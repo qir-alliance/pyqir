@@ -1,0 +1,7 @@
+[project]
+name = "pyqir_parser"
+requires-python = ">=3.6"
+
+[build-system]
+requires = ["maturin>=0.10,<0.12"]
+build-backend = "maturin"

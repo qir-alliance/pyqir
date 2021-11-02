@@ -1,0 +1,48 @@
+[package]
+authors = ["Microsoft"]
+name = "pyqir-jit"
+version = "0.1.0"
+edition = "2018"
+license = "MIT"
+description = "Python based QIR JIT library."
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+microsoft-quantum-qir-runtime-sys = { git = "https://github.com/microsoft/qsharp-runtime", rev = "d955aec7", default-features = false, features = ["runtime", "foundation", "llvm-libloading"] }
+qirlib = { path = "../qirlib" }
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["llvm11-0", "target-x86"] }
+lazy_static = "1.4.0"
+mut_static = "5.0.0"
+log = "0.4.14"
+
+[dependencies.pyo3]
+version = "0.14.2"
+
+[features]
+extension-module = ["pyo3/abi3-py36", "pyo3/extension-module"]
+default = ["extension-module"]
+
+[dev-dependencies]
+serial_test = "0.5.1"
+tempfile = "3.2.0"
+
+[lib]
+name = "pyqir_jit"
+crate-type = ["cdylib"]
+
+[package.metadata.maturin]
+classifier=[
+    "License :: OSI Approved :: MIT License",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python",
+    "Programming Language :: Rust",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+]

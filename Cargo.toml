@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "pyqir-generator",
+    "pyqir-jit",
+    "pyqir-parser",
+    "qirlib",
+]

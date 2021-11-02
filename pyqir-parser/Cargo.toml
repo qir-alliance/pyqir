@@ -1,0 +1,39 @@
+[package]
+authors = ["Microsoft"]
+name = "pyqir-parser"
+version = "0.1.0"
+edition = "2018"
+license = "MIT"
+description = "Python based QIR parser library."
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+llvm-ir = { version = "0.8.0", features = ["llvm-11"] }
+
+[dependencies.pyo3]
+version = "0.14.2"
+
+[features]
+extension-module = ["pyo3/abi3-py36", "pyo3/extension-module"]
+default = ["extension-module"]
+
+[lib]
+name = "pyqir_parser"
+crate-type = ["cdylib"]
+
+[package.metadata.maturin]
+classifier=[
+    "License :: OSI Approved :: MIT License",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python",
+    "Programming Language :: Rust",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+]
