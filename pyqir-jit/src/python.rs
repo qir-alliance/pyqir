@@ -13,20 +13,20 @@ use crate::interop::{
 
 #[pymodule]
 fn pyqir_jit(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyQirJit>()?;
+    m.add_class::<PyNonadaptiveJit>()?;
 
     Ok(())
 }
 
 #[pyclass]
-pub struct PyQirJit {
+pub struct PyNonadaptiveJit {
 }
 
 #[pymethods]
-impl PyQirJit {
+impl PyNonadaptiveJit {
     #[new]
     fn new() -> Self {
-        PyQirJit { }
+        PyNonadaptiveJit { }
     }
 
     fn controlled(

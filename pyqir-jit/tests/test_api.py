@@ -63,11 +63,13 @@ class GateLogger(GateSet):
 
 def test_bell_qir():
     file = "tests/bell_qir_measure.ll"
-    qirjit = QirJit()
-    generator = GateLogger()
-    qirjit.eval(file, generator)
+    jit = NonadaptiveJit()
+    logger = GateLogger()
+    jit.eval(file, logger)
 
-    assert len(generator.instructions) == 2
-    assert str(generator.instructions[0]).startswith("h")
-    assert str(generator.instructions[1]).startswith("cx")
+    logger.print()
+
+    assert len(logger.instructions) == 2
+    assert str(logger.instructions[0]).startswith("h")
+    assert str(logger.instructions[1]).startswith("cx")
 

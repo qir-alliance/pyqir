@@ -4,14 +4,14 @@
 from typing import Any
 from .pyqir_jit import *
 
-class QirJit(object):
-    """
-    The QirJit object loads bitcode/QIR for evaluation and processing
 
+class NonadaptiveJit(object):
+    """
+    The NonadaptiveJit object loads bitcode/QIR for evaluation and processing
     """
 
     def __init__(self):
-        self.pyqirjit = PyQirJit()
+        self.jit = PyNonadaptiveJit()
 
     def eval(self, file_path: str, pyobj: Any):
         """
@@ -23,4 +23,4 @@ class QirJit(object):
         :param pyobj: python GateSet object defining the quantum operations
         :type pyobj: str
         """
-        self.pyqirjit.eval(file_path, pyobj)
+        self.jit.eval(file_path, pyobj)
