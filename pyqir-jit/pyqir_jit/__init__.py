@@ -3,3 +3,4 @@
 
 from .jit import *
 from .gateset import *
+from .gatelogger import *
