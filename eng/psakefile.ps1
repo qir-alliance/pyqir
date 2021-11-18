@@ -150,6 +150,7 @@ function Install-LlvmFromSource {
     $Env:PKG_NAME = Get-PackageName
     $Env:CMAKE_INSTALL_PREFIX = $packagePath
     $Env:INSTALL_LLVM_PACKAGE = $true
+    Assert $false -failureMessage "TODO: Migration in progress"
     . (Join-Path (Get-RepoRoot) "build" "llvm.ps1")
     Use-LlvmInstallation $packagePath
 }
