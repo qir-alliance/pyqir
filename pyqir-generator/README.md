@@ -2,7 +2,17 @@
 
 The `pyqir_generator` package provides the ability to generate [QIR](https://github.com/microsoft/qsharp-language/tree/main/Specifications/QIR#quantum-intermediate-representation-qir) using a [builder](https://en.wikipedia.org/wiki/Builder_pattern) API.
 
-For example, this operation sets two qubits in superposition and returns the result of 
+It is intended to be used by code automating translation processes enabling the conversion in some format to QIR via Python.
+
+## Examples
+
+There are generator examples in the repository:
+- [Bernstein-Vazirani](examples/generator/bernstein_vazirani.py)
+- [Superposition](examples/generator/superposition.py)
+
+A short example is below.
+
+This operation sets two qubits in superposition and returns the result of 
 measuring them. The full output is sent to the terminal:
 
 ```python
