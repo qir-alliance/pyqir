@@ -160,19 +160,9 @@ function Use-LlvmInstallation {
 }
 
 # Gets the LLVM version git hash
-# on the CI this will come as an env var
 function Get-LlvmSha {
-    # Sometimes the CI fails to initilize PYQIR_LLVM_PACKAGE_GIT_VERSION correctly
-    # so we need to make sure it isn't empty.
-    if ((Test-Path env:\PYQIR_LLVM_PACKAGE_GIT_VERSION) -and ![string]::IsNullOrWhiteSpace($Env:PYQIR_LLVM_PACKAGE_GIT_VERSION)) {
-        Write-BuildLog "Use environment submodule version: $($env:PYQIR_LLVM_PACKAGE_GIT_VERSION)"
-        $env:PYQIR_LLVM_PACKAGE_GIT_VERSION
-    }
-    else {
-        $sha = exec { Get-LlvmSubmoduleSha }
-        Write-BuildLog "Use cached submodule version: $sha"
-        $sha
-    }
+    $sha = exec { Get-LlvmSubmoduleSha }
+    $sha
 }
 
 function Get-PackageName {

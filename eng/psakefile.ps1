@@ -173,18 +173,18 @@ function Initialize-Environment {
         Use-ExternalLlvmInstallation
     }
     else {
-        $PYQIR_LLVM_PACKAGE_GIT_VERSION = Get-LlvmSha
-        Write-BuildLog "llvm-project sha: $PYQIR_LLVM_PACKAGE_GIT_VERSION"
+        $llvmSha = Get-LlvmSha
+        Write-BuildLog "llvm-project sha: $llvmSha"
         $packageName = Get-PackageName
 
         $packagePath = Get-InstallationDirectory $packageName
         if (Test-Path $packagePath) {
-            Write-BuildLog "LLVM target $($PYQIR_LLVM_PACKAGE_GIT_VERSION) is already installed."
+            Write-BuildLog "LLVM target $($llvmSha) is already installed."
             # LLVM is already downloaded
             Use-LlvmInstallation $packagePath
         }
         else {
-            Write-BuildLog "LLVM target $($PYQIR_LLVM_PACKAGE_GIT_VERSION) is not installed."
+            Write-BuildLog "LLVM target $($llvmSha) is not installed."
             if (Test-AllowedToDownloadLlvm) {
                 Write-BuildLog "Downloading LLVM target $packageName "
                 Install-LlvmFromBuildArtifacts $packagePath
