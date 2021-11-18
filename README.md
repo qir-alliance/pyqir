@@ -9,5 +9,6 @@ PyQIR is a set of APIs for generating, parsing, and evaluating [Quantum Intermed
 
 ## Documentation
 
+- [Building](./docs/building.md)
 
 ## Installation
