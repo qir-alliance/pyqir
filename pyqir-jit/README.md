@@ -68,3 +68,8 @@ measure qubits[8] -> out[8]
 ## Building and Testing
 
 See [Building](../docs/building.md)
+
+## Limitations
+
+- QIR entrypoint for JIT must be named `QuantumApplication__Run`
+- QIR must contain the defined runtime in [module.ll](../qirlib/src/module.ll)

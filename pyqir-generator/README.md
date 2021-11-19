@@ -95,3 +95,8 @@ entry:
 ## Building and Testing
 
 See [Building](../docs/building.md)
+
+## Limitations
+
+- API is designed for automated translation, not as a circuit building library
+- Using qubit/register names in gate calls that haven't been defined will cause an error during generation.
