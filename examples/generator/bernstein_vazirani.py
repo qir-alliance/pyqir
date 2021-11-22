@@ -13,6 +13,8 @@ ParityFunction: type = Callable[[Tuple[List[str], str]], None]
 class BernsteinVazirani:
     """
     Implementation of the Bernstein-Vazirani quantum algorithm
+
+    builder: QirBuilder
     """
 
     def __init__(self, qubit_count: int = 8, pattern: int = 12):
