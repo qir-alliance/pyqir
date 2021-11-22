@@ -5,9 +5,16 @@ from pyqir_jit import GateSet
 
 
 class GateLogger(GateSet):
+    """
+    Records the quantum circuit operations executed during JIT execution.
+
+    number_of_qubits: int
+    number_of_registers: int
+    instructions: List[str]
+    """
+
     def __init__(self):
-        # call parent class constructor
-        super().__init__()
+        self.number_of_qubits = 0
         self.number_of_registers = 0
         self.instructions = []
 
@@ -61,6 +68,7 @@ class GateLogger(GateSet):
 
     def finish(self, metadata: dict):
         super().finish(metadata)
+        self.number_of_qubits = metadata["number_of_qubits"]
         self.number_of_registers = self.number_of_qubits
 
     def print(self):

@@ -2,8 +2,10 @@
 # Licensed under the MIT License.
 
 class GateSet(object):
-    def __init__(self):
-        self.number_of_qubits = 0
+    """
+    Defines the quantum circuit operations which may be registered for
+    callbacks during JIT execution of QIR
+    """
 
     def cx(self, control: str, target: str):
         pass
@@ -54,5 +56,7 @@ class GateSet(object):
         pass
 
     def finish(self, metadata: dict):
-        self.number_of_qubits = metadata["number_of_qubits"]
+        """
+        Called at the end of JIT execution supplying run metadata.
+        """
         pass
