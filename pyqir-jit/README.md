@@ -5,7 +5,9 @@
 There are JIT examples in the repository:
 - [Bernstein-Vazirani](../examples/jit/bernstein_vazirani.py) ([Bernstein-Vazirani QIR](../examples/jit/bernstein_vazirani.ll))
 
-Let's walk though the example. Suppose we have the generated IR (`bernstein_vazirani.ll`). We can evaluate it with the `NonadaptiveJit`, and `GateLogger` to print out a simple log of the quantum application.
+Let's look at how to log the gate sequence for the following example:
+- [Bernstein-Vazirani](../examples/jit/bernstein_vazirani.py)
+ We can evaluate the [generated QIR](../examples/jit/bernstein_vazirani.ll) with the `NonadaptiveJit`, and `GateLogger` to print out a simple log of the quantum application.
 
 ```python
 from pyqir_jit import NonadaptiveJit, GateLogger
