@@ -1,4 +1,4 @@
-# pyqir-parser
+# pyqir_parser
 
 Under active development and will be updated.
 
