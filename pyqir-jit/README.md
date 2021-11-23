@@ -1,4 +1,4 @@
-# pyqir-jit
+# pyqir_jit
 
 ## Examples
 
