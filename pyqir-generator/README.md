@@ -1,6 +1,6 @@
 # pyqir_generator
 
-The `pyqir_generator` package provides the ability to generate [QIR](https://github.com/microsoft/qsharp-language/tree/main/Specifications/QIR#quantum-intermediate-representation-qir) using a [builder](https://en.wikipedia.org/wiki/Builder_pattern) API.
+The `pyqir_generator` package provides the ability to generate [QIR](https://github.com/qir-alliance/qir-spec) using a [builder](https://en.wikipedia.org/wiki/Builder_pattern) API.
 
 It is intended to be used by code automating translation processes enabling the conversion in some format to QIR via Python; i.e., this is a low level API intended to be used as a bridge to existing Python frameworks enabling the generation of QIR rather than directly consumed by an end-user. It is **not** intended to be used as a framework for algorithm and application development.
 
