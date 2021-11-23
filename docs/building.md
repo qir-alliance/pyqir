@@ -1,4 +1,4 @@
-# Building PyQIR
+# Building PyQIR from source
 
 ## Local Environment
 
