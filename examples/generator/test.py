@@ -5,14 +5,25 @@
 
 import sys
 from antlr4 import *
+from argparse import *
 from mock_language.MockLanguageLexer import MockLanguageLexer
 from mock_language.MockLanguageParser import MockLanguageParser
 from mock_language.MockLanguageListener import MockLanguageListener
+from pathlib import Path
 from pyqir_generator import QirBuilder
 
 
-class QirGenerator(MockLanguageListener) :
-    def __init__(self, nr_qubits, module_id):
+class QirGenerator(MockLanguageListener):
+    """
+    Class that generates QIR when walking the parse tree 
+    of a Mock language program.
+    """    
+    
+    def __init__(self, nr_qubits: int, module_id: str):
+        """
+        :param nr_qubits: The total number of qubits used in the compilation.
+        :type nr_qubits: int
+        """
         self.builder = QirBuilder(module_id)
         self.builder.add_quantum_register("q", nr_qubits)
         self.builder.add_classical_register("m", nr_qubits)
@@ -20,8 +31,12 @@ class QirGenerator(MockLanguageListener) :
     def get_ir_string(self) -> str:
         return self.builder.get_ir_string()
 
-    def write_to_file(self, file_name) -> str:
-        file = open(file_name,"w")
+    def write_to_file(self, file_path: str) -> str:
+        """
+        :param file_path: Path of the file to write the IR to.
+        :type file_path: str
+        """
+        file = open(file_path,"w")
         file.write(self.get_ir_string())
         file.close()
 
@@ -37,24 +52,42 @@ class QirGenerator(MockLanguageListener) :
     def enterMzGate(self, ctx:MockLanguageParser.MzGateContext):
         self.builder.m("q" + ctx.target.text, "m" + ctx.target.text)
 
-def main(argv):
-    nr_qubits = int(argv[1])
-    input_file = FileStream(argv[2])
 
-    lexer = MockLanguageLexer(input_file)
+def mock_program_to_qir(nr_qubits: int, input_file: str) -> str:
+    """
+    Parses a Mock program and generates QIR based on the syntax tree.
+    Usually the language specific compiler would fully validate and 
+    potentially optimize the program before QIR is generated, but for 
+    illustration purposes we omit that from this example.
+
+    :param nr_qubits: The total number of qubits used in the program.
+    :type nr_qubits: int
+    :param input_file: Path of the file containing the Mock program.
+    :type input_file: str
+    """
+
+    lexer = MockLanguageLexer(FileStream(input_file))
     stream = CommonTokenStream(lexer)
     parser = MockLanguageParser(stream)
     tree = parser.document()
-
-    module_id = "test"
     
-    generator = QirGenerator(nr_qubits, module_id)
+    generator = QirGenerator(nr_qubits, Path(input_file).stem)
     walker = ParseTreeWalker()
     walker.walk(generator, tree)
-        
-    print(generator.get_ir_string())
-    #generator.write_to_file("output.txt")
+    return generator.get_ir_string()
+
 
 if __name__ == '__main__':
-    main(sys.argv)
+
+    command_line = ArgumentParser()
+    command_line.add_argument(
+        'input_file', type=str,
+        help='Path of the file containing the Mock program.')
+    command_line.add_argument(
+        'nr_qubits', type=int,
+        help='The total number of qubits used in the program.')
+    args = command_line.parse_args()
+
+    generated_qir = mock_program_to_qir(args.nr_qubits, args.input_file)
+    print(generated_qir)
 
