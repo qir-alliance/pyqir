@@ -6,6 +6,8 @@ on:
   pull_request:
     branches:
     - main
+    - feature/*
+    - features/*
 
 env:
   CARGO_TERM_COLOR: always

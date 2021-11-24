@@ -78,5 +78,6 @@ See [Building](../docs/building.md)
 
 ## Current Limitations
 
-- QIR entrypoint for JIT must be named `QuantumApplication__Run`
-- QIR must contain the defined runtime in [module.ll](../qirlib/src/module.ll)
+- QIR entry point for JIT must be named `QuantumApplication__Run`
+- Entry point arguments are not yet supported
+- QIR must contain the defined runtime in [module.ll](../qirlib/src/module.ll); it is automatically included when using the [pyqir_generator](../pyqir-generator) package to generate QIR
