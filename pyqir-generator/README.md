@@ -8,12 +8,11 @@ It is intended to be used by code automating translation processes enabling the 
 
 There are generator examples in the repository:
 - [Bernstein-Vazirani](examples/generator/bernstein_vazirani.py)
-- [Superposition](examples/generator/superposition.py)
+- [Bell pair](examples/generator/bell_pair.py)
 
 A short example is below.
 
-This operation sets two qubits in superposition and returns the result of 
-measuring them. The full output is sent to the terminal:
+This operation creates a Bell pair and returns the result of measuring each qubit. The full output is sent to the terminal:
 
 ```python
 from pyqir_generator import QirBuilder
