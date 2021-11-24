@@ -5,10 +5,10 @@ The 'pyqir_jit' package provides an easy way to execute generated QIR for the pu
 2. connecting it to low-level Python-based lab software such as e.g. [QCoDes.](https://qcodes.github.io/Qcodes/user/intro.html) 
 
 It contains the necessary [just-in-time compilation](https://en.wikipedia.org/wiki/Just-in-time_compilation) infrastructure as well an extensibility mechanism to define what actions to perform when a gate is applied in Python.
+
 ## Examples
 
-There are JIT examples in the repository:
-- [Bernstein-Vazirani](../examples/jit/bernstein_vazirani.py) ([Bernstein-Vazirani QIR](../examples/jit/bernstein_vazirani.ll))
+There are [JIT examples](../examples/jit) in the repository.
 
 Let's look at how to log the gate sequence for the following example:
 - [Bernstein-Vazirani](../examples/jit/bernstein_vazirani.py)
