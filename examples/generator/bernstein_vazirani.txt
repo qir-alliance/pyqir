@@ -1,4 +1,4 @@
-// Bernstein-Vazirani algorithm
+// Implementation of a Bernstein-Vazirani algorithm
 
 x 6
 h 0
