@@ -1,22 +1,13 @@
-# pyqir-parser
+# pyqir_parser
+
+Under active development and will be updated.
 
 ## Building and Testing
 
-To build this package, first install `maturin`:
+See [Building](../docs/building.md)
 
-```shell
-pip install maturin
-```
+## Limitations
 
-To build and test use `maturin develop`:
-
-```shell
-pip install -r requirements-dev.txt
-maturin develop && pytest
-```
-
-Alternatively, install tox and run the tests inside an isolated environment:
-
-```shell
-tox -e py
-```
+- Unsupported IR
+  - Phi nodes
+  - arrays

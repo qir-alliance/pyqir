@@ -21,3 +21,7 @@ tempfile = "3.2.0"
 
 [lib]
 name = "qirlib"
+
+[features]
+jit = []
+default = []

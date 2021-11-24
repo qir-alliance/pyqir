@@ -11,6 +11,7 @@ use crate::{constants::Constants, intrinsics::Intrinsics, runtime_library::Runti
 pub struct Context<'ctx> {
     pub context: &'ctx inkwell::context::Context,
     pub module: inkwell::module::Module<'ctx>,
+    #[cfg(feature = "jit")]
     pub execution_engine: inkwell::execution_engine::ExecutionEngine<'ctx>,
     pub builder: inkwell::builder::Builder<'ctx>,
     pub types: Types<'ctx>,
@@ -24,6 +25,7 @@ pub enum ContextType<'ctx> {
     File(&'ctx String),
 }
 
+#[cfg(feature = "jit")]
 impl<'ctx> Context<'ctx> {
     pub fn new(
         context: &'ctx inkwell::context::Context,
@@ -49,6 +51,33 @@ impl<'ctx> Context<'ctx> {
             constants,
         })
     }
+}
+
+#[cfg(not(feature = "jit"))]
+impl<'ctx> Context<'ctx> {
+    pub fn new(
+        context: &'ctx inkwell::context::Context,
+        context_type: ContextType<'ctx>,
+    ) -> Result<Self, String> {
+        let builder = context.create_builder();
+        let module = Context::load_module(context, context_type)?;
+        let types = Types::new(&context, &module);
+        let runtime_library = RuntimeLibrary::new(&module);
+        let intrinsics = Intrinsics::new(&module);
+        let constants = Constants::new(&module, &types);
+        Ok(Context {
+            builder,
+            module,
+            types,
+            context,
+            runtime_library,
+            intrinsics,
+            constants,
+        })
+    }
+}
+
+impl<'ctx> Context<'ctx> {
     fn load_module(
         context: &'ctx inkwell::context::Context,
         context_type: ContextType<'ctx>,

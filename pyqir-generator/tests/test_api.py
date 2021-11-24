@@ -1,5 +1,8 @@
-from pyqir_generator import *
-import pytest
+# Copyright(c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+from pyqir_generator import QirBuilder
+
 
 def test_bell(tmpdir):
     builder = QirBuilder("Bell circuit")
@@ -14,6 +17,7 @@ def test_bell(tmpdir):
     print(f'Writing {file}')
     builder.build(str(file))
 
+
 def test_bell_no_measure(tmpdir):
     builder = QirBuilder("Bell circuit")
     builder.add_quantum_register("qr", 2)
@@ -25,6 +29,7 @@ def test_bell_no_measure(tmpdir):
     file = tmpdir.mkdir("sub").join("bell_no_measure.ll")
     print(f'Writing {file}')
     builder.build(str(file))
+
 
 def test_bernstein_vazirani(tmpdir):
     builder = QirBuilder("Bernstein-Vazirani")
@@ -62,6 +67,7 @@ def test_bernstein_vazirani(tmpdir):
     print(f'Writing {file}')
     builder.build(str(file))
 
+
 def test_all_gates(tmpdir):
     builder = QirBuilder("All Gates")
     builder.add_quantum_register("q", 4)
@@ -73,9 +79,9 @@ def test_all_gates(tmpdir):
     builder.cz("q1", "control0")
     builder.h("q0")
     builder.reset("q0")
-    builder.rx(15.0,"q1")
-    builder.ry(16.0,"q2")
-    builder.rz(17.0,"q3")
+    builder.rx(15.0, "q1")
+    builder.ry(16.0, "q2")
+    builder.rz(17.0, "q3")
     builder.s("q0")
     builder.s_adj("q1")
     builder.t("q2")
@@ -92,6 +98,7 @@ def test_all_gates(tmpdir):
     file = tmpdir.mkdir("sub").join("all_gates.ll")
     print(f'Writing {file}')
     builder.build(str(file))
+
 
 def test_bernstein_vazirani_ir_string():
     builder = QirBuilder("Bernstein-Vazirani")
