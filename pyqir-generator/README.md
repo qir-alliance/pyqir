@@ -12,29 +12,17 @@ There are generator examples in the repository:
 
 A short example is below.
 
-This operation creates a Bell pair and returns the result of measuring each qubit. The full output is sent to the terminal:
+The following code creates QIR for an create Bell pair before measuring each qubit and returning the result. The unoptimized QIR is displayed in the terminal when executed:
 
 ```python
 from pyqir_generator import QirBuilder
 
-"""
-Whether the two qubits should be entangled.
-    If "true", the two qubits are entangled such that the state of both
-    is one of the Bell states: | x 〉| y 〉 = 1/sqrt(2) [|0〉|0〉 + |1〉|1〉]
-    If "false", the two qubits are entangled such that the state is:
-    | x 〉| y 〉 = 1/4 [|0〉|0〉 + |0〉|1〉 + |1〉|0〉 + |1〉|1〉]
-"""
-entangle: bool = True
-
 builder = QirBuilder("Bell")
 builder.add_quantum_register("qubit", 2)
 builder.add_classical_register("output", 2)
-builder.h("qubit0")
 
-if(entangle):
-    builder.cx("qubit0", "qubit1")
-else:
-    builder.h("qubit1")
+builder.h("qubit0")
+builder.cx("qubit0", "qubit1")
 
 builder.m("qubit0", "output0")
 builder.m("qubit1", "output1")
