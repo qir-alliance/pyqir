@@ -4,9 +4,10 @@ The `pyqir_generator` package provides the ability to generate [QIR](https://git
 
 It is intended to be used by code automating translation processes enabling the conversion in some format to QIR via Python; i.e., this is a low level API intended to be used as a bridge to existing Python frameworks enabling the generation of QIR rather than directly consumed by an end-user. It is **not** intended to be used as a framework for algorithm and application development.
 
-This folder contains the following examples for how to use the `pyqir_generator` package:  
-    - [Bernstein-Vazirani](mock_to_qir.py), give the Mock language [program description](bernstein_vazirani.txt)  
-    - [Bell pair](bell_pair.py)
+This folder contains the following examples for how to use the `pyqir_generator` package:
+
+- [Bernstein-Vazirani](mock_to_qir.py), give the Mock language [program description](bernstein_vazirani.txt)  
+- [Bell pair](bell_pair.py)
 
 The **Bernstein-Vazirani example** matches most closely how the `pyqir_generator` package is intended to be used. It consists of a [Python program](mock_to_qir.py) that uses a "mini-compiler" for a made up [Mock language](mock_language) to parse a program and then walks the created syntax tree to compile it into QIR.
 For simplicity, we used [Antlr](https://www.antlr.org/) to generate the parser based on the defined [grammar](mock_language/MockLanguage.g4) and omitted any further compilation or optimization. To run the example, please install the Antlr runtime:
