@@ -22,7 +22,6 @@ class QirGenerator(MockLanguageListener):
     def __init__(self, nr_qubits: int, module_id: str):
         """
         :param nr_qubits: The total number of qubits used in the compilation.
-        :type nr_qubits: int
         """
         self.builder = QirBuilder(module_id)
         self.builder.add_quantum_register("q", nr_qubits)
@@ -56,14 +55,12 @@ class QirGenerator(MockLanguageListener):
 def mock_program_to_qir(nr_qubits: int, input_file: str) -> str:
     """
     Parses a Mock program and generates QIR based on the syntax tree.
-    Usually the language specific compiler would fully validate and 
+    Usually the language-specific compiler would fully validate and 
     potentially optimize the program before QIR is generated, but for 
     illustration purposes we omit that from this example.
 
     :param nr_qubits: The total number of qubits used in the program.
-    :type nr_qubits: int
     :param input_file: Path of the file containing the Mock program.
-    :type input_file: str
     """
 
     lexer = MockLanguageLexer(FileStream(input_file))
