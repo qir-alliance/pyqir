@@ -60,9 +60,7 @@ def mock_program_to_qir(nr_qubits: int, input_file: str) -> str:
     illustration purposes we omit that from this example.
 
     :param nr_qubits: The total number of qubits used in the program.
-    :type nr_qubits: int
     :param input_file: Path of the file containing the Mock program.
-    :type input_file: str
     """
 
     lexer = MockLanguageLexer(FileStream(input_file))
