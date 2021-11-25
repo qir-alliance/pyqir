@@ -4,7 +4,7 @@ The `pyqir_generator` package provides the ability to generate [QIR](https://git
 
 It is intended to be used by code automating translation processes enabling the conversion in some format to QIR via Python; i.e., this is a low level API intended to be used as a bridge to existing Python frameworks enabling the generation of QIR rather than directly consumed by an end-user. It is **not** intended to be used as a framework for algorithm and application development.
 
-This folder contains two examples for how to use the `pyqir_generator` package:  
+This folder contains the following examples for how to use the `pyqir_generator` package:  
     - [Bernstein-Vazirani](mock_to_qir.py), give the Mock language [program description](bernstein_vazirani.txt)  
     - [Bell pair](bell_pair.py)
 
