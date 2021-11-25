@@ -22,22 +22,22 @@ class QirGenerator(MockLanguageListener):
     def __init__(self, nr_qubits: int, module_id: str):
         """
         :param nr_qubits: The total number of qubits used in the compilation.
+        :param module_id: An identifier for the created QIR module.
         """
         self.builder = QirBuilder(module_id)
         self.builder.add_quantum_register("q", nr_qubits)
         self.builder.add_classical_register("m", nr_qubits)
-
-    def get_ir_string(self) -> str:
+        
+    @property
+    def ir_string(self) -> str:
         return self.builder.get_ir_string()
 
     def write_to_file(self, file_path: str) -> str:
         """
         :param file_path: Path of the file to write the IR to.
-        :type file_path: str
         """
-        file = open(file_path,"w")
-        file.write(self.get_ir_string())
-        file.close()
+        with open(file_path, 'w') as file:
+            file.write(self.ir_string)
 
     def enterXGate(self, ctx: MockLanguageParser.XGateContext):
         self.builder.x("q" + ctx.target.text)
@@ -71,7 +71,7 @@ def mock_program_to_qir(nr_qubits: int, input_file: str) -> str:
     generator = QirGenerator(nr_qubits, Path(input_file).stem)
     walker = ParseTreeWalker()
     walker.walk(generator, tree)
-    return generator.get_ir_string()
+    return generator.ir_string
 
 
 if __name__ == '__main__':

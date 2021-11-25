@@ -1,3 +1,6 @@
+// Copyright(c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 // This grammar implements a Mock-language to illustrate 
 // the use of PyQIR as part of a compiler toolchain.
 
