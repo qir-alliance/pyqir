@@ -1,18 +1,18 @@
 # PyQIR
 
-PyQIR is a set of APIs for generating, parsing, and evaluating [Quantum Intermediate Representation (QIR)](https://github.com/microsoft/qsharp-language/tree/main/Specifications/QIR#quantum-intermediate-representation-qir).
+PyQIR is a set of APIs for generating, parsing, and evaluating [Quantum Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec).
 
-- [pyqir-generator](./pyqir-generator/README.md) : Python API for generating QIR ([bitcode](https://www.llvm.org/docs/BitCodeFormat.html#id10) and [IR](https://llvm.org/docs/LangRef.html)).
-  - [Examples](examples/generator)
-- [pyqir-jit](./pyqir-jit/README.md) : Python API for evaluating QIR using [JIT compilation](https://en.wikipedia.org/wiki/Just-in-time_compilation).
-  - [Examples](examples/jit)
-- [pyqir-parser](./pyqir-parser/README.md) : Python API for parsing QIR into an object model for analysis.
-- [qirlib](./qirlib/README.md): Rust library wrapping [LLVM](https://llvm.org/) libraries for working with QIR.
+- [pyqir-generator](https://github.com/qir-alliance/pyqir/tree/main/pyqir-generator): Python API for generating QIR ([bitcode](https://www.llvm.org/docs/BitCodeFormat.html#id10) and [IR](https://llvm.org/docs/LangRef.html)).
+  - [Examples](https://github.com/qir-alliance/pyqir/tree/main/examples/generator)
+- [pyqir-jit](https://github.com/qir-alliance/pyqir/tree/main/pyqir-jit): Python API for evaluating QIR using [JIT compilation](https://en.wikipedia.org/wiki/Just-in-time_compilation).
+  - [Examples](https://github.com/qir-alliance/pyqir/tree/main/examples/jit)
+- [pyqir-parser](https://github.com/qir-alliance/pyqir/tree/main/pyqir-parser): Python API for parsing QIR into an object model for analysis.
+- [qirlib](https://github.com/qir-alliance/pyqir/tree/main/qirlib): Rust library wrapping [LLVM](https://llvm.org/) libraries for working with QIR.
 
 ## Documentation
 
-- [Installing PyQIR](./docs/installing.md)
-- [Building PyQIR from source](./docs/building.md)
-- [Compatibility](./docs/compatibility.md)
+- [Installing PyQIR](https://github.com/qir-alliance/pyqir/blob/main/docs/installing.md)
+- [Building PyQIR from source](https://github.com/qir-alliance/pyqir/blob/main/docs/building.md)
+- [Compatibility](https://github.com/qir-alliance/pyqir/blob/main/docs/compatibility.md)
 
 ## Installation

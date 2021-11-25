@@ -6,7 +6,7 @@ It is intended to be used by code automating translation processes enabling the 
 
 ## Examples
 
-There are [generator examples](../examples/generator) in the repository.
+There are [generator examples](https://github.com/qir-alliance/pyqir/tree/main/examples/generator) in the repository.
 
 Let's look at a short example.
 The following code creates QIR for an create Bell pair before measuring each qubit and returning the result. The unoptimized QIR is displayed in the terminal when executed:
@@ -78,7 +78,7 @@ entry:
 
 ## Building and Testing
 
-See [Building](../docs/building.md)
+See [Building](https://github.com/qir-alliance/pyqir/blob/main/docs/building.md)
 
 ## Current Limitations
 

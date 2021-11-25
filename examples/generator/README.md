@@ -6,13 +6,13 @@ It is intended to be used by code automating translation processes enabling the 
 
 This folder contains the following examples for how to use the `pyqir_generator` package:
 
-- [Bernstein-Vazirani](mock_to_qir.py), give the Mock language [program description](bernstein_vazirani.txt)  
-- [Bell pair](bell_pair.py)
+- [Bernstein-Vazirani](https://github.com/qir-alliance/pyqir/tree/main/examples/generator/mock_to_qir.py), give the Mock language [program description](https://github.com/qir-alliance/pyqir/tree/main/examples/generator/bernstein_vazirani.txt)  
+- [Bell pair](https://github.com/qir-alliance/pyqir/tree/main/examples/generator/bell_pair.py)
 
-The **Bernstein-Vazirani example** matches most closely how the `pyqir_generator` package is intended to be used. It consists of a [Python program](mock_to_qir.py) that uses a "mini-compiler" for a made up [Mock language](mock_language) to parse a program and then walks the created syntax tree to compile it into QIR.
-For simplicity, we used [Antlr](https://www.antlr.org/) to generate the parser based on the defined [grammar](mock_language/MockLanguage.g4) and omitted any further compilation or optimization. To run the example, please install the Antlr runtime:
+The **Bernstein-Vazirani example** matches most closely how the `pyqir_generator` package is intended to be used. It consists of a [Python program](https://github.com/qir-alliance/pyqir/tree/main/examples/generator/mock_to_qir.py) that uses a "mini-compiler" for a made up [Mock language](https://github.com/qir-alliance/pyqir/tree/main/examples/generator/mock_language) to parse a program and then walks the created syntax tree to compile it into QIR.
+For simplicity, we used [Antlr](https://www.antlr.org/) to generate the parser based on the defined [grammar](https://github.com/qir-alliance/pyqir/tree/main/examples/generator/mock_language/MockLanguage.g4) and omitted any further compilation or optimization. To run the example, please install the Antlr runtime:
 ```
 pip install antlr4-python3-runtime
 ```
 
-The **Bell pair example** consists of a [single file](bell_pair.py), and does not require any additional installation besides the `pyqir_generator` package itself. Please be aware that the PyQIR API is not intended to directly express quantum applications; its purpose is to be easily usable for *compiler and frontend developers* rather than *application developers* - as evidenced, e.g., by the fact that there is no `qubit` or `register` type defined within the API.
+The **Bell pair example** consists of a [single file](https://github.com/qir-alliance/pyqir/tree/main/examples/generator/bell_pair.py), and does not require any additional installation besides the `pyqir_generator` package itself. Please be aware that the PyQIR API is not intended to directly express quantum applications; its purpose is to be easily usable for *compiler and frontend developers* rather than *application developers* - as evidenced, e.g., by the fact that there is no `qubit` or `register` type defined within the API.
