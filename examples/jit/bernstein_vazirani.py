@@ -9,7 +9,7 @@ from pathlib import Path
 import os
 
 path = Path(__file__).parent
-file = os.path.join(path, "bernstein_vazirani.ll")
+file = os.path.join(path, "bernstein_vazirani.bc")
 
 jit = NonadaptiveJit()
 logger = GateLogger()

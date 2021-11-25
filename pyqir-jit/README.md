@@ -12,7 +12,7 @@ There are [JIT examples](../examples/jit) in the repository.
 
 Let's look at how to log the gate sequence for the following example:
 - [Bernstein-Vazirani](../examples/jit/bernstein_vazirani.py)
- We can evaluate the [generated QIR](../examples/jit/bernstein_vazirani.ll) with the `NonadaptiveJit`, and `GateLogger` to print out a simple log of the quantum application.
+ We can evaluate the [generated bitcode](../examples/jit/bernstein_vazirani.bc) with the `NonadaptiveJit`, and `GateLogger` to print out a simple log of the quantum application.
 
 ```python
 from pyqir_jit import NonadaptiveJit, GateLogger
@@ -21,7 +21,7 @@ from pathlib import Path
 import os
 
 path = Path(__file__).parent
-file = os.path.join(path, "bernstein_vazirani.ll")
+file = os.path.join(path, "bernstein_vazirani.bc")
 
 jit = NonadaptiveJit()
 logger = GateLogger()
