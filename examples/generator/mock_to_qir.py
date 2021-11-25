@@ -56,7 +56,7 @@ class QirGenerator(MockLanguageListener):
 def mock_program_to_qir(nr_qubits: int, input_file: str) -> str:
     """
     Parses a Mock program and generates QIR based on the syntax tree.
-    Usually the language specific compiler would fully validate and 
+    Usually the language-specific compiler would fully validate and 
     potentially optimize the program before QIR is generated, but for 
     illustration purposes we omit that from this example.
 
