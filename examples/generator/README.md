@@ -14,4 +14,4 @@ For simplicity, we used [Antlr](https://www.antlr.org/) to generate the parser b
 pip install antlr4-python3-runtime
 ```
 
-The **Bell pair example** consists of a [single file](bell_pair.py), and does not require any additional installation besides the `pyqir_generator` package itself. Please be aware that the PyQIR API is not intended to directly express quantum applications; its purpose is to be easily usable for *compiler developers* rather than *application developers* - as evidenced, e.g., by the fact that there is no `qubit` or `register` type defined within the API.
+The **Bell pair example** consists of a [single file](bell_pair.py), and does not require any additional installation besides the `pyqir_generator` package itself. Please be aware that the PyQIR API is not intended to directly express quantum applications; its purpose is to be easily usable for *compiler and frontend developers* rather than *application developers* - as evidenced, e.g., by the fact that there is no `qubit` or `register` type defined within the API.
