@@ -22,7 +22,6 @@ class QirGenerator(MockLanguageListener):
     def __init__(self, nr_qubits: int, module_id: str):
         """
         :param nr_qubits: The total number of qubits used in the compilation.
-        :type nr_qubits: int
         """
         self.builder = QirBuilder(module_id)
         self.builder.add_quantum_register("q", nr_qubits)
