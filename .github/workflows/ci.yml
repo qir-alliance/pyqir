@@ -1,0 +1,61 @@
+name: CI
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+    - feature/*
+    - features/*
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ${{ matrix.config.os }}
+    env: ${{ matrix.config.env }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+              os: "ubuntu-20.04",
+              arch: "amd64",
+              env: {},
+            }
+          - {
+              os: "windows-2019",
+              arch: "amd64",
+              env: {},
+            }
+          - {
+              os: "macOS-10.15",
+              arch: "amd64",
+              env: {},
+            }
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - name: Linux - Install build dependencies, ccache, and update PATH to use linked versions of gcc, cc, etc
+        run: sudo apt-get install -y ccache ninja-build
+        if: ${{ matrix.config.os == 'ubuntu-20.04' }}
+      - name: Windows - Install build dependencies, ccache, and update PATH to use linked versions of gcc, cc, etc
+        run: choco install --accept-license -y sccache ninja
+        if: ${{ matrix.config.os == 'windows-2019' }}
+      - name: MacOS - Install build dependencies, ccache, and update PATH to use linked versions of gcc, cc, etc
+        run: brew install ccache ninja
+        if: ${{ matrix.config.os == 'macOS-10.15' }}
+      - name: Windows - Install LLVM 11.1.0
+        run: choco install llvm --version=11.1.0 --allow-downgrade
+        if: ${{ matrix.config.os == 'windows-2019' }}
+      - name: "Build all"
+        run: ./build.ps1
+        shell: pwsh
+      - name: Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: artifacts
+          path: target/wheels/*
