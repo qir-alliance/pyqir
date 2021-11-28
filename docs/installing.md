@@ -49,9 +49,8 @@ Then run the installation script:
 ## Supported Platforms
 
 For more information about what platforms are supported, please see
-[Compatibility](compatibility.md).
-Alternatively, instructions for how to build PyQIR from source can be found
-[here](building.md)
+[Compatibility](compatibility.md). Alternatively, instructions for how to build
+PyQIR from source can be found [here](building.md)
 
 ## Uninstalling the Packages
 
@@ -64,12 +63,11 @@ python -m pip uninstall -y pyqir_generator pyqir_parser pyqir_jit`
 
 ### Error when running the examples
 
-- `ModuleNotFoundError: No module named 'pyqir_(generator|parser|jit)'`:
-  Install the library by running one of the `install.(sh|ps1|cmd)` scripts.
+- `ModuleNotFoundError: No module named 'pyqir_(generator|parser|jit)'`: Install
+  the library by running one of the `install.(sh|ps1|cmd)` scripts.
 
 ### Other errors
 
-- `Python was not found`:
-  If you are running `python3` in a terminal window, run `python --version`. If
-  the output starts `Python 3` then use `python` instead. This can happen on
-  some platforms that don't create an alias.
+- `Python was not found`: If you are running `python3` in a terminal window, run
+  `python --version`. If the output starts `Python 3` then use `python` instead.
+  This can happen on some platforms that don't create an alias.
