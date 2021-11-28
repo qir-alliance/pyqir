@@ -6,13 +6,13 @@ PyQIR runs on most x86-64 operating systems that can run Python 3.6+; however,
 not all of these systems are equally compatible. Operating systems are grouped
 into tiers that represent the level of compatibility users can expect.
 
-* Tier 1 systems are compatible. For tier 1 systems:
-  * operating system is used in automated tests
-  * installation packages provided for them
-* Tier 2 systems should be compatible with PyQIR and can be used relatively
+- Tier 1 systems are compatible. For tier 1 systems:
+  - operating system is used in automated tests
+  - installation packages provided for them
+- Tier 2 systems should be compatible with PyQIR and can be used relatively
   easily. For tier 2 systems:
-  * informal testing may have been done
-  * the packages for tier 1 systems will likely work in tier 2 systems
+  - informal testing may have been done
+  - the packages for tier 1 systems will likely work in tier 2 systems
 
 ### Tier 1
 

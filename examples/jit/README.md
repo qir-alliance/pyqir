@@ -2,6 +2,7 @@
 
 The 'pyqir_jit' package provides an easy way to execute generated QIR for the
 purpose of
+
 1. easily testing and experimenting with QIR code
 2. connecting it to low-level Python-based lab software such as e.g.
    [QCoDes.](https://qcodes.github.io/Qcodes/user/intro.html)

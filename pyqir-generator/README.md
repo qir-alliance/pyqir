@@ -37,7 +37,7 @@ print(builder.get_ir_string())
 
 The corresponding piece in the QIR output will contain the generated function:
 
-```
+```llvm
 define internal %Array* @QuantumApplication__Run__body() {
 entry:
   %qubit0 = call %Qubit* @__quantum__rt__qubit_allocate()

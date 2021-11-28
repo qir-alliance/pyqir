@@ -24,7 +24,8 @@ package:
   [grammar](https://github.com/qir-alliance/pyqir/tree/main/examples/generator/mock_language/MockLanguage.g4)
   and omitted any further compilation or optimization. To run the example,
   please install the Antlr runtime:
-  ```
+
+  ```console
   pip install antlr4-python3-runtime
   ```
 

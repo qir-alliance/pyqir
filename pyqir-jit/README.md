@@ -2,6 +2,7 @@
 
 The 'pyqir_jit' package provides an easy way to execute generated QIR for the
 purpose of
+
 1. easily testing and experimenting with QIR code
 2. connecting it to low-level Python-based lab software such as e.g.
    [QCoDes.](https://qcodes.github.io/Qcodes/user/intro.html)
@@ -18,6 +19,7 @@ examples](https://github.com/qir-alliance/pyqir/tree/main/examples/jit) in the
 repository.
 
 Let's look at how to log the gate sequence for the following example:
+
 - [Bernstein-Vazirani](https://github.com/qir-alliance/pyqir/tree/main/examples/jit/bernstein_vazirani.py)
   We can evaluate the [generated
   bitcode](https://github.com/qir-alliance/pyqir/tree/main/examples/jit/bernstein_vazirani.bc)
@@ -45,7 +47,7 @@ logger.print()
 
 Would generate the output:
 
-```
+```text
 # output from NonadaptiveJit returning the uninitialized output
 [[Zero, Zero, Zero, Zero, Zero, Zero, Zero, Zero]]
 # output from GateLogger
