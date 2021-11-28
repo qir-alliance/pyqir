@@ -1,6 +1,6 @@
 # Examples: pyqir_jit
 
-The 'pyqir_jit' package provides an easy way to execute generated QIR for the
+The `pyqir_jit` package provides an easy way to execute generated QIR for the
 purpose of
 
 1. easily testing and experimenting with QIR code

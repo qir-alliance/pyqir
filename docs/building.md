@@ -61,9 +61,11 @@ each project can be built by running `cargo build` in the project directory. If
 not, you can install Clang manually:
 
 - Linux (Ubuntu)
+
   ```bash
   apt-get update apt-get install -y clang-11 lldb-11 lld-11 clangd-11
   ```
+
 - Windows
   - Download and install the `LLVM-11.1.0-win64.exe` from the [11.1.0
     Release](https://github.com/llvm/llvm-project/releases/tag/llvmorg-11.1.0)
