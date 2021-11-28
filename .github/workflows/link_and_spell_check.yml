@@ -1,4 +1,5 @@
 on:
+  workflow_dispatch:
   pull_request:
     branches:
     - main
@@ -8,11 +9,16 @@ name: "Check spelling, linting and links"
 jobs:
   check-markdown:
     runs-on: ubuntu-latest
-    name: "Check Markdown files"
+    name: "Check spelling, linting and links"
     steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@v2
     - run: |
-        Get-ChildItem (Join-Path ".github" "utils" "problem-matchers") `
+        wget https://github.com/qir-alliance/.github/archive/refs/heads/main.zip -O clone.zip &&
+        unzip clone.zip && mv .github-main out && rm clone.zip &&
+        mv out/workflow-templates/utils/ utils && rm -r out
+      shell: bash
+    - run: |
+        Get-ChildItem (Join-Path "utils" "problem-matchers") `
           | ForEach-Object {
             Write-Host "Adding matcher $_...";
             Write-Host "::add-matcher::$_";
@@ -23,25 +29,20 @@ jobs:
       uses: nosborn/github-action-markdown-cli@v2.0.0
       with:
         files: .
-        config_file: '.github/utils/md_lint_config.yml'
+        config_file: 'utils/md_lint_config.yml'
     - name: Markdown link check
       # cspell:words gaurav
       uses: gaurav-nelson/github-action-markdown-link-check@v1
       with:
         use-verbose-mode: 'yes'
       if: ${{ success() || failure() }}
-
-  check-spelling:
-    runs-on: ubuntu-latest
-    name: "Check spelling in changed files"
-    steps:
-      - uses: actions/checkout@v2
+    - name: "Check spelling in changed files"
       # cspell:words streetsidesoftware
-      - uses: streetsidesoftware/cspell-action@v1.2.4
-        with:
-          inline: warning
-          # Only warn on spelling errors, since there's likely a lot of false
-          # positives with terminology in quantum computing.
-          strict: false
-          incremental_files_only: true
-          config: '.github/utils/spelling_allowlist.json'
+      uses: streetsidesoftware/cspell-action@v1.2.4
+      with:
+        inline: warning
+        # Only warn on spelling errors, since there's likely a lot of false
+        # positives with terminology in quantum computing.
+        strict: false
+        incremental_files_only: true
+        config: 'utils/spelling_allowlist.json'
