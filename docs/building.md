@@ -27,6 +27,7 @@ Install Rust from [rustup](https://rustup.rs/).
 
 Install Python 3.6+ from one of the following and make sure it is added to the
 path.
+
 - [Windows
   store](https://docs.microsoft.com/en-us/windows/python/beginners#install-python)
 - [Miniconda](https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links)
@@ -45,7 +46,8 @@ Install Rust from [rustup](https://rustup.rs/).
 Install Python 3.6+ from [Python.org](https://www.python.org/downloads/macos/).
 
 or brew:
-```
+
+```bash
 brew install 'python@3.9'
 python -m pip install --user maturin tox
 ```
@@ -59,72 +61,93 @@ each project can be built by running `cargo build` in the project directory. If
 not, you can install Clang manually:
 
 - Linux (Ubuntu)
-  - ```
-    apt-get update apt-get install -y clang-11 lldb-11 lld-11 clangd-11
-    ```
-  - Windows
-  - Download and install the `LLVM-11.1.0-win64.exe` from the [11.1.0 Release](https://github.com/llvm/llvm-project/releases/tag/llvmorg-11.1.0) page.
-  - This package only contains the Clang components. There is no package that contains Clang and LLVM.
+  ```bash
+  apt-get update apt-get install -y clang-11 lldb-11 lld-11 clangd-11
+  ```
+- Windows
+  - Download and install the `LLVM-11.1.0-win64.exe` from the [11.1.0
+    Release](https://github.com/llvm/llvm-project/releases/tag/llvmorg-11.1.0)
+    page.
+  - This package only contains the Clang components. There is no package that
+    contains Clang and LLVM.
   - MacOS
   - Should be preinstalled.
 
-  ### Installing LLVM
+### Installing LLVM
 
-  The build scripts will automatically download an LLVM toolchain which is detailed in the [Development](#development) section. The build installs the toolchain to `$HOME/.pyqir` (Windows: `$HOME\.pyqir`) and configures Rust to use this installation by setting the `LLVM_SYS_110_PREFIX` environment variable in the root `.cargo/config.toml`
+The build scripts will automatically download an LLVM toolchain which is
+detailed in the [Development](#development) section. The build installs the
+toolchain to `$HOME/.pyqir` (Windows: `$HOME\.pyqir`) and configures Rust to use
+this installation by setting the `LLVM_SYS_110_PREFIX` environment variable in
+the root `.cargo/config.toml`
 
-  ## Development
+## Development
 
-  Running `build.(ps1|sh|cmd)` will initialize your local environment and build the solution. The [Environment Variables](#environment-variables) section details ways to change this behavior.
+Running `build.(ps1|sh|cmd)` will initialize your local environment and build
+the solution. The [Environment Variables](#environment-variables) section
+details ways to change this behavior.
 
-  Within each project folder, the build can be run specifically for that project.
+Within each project folder, the build can be run specifically for that project.
 
-  Build commands:
-  - `maturin build`: Build the crate into python packages
-  - `maturin build --release`: Build and pass --release to cargo
-  - `maturin build --help`: to view more options
-  - `maturin develop`: Installs the crate as module in the current virtualenv
-  - `maturin develop && pytest`: Installs the crate as module in the current virtualenv and runs the Python tests
+Build commands:
 
-  If you do not wish to package and test the Python wheels, `cargo` can be used to build the project and run Rust tests.
+- `maturin build`: Build the crate into python packages
+- `maturin build --release`: Build and pass --release to cargo
+- `maturin build --help`: to view more options
+- `maturin develop`: Installs the crate as module in the current virtualenv
+- `maturin develop && pytest`: Installs the crate as module in the current
+  virtualenv and runs the Python tests
 
-  - `cargo build`: Build the Rust cdylib
-  - `cargo build --release`: Build the Rust cdylib in release mode
-  - `cargo test`: Build and run the Rust cdylib tests
-  - `cargo test --release`: Build and run the Rust cdylib tests in release mode
+If you do not wish to package and test the Python wheels, `cargo` can be used to
+build the project and run Rust tests.
 
-  [Tox](https://tox.readthedocs.io/) can be used as well:
+- `cargo build`: Build the Rust cdylib
+- `cargo build --release`: Build the Rust cdylib in release mode
+- `cargo test`: Build and run the Rust cdylib tests
+- `cargo test --release`: Build and run the Rust cdylib tests in release mode
 
-  Two targets are available for tox:
-  - `python -m tox -e test`
-  - Runs the python tests in an isolated environment
-  - `python -m tox -e pack`
-  - Packages all wheels in an isolated environment
+[Tox](https://tox.readthedocs.io/) can be used as well:
 
+Two targets are available for tox:
 
-  ### Environment Variables
+- `python -m tox -e test`
+- Runs the python tests in an isolated environment
+- `python -m tox -e pack`
+- Packages all wheels in an isolated environment
 
-  - `PYQIR_LLVM_EXTERNAL_DIR`
-  - Path to where LLVM is already installed by user. Useful if you want to use your own LLVM builds for testing.
-  - `PYQIR_DOWNLOAD_LLVM`
-  - Indicator to whether the build should download LLVM cached builds.
-  - Build will download LLVM if needed unless this variable is defined and set to `false`
-  - `PYQIR_LLVM_BUILDS_URL`
-  - Url from where LLVM builds will be downloaded.
-  - Default: `https://msquantumpublic.blob.core.windows.net/llvm-builds`
-  - `PYQIR_CACHE_DIR`
-  - Root insallation path for LLVM builds
-  - Default if not specified:
-    - Linux/Mac: `$HOME/.pyqir`
-    - Windows: `$HOME\.pyqir`
-  - `LLVM_SYS_110_PREFIX`
-  - Required by `llvm-sys` and will be set to the version of LLVM used for configuration.
-  - Version dependent and will change as LLVM is updated. (`LLVM_SYS_120_PREFIX`, `LLVM_SYS_130_PREFIX`, etc)
-  - Not needed if you have a working LLVM installation on the path.
+### Environment Variables
 
-  ### Packaging
+- `PYQIR_LLVM_EXTERNAL_DIR`
+- Path to where LLVM is already installed by user. Useful if you want to use
+  your own LLVM builds for testing.
+- `PYQIR_DOWNLOAD_LLVM`
+- Indicator to whether the build should download LLVM cached builds.
+- Build will download LLVM if needed unless this variable is defined and set to
+  `false`
+- `PYQIR_LLVM_BUILDS_URL`
+- Url from where LLVM builds will be downloaded.
+- Default: `https://msquantumpublic.blob.core.windows.net/llvm-builds`
+- `PYQIR_CACHE_DIR`
+- Root insallation path for LLVM builds
+- Default if not specified:
+  - Linux/Mac: `$HOME/.pyqir`
+  - Windows: `$HOME\.pyqir`
+- `LLVM_SYS_110_PREFIX`
+- Required by `llvm-sys` and will be set to the version of LLVM used for
+  configuration.
+- Version dependent and will change as LLVM is updated. (`LLVM_SYS_120_PREFIX`,
+  `LLVM_SYS_130_PREFIX`, etc)
+- Not needed if you have a working LLVM installation on the path.
 
-  The `build.(ps1|sh|cmd)`, `maturin`, and `tox` builds all generate Python wheels to the `target/wheels` folder. The default Python3 installation will be used targeting Python ABI 3.6.
+### Packaging
 
-  The manylinux support uses a Docker image in the build scripts to run the builds in the CI environment.
+The `build.(ps1|sh|cmd)`, `maturin`, and `tox` builds all generate Python wheels
+to the `target/wheels` folder. The default Python3 installation will be used
+targeting Python ABI 3.6.
 
-  The Windows packaging will look for python installations available and build for them. More information on [supporting multiple python versions on Windows](https://tox.readthedocs.io/en/latest/developers.html?highlight=windows#multiple-python-versions-on-windows)
+The manylinux support uses a Docker image in the build scripts to run the builds
+in the CI environment.
+
+The Windows packaging will look for python installations available and build for
+them. More information on [supporting multiple python versions on
+Windows](https://tox.readthedocs.io/en/latest/developers.html?highlight=windows#multiple-python-versions-on-windows)

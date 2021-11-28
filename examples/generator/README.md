@@ -25,7 +25,7 @@ package:
   and omitted any further compilation or optimization. To run the example,
   please install the Antlr runtime:
 
-  ```console
+  ```bash
   pip install antlr4-python3-runtime
   ```
 

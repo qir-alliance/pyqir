@@ -22,6 +22,7 @@ into tiers that represent the level of compatibility users can expect.
 - macOS 10.15
 
 ### Tier 2
+
 - Windows 10
 - Windows 11
 - [Ubuntu 18.04](https://wiki.ubuntu.com/BionicBeaver/ReleaseNotes)

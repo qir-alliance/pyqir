@@ -14,7 +14,8 @@ We are working on making them available via other common distribution channels.
 To install the pre-built package from GitHub, please install the [GitHub
 CLI](https://cli.github.com/) either directly from the webpage, or alternatively
 via the [conda](https://docs.conda.io/en/latest/) command
-```
+
+```bash
 conda install -c conda-forge gh
 ```
 
@@ -24,20 +25,21 @@ From within the repository root folder, run the following command to download
 the desired version for your platform, e.g. for `v0.1.0a1`:
 
 - on Linux:
-    ```
+    ```bash
     gh release download v0.1.0a1 -D wheelhouse -R qir-alliance/pyqir --pattern "*-manylinux*_x86_64.whl"
     ```
 - on Mac OS:
-    ```
+    ```bash
     gh release download v0.1.0a1 -D wheelhouse -R qir-alliance/pyqir --pattern "*-macosx_*_x86_64.whl"
     ```
 - on Windows:
-    ```
+    ```bash
     gh release download v0.1.0a1 -D wheelhouse -R qir-alliance/pyqir --pattern "*-win_amd64.whl"
     ```
 ### Install the Packages
 
 Then run the installation script:
+
 - Windows
   - Command Prompt: `install.cmd`
   - PowerShell: `install.ps1`
@@ -55,7 +57,8 @@ PyQIR from source can be found [here](building.md)
 ## Uninstalling the Packages
 
 To uninstall the PyQIR packages, run
-```
+
+```bash
 python -m pip uninstall -y pyqir_generator pyqir_parser pyqir_jit`
 ```
 
