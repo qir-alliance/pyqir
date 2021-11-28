@@ -1,15 +1,23 @@
 # pyqir_generator
 
-The `pyqir_generator` package provides the ability to generate [QIR](https://github.com/qir-alliance/qir-spec) using a Python API.
+The `pyqir_generator` package provides the ability to generate
+[QIR](https://github.com/qir-alliance/qir-spec) using a Python API.
 
-It is intended to be used by code automating translation processes enabling the conversion in some format to QIR via Python; i.e., this is a low level API intended to be used as a bridge to existing Python frameworks enabling the generation of QIR rather than directly consumed by an end-user. It is **not** intended to be used as a framework for algorithm and application development.
+It is intended to be used by code automating translation processes enabling the
+conversion in some format to QIR via Python; i.e., this is a low level API
+intended to be used as a bridge to existing Python frameworks enabling the
+generation of QIR rather than directly consumed by an end-user. It is **not**
+intended to be used as a framework for algorithm and application development.
 
 ## Examples
 
-There are [generator examples](https://github.com/qir-alliance/pyqir/tree/main/examples/generator) in the repository.
+There are [generator
+examples](https://github.com/qir-alliance/pyqir/tree/main/examples/generator) in
+the repository.
 
-Let's look at a short example.
-The following code creates QIR for an create Bell pair before measuring each qubit and returning the result. The unoptimized QIR is displayed in the terminal when executed:
+Let's look at a short example. The following code creates QIR for an create Bell
+pair before measuring each qubit and returning the result. The unoptimized QIR
+is displayed in the terminal when executed:
 
 ```python
 from pyqir_generator import QirBuilder
@@ -29,7 +37,7 @@ print(builder.get_ir_string())
 
 The corresponding piece in the QIR output will contain the generated function:
 
-```
+```llvm
 define internal %Array* @QuantumApplication__Run__body() {
 entry:
   %qubit0 = call %Qubit* @__quantum__rt__qubit_allocate()
@@ -82,5 +90,8 @@ See [Building](https://github.com/qir-alliance/pyqir/blob/main/docs/building.md)
 
 ## Current Limitations
 
-- Support for emitting classical computations and control flow constructs is not yet implemented, see also [this issue](https://github.com/qir-alliance/pyqir/issues/2)
-- Using qubit/register names in gate calls that haven't been defined will cause an error during generation.
+- Support for emitting classical computations and control flow constructs is not
+  yet implemented, see also [this
+  issue](https://github.com/qir-alliance/pyqir/issues/2)
+- Using qubit/register names in gate calls that haven't been defined will cause
+  an error during generation.
