@@ -27,7 +27,8 @@ class QirGenerator(MockLanguageListener):
         self.builder = QirBuilder(module_id)
         self.builder.add_quantum_register("q", nr_qubits)
         self.builder.add_classical_register("m", nr_qubits)
-        
+        self.nr_qubits = nr_qubits
+
     @property
     def ir_string(self) -> str:
         return self.builder.get_ir_string()
@@ -40,15 +41,27 @@ class QirGenerator(MockLanguageListener):
             file.write(self.ir_string)
 
     def enterXGate(self, ctx: MockLanguageParser.XGateContext):
+        if int(ctx.target.text) >= self.nr_qubits:
+            raise ValueError("Parsed progam uses more qubits than allocated")
+
         self.builder.x("q" + ctx.target.text)
 
-    def enterHGate(self, ctx:MockLanguageParser.HGateContext):
+    def enterHGate(self, ctx: MockLanguageParser.HGateContext):
+        if int(ctx.target.text) >= self.nr_qubits:
+            raise ValueError("Parsed progam uses more qubits than allocated")
+
         self.builder.h("q" + ctx.target.text)
 
-    def enterCNOTGate(self, ctx:MockLanguageParser.CNOTGateContext):
+    def enterCNOTGate(self, ctx: MockLanguageParser.CNOTGateContext):
+        if int(ctx.target.text) >= self.nr_qubits:
+            raise ValueError("Parsed progam uses more qubits than allocated")
+
         self.builder.cx("q" + ctx.control.text, "q" + ctx.target.text)
 
-    def enterMzGate(self, ctx:MockLanguageParser.MzGateContext):
+    def enterMzGate(self, ctx: MockLanguageParser.MzGateContext):
+        if int(ctx.target.text) >= self.nr_qubits:
+            raise ValueError("Parsed progam uses more qubits than allocated")
+
         self.builder.m("q" + ctx.target.text, "m" + ctx.target.text)
 
 
