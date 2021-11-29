@@ -17,8 +17,8 @@ class QirGenerator(MockLanguageListener):
     """
     Class that generates QIR when walking the parse tree 
     of a Mock language program.
-    """    
-    
+    """
+
     def __init__(self, nr_qubits: int, module_id: str):
         """
         :param nr_qubits: The total number of qubits used in the compilation.
@@ -80,7 +80,7 @@ def mock_program_to_qir(nr_qubits: int, input_file: str) -> str:
     stream = CommonTokenStream(lexer)
     parser = MockLanguageParser(stream)
     tree = parser.document()
-    
+
     generator = QirGenerator(nr_qubits, Path(input_file).stem)
     walker = ParseTreeWalker()
     walker.walk(generator, tree)
@@ -106,5 +106,5 @@ if __name__ == '__main__':
     if args.output_file is not None:
         with open(args.output_file, 'w') as file:
             file.write(generated_qir)
-    else: print(generated_qir)
-
+    else:
+        print(generated_qir)
