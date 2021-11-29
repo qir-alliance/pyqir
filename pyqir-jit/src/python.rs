@@ -1,15 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use log;
-use pyo3::exceptions::{PyOSError};
+use crate::interop::Instruction;
+use pyo3::exceptions::PyOSError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pyo3::PyErr;
-use crate::interop::{
-    Instruction
-};
-
 
 #[pymodule]
 fn pyqir_jit(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -19,14 +15,13 @@ fn pyqir_jit(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass]
-pub struct PyNonadaptiveJit {
-}
+pub struct PyNonadaptiveJit {}
 
 #[pymethods]
 impl PyNonadaptiveJit {
     #[new]
     fn new() -> Self {
-        PyNonadaptiveJit { }
+        PyNonadaptiveJit {}
     }
 
     fn controlled(
@@ -86,7 +81,8 @@ impl PyNonadaptiveJit {
     }
 
     fn eval(&self, file: String, pyobj: &PyAny) -> PyResult<()> {
-        let result = crate::jit::run_module(file);
+        // TODO: Add entry point parameter.
+        let result = crate::jit::run_module(file, None);
         if let Err(msg) = result {
             let err: PyErr = PyOSError::new_err::<String>(msg);
             return Err(err);

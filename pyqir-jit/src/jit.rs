@@ -15,7 +15,10 @@ use qirlib::{
 };
 use std::path::Path;
 
-pub fn run_module<P: AsRef<Path>>(path: P) -> Result<SemanticModel, String> {
+pub fn run_module(
+    path: impl AsRef<Path>,
+    entry_point: Option<&str>,
+) -> Result<SemanticModel, String> {
     let ctx = inkwell::context::Context::create();
     let path_str = path
         .as_ref()
@@ -24,10 +27,10 @@ pub fn run_module<P: AsRef<Path>>(path: P) -> Result<SemanticModel, String> {
         .to_owned();
     let context_type = ContextType::File(&path_str);
     let context = Context::new(&ctx, context_type)?;
-    run_ctx(context)
+    run_ctx(context, entry_point)
 }
 
-pub fn run_ctx<'ctx>(context: Context<'ctx>) -> Result<SemanticModel, String> {
+pub fn run_ctx(context: Context, entry_point: Option<&str>) -> Result<SemanticModel, String> {
     Target::initialize_native(&InitializationConfig::default()).unwrap();
     let default_triple = TargetMachine::get_default_triple();
 
@@ -36,13 +39,7 @@ pub fn run_ctx<'ctx>(context: Context<'ctx>) -> Result<SemanticModel, String> {
     assert!(target.has_target_machine());
 
     run_basic_passes_on(&context);
-
-    let entry_point = module_functions(&context.module)
-        .filter(is_entry_point)
-        .next()
-        .ok_or("Module contains no matching entry point.")?;
-
-    let entry_point_name = entry_point.get_name().to_str().unwrap();
+    let entry_point = choose_entry_point(module_functions(&context.module), entry_point)?;
 
     unsafe {
         BasicRuntimeDriver::initialize_qir_context(true);
@@ -52,11 +49,31 @@ pub fn run_ctx<'ctx>(context: Context<'ctx>) -> Result<SemanticModel, String> {
 
         let main = context
             .execution_engine
-            .get_function::<unsafe extern "C" fn() -> ()>(entry_point_name)
+            .get_function::<unsafe extern "C" fn() -> ()>(&entry_point)
             .unwrap();
 
         main.call();
         Ok(simulator.get_model())
+    }
+}
+
+fn choose_entry_point<'ctx>(
+    functions: impl Iterator<Item = FunctionValue<'ctx>>,
+    name: Option<&str>,
+) -> Result<String, String> {
+    let mut entry_points = functions
+        .filter(is_entry_point)
+        .map(|f| f.get_name().to_str().unwrap().to_owned())
+        .filter(|function_name| name.iter().all(|n| function_name == n));
+
+    let entry_point = entry_points
+        .next()
+        .ok_or("No matching entry point found.".to_owned())?;
+
+    if entry_points.next().is_some() {
+        Err("Multiple matching entry points found.".to_owned())
+    } else {
+        Ok(entry_point)
     }
 }
 
@@ -96,7 +113,7 @@ mod tests {
         let mut buffer = File::create(&file_path).unwrap();
         buffer.write_all(bell_qir_measure_contents).unwrap();
 
-        let generated_model = super::run_module(file_path)?;
+        let generated_model = super::run_module(file_path, None)?;
 
         assert_eq!(generated_model.instructions.len(), 2);
         Ok(())
@@ -105,6 +122,6 @@ mod tests {
     #[test]
     fn eval_my_qir_file() {
         let path = "C:\\Users\\samarsha\\Code\\samarsha\\qsharp-sandbox\\App\\qir\\App.ll";
-        run_module(path.to_string()).unwrap();
+        run_module(path.to_string(), Some("App__EntryPoint1")).unwrap();
     }
 }
