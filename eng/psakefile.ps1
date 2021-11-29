@@ -14,16 +14,18 @@ properties {
     $pyqir.generator = @{}
     $pyqir.generator.name = "pyqir-generator"
     $pyqir.generator.dir = Join-Path $repo.root "pyqir-generator"
+    $pyqir.generator.examples_dir = Join-Path $repo.root "examples" "generator"
 
     $pyqir.jit = @{}
     $pyqir.jit.name = "pyqir-jit"
     $pyqir.jit.dir = Join-Path $repo.root "pyqir-jit"
+    $pyqir.jit.examples_dir = Join-Path $repo.root "examples" "jit"
 }
 
 Include settings.ps1
 Include utils.ps1
 
-Task default -Depends parser, generator, jit
+Task default -Depends parser, generator, jit, run-examples
 
 Task init {
     Restore-ConfigTomlWithLlvmInfo
@@ -271,3 +273,42 @@ function Build-PyQIR([string]$project) {
         #exec -workingDirectory $srcPath { & cargo test --package qirlib --lib -vv -- --nocapture }
     }
 }
+
+task run-examples -Depends init {   
+    exec -workingDirectory $pyqir.generator.dir {
+        maturin develop --release
+    }
+
+    exec -workingDirectory $pyqir.generator.examples_dir {
+        & $python -m pip install -r requirements.txt
+        & $python "bell_pair.py" | Tee-Object -Variable bell_pair_output
+        $bell_first_line = $($bell_pair_output | Select-Object -first 1)
+        $bell_expected = "; ModuleID = 'Bell'"
+        Assert ($bell_first_line -eq $bell_expected) "Expected $bell_expected found $bell_first_line"
+
+        $bz_output = (Join-Path $($env:TEMP) "bz.ll")
+        & $python "mock_to_qir.py" -o $bz_output "bernstein_vazirani.txt" 7
+        $bz_first_line = Get-Content $bz_output | Select-Object -first 1
+        $bz_expected = "; ModuleID = 'bernstein_vazirani'"
+        Assert ($bz_first_line -eq $bz_expected) "Expected $bz_expected found $bz_first_line"
+    }
+
+    exec -workingDirectory $pyqir.jit.dir {
+        maturin develop --release
+    }
+
+    exec -workingDirectory $pyqir.jit.examples_dir {
+        & $python "bernstein_vazirani.py" | Tee-Object -Variable bz_output
+        $bz_first_lines = @($bz_output | Select-Object -first 5)
+        $bz_expected = @(
+            "# NonadaptiveJit output returning the uninitialized output",
+            "[[Zero, Zero, Zero, Zero, Zero, Zero, Zero, Zero]]",
+            "# output from GateLogger",
+            "qubits[9]",
+            "out[9]"
+        )
+        Assert (@(Compare-Object $bz_first_lines $bz_expected).Length -eq 0) "Expected $bz_expected found $bz_first_lines"
+    }
+    
+}
+
