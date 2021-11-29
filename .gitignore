@@ -148,4 +148,6 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# Other
 /.cargo/config.toml
+wheelhouse/
