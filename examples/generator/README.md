@@ -29,8 +29,8 @@ package:
   pip install antlr4-python3-runtime
   ```
 
-  The example can then be run using python, with the generated QIR being outputted
-  to a text file:
+  The example can then be run using python, with the generated QIR being
+  outputted to a text file:
 
   ```bash
   python mock_to_qir.py bernstein_vazirani.txt 8 >> bernstein_vazirani_output.txt
@@ -46,8 +46,8 @@ package:
   e.g., by the fact that there is no `qubit` or `register` type defined within
   the API.
 
-  The example can be run using python, with the generated QIR being outputted to a
-  text file:
+  The example can be run using python, with the generated QIR being
+  outputted to a text file:
 
   ```bash
   python bell_pair.py >> bell_pair_output.txt
