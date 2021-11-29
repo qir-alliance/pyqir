@@ -72,6 +72,7 @@ and check if you can help someone who has already started working on it.
 
 And last but not least:
 
-## Thank You!
+## Thank You
+
 Your contributions to open source, large or small, make great projects like this
 possible. Thank you for taking the time to contribute.
