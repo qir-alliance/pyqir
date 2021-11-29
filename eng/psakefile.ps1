@@ -275,8 +275,9 @@ function Build-PyQIR([string]$project) {
 }
 
 task run-examples -Depends init {   
-    exec -workingDirectory $pyqir.generator.dir {
-        maturin develop --release
+    exec -workingDirectory $repo.root {
+        $wheels = Join-Path $repo.root "target" "wheels"
+        & $python -m pip install -r requirements.txt --no-index --find-links=$wheels -v
     }
 
     exec -workingDirectory $pyqir.generator.examples_dir {
@@ -291,10 +292,6 @@ task run-examples -Depends init {
         $bz_first_line = Get-Content $bz_output | Select-Object -first 1
         $bz_expected = "; ModuleID = 'bernstein_vazirani'"
         Assert ($bz_first_line -eq $bz_expected) "Expected $bz_expected found $bz_first_line"
-    }
-
-    exec -workingDirectory $pyqir.jit.dir {
-        maturin develop --release
     }
 
     exec -workingDirectory $pyqir.jit.examples_dir {
