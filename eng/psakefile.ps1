@@ -28,6 +28,10 @@ properties {
     $docs.build.opts = @()
 
     $wheelhouse = Join-Path $repo.root "target" "wheels" "*.whl"
+
+    $package = @{}
+    $package.Name = Get-PackageName
+    $package.Path = Get-InstallationDirectory $package.Name
 }
 
 Include settings.ps1
@@ -195,18 +199,19 @@ function Install-LlvmFromBuildArtifacts {
     Use-LlvmInstallation $packagePath
 }
 
+task install-llvm {
+    Invoke-psake llvm.ps1 -t build -properties @{ INSTALL_LLVM_PACKAGE = "$true" }
+}
+
+task build-llvm {
+    Invoke-psake llvm.ps1 -t build
+}
+
 function Install-LlvmFromSource {
-    [CmdletBinding()]
-    param (
-        [Parameter()]
-        [string]
-        $packagePath
-    )
-    $Env:PKG_NAME = Get-PackageName
-    $Env:CMAKE_INSTALL_PREFIX = $packagePath
-    $Env:INSTALL_LLVM_PACKAGE = $true
-    Assert $false -failureMessage "TODO: Migration in progress"
-    . (Join-Path (Get-RepoRoot) "build" "llvm.ps1")
+    Invoke-psake llvm.ps1 -t build -properties @{ INSTALL_LLVM_PACKAGE = "$true" }
+
+    $packageName = Get-PackageName
+    $packagePath = Get-InstallationDirectory $packageName
     Use-LlvmInstallation $packagePath
 }
 
@@ -249,7 +254,7 @@ function Initialize-Environment {
                 # We don't have an external LLVM installation specified
                 # We are not downloading LLVM
                 # So we need to build it.
-                Install-LlvmFromSource $packagePath
+                Install-LlvmFromSource
             }
         }
     }

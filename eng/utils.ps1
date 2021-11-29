@@ -154,6 +154,13 @@ function Use-LlvmInstallation {
     )
     Write-BuildLog "LLVM installation set to: $path"
     $env:LLVM_SYS_110_PREFIX = $path
+    $binPath = Join-Path $path "bin"
+    if ($IsWindows) {
+        $env:PATH = "$($binPath);$($env:PATH)"
+    }
+    else {
+        $env:PATH = "$($binPath):$($env:PATH)"
+    }
 }
 
 # Gets the LLVM version git hash
@@ -165,7 +172,7 @@ function Get-LlvmSha {
 function Get-PackageName {
     $sha = Get-LlvmSha
     $TARGET_TRIPLE = Get-TargetTriple
-    $packageName = "aq-llvm-$($TARGET_TRIPLE)-$($sha)"
+    $packageName = "pyqir-llvm-$($TARGET_TRIPLE)-$($sha)"
     $packageName
 }
 
@@ -178,12 +185,12 @@ function Get-DefaultInstallDirectory {
     }
 }
 
-function Get-AqCacheDirectory {
-    $aqCacheDirectory = (Get-DefaultInstallDirectory)
-    if (!(Test-Path $aqCacheDirectory)) {
-        mkdir $aqCacheDirectory | Out-Null
+function Get-PyQirCacheDirectory {
+    $pyqirCacheDirectory = (Get-DefaultInstallDirectory)
+    if (!(Test-Path $pyqirCacheDirectory)) {
+        mkdir $pyqirCacheDirectory | Out-Null
     }
-    Resolve-Path $aqCacheDirectory
+    Resolve-Path $pyqirCacheDirectory
 }
 
 function Get-InstallationDirectory {
@@ -193,8 +200,8 @@ function Get-InstallationDirectory {
         [string]
         $packageName
     )
-    $aqCacheDirectory = Get-AqCacheDirectory
-    $packagePath = Join-Path $aqCacheDirectory $packageName
+    $pyqirCacheDirectory = Get-PyQirCacheDirectory
+    $packagePath = Join-Path $pyqirCacheDirectory $packageName
     $packagePath
 }
 
@@ -228,7 +235,8 @@ function Invoke-LoggedCommand {
         [Alias("wd")]
         [string]$workingDirectory = $null
     )
-    Write-BuildLog "$cmd".Trim() "command"
+    Write-BuildLog "Executing in $workingDirectory`:"
+    Write-BuildLog $ExecutionContext.InvokeCommand.ExpandString($cmd).Trim() "command"
 
     # errorMessage pulls default values from psake. We
     # only want to pass the param if we want to override.
