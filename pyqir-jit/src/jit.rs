@@ -107,6 +107,7 @@ fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = Functio
 
 #[cfg(test)]
 mod tests {
+    use super::run_module_file;
     use std::{fs::File, io::Write};
     use tempfile::tempdir;
 
@@ -118,14 +119,20 @@ mod tests {
         let mut buffer = File::create(&file_path).unwrap();
         buffer.write_all(bell_qir_measure_contents).unwrap();
 
-        let generated_model = super::run_module_file(file_path, None)?;
+        let generated_model = run_module_file(file_path, None)?;
         assert_eq!(generated_model.instructions.len(), 2);
         Ok(())
     }
 
     #[test]
-    fn eval_my_qir_file() {
-        let path = "C:\\Users\\samarsha\\Code\\samarsha\\qsharp-sandbox\\App\\qir\\App.ll";
-        super::run_module_file(path.to_owned(), Some("App__Foo")).unwrap();
+    fn eval_entry_points_test() {
+        let custom_entry_point_name = "tests/custom_entry_point_name.ll";
+        run_module_file(custom_entry_point_name.to_owned(), None).unwrap();
+        run_module_file(custom_entry_point_name.to_owned(), Some("App__Foo")).unwrap();
+
+        let multiple_entry_points = "tests/multiple_entry_points.ll";
+        assert!(run_module_file(multiple_entry_points.to_owned(), None).is_err());
+        run_module_file(multiple_entry_points.to_owned(), Some("App__Foo")).unwrap();
+        run_module_file(multiple_entry_points.to_owned(), Some("App__Bar")).unwrap();
     }
 }
