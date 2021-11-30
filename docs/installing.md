@@ -13,7 +13,8 @@ We are working on making them available via other common distribution channels.
 
 To install the pre-built package from GitHub, please install the [GitHub
 CLI](https://cli.github.com/) either directly from the webpage, or alternatively
-via the [conda](https://docs.conda.io/en/latest/) command
+use the following [conda](https://docs.conda.io/en/latest/) command from within
+your conda environment:
 
 ```bash
 conda install -c conda-forge gh
