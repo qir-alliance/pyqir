@@ -48,9 +48,13 @@ pub(crate) fn load_module_from_ir_file<'ctx, P: AsRef<Path>>(
     context: &'ctx inkwell::context::Context,
 ) -> Result<Module<'ctx>, String> {
     let memory_buffer = load_memory_buffer_from_ir_file(path)?;
-    context.create_module_from_ir(memory_buffer).map_err(|e| e.to_string())
+    context
+        .create_module_from_ir(memory_buffer)
+        .map_err(|e| e.to_string())
 }
 
-pub(crate) fn load_memory_buffer_from_ir_file<P: AsRef<Path>>(path: P) -> Result<MemoryBuffer, String> {
+pub(crate) fn load_memory_buffer_from_ir_file<P: AsRef<Path>>(
+    path: P,
+) -> Result<MemoryBuffer, String> {
     MemoryBuffer::create_from_file(path.as_ref()).map_err(|e| e.to_string())
 }

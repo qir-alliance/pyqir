@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use qirlib::context::Context;
 use inkwell::values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue};
+use qirlib::context::Context;
 
 pub(crate) fn emit_void_call<'ctx>(
     context: &Context<'ctx>,

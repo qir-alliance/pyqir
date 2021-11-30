@@ -3,10 +3,7 @@
 
 use inkwell::module::Module;
 use inkwell::passes::PassManager;
-use inkwell::{
-    passes::PassManagerBuilder,
-    OptimizationLevel,
-};
+use inkwell::{passes::PassManagerBuilder, OptimizationLevel};
 
 // This method returns true if any of the passes modified the function or module and false otherwise.
 pub fn run_basic_passes_on<'ctx>(module: &Module<'ctx>) -> bool {

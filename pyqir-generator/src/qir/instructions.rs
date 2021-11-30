@@ -7,8 +7,8 @@ use super::{
     array1d::{self, create_ctl_wrapper},
     basic_values, calls,
 };
-use qirlib::context::Context;
 use inkwell::values::{BasicValueEnum, FunctionValue};
+use qirlib::context::Context;
 use std::collections::HashMap;
 
 /// # Panics
@@ -18,7 +18,10 @@ fn get_qubit<'ctx>(
     name: &String,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
 ) -> BasicValueEnum<'ctx> {
-    qubits.get(name).expect(format!("Qubit {} not found.", name).as_str()).to_owned()
+    qubits
+        .get(name)
+        .expect(format!("Qubit {} not found.", name).as_str())
+        .to_owned()
 }
 
 /// # Panics
@@ -28,7 +31,10 @@ fn get_register<'ctx>(
     name: &String,
     registers: &HashMap<String, (BasicValueEnum<'ctx>, Option<u64>)>,
 ) -> (BasicValueEnum<'ctx>, Option<u64>) {
-    registers.get(name).expect(format!("Register {} not found.", name).as_str()).to_owned()
+    registers
+        .get(name)
+        .expect(format!("Register {} not found.", name).as_str())
+        .to_owned()
 }
 
 pub(crate) fn emit<'ctx>(

@@ -1,15 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use crate::interop::Instruction;
 use log;
-use pyo3::exceptions::{PyOSError};
+use pyo3::exceptions::PyOSError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pyo3::PyErr;
-use crate::interop::{
-    Instruction
-};
-
 
 #[pymodule]
 fn pyqir_jit(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -19,14 +16,13 @@ fn pyqir_jit(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass]
-pub struct PyNonadaptiveJit {
-}
+pub struct PyNonadaptiveJit {}
 
 #[pymethods]
 impl PyNonadaptiveJit {
     #[new]
     fn new() -> Self {
-        PyNonadaptiveJit { }
+        PyNonadaptiveJit {}
     }
 
     fn controlled(
