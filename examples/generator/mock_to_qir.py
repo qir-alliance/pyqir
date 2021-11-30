@@ -41,28 +41,26 @@ class QirGenerator(MockLanguageListener):
             file.write(self.ir_string)
 
     def enterXGate(self, ctx: MockLanguageParser.XGateContext):
-        if int(ctx.target.text) >= self.nr_qubits:
-            raise ValueError("Parsed progam uses more qubits than allocated")
-
+        self.verify_qubit_in_range(ctx.target.text)
         self.builder.x("q" + ctx.target.text)
 
     def enterHGate(self, ctx: MockLanguageParser.HGateContext):
-        if int(ctx.target.text) >= self.nr_qubits:
-            raise ValueError("Parsed progam uses more qubits than allocated")
-
+        self.verify_qubit_in_range(ctx.target.text)
         self.builder.h("q" + ctx.target.text)
 
     def enterCNOTGate(self, ctx: MockLanguageParser.CNOTGateContext):
-        if int(ctx.target.text) >= self.nr_qubits:
-            raise ValueError("Parsed progam uses more qubits than allocated")
+        self.verify_qubit_in_range(ctx.control.text)
+        self.verify_qubit_in_range(ctx.target.text)
 
         self.builder.cx("q" + ctx.control.text, "q" + ctx.target.text)
 
     def enterMzGate(self, ctx: MockLanguageParser.MzGateContext):
-        if int(ctx.target.text) >= self.nr_qubits:
-            raise ValueError("Parsed progam uses more qubits than allocated")
-
+        self.verify_qubit_in_range(ctx.target.text)
         self.builder.m("q" + ctx.target.text, "m" + ctx.target.text)
+
+    def verify_qubit_in_range(self, text):
+        if int(text) >= self.nr_qubits:
+            raise ValueError("Parsed progam uses more qubits than allocated")
 
 
 def mock_program_to_qir(nr_qubits: int, input_file: str) -> str:
