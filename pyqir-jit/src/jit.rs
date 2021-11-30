@@ -7,15 +7,16 @@ use inkwell::{
     module::Module,
     targets::{InitializationConfig, Target, TargetMachine},
     values::FunctionValue,
+    OptimizationLevel,
 };
 use microsoft_quantum_qir_runtime_sys::runtime::BasicRuntimeDriver;
 use qirlib::{
-    context::{Context, ContextType},
+    context::{BareContext, ContextType},
     passes::run_basic_passes_on,
 };
 use std::path::Path;
 
-pub fn run_module(
+pub fn run_module_file(
     path: impl AsRef<Path>,
     entry_point: Option<&str>,
 ) -> Result<SemanticModel, String> {
@@ -26,11 +27,15 @@ pub fn run_module(
         .expect("Did not find a valid Unicode path string")
         .to_owned();
     let context_type = ContextType::File(&path_str);
-    let context = Context::new(&ctx, context_type)?;
-    run_ctx(context, entry_point)
+    let context = BareContext::new(&ctx, context_type)?;
+    let model = run_module(&context.module, entry_point)?;
+    Ok(model)
 }
 
-pub fn run_ctx(context: Context, entry_point: Option<&str>) -> Result<SemanticModel, String> {
+pub fn run_module<'ctx>(
+    module: &Module<'ctx>,
+    entry_point: Option<&str>,
+) -> Result<SemanticModel, String> {
     Target::initialize_native(&InitializationConfig::default()).unwrap();
     let default_triple = TargetMachine::get_default_triple();
 
@@ -38,17 +43,18 @@ pub fn run_ctx(context: Context, entry_point: Option<&str>) -> Result<SemanticMo
     assert!(target.has_asm_backend());
     assert!(target.has_target_machine());
 
-    run_basic_passes_on(&context);
-    let entry_point = choose_entry_point(module_functions(&context.module), entry_point)?;
+    run_basic_passes_on(&module);
+    let entry_point = choose_entry_point(module_functions(module), entry_point)?;
 
     unsafe {
         BasicRuntimeDriver::initialize_qir_context(true);
         let _ = microsoft_quantum_qir_runtime_sys::foundation::QSharpFoundation::new();
         let _ = inkwell::support::load_library_permanently("");
-        let simulator = Simulator::new(&context, &context.execution_engine);
-
-        let main = context
-            .execution_engine
+        let execution_engine = module
+            .create_jit_execution_engine(OptimizationLevel::None)
+            .expect("Could not create JIT Engine");
+        let simulator = Simulator::new(&module, &execution_engine);
+        let main = execution_engine
             .get_function::<unsafe extern "C" fn() -> ()>(&entry_point)
             .unwrap();
 
@@ -101,7 +107,6 @@ fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = Functio
 
 #[cfg(test)]
 mod tests {
-    use super::run_module;
     use std::{fs::File, io::Write};
     use tempfile::tempdir;
 
@@ -113,8 +118,7 @@ mod tests {
         let mut buffer = File::create(&file_path).unwrap();
         buffer.write_all(bell_qir_measure_contents).unwrap();
 
-        let generated_model = super::run_module(file_path, None)?;
-
+        let generated_model = super::run_module_file(file_path, None)?;
         assert_eq!(generated_model.instructions.len(), 2);
         Ok(())
     }
@@ -122,6 +126,6 @@ mod tests {
     #[test]
     fn eval_my_qir_file() {
         let path = "C:\\Users\\samarsha\\Code\\samarsha\\qsharp-sandbox\\App\\qir\\App.ll";
-        run_module(path.to_string(), Some("App__Foo")).unwrap();
+        super::run_module_file(path.to_owned(), Some("App__Foo")).unwrap();
     }
 }

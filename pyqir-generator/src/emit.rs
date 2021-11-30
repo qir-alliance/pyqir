@@ -7,12 +7,12 @@ use inkwell::values::BasicValueEnum;
 use qirlib::context::{Context, ContextType};
 
 use crate::{interop::SemanticModel, qir};
+use qirlib::passes::run_basic_passes_on;
 
 pub fn write_model_to_file(model: &SemanticModel, file_name: &str) -> Result<(), String> {
     let ctx = inkwell::context::Context::create();
     let context = populate_context(&ctx, &model)?;
-    #[cfg(feature = "basic-passes")]
-    qirlib::passes::run_basic_passes_on(&context);
+    run_basic_passes_on(&context.module);
     context.emit_ir(file_name)?;
 
     Ok(())
@@ -21,8 +21,7 @@ pub fn write_model_to_file(model: &SemanticModel, file_name: &str) -> Result<(),
 pub fn get_ir_string(model: &SemanticModel) -> Result<String, String> {
     let ctx = inkwell::context::Context::create();
     let context = populate_context(&ctx, &model)?;
-    #[cfg(feature = "basic-passes")]
-    qirlib::passes::run_basic_passes_on(&context);
+    run_basic_passes_on(&context.module);
     let ir = context.get_ir_string();
 
     Ok(ir)
@@ -31,8 +30,7 @@ pub fn get_ir_string(model: &SemanticModel) -> Result<String, String> {
 pub fn get_bitcode_base64_string(model: &SemanticModel) -> Result<String, String> {
     let ctx = inkwell::context::Context::create();
     let context = populate_context(&ctx, &model)?;
-    #[cfg(feature = "basic-passes")]
-    qirlib::passes::run_basic_passes_on(&context);
+    run_basic_passes_on(&context.module);
     let b64 = context.get_bitcode_base64_string();
 
     Ok(b64)

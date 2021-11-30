@@ -78,7 +78,7 @@ impl PyNonadaptiveJit {
     }
 
     fn eval(&self, file: String, pyobj: &PyAny, entry_point: Option<&str>) -> PyResult<()> {
-        let gen_model = jit::run_module(file, entry_point).map_err(PyOSError::new_err)?;
+        let gen_model = jit::run_module_file(file, entry_point).map_err(PyOSError::new_err)?;
 
         Python::with_gil(|py| -> PyResult<()> {
             for instruction in gen_model.instructions {
