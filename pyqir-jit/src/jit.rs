@@ -122,6 +122,6 @@ mod tests {
     #[test]
     fn eval_my_qir_file() {
         let path = "C:\\Users\\samarsha\\Code\\samarsha\\qsharp-sandbox\\App\\qir\\App.ll";
-        run_module(path.to_string(), Some("App__EntryPoint1")).unwrap();
+        run_module(path.to_string(), Some("App__Foo")).unwrap();
     }
 }
