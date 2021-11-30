@@ -33,7 +33,7 @@ package:
   written to a text file:
 
   ```bash
-  python mock_to_qir.py bernstein_vazirani.txt 8 >> bernstein_vazirani_output.txt
+  python mock_to_qir.py bernstein_vazirani.txt 7 >> bernstein_vazirani_output.txt
   ```
 
 - **Bell pair example**: <br/>
