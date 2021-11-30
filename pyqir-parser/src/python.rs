@@ -9,11 +9,11 @@
 // from within rust, and wrappers for each class and function will be added to __init__.py so that the
 // parser API can have full python doc comments for usability.
 
-use pyo3::exceptions::{PyRuntimeError};
+use super::parse::*;
 use llvm_ir;
 use llvm_ir::types::Typed;
+use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
-use super::parse::*;
 use std::convert::TryFrom;
 
 #[pymodule]

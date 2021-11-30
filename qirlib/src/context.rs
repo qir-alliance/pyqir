@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-
-use inkwell::{OptimizationLevel, memory_buffer::MemoryBuffer, module::Module};
+use inkwell::{memory_buffer::MemoryBuffer, module::Module, OptimizationLevel};
 
 use std::path::Path;
 
-use crate::{constants::Constants, intrinsics::Intrinsics, runtime_library::RuntimeLibrary, types::Types};
+use crate::{
+    constants::Constants, intrinsics::Intrinsics, runtime_library::RuntimeLibrary, types::Types,
+};
 
 pub struct Context<'ctx> {
     pub context: &'ctx inkwell::context::Context,
@@ -113,7 +114,7 @@ impl<'ctx> Context<'ctx> {
             Ok(module) => Ok(module),
         }
     }
-    
+
     fn load_module_from_bitcode_file<P: AsRef<Path>>(
         path: P,
         context: &'ctx inkwell::context::Context,
@@ -126,13 +127,13 @@ impl<'ctx> Context<'ctx> {
             Ok(module) => Ok(module),
         }
     }
-    
+
     fn load_module_from_ir_file<P: AsRef<Path>>(
         path: P,
         context: &'ctx inkwell::context::Context,
     ) -> Result<Module<'ctx>, String> {
         let memory_buffer = Context::load_memory_buffer_from_ir_file(path)?;
-    
+
         match context.create_module_from_ir(memory_buffer) {
             Err(err) => {
                 let message = err.to_string();
@@ -141,7 +142,7 @@ impl<'ctx> Context<'ctx> {
             Ok(module) => Ok(module),
         }
     }
-    
+
     fn load_memory_buffer_from_ir_file<P: AsRef<Path>>(path: P) -> Result<MemoryBuffer, String> {
         match MemoryBuffer::create_from_file(path.as_ref()) {
             Err(err) => {
@@ -151,7 +152,7 @@ impl<'ctx> Context<'ctx> {
             Ok(memory_buffer) => Ok(memory_buffer),
         }
     }
-    
+
     pub fn emit_bitcode(&self, file_path: &str) {
         let bitcode_path = Path::new(file_path);
         self.module.write_bitcode_to_path(&bitcode_path);

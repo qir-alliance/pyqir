@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use qirlib::context::Context;
-use qirlib::intrinsics::Intrinsics;
 use crate::gates::CURRENT_GATES;
 use crate::interop::SemanticModel;
 use inkwell::execution_engine::ExecutionEngine;
+use qirlib::context::Context;
+use qirlib::intrinsics::Intrinsics;
 
 use super::gates::GateScope;
 
