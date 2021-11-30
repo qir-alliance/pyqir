@@ -17,8 +17,8 @@ class QirGenerator(MockLanguageListener):
     """
     Class that generates QIR when walking the parse tree 
     of a Mock language program.
-    """    
-    
+    """
+
     def __init__(self, nr_qubits: int, module_id: str):
         """
         :param nr_qubits: The total number of qubits used in the compilation.
@@ -27,7 +27,8 @@ class QirGenerator(MockLanguageListener):
         self.builder = QirBuilder(module_id)
         self.builder.add_quantum_register("q", nr_qubits)
         self.builder.add_classical_register("m", nr_qubits)
-        
+        self.nr_qubits = nr_qubits
+
     @property
     def ir_string(self) -> str:
         return self.builder.get_ir_string()
@@ -40,16 +41,26 @@ class QirGenerator(MockLanguageListener):
             file.write(self.ir_string)
 
     def enterXGate(self, ctx: MockLanguageParser.XGateContext):
+        self.verify_qubit_in_range(ctx.target.text)
         self.builder.x("q" + ctx.target.text)
 
-    def enterHGate(self, ctx:MockLanguageParser.HGateContext):
+    def enterHGate(self, ctx: MockLanguageParser.HGateContext):
+        self.verify_qubit_in_range(ctx.target.text)
         self.builder.h("q" + ctx.target.text)
 
-    def enterCNOTGate(self, ctx:MockLanguageParser.CNOTGateContext):
+    def enterCNOTGate(self, ctx: MockLanguageParser.CNOTGateContext):
+        self.verify_qubit_in_range(ctx.control.text)
+        self.verify_qubit_in_range(ctx.target.text)
+
         self.builder.cx("q" + ctx.control.text, "q" + ctx.target.text)
 
-    def enterMzGate(self, ctx:MockLanguageParser.MzGateContext):
+    def enterMzGate(self, ctx: MockLanguageParser.MzGateContext):
+        self.verify_qubit_in_range(ctx.target.text)
         self.builder.m("q" + ctx.target.text, "m" + ctx.target.text)
+
+    def verify_qubit_in_range(self, text):
+        if int(text) >= self.nr_qubits:
+            raise ValueError("Parsed progam uses more qubits than allocated")
 
 
 def mock_program_to_qir(nr_qubits: int, input_file: str) -> str:
@@ -67,7 +78,7 @@ def mock_program_to_qir(nr_qubits: int, input_file: str) -> str:
     stream = CommonTokenStream(lexer)
     parser = MockLanguageParser(stream)
     tree = parser.document()
-    
+
     generator = QirGenerator(nr_qubits, Path(input_file).stem)
     walker = ParseTreeWalker()
     walker.walk(generator, tree)
@@ -93,5 +104,5 @@ if __name__ == '__main__':
     if args.output_file is not None:
         with open(args.output_file, 'w') as file:
             file.write(generated_qir)
-    else: print(generated_qir)
-
+    else:
+        print(generated_qir)

@@ -22,11 +22,18 @@ package:
   QIR. For simplicity, we used [Antlr](https://www.antlr.org/) to generate the
   parser based on the defined
   [grammar](https://github.com/qir-alliance/pyqir/tree/main/examples/generator/mock_language/MockLanguage.g4)
-  and omitted any further compilation or optimization. To run the example,
+  and omitted any further compilation or optimization. Before running the example,
   please install the Antlr runtime:
 
   ```bash
   pip install antlr4-python3-runtime
+  ```
+
+  The example can then be run using python, with the generated QIR being
+  written to a text file:
+
+  ```bash
+  python mock_to_qir.py bernstein_vazirani.txt 7 >> bernstein_vazirani_output.txt
   ```
 
 - **Bell pair example**: <br/>
@@ -38,3 +45,10 @@ package:
   and frontend developers* rather than *application developers* - as evidenced,
   e.g., by the fact that there is no `qubit` or `register` type defined within
   the API.
+
+  The example can be run using python, with the generated QIR being
+  written to a text file:
+
+  ```bash
+  python bell_pair.py >> bell_pair_output.txt
+  ```

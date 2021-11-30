@@ -24,3 +24,9 @@ program](https://github.com/qir-alliance/pyqir/tree/main/examples/jit/bernstein_
   bitcode](https://github.com/qir-alliance/pyqir/tree/main/examples/jit/bernstein_vazirani.bc)
   and then uses the `NonadaptiveJit`, and a custom `GateLogger` to print out a
   simple log of the quantum gates applied during execution.
+
+  The example can be run using python:
+
+  ```bash
+  python bernstein_vazirani.py
+  ```
