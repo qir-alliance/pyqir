@@ -16,8 +16,10 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 RUN wget https://github.com/PowerShell/PowerShell/releases/download/v7.2.0/powershell-lts_7.2.0-1.deb_amd64.deb && \
-    dpkg -i powershell-lts_7.2.0-1.deb_amd64.deb && \
-    rm powershell-lts_7.2.0-1.deb_amd64.deb
+    apt-get update && \
+    apt-get install -y ./powershell-lts_7.2.0-1.deb_amd64.deb && \
+    rm powershell-lts_7.2.0-1.deb_amd64.deb && \
+    rm -rf /var/lib/apt/lists/*
 
 ARG USERNAME=pyqir
 ARG USER_UID=1000
