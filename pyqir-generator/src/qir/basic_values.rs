@@ -15,7 +15,10 @@ pub(crate) fn i8_null_ptr<'ctx>(context: &Context<'ctx>) -> BasicMetadataValueEn
         .into()
 }
 
-pub(crate) fn f64_to_f64<'ctx>(context: &Context<'ctx>, value: &f64) -> BasicMetadataValueEnum<'ctx> {
+pub(crate) fn f64_to_f64<'ctx>(
+    context: &Context<'ctx>,
+    value: &f64,
+) -> BasicMetadataValueEnum<'ctx> {
     context
         .types
         .double
@@ -24,7 +27,10 @@ pub(crate) fn f64_to_f64<'ctx>(context: &Context<'ctx>, value: &f64) -> BasicMet
         .into()
 }
 
-pub(crate) fn u64_to_i32<'ctx>(context: &Context<'ctx>, value: u64) -> BasicMetadataValueEnum<'ctx> {
+pub(crate) fn u64_to_i32<'ctx>(
+    context: &Context<'ctx>,
+    value: u64,
+) -> BasicMetadataValueEnum<'ctx> {
     context
         .context
         .i32_type()
@@ -33,7 +39,10 @@ pub(crate) fn u64_to_i32<'ctx>(context: &Context<'ctx>, value: u64) -> BasicMeta
         .into()
 }
 
-pub(crate) fn i64_to_i32<'ctx>(context: &Context<'ctx>, value: i64) -> BasicMetadataValueEnum<'ctx> {
+pub(crate) fn i64_to_i32<'ctx>(
+    context: &Context<'ctx>,
+    value: i64,
+) -> BasicMetadataValueEnum<'ctx> {
     // convert to capture negative values.
     let target: u64 = value as u64;
 
@@ -45,7 +54,10 @@ pub(crate) fn i64_to_i32<'ctx>(context: &Context<'ctx>, value: i64) -> BasicMeta
         .into()
 }
 
-pub(crate) fn u64_to_i64<'ctx>(context: &Context<'ctx>, value: u64) -> BasicMetadataValueEnum<'ctx> {
+pub(crate) fn u64_to_i64<'ctx>(
+    context: &Context<'ctx>,
+    value: u64,
+) -> BasicMetadataValueEnum<'ctx> {
     context
         .types
         .int

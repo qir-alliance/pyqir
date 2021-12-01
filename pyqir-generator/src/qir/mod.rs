@@ -62,5 +62,3 @@ pub(crate) fn remove_quantumapplication_run_interop<'ctx>(
     context.builder.build_return(Some(&v));
     entrypoint
 }
-
-

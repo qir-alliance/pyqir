@@ -2,12 +2,15 @@
 // Licensed under the MIT License.
 
 use log;
-use pyo3::exceptions::{PyOSError};
+use pyo3::exceptions::PyOSError;
 use pyo3::prelude::*;
 use pyo3::PyErr;
 
 use crate::emit::{get_bitcode_base64_string, get_ir_string, write_model_to_file};
-use crate::interop::{ClassicalRegister, Controlled, Instruction, Measured, QuantumRegister, Rotated, SemanticModel, Single};
+use crate::interop::{
+    ClassicalRegister, Controlled, Instruction, Measured, QuantumRegister, Rotated, SemanticModel,
+    Single,
+};
 
 #[pymodule]
 fn pyqir_generator(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -217,4 +220,3 @@ impl PyQIR {
         Ok(())
     }
 }
-

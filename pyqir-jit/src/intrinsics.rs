@@ -11,7 +11,7 @@ pub struct QirRTuple {
 
 pub type PauliId = i8;
 
-use microsoft_quantum_qir_runtime_sys::runtime::{QirArray,QirRuntime, QUBIT};
+use microsoft_quantum_qir_runtime_sys::runtime::{QirArray, QirRuntime, QUBIT};
 use mut_static::ForceSomeRwLockWriteGuard;
 
 use super::gates::BaseProfile;

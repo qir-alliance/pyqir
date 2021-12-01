@@ -3,10 +3,7 @@
 
 use crate::context::Context;
 use inkwell::passes::PassManager;
-use inkwell::{
-    passes::PassManagerBuilder,
-    OptimizationLevel,
-};
+use inkwell::{passes::PassManagerBuilder, OptimizationLevel};
 
 pub fn run_basic_passes_on<'ctx>(context: &Context<'ctx>) -> bool {
     let pass_manager_builder = PassManagerBuilder::create();

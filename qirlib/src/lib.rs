@@ -6,6 +6,6 @@
 pub mod constants;
 pub mod context;
 pub mod intrinsics;
-pub mod runtime_library;
 pub mod passes;
+pub mod runtime_library;
 pub mod types;
