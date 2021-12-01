@@ -28,8 +28,7 @@ pub fn run_module_file(
         .to_owned();
     let context_type = ContextType::File(&path_str);
     let context = BareContext::new(&ctx, context_type)?;
-    let model = run_module(&context.module, entry_point)?;
-    Ok(model)
+    run_module(&context.module, entry_point)
 }
 
 pub fn run_module<'ctx>(
@@ -108,33 +107,47 @@ fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = Functio
 #[cfg(test)]
 mod tests {
     use super::run_module_file;
-    use std::{fs::File, io::Write};
-    use tempfile::tempdir;
+    use std::io::{self, Write};
+    use tempfile::NamedTempFile;
 
     #[test]
-    fn eval_test() -> Result<(), String> {
-        let bell_qir_measure_contents = include_bytes!("../tests/bell_qir_measure.ll");
-        let dir = tempdir().expect("Could not create temp dir");
-        let file_path = dir.path().join("bell_qir_measure.ll");
-        let mut buffer = File::create(&file_path).unwrap();
-        buffer.write_all(bell_qir_measure_contents).unwrap();
+    fn evaluates_bell_qir_measure() -> Result<(), String> {
+        let bell_qir_measure = temp_ll_file(include_bytes!("../tests/bell_qir_measure.ll"))
+            .map_err(|e| e.to_string())?;
 
-        let generated_model = run_module_file(file_path, None)?;
+        let generated_model = run_module_file(&bell_qir_measure, None)?;
         assert_eq!(generated_model.instructions.len(), 2);
         Ok(())
     }
 
     #[test]
-    fn eval_entry_points_test() {
-        let custom_entry_point_name = "tests/custom_entry_point_name.ll";
-        run_module_file(custom_entry_point_name, None).unwrap();
-        run_module_file(custom_entry_point_name, Some("App__Foo")).unwrap();
-        assert!(run_module_file(custom_entry_point_name, Some("nonexistent")).is_err());
+    fn evaluates_custom_entry_point_name() -> Result<(), String> {
+        let custom_entry_point_name =
+            temp_ll_file(include_bytes!("../tests/custom_entry_point_name.ll"))
+                .map_err(|e| e.to_string())?;
 
-        let multiple_entry_points = "tests/multiple_entry_points.ll";
-        assert!(run_module_file(multiple_entry_points, None).is_err());
-        run_module_file(multiple_entry_points, Some("App__Foo")).unwrap();
-        run_module_file(multiple_entry_points, Some("App__Bar")).unwrap();
-        assert!(run_module_file(multiple_entry_points, Some("nonexistent")).is_err());
+        run_module_file(&custom_entry_point_name, None)?;
+        run_module_file(&custom_entry_point_name, Some("App__Foo"))?;
+        assert!(run_module_file(&custom_entry_point_name, Some("nonexistent")).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn evaluates_multiple_entry_points() -> Result<(), String> {
+        let multiple_entry_points =
+            temp_ll_file(include_bytes!("../tests/multiple_entry_points.ll"))
+                .map_err(|e| e.to_string())?;
+
+        assert!(run_module_file(&multiple_entry_points, None).is_err());
+        run_module_file(&multiple_entry_points, Some("App__Foo"))?;
+        run_module_file(&multiple_entry_points, Some("App__Bar"))?;
+        assert!(run_module_file(&multiple_entry_points, Some("nonexistent")).is_err());
+        Ok(())
+    }
+
+    fn temp_ll_file(buf: &[u8]) -> io::Result<NamedTempFile> {
+        let mut temp_file = tempfile::Builder::new().suffix(".ll").tempfile()?;
+        temp_file.write_all(buf)?;
+        Ok(temp_file)
     }
 }
