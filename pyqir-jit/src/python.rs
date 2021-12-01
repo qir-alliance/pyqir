@@ -86,7 +86,7 @@ impl PyNonadaptiveJit {
     }
 
     fn eval(&self, file: String, pyobj: &PyAny) -> PyResult<()> {
-        let result = crate::jit::run_module(file);
+        let result = crate::jit::run_module_file(file);
         if let Err(msg) = result {
             let err: PyErr = PyOSError::new_err::<String>(msg);
             return Err(err);
