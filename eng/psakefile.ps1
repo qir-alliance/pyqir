@@ -25,7 +25,7 @@ properties {
 Include settings.ps1
 Include utils.ps1
 
-Task default -Depends parser, generator, jit, run-examples
+Task default -Depends parser, generator, jit, run-examples, run-examples-in-containers
 
 Task init {
     Restore-ConfigTomlWithLlvmInfo
