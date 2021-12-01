@@ -281,10 +281,10 @@ task run-examples-in-containers -precondition { Test-CI -and $IsLinux } {
     $images = @("buster", "bullseye", "bionic", "focal")
     foreach ($image in $images) {
         exec -workingDirectory (Join-Path $repo.root "eng") {
-            get-content $image.Dockerfile | docker build --build-arg USERNAME=$userName --build-arg USER_UID=$userId --build-arg USER_GID=$groupId -t $image-samples -
+            get-content "$($image).Dockerfile" | docker build --build-arg USERNAME=$userName --build-arg USER_UID=$userId --build-arg USER_GID=$groupId -t "$image-samples" -
         }
         exec {
-            docker run --rm --user $userName -v "$($repo.root):/home/$userName" $image-samples build.ps1 -t run-examples
+            docker run --rm --user $userName -v "$($repo.root):/home/$userName" "$image-samples" build.ps1 -t run-examples
         }
     }
 }
