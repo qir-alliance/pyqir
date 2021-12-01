@@ -10,6 +10,7 @@ RUN apt-get update && \
     apt-transport-https \
     python3-minimal \
     python3-pip \
+    python3-setuptools \
     sudo \
     && \
     python3 -m pip install -U pip && \
