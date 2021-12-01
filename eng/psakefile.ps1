@@ -25,7 +25,21 @@ properties {
 Include settings.ps1
 Include utils.ps1
 
-Task default -Depends parser, generator, jit, run-examples
+Task default -Depends checks, parser, generator, jit, run-examples
+
+Task checks -Depends cargo-fmt, cargo-clippy
+
+Task cargo-fmt {
+    exec -workingDirectory $repo.root -errorMessage "Please run 'cargo fmt --all' before pushing" {
+        cargo fmt --all -- --check
+    }
+}
+
+Task cargo-clippy {
+    exec -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
+        cargo clippy --workspace --all-targets --all-features -- -D warnings 
+    }
+}
 
 Task init {
     Restore-ConfigTomlWithLlvmInfo
