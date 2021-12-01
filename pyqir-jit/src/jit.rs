@@ -108,9 +108,11 @@ fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = Functio
 mod tests {
     use super::run_module_file;
     use crate::interop::{Instruction, Single};
+    use serial_test::serial;
     use std::io::{self, Write};
     use tempfile::NamedTempFile;
 
+    #[serial]
     #[test]
     fn evaluates_bell_qir_measure() -> Result<(), String> {
         let module_file = temp_ll_file(include_bytes!("../tests/bell_qir_measure.ll"))
@@ -121,6 +123,7 @@ mod tests {
         Ok(())
     }
 
+    #[serial]
     #[test]
     fn evaluates_custom_entry_point_name() -> Result<(), String> {
         let module_file = temp_ll_file(include_bytes!("../tests/custom_entry_point_name.ll"))
@@ -146,6 +149,7 @@ mod tests {
         Ok(())
     }
 
+    #[serial]
     #[test]
     fn evaluates_multiple_entry_points() -> Result<(), String> {
         let module_file = temp_ll_file(include_bytes!("../tests/multiple_entry_points.ll"))
