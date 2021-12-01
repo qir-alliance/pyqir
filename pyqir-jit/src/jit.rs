@@ -112,14 +112,14 @@ mod tests {
     use std::io::{self, Write};
     use tempfile::NamedTempFile;
 
-    const BELL_QIR_MEASURE: &[u8] = include_bytes!("../tests/bell_qir_measure.ll");
-    const CUSTOM_ENTRY_POINT_NAME: &[u8] = include_bytes!("../tests/custom_entry_point_name.ll");
-    const MULTIPLE_ENTRY_POINTS: &[u8] = include_bytes!("../tests/multiple_entry_points.ll");
+    const BELL_QIR_MEASURE: &[u8] = include_bytes!("../tests/bell_qir_measure.bc");
+    const CUSTOM_ENTRY_POINT_NAME: &[u8] = include_bytes!("../tests/custom_entry_point_name.bc");
+    const MULTIPLE_ENTRY_POINTS: &[u8] = include_bytes!("../tests/multiple_entry_points.bc");
 
     #[serial]
     #[test]
     fn runs_bell_qir_measure() -> Result<(), String> {
-        let module_file = temp_ll_file(BELL_QIR_MEASURE).map_err(|e| e.to_string())?;
+        let module_file = temp_bc_file(BELL_QIR_MEASURE).map_err(|e| e.to_string())?;
         let generated_model = run_module_file(&module_file, None)?;
         assert_eq!(generated_model.instructions.len(), 2);
         Ok(())
@@ -128,7 +128,7 @@ mod tests {
     #[serial]
     #[test]
     fn runs_single_entry_point_with_custom_name() -> Result<(), String> {
-        let module_file = temp_ll_file(CUSTOM_ENTRY_POINT_NAME).map_err(|e| e.to_string())?;
+        let module_file = temp_bc_file(CUSTOM_ENTRY_POINT_NAME).map_err(|e| e.to_string())?;
         let model = run_module_file(&module_file, None)?;
         assert_eq!(
             model.instructions,
@@ -140,7 +140,7 @@ mod tests {
     #[serial]
     #[test]
     fn runs_entry_point_by_name() -> Result<(), String> {
-        let module_file = temp_ll_file(CUSTOM_ENTRY_POINT_NAME).map_err(|e| e.to_string())?;
+        let module_file = temp_bc_file(CUSTOM_ENTRY_POINT_NAME).map_err(|e| e.to_string())?;
         let model = run_module_file(&module_file, Some("App__Foo"))?;
         assert_eq!(
             model.instructions,
@@ -152,7 +152,7 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_wrong_name_single_entry_point() -> Result<(), String> {
-        let module_file = temp_ll_file(CUSTOM_ENTRY_POINT_NAME).map_err(|e| e.to_string())?;
+        let module_file = temp_bc_file(CUSTOM_ENTRY_POINT_NAME).map_err(|e| e.to_string())?;
         assert_eq!(
             run_module_file(&module_file, Some("nonexistent")).err(),
             Some("No matching entry point found.".to_owned())
@@ -163,7 +163,7 @@ mod tests {
     #[serial]
     #[test]
     fn fails_without_name_if_multiple_entry_points() -> Result<(), String> {
-        let module_file = temp_ll_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
+        let module_file = temp_bc_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
         assert_eq!(
             run_module_file(&module_file, None).err(),
             Some("Multiple matching entry points found.".to_owned())
@@ -174,7 +174,7 @@ mod tests {
     #[serial]
     #[test]
     fn runs_first_entry_point_by_name() -> Result<(), String> {
-        let module_file = temp_ll_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
+        let module_file = temp_bc_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
         let model = run_module_file(&module_file, Some("App__Foo"))?;
         assert_eq!(
             model.instructions,
@@ -186,7 +186,7 @@ mod tests {
     #[serial]
     #[test]
     fn runs_second_entry_point_by_name() -> Result<(), String> {
-        let module_file = temp_ll_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
+        let module_file = temp_bc_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
         let model = run_module_file(&module_file, Some("App__Bar"))?;
         assert_eq!(
             model.instructions,
@@ -198,7 +198,7 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_wrong_name_multiple_entry_points() -> Result<(), String> {
-        let module_file = temp_ll_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
+        let module_file = temp_bc_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
         assert_eq!(
             run_module_file(&module_file, Some("nonexistent")).err(),
             Some("No matching entry point found.".to_owned())
@@ -206,8 +206,8 @@ mod tests {
         Ok(())
     }
 
-    fn temp_ll_file(buf: &[u8]) -> io::Result<NamedTempFile> {
-        let mut temp_file = tempfile::Builder::new().suffix(".ll").tempfile()?;
+    fn temp_bc_file(buf: &[u8]) -> io::Result<NamedTempFile> {
+        let mut temp_file = tempfile::Builder::new().suffix(".bc").tempfile()?;
         temp_file.write_all(buf)?;
         Ok(temp_file)
     }
