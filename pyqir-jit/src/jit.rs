@@ -1,31 +1,22 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use std::path::Path;
-
-use crate::interop::SemanticModel;
-use crate::runtime::Simulator;
-use inkwell::module::Module;
-use inkwell::targets::TargetMachine;
+use crate::{interop::SemanticModel, runtime::Simulator};
 use inkwell::{
-    targets::{InitializationConfig, Target},
+    module::Module,
+    targets::{InitializationConfig, Target, TargetMachine},
     OptimizationLevel,
 };
 use microsoft_quantum_qir_runtime_sys::runtime::BasicRuntimeDriver;
-use qirlib::context::{BareContext, ContextType};
-use qirlib::passes::run_basic_passes_on;
+use qirlib::{
+    context::{BareContext, ContextType},
+    passes::run_basic_passes_on,
+};
 
-pub fn run_module_file<P: AsRef<Path>>(path: P) -> Result<SemanticModel, String> {
+pub fn run_context_module(context_type: ContextType) -> Result<SemanticModel, String> {
     let ctx = inkwell::context::Context::create();
-    let path_str = path
-        .as_ref()
-        .to_str()
-        .expect("Did not find a valid Unicode path string")
-        .to_owned();
-    let context_type = ContextType::File(&path_str);
     let context = BareContext::new(&ctx, context_type)?;
-    let model = run_module(&context.module)?;
-    Ok(model)
+    run_module(&context.module)
 }
 
 pub fn run_module<'ctx>(module: &Module<'ctx>) -> Result<SemanticModel, String> {
@@ -59,8 +50,8 @@ pub fn run_module<'ctx>(module: &Module<'ctx>) -> Result<SemanticModel, String> 
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
-    use std::io::Write;
+    use qirlib::context::ContextType;
+    use std::{fs::File, io::Write};
     use tempfile::tempdir;
 
     #[test]
@@ -71,7 +62,7 @@ mod tests {
         let mut buffer = File::create(&file_path).unwrap();
         buffer.write_all(bell_qir_measure_contents).unwrap();
 
-        let generated_model = super::run_module_file(file_path)?;
+        let generated_model = super::run_context_module(ContextType::File(&file_path))?;
 
         assert_eq!(generated_model.instructions.len(), 2);
         Ok(())

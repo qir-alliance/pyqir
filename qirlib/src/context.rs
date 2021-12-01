@@ -44,8 +44,8 @@ pub struct Context<'ctx> {
 }
 
 pub enum ContextType<'ctx> {
-    Template(&'ctx String),
-    File(&'ctx String),
+    Template(&'ctx str),
+    File(&'ctx Path),
 }
 
 #[cfg(feature = "jit")]
