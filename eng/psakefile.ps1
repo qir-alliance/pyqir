@@ -274,7 +274,7 @@ function Build-PyQIR([string]$project) {
     }
 }
 
-task run-examples-in-containers -precondition { Test-CI } {
+task run-examples-in-containers -precondition { Test-CI -and $IsLinux } {
     $userName = [Environment]::UserName
     $userId = $(id -u)
     $groupId = $(id -g)
