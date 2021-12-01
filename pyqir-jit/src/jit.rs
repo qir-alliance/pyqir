@@ -112,36 +112,48 @@ mod tests {
 
     #[test]
     fn evaluates_bell_qir_measure() -> Result<(), String> {
-        let bell_qir_measure = temp_ll_file(include_bytes!("../tests/bell_qir_measure.ll"))
+        let module_file = temp_ll_file(include_bytes!("../tests/bell_qir_measure.ll"))
             .map_err(|e| e.to_string())?;
+        let generated_model = run_module_file(&module_file, None)?;
 
-        let generated_model = run_module_file(&bell_qir_measure, None)?;
         assert_eq!(generated_model.instructions.len(), 2);
         Ok(())
     }
 
     #[test]
     fn evaluates_custom_entry_point_name() -> Result<(), String> {
-        let custom_entry_point_name =
-            temp_ll_file(include_bytes!("../tests/custom_entry_point_name.ll"))
-                .map_err(|e| e.to_string())?;
+        let module_file = temp_ll_file(include_bytes!("../tests/custom_entry_point_name.ll"))
+            .map_err(|e| e.to_string())?;
 
-        run_module_file(&custom_entry_point_name, None)?;
-        run_module_file(&custom_entry_point_name, Some("App__Foo"))?;
-        assert!(run_module_file(&custom_entry_point_name, Some("nonexistent")).is_err());
+        run_module_file(&module_file, None)?;
+        run_module_file(&module_file, Some("App__Foo"))?;
+
+        assert_eq!(
+            run_module_file(&module_file, Some("nonexistent")).err(),
+            Some("No matching entry point found.".to_owned())
+        );
+
         Ok(())
     }
 
     #[test]
     fn evaluates_multiple_entry_points() -> Result<(), String> {
-        let multiple_entry_points =
-            temp_ll_file(include_bytes!("../tests/multiple_entry_points.ll"))
-                .map_err(|e| e.to_string())?;
+        let module_file = temp_ll_file(include_bytes!("../tests/multiple_entry_points.ll"))
+            .map_err(|e| e.to_string())?;
 
-        assert!(run_module_file(&multiple_entry_points, None).is_err());
-        run_module_file(&multiple_entry_points, Some("App__Foo"))?;
-        run_module_file(&multiple_entry_points, Some("App__Bar"))?;
-        assert!(run_module_file(&multiple_entry_points, Some("nonexistent")).is_err());
+        assert_eq!(
+            run_module_file(&module_file, None).err(),
+            Some("Multiple matching entry points found.".to_owned())
+        );
+
+        run_module_file(&module_file, Some("App__Foo"))?;
+        run_module_file(&module_file, Some("App__Bar"))?;
+
+        assert_eq!(
+            run_module_file(&module_file, Some("nonexistent")).err(),
+            Some("No matching entry point found.".to_owned())
+        );
+
         Ok(())
     }
 
