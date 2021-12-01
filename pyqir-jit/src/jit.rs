@@ -107,6 +107,7 @@ fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = Functio
 #[cfg(test)]
 mod tests {
     use super::run_module_file;
+    use crate::interop::{Instruction, Single};
     use std::io::{self, Write};
     use tempfile::NamedTempFile;
 
@@ -125,8 +126,17 @@ mod tests {
         let module_file = temp_ll_file(include_bytes!("../tests/custom_entry_point_name.ll"))
             .map_err(|e| e.to_string())?;
 
-        run_module_file(&module_file, None)?;
-        run_module_file(&module_file, Some("App__Foo"))?;
+        let model = run_module_file(&module_file, None)?;
+        assert_eq!(
+            model.instructions,
+            vec![Instruction::X(Single::new("0".to_owned()))]
+        );
+
+        let model = run_module_file(&module_file, Some("App__Foo"))?;
+        assert_eq!(
+            model.instructions,
+            vec![Instruction::X(Single::new("0".to_owned()))]
+        );
 
         assert_eq!(
             run_module_file(&module_file, Some("nonexistent")).err(),
@@ -146,8 +156,17 @@ mod tests {
             Some("Multiple matching entry points found.".to_owned())
         );
 
-        run_module_file(&module_file, Some("App__Foo"))?;
-        run_module_file(&module_file, Some("App__Bar"))?;
+        let model = run_module_file(&module_file, Some("App__Foo"))?;
+        assert_eq!(
+            model.instructions,
+            vec![Instruction::X(Single::new("0".to_owned()))]
+        );
+
+        let model = run_module_file(&module_file, Some("App__Bar"))?;
+        assert_eq!(
+            model.instructions,
+            vec![Instruction::H(Single::new("0".to_owned()))]
+        );
 
         assert_eq!(
             run_module_file(&module_file, Some("nonexistent")).err(),
