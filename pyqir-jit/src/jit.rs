@@ -127,12 +127,14 @@ mod tests {
     #[test]
     fn eval_entry_points_test() {
         let custom_entry_point_name = "tests/custom_entry_point_name.ll";
-        run_module_file(custom_entry_point_name.to_owned(), None).unwrap();
-        run_module_file(custom_entry_point_name.to_owned(), Some("App__Foo")).unwrap();
+        run_module_file(custom_entry_point_name, None).unwrap();
+        run_module_file(custom_entry_point_name, Some("App__Foo")).unwrap();
+        assert!(run_module_file(custom_entry_point_name, Some("nonexistent")).is_err());
 
         let multiple_entry_points = "tests/multiple_entry_points.ll";
-        assert!(run_module_file(multiple_entry_points.to_owned(), None).is_err());
-        run_module_file(multiple_entry_points.to_owned(), Some("App__Foo")).unwrap();
-        run_module_file(multiple_entry_points.to_owned(), Some("App__Bar")).unwrap();
+        assert!(run_module_file(multiple_entry_points, None).is_err());
+        run_module_file(multiple_entry_points, Some("App__Foo")).unwrap();
+        run_module_file(multiple_entry_points, Some("App__Bar")).unwrap();
+        assert!(run_module_file(multiple_entry_points, Some("nonexistent")).is_err());
     }
 }
