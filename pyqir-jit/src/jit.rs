@@ -4,6 +4,7 @@
 use crate::{interop::SemanticModel, runtime::Simulator};
 use inkwell::{
     attributes::AttributeLoc,
+    execution_engine::ExecutionEngine,
     module::Module,
     targets::{InitializationConfig, Target, TargetMachine},
     values::FunctionValue,
@@ -37,7 +38,6 @@ pub fn run_module<'ctx>(
 ) -> Result<SemanticModel, String> {
     Target::initialize_native(&InitializationConfig::default()).unwrap();
     let default_triple = TargetMachine::get_default_triple();
-
     let target = Target::from_triple(&default_triple).expect("Unable to create target machine");
     assert!(target.has_asm_backend());
     assert!(target.has_target_machine());
@@ -47,29 +47,41 @@ pub fn run_module<'ctx>(
 
     unsafe {
         BasicRuntimeDriver::initialize_qir_context(true);
-        let _ = microsoft_quantum_qir_runtime_sys::foundation::QSharpFoundation::new();
-        let _ = inkwell::support::load_library_permanently("");
-        let execution_engine = module
-            .create_jit_execution_engine(OptimizationLevel::None)
-            .expect("Could not create JIT Engine");
-        let simulator = Simulator::new(&module, &execution_engine);
-        let main = execution_engine
-            .get_function::<unsafe extern "C" fn() -> ()>(&entry_point)
-            .unwrap();
+        microsoft_quantum_qir_runtime_sys::foundation::QSharpFoundation::new();
+        inkwell::support::load_library_permanently("");
+    }
 
-        main.call();
-        Ok(simulator.get_model())
+    let execution_engine = module
+        .create_jit_execution_engine(OptimizationLevel::None)
+        .expect("Could not create JIT Engine");
+    let simulator = Simulator::new(&module, &execution_engine);
+
+    unsafe {
+        run_entry_point(&execution_engine, entry_point)?;
+    }
+
+    Ok(simulator.get_model())
+}
+
+unsafe fn run_entry_point(
+    execution_engine: &ExecutionEngine,
+    entry_point: FunctionValue,
+) -> Result<(), String> {
+    if entry_point.count_params() == 0 && entry_point.get_type().get_return_type().is_none() {
+        execution_engine.run_function(entry_point, &[]);
+        Ok(())
+    } else {
+        Err("Entry point has parameters or a non-void return type.".to_owned())
     }
 }
 
 fn choose_entry_point<'ctx>(
     functions: impl Iterator<Item = FunctionValue<'ctx>>,
     name: Option<&str>,
-) -> Result<String, String> {
+) -> Result<FunctionValue<'ctx>, String> {
     let mut entry_points = functions
         .filter(is_entry_point)
-        .map(|f| f.get_name().to_str().unwrap().to_owned())
-        .filter(|function_name| name.iter().all(|n| function_name == n));
+        .filter(|f| name.iter().all(|n| f.get_name().to_str() == Ok(n)));
 
     let entry_point = entry_points
         .next()
@@ -115,6 +127,7 @@ mod tests {
     const BELL_QIR_MEASURE: &[u8] = include_bytes!("../tests/bell_qir_measure.bc");
     const CUSTOM_ENTRY_POINT_NAME: &[u8] = include_bytes!("../tests/custom_entry_point_name.bc");
     const MULTIPLE_ENTRY_POINTS: &[u8] = include_bytes!("../tests/multiple_entry_points.bc");
+    const ENTRY_POINT_TYPES: &[u8] = include_bytes!("../tests/entry_point_types.bc");
 
     #[serial]
     #[test]
@@ -202,6 +215,28 @@ mod tests {
         assert_eq!(
             run_module_file(&module_file, Some("nonexistent")).err(),
             Some("No matching entry point found.".to_owned())
+        );
+        Ok(())
+    }
+
+    #[serial]
+    #[test]
+    fn fails_if_entry_point_has_params() -> Result<(), String> {
+        let module_file = temp_bc_file(ENTRY_POINT_TYPES).map_err(|e| e.to_string())?;
+        assert_eq!(
+            run_module_file(&module_file, Some("App__IntParam")).err(),
+            Some("Entry point has parameters or a non-void return type.".to_owned())
+        );
+        Ok(())
+    }
+
+    #[serial]
+    #[test]
+    fn fails_if_entry_point_has_return_value() -> Result<(), String> {
+        let module_file = temp_bc_file(ENTRY_POINT_TYPES).map_err(|e| e.to_string())?;
+        assert_eq!(
+            run_module_file(&module_file, Some("App__IntReturn")).err(),
+            Some("Entry point has parameters or a non-void return type.".to_owned())
         );
         Ok(())
     }
