@@ -41,7 +41,14 @@ impl ModuleExt for llvm_ir::Module {
 
 pub trait FunctionExt {
     fn get_attribute_value(&self, name: &str) -> Option<String>;
+    /// # Errors
+    ///
+    /// Will return `Err` if `requiredQubits` value was not an integer
     fn get_required_qubits(&self) -> Result<Option<i64>, ParseIntError>;
+
+    /// # Errors
+    ///
+    /// Will return `Err` if `requiredResults` value was not an integer
     fn get_required_results(&self) -> Result<Option<i64>, ParseIntError>;
     fn get_instruction_by_output_name(&self, name: &str) -> Option<&llvm_ir::Instruction>;
 }
@@ -223,9 +230,10 @@ pub trait PhiExt {
 impl PhiExt for llvm_ir::instruction::Phi {
     fn get_incoming_value_for_name(&self, name: &str) -> Option<llvm_ir::Operand> {
         self.incoming_values.iter().find_map(|(op, block_name)| {
-            match block_name.get_string().eq(name) {
-                true => Some(op.clone()),
-                false => None,
+            if block_name.get_string().eq(name) {
+                Some(op.clone())
+            } else {
+                None
             }
         })
     }

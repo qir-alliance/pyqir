@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 #![deny(clippy::all, clippy::pedantic)]
+// pyo3 generates errors with _obj and _tmp values
+#![allow(clippy::used_underscore_binding)]
 
 pub mod emit;
 pub mod interop;

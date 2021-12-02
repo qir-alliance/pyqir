@@ -10,6 +10,7 @@ use qirlib::intrinsics::Intrinsics;
 use super::gates::GateScope;
 
 pub(crate) struct Simulator {
+    #[allow(unused)]
     scope: GateScope,
 }
 
@@ -18,17 +19,17 @@ impl<'ctx> Simulator {
         let simulator = Simulator {
             scope: crate::gates::GateScope::new(),
         };
-        simulator.bind(context, ee);
+        Simulator::bind(context, ee);
         simulator
     }
 
-    pub fn get_model(&self) -> SemanticModel {
+    pub fn get_model() -> SemanticModel {
         let mut gs = CURRENT_GATES.write().unwrap();
         gs.infer_allocations();
         gs.get_model()
     }
 
-    fn bind(&self, context: &Context<'ctx>, ee: &ExecutionEngine<'ctx>) {
+    fn bind(context: &Context<'ctx>, ee: &ExecutionEngine<'ctx>) {
         let intrinsics = Intrinsics::new(&context.module);
 
         if let Some(ins) = intrinsics.h_ins {

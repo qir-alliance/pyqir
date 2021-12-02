@@ -8,9 +8,12 @@ use crate::runtime::Simulator;
 use inkwell::targets::TargetMachine;
 use inkwell::targets::{InitializationConfig, Target};
 use microsoft_quantum_qir_runtime_sys::runtime::BasicRuntimeDriver;
-use qirlib::context::{Context, ContextType};
+use qirlib::context::{Context, ModuleType};
 use qirlib::passes::run_basic_passes_on;
 
+/// # Errors
+///
+/// Will return `Err` if module fails to load
 pub fn run_module<P: AsRef<Path>>(path: P) -> Result<SemanticModel, String> {
     let ctx = inkwell::context::Context::create();
     let path_str = path
@@ -18,36 +21,43 @@ pub fn run_module<P: AsRef<Path>>(path: P) -> Result<SemanticModel, String> {
         .to_str()
         .expect("Did not find a valid Unicode path string")
         .to_owned();
-    let context_type = ContextType::File(&path_str);
+    let context_type = ModuleType::File(&path_str);
     let context = Context::new(&ctx, context_type)?;
-    let model = run_ctx(context)?;
+    let model = run_ctx(&context)?;
     Ok(model)
 }
 
-pub fn run_ctx<'ctx>(context: Context<'ctx>) -> Result<SemanticModel, String> {
-    Target::initialize_native(&InitializationConfig::default()).unwrap();
+/// # Errors
+///
+/// Will return `Err` if LLVM native target fails to initialize
+pub fn run_ctx(context: &Context<'_>) -> Result<SemanticModel, String> {
+    Target::initialize_native(&InitializationConfig::default())?;
 
     let default_triple = TargetMachine::get_default_triple();
 
     let target = Target::from_triple(&default_triple).expect("Unable to create target machine");
 
-    assert!(target.has_asm_backend());
-    assert!(target.has_target_machine());
+    if !target.has_asm_backend() {
+        return Err("Target doesn't have an ASM backend.".to_owned());
+    }
+    if !target.has_target_machine() {
+        return Err("Target doesn't have a target machine.".to_owned());
+    }
 
-    run_basic_passes_on(&context);
+    run_basic_passes_on(context);
 
     unsafe {
         BasicRuntimeDriver::initialize_qir_context(true);
         let _ = microsoft_quantum_qir_runtime_sys::foundation::QSharpFoundation::new();
 
         let _ = inkwell::support::load_library_permanently("");
-        let simulator = Simulator::new(&context, &context.execution_engine);
+        let _simulator = Simulator::new(context, &context.execution_engine);
         let main = context
             .execution_engine
             .get_function::<unsafe extern "C" fn() -> ()>("QuantumApplication__Run")
-            .unwrap();
+            .expect("Could not load entrypoint.");
         main.call();
-        Ok(simulator.get_model())
+        Ok(Simulator::get_model())
     }
 }
 

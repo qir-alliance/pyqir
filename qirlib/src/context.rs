@@ -21,32 +21,36 @@ pub struct Context<'ctx> {
     pub constants: Constants<'ctx>,
 }
 
-pub enum ContextType<'ctx> {
+#[derive(Clone, Copy)]
+pub enum ModuleType<'ctx> {
     Template(&'ctx String),
     File(&'ctx String),
 }
 
 #[cfg(feature = "jit")]
 impl<'ctx> Context<'ctx> {
+    /// # Errors
+    ///
+    /// Will return `Err` if module fails to load or LLVM native target fails to initialize
     pub fn new(
         context: &'ctx inkwell::context::Context,
-        context_type: ContextType<'ctx>,
+        context_type: ModuleType<'ctx>,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
         let module = Context::load_module(context, context_type)?;
         let execution_engine = module
             .create_jit_execution_engine(OptimizationLevel::None)
             .expect("Could not create JIT Engine");
-        let types = Types::new(&context, &module);
+        let types = Types::new(context, &module);
         let runtime_library = RuntimeLibrary::new(&module);
         let intrinsics = Intrinsics::new(&module);
         let constants = Constants::new(&module, &types);
         Ok(Context {
-            builder,
+            context,
             module,
             execution_engine,
+            builder,
             types,
-            context,
             runtime_library,
             intrinsics,
             constants,
@@ -56,9 +60,12 @@ impl<'ctx> Context<'ctx> {
 
 #[cfg(not(feature = "jit"))]
 impl<'ctx> Context<'ctx> {
+    /// # Errors
+    ///
+    /// Will return `Err` if module fails to load
     pub fn new(
         context: &'ctx inkwell::context::Context,
-        context_type: ContextType<'ctx>,
+        context_type: ModuleType<'ctx>,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
         let module = Context::load_module(context, context_type)?;
@@ -67,10 +74,10 @@ impl<'ctx> Context<'ctx> {
         let intrinsics = Intrinsics::new(&module);
         let constants = Constants::new(&module, &types);
         Ok(Context {
-            builder,
-            module,
-            types,
             context,
+            module,
+            builder,
+            types,
             runtime_library,
             intrinsics,
             constants,
@@ -81,19 +88,19 @@ impl<'ctx> Context<'ctx> {
 impl<'ctx> Context<'ctx> {
     fn load_module(
         context: &'ctx inkwell::context::Context,
-        context_type: ContextType<'ctx>,
+        context_type: ModuleType<'ctx>,
     ) -> Result<Module<'ctx>, String> {
         let module = match context_type {
-            ContextType::Template(name) => {
-                Context::load_module_from_bitcode_template(&context, &name[..])?
+            ModuleType::Template(name) => {
+                Context::load_module_from_bitcode_template(context, &name[..])?
             }
-            ContextType::File(file_name) => {
+            ModuleType::File(file_name) => {
                 let file_path = Path::new(&file_name[..]);
                 let ext = file_path.extension().and_then(std::ffi::OsStr::to_str);
                 let module = match ext {
                     Some("ll") => Context::load_module_from_ir_file(file_path, context)?,
                     Some("bc") => Context::load_module_from_bitcode_file(file_path, context)?,
-                    _ => panic!("Unsupported module exetension {:?}", ext),
+                    _ => panic!("Unsupported module extension {:?}", ext),
                 };
                 module
             }
@@ -109,7 +116,7 @@ impl<'ctx> Context<'ctx> {
         match Module::parse_bitcode_from_buffer(&buffer, context) {
             Err(err) => {
                 let message = err.to_string();
-                return Err(message);
+                Err(message)
             }
             Ok(module) => Ok(module),
         }
@@ -122,7 +129,7 @@ impl<'ctx> Context<'ctx> {
         match Module::parse_bitcode_from_path(path, context) {
             Err(err) => {
                 let message = err.to_string();
-                return Err(message);
+                Err(message)
             }
             Ok(module) => Ok(module),
         }
@@ -137,7 +144,7 @@ impl<'ctx> Context<'ctx> {
         match context.create_module_from_ir(memory_buffer) {
             Err(err) => {
                 let message = err.to_string();
-                return Err(message);
+                Err(message)
             }
             Ok(module) => Ok(module),
         }
@@ -147,7 +154,7 @@ impl<'ctx> Context<'ctx> {
         match MemoryBuffer::create_from_file(path.as_ref()) {
             Err(err) => {
                 let message = err.to_string();
-                return Err(message);
+                Err(message)
             }
             Ok(memory_buffer) => Ok(memory_buffer),
         }
@@ -155,9 +162,12 @@ impl<'ctx> Context<'ctx> {
 
     pub fn emit_bitcode(&self, file_path: &str) {
         let bitcode_path = Path::new(file_path);
-        self.module.write_bitcode_to_path(&bitcode_path);
+        self.module.write_bitcode_to_path(bitcode_path);
     }
 
+    /// # Errors
+    ///
+    /// Will return `Err` if LLVM Module fails validation
     pub fn emit_ir(&self, file_path: &str) -> Result<(), String> {
         let ir_path = Path::new(file_path);
         if let Err(llvmstr) = self.module.print_to_file(ir_path) {
@@ -168,21 +178,19 @@ impl<'ctx> Context<'ctx> {
 
     pub fn get_ir_string(&self) -> String {
         let ir = self.module.print_to_string();
-        let result = ir.to_string();
-        result
+        ir.to_string()
     }
 
     pub fn get_bitcode_base64_string(&self) -> String {
         let buffer = self.module.write_bitcode_to_memory();
         let bytes = buffer.as_slice();
-        let result = base64::encode(bytes);
-        result
+        base64::encode(bytes)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::context::{Context, ContextType};
+    use crate::context::{Context, ModuleType};
     use std::fs::File;
     use std::io::prelude::*;
 
@@ -198,7 +206,7 @@ mod tests {
 
         let ctx = inkwell::context::Context::create();
         let name = String::from("temp");
-        let context = Context::new(&ctx, ContextType::Template(&name)).unwrap();
+        let context = Context::new(&ctx, ModuleType::Template(&name)).unwrap();
         context.emit_bitcode(file_path_string.as_str());
         let mut emitted_bitcode_file =
             File::open(file_path_string.as_str()).expect("Could not open emitted bitcode file");

@@ -17,12 +17,12 @@ pub(crate) fn i8_null_ptr<'ctx>(context: &Context<'ctx>) -> BasicMetadataValueEn
 
 pub(crate) fn f64_to_f64<'ctx>(
     context: &Context<'ctx>,
-    value: &f64,
+    value: f64,
 ) -> BasicMetadataValueEnum<'ctx> {
     context
         .types
         .double
-        .const_float(value.clone())
+        .const_float(value)
         .as_basic_value_enum()
         .into()
 }
@@ -44,6 +44,7 @@ pub(crate) fn i64_to_i32<'ctx>(
     value: i64,
 ) -> BasicMetadataValueEnum<'ctx> {
     // convert to capture negative values.
+    #[allow(clippy::cast_sign_loss)]
     let target: u64 = value as u64;
 
     context

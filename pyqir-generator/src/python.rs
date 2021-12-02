@@ -33,11 +33,16 @@ impl PyQIR {
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
+    #[allow(clippy::unused_self)]
     fn add_measurement(&mut self, qubit: String, target: String) -> PyResult<()> {
         log::info!("measure {} => {}", qubit, target);
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn cx(&mut self, control: String, target: String) -> PyResult<()> {
         log::info!("cx {} => {}", control, target);
         let controlled = Controlled::new(control, target);
@@ -46,6 +51,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn cz(&mut self, control: String, target: String) -> PyResult<()> {
         log::info!("cz {} => {}", control, target);
         let controlled = Controlled::new(control, target);
@@ -54,6 +61,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn h(&mut self, qubit: String) -> PyResult<()> {
         log::info!("h => {}", qubit);
         let single = Single::new(qubit);
@@ -62,6 +71,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn m(&mut self, qubit: String, target: String) -> PyResult<()> {
         log::info!("m {}[{}]", qubit, target);
         let inst = Measured::new(qubit, target);
@@ -70,6 +81,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn reset(&mut self, qubit: String) -> PyResult<()> {
         log::info!("reset => {}", qubit);
         let single = Single::new(qubit);
@@ -78,6 +91,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn rx(&mut self, theta: f64, qubit: String) -> PyResult<()> {
         log::info!("rx {} => {}", qubit, theta);
         let rotated = Rotated::new(theta, qubit);
@@ -86,6 +101,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn ry(&mut self, theta: f64, qubit: String) -> PyResult<()> {
         log::info!("ry {} => {}", qubit, theta);
         let rotated = Rotated::new(theta, qubit);
@@ -94,6 +111,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn rz(&mut self, theta: f64, qubit: String) -> PyResult<()> {
         log::info!("rz {} => {}", qubit, theta);
         let rotated = Rotated::new(theta, qubit);
@@ -102,6 +121,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn s(&mut self, qubit: String) -> PyResult<()> {
         log::info!("s => {}", qubit);
         let single = Single::new(qubit);
@@ -110,6 +131,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn s_adj(&mut self, qubit: String) -> PyResult<()> {
         log::info!("s_adj => {}", qubit);
         let single = Single::new(qubit);
@@ -118,6 +141,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn t(&mut self, qubit: String) -> PyResult<()> {
         log::info!("t => {}", qubit);
         let single = Single::new(qubit);
@@ -126,6 +151,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn t_adj(&mut self, qubit: String) -> PyResult<()> {
         log::info!("t_adj => {}", qubit);
         let single = Single::new(qubit);
@@ -134,6 +161,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn x(&mut self, qubit: String) -> PyResult<()> {
         log::info!("x => {}", qubit);
         let single = Single::new(qubit);
@@ -142,6 +171,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn y(&mut self, qubit: String) -> PyResult<()> {
         log::info!("y => {}", qubit);
         let single = Single::new(qubit);
@@ -150,6 +181,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn dump_machine(&mut self) -> PyResult<()> {
         log::info!("dump_machine");
         let inst = Instruction::DumpMachine;
@@ -157,6 +190,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn z(&mut self, qubit: String) -> PyResult<()> {
         log::info!("z => {}", qubit);
         let single = Single::new(qubit);
@@ -165,6 +200,8 @@ impl PyQIR {
         Ok(())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::unnecessary_wraps)]
     fn add_quantum_register(&mut self, name: String, size: u64) -> PyResult<()> {
         let ns = name.as_str();
         for index in 0..size {
@@ -174,16 +211,17 @@ impl PyQIR {
                 name: String::from(ns),
                 index,
             };
-            self.model.add_reg(reg.as_register());
+            self.model.add_reg(&reg.as_register());
         }
         Ok(())
     }
 
+    #[allow(clippy::unnecessary_wraps)]
     fn add_classical_register(&mut self, name: String, size: u64) -> PyResult<()> {
         let ns = name.clone();
         let reg = ClassicalRegister { name, size };
         log::info!("Adding {}({})", ns, size);
-        self.model.add_reg(reg.as_register());
+        self.model.add_reg(&reg.as_register());
         Ok(())
     }
 
@@ -215,6 +253,8 @@ impl PyQIR {
         }
     }
 
+    #[allow(clippy::unnecessary_wraps)]
+    #[allow(clippy::unused_self)]
     fn enable_logging(&self) -> PyResult<()> {
         let _ = env_logger::try_init();
         Ok(())

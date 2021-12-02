@@ -8,10 +8,12 @@ pub struct QuantumRegister {
 }
 
 impl QuantumRegister {
+    #[must_use]
     pub fn new(name: String, index: u64) -> Self {
         QuantumRegister { name, index }
     }
 
+    #[must_use]
     pub fn as_register(&self) -> Register {
         Register::Quantum(self.clone())
     }
@@ -24,10 +26,12 @@ pub struct ClassicalRegister {
 }
 
 impl ClassicalRegister {
+    #[must_use]
     pub fn new(name: String, size: u64) -> Self {
         ClassicalRegister { name, size }
     }
 
+    #[must_use]
     pub fn as_register(&self) -> Register {
         Register::Classical(self.clone())
     }
@@ -46,6 +50,7 @@ pub struct Controlled {
 }
 
 impl Controlled {
+    #[must_use]
     pub fn new(control: String, target: String) -> Self {
         Controlled { control, target }
     }
@@ -58,6 +63,7 @@ pub struct Measured {
 }
 
 impl Measured {
+    #[must_use]
     pub fn new(qubit: String, target: String) -> Self {
         Measured { qubit, target }
     }
@@ -70,6 +76,7 @@ pub struct Rotated {
 }
 
 impl Rotated {
+    #[must_use]
     pub fn new(theta: f64, qubit: String) -> Self {
         Rotated { theta, qubit }
     }
@@ -81,6 +88,7 @@ pub struct Single {
 }
 
 impl Single {
+    #[must_use]
     pub fn new(qubit: String) -> Self {
         Single { qubit }
     }
@@ -116,19 +124,20 @@ pub struct SemanticModel {
 }
 
 impl SemanticModel {
+    #[must_use]
     pub fn new(name: String) -> Self {
         SemanticModel {
-            name: name,
+            name,
             registers: vec![],
             qubits: vec![],
             instructions: vec![],
         }
     }
 
-    pub fn add_reg(&mut self, reg: Register) {
+    pub fn add_reg(&mut self, reg: &Register) {
         match &reg {
-            Register::Classical(creg) => self.registers.push(creg.to_owned()),
-            Register::Quantum(qreg) => self.qubits.push(qreg.to_owned()),
+            Register::Classical(classical) => self.registers.push(classical.clone()),
+            Register::Quantum(quantum) => self.qubits.push(quantum.clone()),
         }
     }
 

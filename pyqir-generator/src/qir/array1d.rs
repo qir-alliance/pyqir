@@ -15,8 +15,8 @@ pub(crate) fn emit_array_1d<'ctx>(
     name: &str,
     size: u64,
 ) -> (BasicValueEnum<'ctx>, Vec<(u64, BasicValueEnum<'ctx>)>) {
-    let sub_result_name = format!("{}", &name[..]);
-    let sub_result = emit_array_allocate1d(&context, 8, size, sub_result_name.as_str());
+    let sub_result_name = name.to_string();
+    let sub_result = emit_array_allocate1d(context, 8, size, sub_result_name.as_str());
     let mut items = vec![];
     for index in 0..size {
         let cast = get_bitcast_result_pointer_array_element(
@@ -96,30 +96,6 @@ fn get_bitcast_qubit_pointer_element<'ctx>(
     cast
 }
 
-fn get_bitcast_array_element<'ctx>(
-    context: &Context<'ctx>,
-    index: u64,
-    sub_result: &BasicValueEnum<'ctx>,
-    sub_result_name: &str,
-) -> BasicValueEnum<'ctx> {
-    let element_raw_ptr_name = format!("{}_{}_raw", sub_result_name, index);
-    let sub_result_element_ptr = emit_array_get_element_ptr_1d(
-        context,
-        index,
-        sub_result.as_basic_value_enum(),
-        element_raw_ptr_name.as_str(),
-    );
-
-    let element_result_ptr_name = format!("{}_result_{}", sub_result_name, index);
-    let target_type = context.types.array;
-    let cast = context.builder.build_bitcast(
-        sub_result_element_ptr,
-        target_type,
-        element_result_ptr_name.as_str(),
-    );
-    cast
-}
-
 pub fn get_bitcast_result_pointer_array_element<'ctx>(
     context: &Context<'ctx>,
     index: u64,
@@ -148,8 +124,7 @@ pub(crate) fn emit_empty_result_array_allocate1d<'ctx>(
     context: &Context<'ctx>,
     result_name: &str,
 ) -> BasicValueEnum<'ctx> {
-    let results = emit_array_allocate1d(&context, 8, 0, &result_name[..]);
-    results
+    emit_array_allocate1d(context, 8, 0, result_name)
 }
 
 pub(crate) fn emit_array_allocate1d<'ctx>(
@@ -191,15 +166,15 @@ pub(crate) fn emit_array_get_element_ptr_1d<'ctx>(
 pub(crate) fn set_elements<'ctx>(
     context: &Context<'ctx>,
     results: &BasicValueEnum<'ctx>,
-    sub_results: Vec<BasicValueEnum<'ctx>>,
+    sub_results: &[BasicValueEnum<'ctx>],
     name: &str,
-) -> () {
-    for index in 0..sub_results.len() {
-        let result_indexed_name = format!("{}_result_tmp", &name[..]);
+) {
+    for (index, _) in sub_results.iter().enumerate() {
+        let result_indexed_name = format!("{}_result_tmp", name);
         let result_indexed = get_bitcast_array_pointer_element(
             context,
             index as u64,
-            &results,
+            results,
             result_indexed_name.as_str(),
         );
 
@@ -214,14 +189,14 @@ pub(crate) fn create_ctl_wrapper<'ctx>(
     control_qubit: &BasicValueEnum<'ctx>,
 ) -> BasicValueEnum<'ctx> {
     let name = String::from("__controlQubits__");
-    let control_qubits = emit_array_allocate1d(&context, 8, 1, &name[..]);
+    let control_qubits = emit_array_allocate1d(context, 8, 1, &name[..]);
     wrap_value_in_array(
         context,
-        &control_qubits.into(),
+        &control_qubits,
         control_qubit,
         format!("{}{}", name, 0).as_str(),
     );
-    control_qubits.into()
+    control_qubits
 }
 
 pub(crate) fn wrap_value_in_array<'ctx>(
@@ -229,10 +204,10 @@ pub(crate) fn wrap_value_in_array<'ctx>(
     results: &BasicValueEnum<'ctx>,
     sub_results: &BasicValueEnum<'ctx>,
     name: &str,
-) -> () {
-    let result_indexed_name = format!("{}_result_tmp", &name[..]);
+) {
+    let result_indexed_name = format!("{}_result_tmp", name);
     let result_indexed =
-        get_bitcast_qubit_pointer_element(context, 0, &results, result_indexed_name.as_str());
+        get_bitcast_qubit_pointer_element(context, 0, results, result_indexed_name.as_str());
 
     let _ = context.builder.build_store(
         result_indexed.into_pointer_value(),

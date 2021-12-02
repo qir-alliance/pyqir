@@ -4,13 +4,16 @@
 use std::collections::HashMap;
 
 use inkwell::values::BasicValueEnum;
-use qirlib::context::{Context, ContextType};
+use qirlib::context::{Context, ModuleType};
 
 use crate::{interop::SemanticModel, qir};
 
+/// # Errors
+///
+/// Will return `Err` if module fails verification.
 pub fn write_model_to_file(model: &SemanticModel, file_name: &str) -> Result<(), String> {
     let ctx = inkwell::context::Context::create();
-    let context = populate_context(&ctx, &model)?;
+    let context = populate_context(&ctx, model)?;
     #[cfg(feature = "basic-passes")]
     qirlib::passes::run_basic_passes_on(&context);
     context.emit_ir(file_name)?;
@@ -18,9 +21,12 @@ pub fn write_model_to_file(model: &SemanticModel, file_name: &str) -> Result<(),
     Ok(())
 }
 
+/// # Errors
+///
+/// Will return `Err` if module fails verification.
 pub fn get_ir_string(model: &SemanticModel) -> Result<String, String> {
     let ctx = inkwell::context::Context::create();
-    let context = populate_context(&ctx, &model)?;
+    let context = populate_context(&ctx, model)?;
     #[cfg(feature = "basic-passes")]
     qirlib::passes::run_basic_passes_on(&context);
     let ir = context.get_ir_string();
@@ -28,9 +34,12 @@ pub fn get_ir_string(model: &SemanticModel) -> Result<String, String> {
     Ok(ir)
 }
 
+/// # Errors
+///
+/// Will return `Err` if module fails verification.
 pub fn get_bitcode_base64_string(model: &SemanticModel) -> Result<String, String> {
     let ctx = inkwell::context::Context::create();
-    let context = populate_context(&ctx, &model)?;
+    let context = populate_context(&ctx, model)?;
     #[cfg(feature = "basic-passes")]
     qirlib::passes::run_basic_passes_on(&context);
     let b64 = context.get_bitcode_base64_string();
@@ -38,16 +47,16 @@ pub fn get_bitcode_base64_string(model: &SemanticModel) -> Result<String, String
     Ok(b64)
 }
 
+/// # Errors
+///
+/// Will return `Err` if module fails verification.
 pub fn populate_context<'a>(
     ctx: &'a inkwell::context::Context,
     model: &'a SemanticModel,
 ) -> Result<Context<'a>, String> {
-    let context_type = ContextType::Template(&model.name);
-    match Context::new(&ctx, context_type) {
-        Err(err) => {
-            let message = err.to_string();
-            return Err(message);
-        }
+    let context_type = ModuleType::Template(&model.name);
+    match Context::new(ctx, context_type) {
+        Err(err) => Err(err),
         Ok(context) => {
             build_entry_function(&context, model)?;
             Ok(context)
@@ -61,11 +70,11 @@ fn build_entry_function(context: &Context<'_>, model: &SemanticModel) -> Result<
     let entry = context.context.append_basic_block(entrypoint, "entry");
     context.builder.position_at_end(entry);
 
-    let qubits = write_qubits(&model, context);
+    let qubits = write_qubits(model, context);
 
-    let registers = write_registers(&model, context);
+    let registers = write_registers(model, context);
 
-    write_instructions(&model, context, &qubits, &registers);
+    write_instructions(model, context, &qubits, &registers);
 
     free_qubits(context, &qubits);
 
@@ -94,7 +103,7 @@ fn write_qubits<'ctx>(
         .iter()
         .map(|reg| {
             let indexed_name = format!("{}{}", &reg.name[..], reg.index);
-            let value = qir::qubits::emit_allocate(&context, indexed_name.as_str());
+            let value = qir::qubits::emit_allocate(context, indexed_name.as_str());
             (indexed_name, value)
         })
         .collect();
@@ -110,25 +119,24 @@ fn write_registers<'ctx>(
     let number_of_registers = model.registers.len() as u64;
     if number_of_registers > 0 {
         let results =
-            qir::array1d::emit_array_allocate1d(&context, 8, number_of_registers, "results");
+            qir::array1d::emit_array_allocate1d(context, 8, number_of_registers, "results");
         registers.insert(String::from("results"), (results, None));
         let mut sub_results = vec![];
-        for reg in model.registers.iter() {
+        for reg in &model.registers {
             let (sub_result, entries) =
-                qir::array1d::emit_array_1d(context, reg.name.as_str(), reg.size.clone());
+                qir::array1d::emit_array_1d(context, reg.name.as_str(), reg.size);
             sub_results.push(sub_result);
             registers.insert(reg.name.clone(), (sub_result, None));
             for (index, _) in entries {
                 registers.insert(format!("{}{}", reg.name, index), (sub_result, Some(index)));
             }
         }
-        qir::array1d::set_elements(&context, &results, sub_results, "results");
-        registers
+        qir::array1d::set_elements(context, &results, &sub_results, "results");
     } else {
-        let results = qir::array1d::emit_empty_result_array_allocate1d(&context, "results");
+        let results = qir::array1d::emit_empty_result_array_allocate1d(context, "results");
         registers.insert(String::from("results"), (results, None));
-        registers
     }
+    registers
 }
 
 fn write_instructions<'ctx>(
@@ -137,7 +145,7 @@ fn write_instructions<'ctx>(
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     registers: &HashMap<String, (BasicValueEnum<'ctx>, Option<u64>)>,
 ) {
-    for inst in model.instructions.iter() {
+    for inst in &model.instructions {
         qir::instructions::emit(context, inst, qubits, registers);
     }
 }

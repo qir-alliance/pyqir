@@ -9,7 +9,10 @@
 // from within rust, and wrappers for each class and function will be added to __init__.py so that the
 // parser API can have full python doc comments for usability.
 
-use super::parse::*;
+use super::parse::{
+    BasicBlockExt, CallExt, ConstantExt, FunctionExt, IntructionExt, ModuleExt, NameExt, PhiExt,
+    TypeExt,
+};
 use llvm_ir;
 use llvm_ir::types::Typed;
 use pyo3::exceptions::PyRuntimeError;
@@ -30,8 +33,9 @@ fn pyqir_parser(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
     #[pyfn(m)]
     #[pyo3(name = "module_from_bitcode")]
+    #[allow(clippy::needless_pass_by_value)]
     fn module_from_bitcode_py(_py: Python, bc_path: String) -> PyResult<PyQirModule> {
-        match llvm_ir::Module::from_bc_path(&bc_path) {
+        match llvm_ir::Module::from_bc_path(bc_path.as_str()) {
             Ok(m) => Ok(PyQirModule { module: m }),
             Err(s) => Err(PyRuntimeError::new_err(s)),
         }
@@ -114,19 +118,16 @@ impl PyQirModule {
             .collect()
     }
 
-    fn get_func_by_name(&self, name: String) -> Option<PyQirFunction> {
-        match self.module.get_func_by_name(&name) {
-            Some(f) => Some(PyQirFunction {
-                function: f.clone(),
-                types: self.module.types.clone(),
-            }),
-            None => None,
-        }
+    fn get_func_by_name(&self, name: &str) -> Option<PyQirFunction> {
+        self.module.get_func_by_name(name).map(|f| PyQirFunction {
+            function: f.clone(),
+            types: self.module.types.clone(),
+        })
     }
 
-    fn get_funcs_by_attr(&self, attr: String) -> Vec<PyQirFunction> {
+    fn get_funcs_by_attr(&self, attr: &str) -> Vec<PyQirFunction> {
         self.module
-            .get_funcs_by_attr_name(&attr)
+            .get_funcs_by_attr_name(attr)
             .iter()
             .map(|f| PyQirFunction {
                 function: (*f).clone(),
@@ -203,23 +204,23 @@ impl PyQirFunction {
         Ok(self.function.get_required_results()?)
     }
 
-    fn get_attribute_value(&self, attr_name: String) -> Option<String> {
-        self.function.get_attribute_value(&attr_name)
+    fn get_attribute_value(&self, attr_name: &str) -> Option<String> {
+        self.function.get_attribute_value(attr_name)
     }
 
-    fn get_block_by_name(&self, name: String) -> Option<PyQirBasicBlock> {
+    fn get_block_by_name(&self, name: &str) -> Option<PyQirBasicBlock> {
         Some(PyQirBasicBlock {
             block: self
                 .function
-                .get_bb_by_name(&llvm_ir::Name::from(name.clone()))?
+                .get_bb_by_name(&llvm_ir::Name::from(name.to_string()))?
                 .clone(),
             types: self.types.clone(),
         })
     }
 
-    fn get_instruction_by_output_name(&self, name: String) -> Option<PyQirInstruction> {
+    fn get_instruction_by_output_name(&self, name: &str) -> Option<PyQirInstruction> {
         Some(PyQirInstruction {
-            instr: self.function.get_instruction_by_output_name(&name)?.clone(),
+            instr: self.function.get_instruction_by_output_name(name)?.clone(),
             types: self.types.clone(),
         })
     }
@@ -271,9 +272,9 @@ impl PyQirBasicBlock {
             .collect()
     }
 
-    fn get_phi_pairs_by_source_name(&self, name: String) -> Vec<(String, PyQirOperand)> {
+    fn get_phi_pairs_by_source_name(&self, name: &str) -> Vec<(String, PyQirOperand)> {
         self.block
-            .get_phi_pairs_by_source_name(&name)
+            .get_phi_pairs_by_source_name(name)
             .iter()
             .map(|(n, op)| {
                 (
@@ -311,10 +312,10 @@ impl PyQirInstruction {
     }
 
     #[getter]
-    fn get_type(&self) -> Option<PyQirType> {
-        Some(PyQirType {
+    fn get_type(&self) -> PyQirType {
+        PyQirType {
             typeref: self.instr.get_type(&self.types),
-        })
+        }
     }
 
     #[getter]
@@ -577,11 +578,11 @@ impl PyQirInstruction {
         )
     }
 
-    fn get_phi_incoming_value_for_name(&self, name: String) -> Option<PyQirOperand> {
+    fn get_phi_incoming_value_for_name(&self, name: &str) -> Option<PyQirOperand> {
         Some(PyQirOperand {
             op: llvm_ir::instruction::Phi::try_from(self.instr.clone())
                 .ok()?
-                .get_incoming_value_for_name(&name)?,
+                .get_incoming_value_for_name(name)?,
             types: self.types.clone(),
         })
     }
@@ -638,10 +639,7 @@ impl PyQirInstruction {
 
     #[getter]
     fn get_has_output(&self) -> bool {
-        match self.instr.try_get_result() {
-            Some(_) => true,
-            None => false,
-        }
+        self.instr.try_get_result().is_some()
     }
 
     #[getter]
@@ -857,11 +855,11 @@ impl PyQirConstant {
     }
 
     #[getter]
-    fn get_int_value(&self) -> Option<i64> {
+    fn get_int_value(&self) -> Option<u64> {
         match_contents!(
             self.constantref.as_ref(),
             llvm_ir::Constant::Int { bits: _, value },
-            value.clone() as i64
+            *value
         )
     }
 
@@ -870,7 +868,7 @@ impl PyQirConstant {
         match_contents!(
             &self.constantref.as_ref(),
             llvm_ir::Constant::Int { bits, value: _ },
-            bits.clone()
+            *bits
         )
     }
 
@@ -884,7 +882,7 @@ impl PyQirConstant {
         match_contents!(
             &self.constantref.as_ref(),
             llvm_ir::Constant::Float(llvm_ir::constant::Float::Double(d)),
-            d.clone()
+            *d
         )
     }
 
@@ -978,7 +976,7 @@ impl PyQirType {
         match_contents!(
             self.typeref.as_ref(),
             llvm_ir::Type::IntegerType { bits },
-            bits.clone()
+            *bits
         )
     }
 
@@ -1015,7 +1013,7 @@ impl PyQirType {
                 pointee_type: _,
                 addr_space
             },
-            addr_space.clone()
+            *addr_space
         )
     }
 
@@ -1060,7 +1058,7 @@ impl PyQirType {
                 element_type: _,
                 num_elements,
             },
-            num_elements.clone()
+            *num_elements
         )
     }
 

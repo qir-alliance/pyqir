@@ -15,34 +15,106 @@ use std::collections::HashMap;
 ///
 /// Panics if the qubit name doesn't exist
 fn get_qubit<'ctx>(
-    name: &String,
+    name: &str,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
 ) -> BasicValueEnum<'ctx> {
-    qubits
+    *qubits
         .get(name)
-        .expect(format!("Qubit {} not found.", name).as_str())
-        .to_owned()
+        .unwrap_or_else(|| panic!("Qubit {} not found.", name))
 }
 
 /// # Panics
 ///
 /// Panics if the register name doesn't exist
 fn get_register<'ctx>(
-    name: &String,
+    name: &str,
     registers: &HashMap<String, (BasicValueEnum<'ctx>, Option<u64>)>,
 ) -> (BasicValueEnum<'ctx>, Option<u64>) {
     registers
         .get(name)
-        .expect(format!("Register {} not found.", name).as_str())
+        .unwrap_or_else(|| panic!("Register {} not found.", name))
         .to_owned()
 }
 
+fn measure<'ctx>(
+    context: &Context<'ctx>,
+    qubit: &str,
+    target: &str,
+    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
+    registers: &HashMap<String, (BasicValueEnum<'ctx>, Option<u64>)>,
+) {
+    let find_qubit = |name| get_qubit(name, qubits);
+    let find_register = |name| get_register(name, registers);
+
+    // measure the qubit and save the result to a temporary value
+    let result = calls::emit_call_with_return(
+        context,
+        context
+            .intrinsics
+            .m
+            .expect("m must be defined in the template"),
+        &[find_qubit(qubit).into()],
+        "measurement",
+    );
+
+    // find the parent register and offset for the given target
+    let (register, index) = find_register(target);
+
+    // get the bitcast pointer to the target location
+    let bitcast_indexed_target_register = array1d::get_bitcast_result_pointer_array_element(
+        context,
+        index.unwrap(),
+        &register,
+        target,
+    );
+
+    // get the existing value from that location and decrement its ref count as its
+    // being replaced with the measurement.
+    let existing_value = context.builder.build_load(
+        bitcast_indexed_target_register.into_pointer_value(),
+        "existing_value",
+    );
+    let minus_one = basic_values::i64_to_i32(context, -1);
+    context.builder.build_call(
+        context.runtime_library.result_update_reference_count,
+        &[existing_value.into(), minus_one],
+        "",
+    );
+
+    // increase the ref count of the new value and store it in the target register
+    let one = basic_values::i64_to_i32(context, 1);
+    context.builder.build_call(
+        context.runtime_library.result_update_reference_count,
+        &[result.into(), one],
+        "",
+    );
+    let _ = context
+        .builder
+        .build_store(bitcast_indexed_target_register.into_pointer_value(), result);
+}
+
+fn controlled<'ctx>(
+    context: &Context<'ctx>,
+    intrinsic: FunctionValue<'ctx>,
+    control: BasicValueEnum<'ctx>,
+    qubit: BasicValueEnum<'ctx>,
+) {
+    calls::emit_void_call(context, intrinsic, &[control.into(), qubit.into()]);
+    let minus_one = basic_values::i64_to_i32(context, -1);
+    context.builder.build_call(
+        context.runtime_library.array_update_reference_count,
+        &[control.into(), minus_one],
+        "",
+    );
+}
+
+#[allow(clippy::too_many_lines)]
 pub(crate) fn emit<'ctx>(
     context: &Context<'ctx>,
     inst: &Instruction,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     registers: &HashMap<String, (BasicValueEnum<'ctx>, Option<u64>)>,
-) -> () {
+) {
     let intrinsics = &context.intrinsics;
     let find_qubit = |name| get_qubit(name, qubits);
     let ctl = |value| create_ctl_wrapper(context, value);
@@ -90,7 +162,7 @@ pub(crate) fn emit<'ctx>(
             context,
             intrinsics.r_x.expect("r_x must be defined in the template"),
             &[
-                basic_values::f64_to_f64(context, &inst.theta),
+                basic_values::f64_to_f64(context, inst.theta),
                 find_qubit(&inst.qubit).into(),
             ],
         ),
@@ -98,7 +170,7 @@ pub(crate) fn emit<'ctx>(
             context,
             intrinsics.r_y.expect("r_y must be defined in the template"),
             &[
-                basic_values::f64_to_f64(context, &inst.theta),
+                basic_values::f64_to_f64(context, inst.theta),
                 find_qubit(&inst.qubit).into(),
             ],
         ),
@@ -106,7 +178,7 @@ pub(crate) fn emit<'ctx>(
             context,
             intrinsics.r_z.expect("r_z must be defined in the template"),
             &[
-                basic_values::f64_to_f64(context, &inst.theta),
+                basic_values::f64_to_f64(context, inst.theta),
                 find_qubit(&inst.qubit).into(),
             ],
         ),
@@ -156,77 +228,5 @@ pub(crate) fn emit<'ctx>(
                 .expect("dumpmachine must be defined before use"),
             &[basic_values::i8_null_ptr(context)],
         ),
-    }
-
-    fn measure<'ctx>(
-        context: &Context<'ctx>,
-        qubit: &String,
-        target: &String,
-        qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-        registers: &HashMap<String, (BasicValueEnum<'ctx>, Option<u64>)>,
-    ) {
-        let find_qubit = |name| get_qubit(name, qubits);
-        let find_register = |name| get_register(name, registers);
-
-        // measure the qubit and save the result to a temporary value
-        let result = calls::emit_call_with_return(
-            context,
-            context
-                .intrinsics
-                .m
-                .expect("m must be defined in the template"),
-            &[find_qubit(qubit).into()],
-            "measurement",
-        );
-
-        // find the parent register and offset for the given target
-        let (register, index) = find_register(target);
-
-        // get the bitcast pointer to the target location
-        let bitcast_indexed_target_register = array1d::get_bitcast_result_pointer_array_element(
-            context,
-            index.unwrap(),
-            &register,
-            target,
-        );
-
-        // get the existing value from that location and decrement its ref count as its
-        // being replaced with the measurement.
-        let existing_value = context.builder.build_load(
-            bitcast_indexed_target_register.into_pointer_value(),
-            "existing_value",
-        );
-        let minus_one = basic_values::i64_to_i32(context, -1);
-        context.builder.build_call(
-            context.runtime_library.result_update_reference_count,
-            &[existing_value.into(), minus_one.into()],
-            "",
-        );
-
-        // increase the ref count of the new value and store it in the target register
-        let one = basic_values::i64_to_i32(context, 1);
-        context.builder.build_call(
-            context.runtime_library.result_update_reference_count,
-            &[result.into(), one.into()],
-            "",
-        );
-        let _ = context
-            .builder
-            .build_store(bitcast_indexed_target_register.into_pointer_value(), result);
-    }
-
-    fn controlled<'ctx>(
-        context: &Context<'ctx>,
-        intrinsic: FunctionValue<'ctx>,
-        control: BasicValueEnum<'ctx>,
-        qubit: BasicValueEnum<'ctx>,
-    ) {
-        calls::emit_void_call(context, intrinsic, &[control.into(), qubit.into()]);
-        let minus_one = basic_values::i64_to_i32(context, -1);
-        context.builder.build_call(
-            context.runtime_library.array_update_reference_count,
-            &[control.into(), minus_one],
-            "",
-        );
     }
 }
