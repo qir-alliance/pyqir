@@ -262,6 +262,11 @@ function Build-PyQIR([string]$project) {
             exec {
                 docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output python -m tox -e test
             }
+            
+            Write-BuildLog "docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output cargo test --release -vv -- --nocapture" "command"
+            exec {
+                docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output cargo test --release -vv -- --nocapture
+            }
         }
 
         Build-ContainerImage
@@ -283,8 +288,8 @@ function Build-PyQIR([string]$project) {
             exec { & $python -m tox -e pack }
         }
 
-        #Write-BuildLog "& cargo test --package qirlib --lib -vv -- --nocapture" "command"
-        #exec -workingDirectory $srcPath { & cargo test --package qirlib --lib -vv -- --nocapture }
+        Write-BuildLog "& cargo test --release -vv -- --nocapture" "command"
+        exec -workingDirectory $srcPath { & cargo test --release -vv -- --nocapture }
     }
 }
 
