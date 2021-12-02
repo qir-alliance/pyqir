@@ -1,15 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use log;
-use pyo3::exceptions::{PyOSError};
-use pyo3::prelude::*;
-use pyo3::types::PyDict;
-use pyo3::PyErr;
-use crate::interop::{
-    Instruction
-};
-
+use crate::{interop::Instruction, jit};
+use pyo3::{exceptions::PyOSError, prelude::*, types::PyDict};
 
 #[pymodule]
 fn pyqir_jit(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -19,14 +12,13 @@ fn pyqir_jit(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass]
-pub struct PyNonadaptiveJit {
-}
+pub struct PyNonadaptiveJit {}
 
 #[pymethods]
 impl PyNonadaptiveJit {
     #[new]
     fn new() -> Self {
-        PyNonadaptiveJit { }
+        PyNonadaptiveJit {}
     }
 
     fn controlled(
@@ -85,13 +77,9 @@ impl PyNonadaptiveJit {
         Ok(())
     }
 
-    fn eval(&self, file: String, pyobj: &PyAny) -> PyResult<()> {
-        let result = crate::jit::run_module_file(file);
-        if let Err(msg) = result {
-            let err: PyErr = PyOSError::new_err::<String>(msg);
-            return Err(err);
-        }
-        let gen_model = result.unwrap();
+    fn eval(&self, file: String, pyobj: &PyAny, entry_point: Option<&str>) -> PyResult<()> {
+        let gen_model = jit::run_module_file(file, entry_point).map_err(PyOSError::new_err)?;
+
         Python::with_gil(|py| -> PyResult<()> {
             for instruction in gen_model.instructions {
                 match instruction {

@@ -1,6 +1,7 @@
 # Copyright(c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+from typing import Optional
 from pyqir_jit import GateSet
 from .pyqir_jit import PyNonadaptiveJit
 
@@ -15,15 +16,13 @@ class NonadaptiveJit(object):
     def __init__(self):
         self.jit = PyNonadaptiveJit()
 
-    def eval(self, file_path: str, gateset: GateSet):
+    def eval(self, file_path: str, gateset: GateSet, entry_point: Optional[str] = None):
         """
         JIT compiles the circuit delegating quantum operations to the supplied
         GateSet
 
         :param file_path: file path of existing QIR in a ll or bc file
-        :type file_path: str
-
         :param gateset: python GateSet based object defining the operations
-        :type gateset: GateSet
+        :param entry_point: entry point name; required if QIR contains multiple entry points
         """
-        self.jit.eval(file_path, gateset)
+        self.jit.eval(file_path, gateset, entry_point)
