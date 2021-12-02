@@ -5,7 +5,7 @@ from pyqir_jit import NonadaptiveJit, GateLogger
 
 
 def test_bell_qir():
-    file = "tests/bell_qir_measure.ll"
+    file = "tests/bell_qir_measure.bc"
     jit = NonadaptiveJit()
     logger = GateLogger()
     jit.eval(file, logger)
@@ -15,4 +15,3 @@ def test_bell_qir():
     assert len(logger.instructions) == 2
     assert str(logger.instructions[0]).startswith("h")
     assert str(logger.instructions[1]).startswith("cx")
-

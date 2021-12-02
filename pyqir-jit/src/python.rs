@@ -79,9 +79,10 @@ impl PyNonadaptiveJit {
         Ok(())
     }
 
-    fn eval(&self, file: &str, pyobj: &PyAny) -> PyResult<()> {
+    fn eval(&self, file: &str, pyobj: &PyAny, entry_point: Option<&str>) -> PyResult<()> {
         let context_type = ContextType::File(Path::new(file));
-        let gen_model = jit::run_context_module(context_type).map_err(PyOSError::new_err)?;
+        let gen_model =
+            jit::run_context_module(context_type, entry_point).map_err(PyOSError::new_err)?;
 
         Python::with_gil(|py| -> PyResult<()> {
             for instruction in gen_model.instructions {
