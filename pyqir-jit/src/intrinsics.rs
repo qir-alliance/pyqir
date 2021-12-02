@@ -327,7 +327,6 @@ pub unsafe extern "C" fn __quantum__qis__dumpregister__body(
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
 pub unsafe fn get_qubit_id(ctls: *mut QirArray) -> QUBIT {
-    //let ctrl_qubit_ptr = QirRuntime::quantum_rt_array_get_element_ptr_1d(ctls, 0) as *mut u64;
     #[allow(clippy::cast_ptr_alignment)]
     let ctrl_qubit_ptr = QirRuntime::quantum_rt_array_get_element_ptr_1d(ctls, 0).cast::<i64>();
     let ctrl_qubit = *ctrl_qubit_ptr;
