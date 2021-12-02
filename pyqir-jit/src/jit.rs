@@ -115,8 +115,6 @@ mod tests {
     use crate::interop::{Instruction, Single};
     use qirlib::context::ContextType;
     use serial_test::serial;
-    use std::io::{self, Write};
-    use tempfile::NamedTempFile;
 
     const BELL_QIR_MEASURE: &[u8] = include_bytes!("../tests/bell_qir_measure.bc");
     const CUSTOM_ENTRY_POINT_NAME: &[u8] = include_bytes!("../tests/custom_entry_point_name.bc");
@@ -126,8 +124,8 @@ mod tests {
     #[serial]
     #[test]
     fn runs_bell_qir_measure() -> Result<(), String> {
-        let file = temp_bc_file(BELL_QIR_MEASURE).map_err(|e| e.to_string())?;
-        let model = run_context_module(ContextType::File(file.path()), None)?;
+        let context_type = ContextType::Memory(BELL_QIR_MEASURE);
+        let model = run_context_module(context_type, None)?;
         assert_eq!(model.instructions.len(), 2);
         Ok(())
     }
@@ -135,8 +133,8 @@ mod tests {
     #[serial]
     #[test]
     fn runs_single_entry_point_with_custom_name() -> Result<(), String> {
-        let file = temp_bc_file(CUSTOM_ENTRY_POINT_NAME).map_err(|e| e.to_string())?;
-        let model = run_context_module(ContextType::File(file.path()), None)?;
+        let context_type = ContextType::Memory(CUSTOM_ENTRY_POINT_NAME);
+        let model = run_context_module(context_type, None)?;
         assert_eq!(
             model.instructions,
             vec![Instruction::X(Single::new("0".to_owned()))]
@@ -147,8 +145,8 @@ mod tests {
     #[serial]
     #[test]
     fn runs_entry_point_by_name() -> Result<(), String> {
-        let file = temp_bc_file(CUSTOM_ENTRY_POINT_NAME).map_err(|e| e.to_string())?;
-        let model = run_context_module(ContextType::File(file.path()), Some("App__Foo"))?;
+        let context_type = ContextType::Memory(CUSTOM_ENTRY_POINT_NAME);
+        let model = run_context_module(context_type, Some("App__Foo"))?;
         assert_eq!(
             model.instructions,
             vec![Instruction::X(Single::new("0".to_owned()))]
@@ -159,8 +157,8 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_wrong_name_single_entry_point() -> Result<(), String> {
-        let file = temp_bc_file(CUSTOM_ENTRY_POINT_NAME).map_err(|e| e.to_string())?;
-        let result = run_context_module(ContextType::File(file.path()), Some("nonexistent"));
+        let context_type = ContextType::Memory(CUSTOM_ENTRY_POINT_NAME);
+        let result = run_context_module(context_type, Some("nonexistent"));
         assert_eq!(
             result.err(),
             Some("No matching entry point found.".to_owned())
@@ -171,8 +169,8 @@ mod tests {
     #[serial]
     #[test]
     fn fails_without_name_if_multiple_entry_points() -> Result<(), String> {
-        let file = temp_bc_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
-        let result = run_context_module(ContextType::File(file.path()), None);
+        let context_type = ContextType::Memory(MULTIPLE_ENTRY_POINTS);
+        let result = run_context_module(context_type, None);
         assert_eq!(
             result.err(),
             Some("Multiple matching entry points found.".to_owned())
@@ -183,8 +181,8 @@ mod tests {
     #[serial]
     #[test]
     fn runs_first_entry_point_by_name() -> Result<(), String> {
-        let file = temp_bc_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
-        let model = run_context_module(ContextType::File(file.path()), Some("App__Foo"))?;
+        let context_type = ContextType::Memory(MULTIPLE_ENTRY_POINTS);
+        let model = run_context_module(context_type, Some("App__Foo"))?;
         assert_eq!(
             model.instructions,
             vec![Instruction::X(Single::new("0".to_owned()))]
@@ -195,8 +193,8 @@ mod tests {
     #[serial]
     #[test]
     fn runs_second_entry_point_by_name() -> Result<(), String> {
-        let file = temp_bc_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
-        let model = run_context_module(ContextType::File(file.path()), Some("App__Bar"))?;
+        let context_type = ContextType::Memory(MULTIPLE_ENTRY_POINTS);
+        let model = run_context_module(context_type, Some("App__Bar"))?;
         assert_eq!(
             model.instructions,
             vec![Instruction::H(Single::new("0".to_owned()))]
@@ -207,8 +205,8 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_wrong_name_multiple_entry_points() -> Result<(), String> {
-        let file = temp_bc_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
-        let result = run_context_module(ContextType::File(file.path()), Some("nonexistent"));
+        let context_type = ContextType::Memory(MULTIPLE_ENTRY_POINTS);
+        let result = run_context_module(context_type, Some("nonexistent"));
         assert_eq!(
             result.err(),
             Some("No matching entry point found.".to_owned())
@@ -219,8 +217,8 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_entry_point_has_params() -> Result<(), String> {
-        let file = temp_bc_file(ENTRY_POINT_TYPES).map_err(|e| e.to_string())?;
-        let result = run_context_module(ContextType::File(file.path()), Some("App__IntParam"));
+        let context_type = ContextType::Memory(ENTRY_POINT_TYPES);
+        let result = run_context_module(context_type, Some("App__IntParam"));
         assert_eq!(
             result.err(),
             Some("Entry point has parameters or a non-void return type.".to_owned())
@@ -231,18 +229,12 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_entry_point_has_return_value() -> Result<(), String> {
-        let file = temp_bc_file(ENTRY_POINT_TYPES).map_err(|e| e.to_string())?;
-        let result = run_context_module(ContextType::File(file.path()), Some("App__IntReturn"));
+        let context_type = ContextType::Memory(ENTRY_POINT_TYPES);
+        let result = run_context_module(context_type, Some("App__IntReturn"));
         assert_eq!(
             result.err(),
             Some("Entry point has parameters or a non-void return type.".to_owned())
         );
         Ok(())
-    }
-
-    fn temp_bc_file(buf: &[u8]) -> io::Result<NamedTempFile> {
-        let mut file = tempfile::Builder::new().suffix(".bc").tempfile()?;
-        file.write_all(buf)?;
-        Ok(file)
     }
 }

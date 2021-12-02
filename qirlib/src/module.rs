@@ -12,7 +12,10 @@ pub(crate) fn load_module<'ctx>(
     context_type: ContextType<'ctx>,
 ) -> Result<Module<'ctx>, String> {
     match context_type {
-        ContextType::Template(name) => load_module_from_bitcode_template(&context, name),
+        ContextType::Template(name) => {
+            let template = include_bytes!("module.bc");
+            load_module_from_bytes(template, name, context)
+        }
         ContextType::File(path) => {
             let ext = path.extension().and_then(std::ffi::OsStr::to_str);
             match ext {
@@ -21,15 +24,16 @@ pub(crate) fn load_module<'ctx>(
                 _ => panic!("Unsupported module extension {:?}", ext),
             }
         }
+        ContextType::Memory(bytes) => load_module_from_bytes(bytes, "Memory", context),
     }
 }
 
-pub(crate) fn load_module_from_bitcode_template<'ctx>(
+fn load_module_from_bytes<'ctx>(
+    bytes: &[u8],
+    name: &str,
     context: &'ctx inkwell::context::Context,
-    name: &'ctx str,
 ) -> Result<Module<'ctx>, String> {
-    let module_contents = include_bytes!("module.bc");
-    let buffer = MemoryBuffer::create_from_memory_range_copy(module_contents, name);
+    let buffer = MemoryBuffer::create_from_memory_range_copy(bytes, name);
     Module::parse_bitcode_from_buffer(&buffer, context).map_err(|e| e.to_string())
 }
 
@@ -44,14 +48,8 @@ pub(crate) fn load_module_from_ir_file<'ctx, P: AsRef<Path>>(
     path: P,
     context: &'ctx inkwell::context::Context,
 ) -> Result<Module<'ctx>, String> {
-    let memory_buffer = load_memory_buffer_from_ir_file(path)?;
+    let buffer = MemoryBuffer::create_from_file(path.as_ref()).map_err(|e| e.to_string())?;
     context
-        .create_module_from_ir(memory_buffer)
+        .create_module_from_ir(buffer)
         .map_err(|e| e.to_string())
-}
-
-pub(crate) fn load_memory_buffer_from_ir_file<P: AsRef<Path>>(
-    path: P,
-) -> Result<MemoryBuffer, String> {
-    MemoryBuffer::create_from_file(path.as_ref()).map_err(|e| e.to_string())
 }
