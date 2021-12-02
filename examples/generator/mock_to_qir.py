@@ -3,7 +3,6 @@
 # Copyright(c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-import sys
 from antlr4 import *
 from argparse import *
 from mock_language.MockLanguageLexer import MockLanguageLexer

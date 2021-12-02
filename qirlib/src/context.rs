@@ -10,23 +10,26 @@ use crate::{
     types::Types,
 };
 
-pub struct BareContext<'ctx> {
+pub struct Bare<'ctx> {
     pub context: &'ctx inkwell::context::Context,
     pub module: inkwell::module::Module<'ctx>,
     pub builder: inkwell::builder::Builder<'ctx>,
 }
 
-impl<'ctx> BareContext<'ctx> {
+impl<'ctx> Bare<'ctx> {
+    /// # Errors
+    ///
+    /// Will return `Err` if module fails to load
     pub fn new(
         context: &'ctx inkwell::context::Context,
-        context_type: ContextType<'ctx>,
+        module_type: ModuleType<'ctx>,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
-        let module = module::load_module(context, context_type)?;
-        Ok(BareContext {
-            builder,
-            module,
+        let module = module::load_module(context, module_type)?;
+        Ok(Bare {
             context,
+            module,
+            builder,
         })
     }
 }

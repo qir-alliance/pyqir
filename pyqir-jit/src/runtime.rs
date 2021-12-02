@@ -21,7 +21,7 @@ impl<'ctx> Simulator {
             scope: crate::gates::GateScope::new(),
         };
 
-        Simulator.bind(module, ee);
+        Simulator::bind(module, ee);
 
         simulator
     }

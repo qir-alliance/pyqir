@@ -5,15 +5,15 @@ use inkwell::{memory_buffer::MemoryBuffer, module::Module};
 
 use std::path::Path;
 
-use crate::context::ContextType;
+use crate::context::ModuleType;
 
 pub(crate) fn load_module<'ctx>(
     context: &'ctx inkwell::context::Context,
-    context_type: ContextType<'ctx>,
+    context_type: ModuleType<'ctx>,
 ) -> Result<Module<'ctx>, String> {
     let module = match context_type {
-        ContextType::Template(name) => load_module_from_bitcode_template(&context, &name[..])?,
-        ContextType::File(file_name) => {
+        ModuleType::Template(name) => load_module_from_bitcode_template(context, &name[..])?,
+        ModuleType::File(file_name) => {
             let file_path = Path::new(&file_name[..]);
             let ext = file_path.extension().and_then(std::ffi::OsStr::to_str);
             let module = match ext {
@@ -36,21 +36,25 @@ pub(crate) fn load_module_from_bitcode_template<'ctx>(
     Module::parse_bitcode_from_buffer(&buffer, context).map_err(|e| e.to_string())
 }
 
-pub(crate) fn load_module_from_bitcode_file<'ctx, P: AsRef<Path>>(
-    path: P,
-    context: &'ctx inkwell::context::Context,
-) -> Result<Module<'ctx>, String> {
+pub(crate) fn load_module_from_bitcode_file(
+    path: impl AsRef<Path>,
+    context: &'_ inkwell::context::Context,
+) -> Result<Module<'_>, String> {
     Module::parse_bitcode_from_path(path, context).map_err(|e| e.to_string())
 }
 
-pub(crate) fn load_module_from_ir_file<'ctx, P: AsRef<Path>>(
-    path: P,
-    context: &'ctx inkwell::context::Context,
-) -> Result<Module<'ctx>, String> {
+pub(crate) fn load_module_from_ir_file(
+    path: impl AsRef<Path>,
+    context: &'_ inkwell::context::Context,
+) -> Result<Module<'_>, String> {
     let memory_buffer = load_memory_buffer_from_ir_file(path)?;
-    context.create_module_from_ir(memory_buffer).map_err(|e| e.to_string())
+    context
+        .create_module_from_ir(memory_buffer)
+        .map_err(|e| e.to_string())
 }
 
-pub(crate) fn load_memory_buffer_from_ir_file<P: AsRef<Path>>(path: P) -> Result<MemoryBuffer, String> {
+pub(crate) fn load_memory_buffer_from_ir_file(
+    path: impl AsRef<Path>,
+) -> Result<MemoryBuffer, String> {
     MemoryBuffer::create_from_file(path.as_ref()).map_err(|e| e.to_string())
 }

@@ -4,7 +4,6 @@
 use crate::{interop::Instruction, jit};
 use pyo3::{exceptions::PyOSError, prelude::*, types::PyDict};
 
-
 #[pymodule]
 fn pyqir_jit(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyNonadaptiveJit>()?;

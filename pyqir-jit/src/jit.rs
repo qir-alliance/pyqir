@@ -13,7 +13,7 @@ use inkwell::{
 use microsoft_quantum_qir_runtime_sys::runtime::BasicRuntimeDriver;
 
 use qirlib::{
-    context::{BareContext, ContextType},
+    context::{Bare, ModuleType},
     passes::run_basic_passes_on,
 };
 use std::path::Path;
@@ -32,19 +32,17 @@ pub fn run_module_file(
         .expect("Did not find a valid Unicode path string")
         .to_owned();
 
-    let context_type = ContextType::File(&path_str);
-    let context = BareContext::new(&ctx, context_type)?;
+    let module_type = ModuleType::File(&path_str);
+    let context = Bare::new(&ctx, module_type)?;
     run_module(&context.module, entry_point)
 }
 
 /// # Errors
 ///
 /// Will return `Err` if LLVM native target fails to initialize
-pub fn run_module(
-    module: &Module<'_>,
-    entry_point: Option<&str>,
-) -> Result<SemanticModel, String> {
-    Target::initialize_native(&InitializationConfig::default()).unwrap();
+pub fn run_module(module: &Module<'_>, entry_point: Option<&str>) -> Result<SemanticModel, String> {
+    Target::initialize_native(&InitializationConfig::default())
+        .expect("Failed to initialize native target.");
 
     let default_triple = TargetMachine::get_default_triple();
     let target = Target::from_triple(&default_triple).expect("Unable to create target machine");
@@ -68,13 +66,13 @@ pub fn run_module(
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::None)
         .expect("Could not create JIT Engine");
-    let simulator = Simulator::new(module, &execution_engine);
+    let _simulator = Simulator::new(module, &execution_engine);
 
     unsafe {
         run_entry_point(&execution_engine, entry_point)?;
     }
 
-    Ok(simulator.get_model())
+    Ok(Simulator::get_model())
 }
 
 unsafe fn run_entry_point(
@@ -99,7 +97,7 @@ fn choose_entry_point<'ctx>(
 
     let entry_point = entry_points
         .next()
-        .ok_or("No matching entry point found.".to_owned())?;
+        .ok_or_else(|| "No matching entry point found.".to_owned())?;
 
     if entry_points.next().is_some() {
         Err("Multiple matching entry points found.".to_owned())
@@ -108,6 +106,7 @@ fn choose_entry_point<'ctx>(
     }
 }
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn is_entry_point(function: &FunctionValue) -> bool {
     function
         .get_string_attribute(AttributeLoc::Function, "EntryPoint")
@@ -122,7 +121,7 @@ fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = Functio
 
         fn next(&mut self) -> Option<Self::Item> {
             let function = self.0;
-            self.0 = function.and_then(|f| f.get_next_function());
+            self.0 = function.and_then(inkwell::values::FunctionValue::get_next_function);
             function
         }
     }
