@@ -233,17 +233,9 @@ function Invoke-LoggedCommand {
     # errorMessage pulls default values from psake. We
     # only want to pass the param if we want to override.
     # all other parameters have safe defaults.
-    if ($errorMessage) {
-        exec $cmd `
-            -errorMessage $errorMessage `
-            -maxRetries $maxRetries `
-            -retryTriggerErrorPattern $retryTriggerErrorPattern `
-            -workingDirectory $workingDirectory
-    }
-    else {
-        exec $cmd `
-            -maxRetries $maxRetries `
-            -retryTriggerErrorPattern $retryTriggerErrorPattern `
-            -workingDirectory $workingDirectory
-    }
+    $extraArgs = $errorMessage ? @{ "errorMessage" = $errorMessage } : @{};
+    exec $cmd @extraArgs `
+        -maxRetries $maxRetries `
+        -retryTriggerErrorPattern $retryTriggerErrorPattern `
+        -workingDirectory $workingDirectory
 }
