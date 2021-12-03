@@ -50,8 +50,7 @@ mod tests {
     #[test]
     fn constants_can_be_loaded() {
         let ctx = inkwell::context::Context::create();
-        let name = String::from("temp");
-        let context = Context::new(&ctx, ContextType::Template(&name)).unwrap();
+        let context = Context::new(&ctx, ContextType::Template).unwrap();
         let types = Types::new(&context.context, &context.module);
         let _ = Constants::new(&context.module, &types);
     }

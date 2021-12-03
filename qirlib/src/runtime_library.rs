@@ -106,8 +106,7 @@ mod tests {
     #[test]
     fn runtime_library_can_be_loaded() {
         let ctx = inkwell::context::Context::create();
-        let name = String::from("temp");
-        let context = Context::new(&ctx, ContextType::Template(&name)).unwrap();
+        let context = Context::new(&ctx, ContextType::Template).unwrap();
         let _ = RuntimeLibrary::new(&context.module);
     }
 }

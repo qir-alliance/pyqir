@@ -12,9 +12,9 @@ pub(crate) fn load_module<'ctx>(
     context_type: ContextType<'ctx>,
 ) -> Result<Module<'ctx>, String> {
     match context_type {
-        ContextType::Template(name) => {
+        ContextType::Template => {
             let template = include_bytes!("module.bc");
-            load_module_from_bytes(template, name, context)
+            load_module_from_bytes(template, "template", context)
         }
         ContextType::File(path) => {
             let ext = path.extension().and_then(std::ffi::OsStr::to_str);
@@ -24,7 +24,7 @@ pub(crate) fn load_module<'ctx>(
                 _ => panic!("Unsupported module extension {:?}", ext),
             }
         }
-        ContextType::Memory(bytes) => load_module_from_bytes(bytes, "Memory", context),
+        ContextType::Memory(bytes) => load_module_from_bytes(bytes, "memory", context),
     }
 }
 

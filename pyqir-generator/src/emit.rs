@@ -40,8 +40,7 @@ pub fn populate_context<'a>(
     ctx: &'a inkwell::context::Context,
     model: &'a SemanticModel,
 ) -> Result<Context<'a>, String> {
-    let context_type = ContextType::Template(&model.name);
-    match Context::new(&ctx, context_type) {
+    match Context::new(&ctx, ContextType::Template) {
         Err(err) => {
             let message = err.to_string();
             return Err(message);

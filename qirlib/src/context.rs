@@ -44,7 +44,7 @@ pub struct Context<'ctx> {
 }
 
 pub enum ContextType<'ctx> {
-    Template(&'ctx str),
+    Template,
     File(&'ctx Path),
     Memory(&'ctx [u8]),
 }
@@ -146,8 +146,7 @@ mod tests {
         let file_path_string = file_path.display().to_string();
 
         let ctx = inkwell::context::Context::create();
-        let name = String::from("temp");
-        let context = Context::new(&ctx, ContextType::Template(&name)).unwrap();
+        let context = Context::new(&ctx, ContextType::Template).unwrap();
         context.emit_bitcode(file_path_string.as_str());
         let mut emitted_bitcode_file =
             File::open(file_path_string.as_str()).expect("Could not open emitted bitcode file");
