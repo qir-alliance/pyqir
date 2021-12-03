@@ -29,12 +29,6 @@ impl PyQIR {
         }
     }
 
-    #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unused_self)]
-    fn add_measurement(&mut self, qubit: String, target: String) {
-        log::info!("measure {} => {}", qubit, target);
-    }
-
     fn cx(&mut self, control: String, target: String) {
         log::info!("cx {} => {}", control, target);
         let controlled = Controlled::new(control, target);
