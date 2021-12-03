@@ -198,12 +198,6 @@ impl PyQIR {
 
     #[allow(clippy::unused_self)]
     fn enable_logging(&self) -> PyResult<()> {
-        match env_logger::try_init() {
-            Err(msg) => {
-                let err: PyErr = PyOSError::new_err::<String>(format!("{}", msg));
-                Err(err)
-            }
-            Ok(_) => Ok(()),
-        }
+        env_logger::try_init().map_err(|e| PyOSError::new_err(e.to_string()))
     }
 }
