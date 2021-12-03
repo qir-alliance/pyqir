@@ -115,7 +115,6 @@ function Get-LlvmSubmoduleSha {
 }
 
 function Get-LlvmSubmoduleStatus {
-    Write-BuildLog "Detected submodules: $(git submodule status --cached)"
     $statusResult = exec -workingDirectory (Get-RepoRoot) { git submodule status --cached }
     # on all platforms, the status uses '/' in the module path.
     $status = $statusResult.Split([Environment]::NewLine) | Where-Object { $_.Contains("external/llvm-project") } | Select-Object -First 1
@@ -125,11 +124,9 @@ function Get-LlvmSubmoduleStatus {
 function Test-LlvmSubmoduleInitialized {
     $status = Get-LlvmSubmoduleStatus
     if ($status.Substring(0, 1) -eq "-") {
-        Write-BuildLog "LLVM Submodule Uninitialized"
         return $false
     }
     else {
-        Write-BuildLog "LLVM Submodule Initialized"
         return $true
     }
 }
@@ -210,5 +207,43 @@ function Resolve-InstallationDirectory {
 
         $packagePath = Get-InstallationDirectory $packageName
         return $packagePath
+    }
+}
+
+# Executes the supplied script block using psake's exec
+# Warning: Do not use this command on anything that contains
+#          sensitive information!
+function Invoke-LoggedCommand {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [scriptblock]$cmd,
+
+        [string]$errorMessage = $null,
+
+        [int]$maxRetries = 0,
+
+        [string]$retryTriggerErrorPattern = $null,
+
+        [Alias("wd")]
+        [string]$workingDirectory = $null
+    )
+    Write-BuildLog "$cmd".Trim() "command"
+
+    # errorMessage pulls default values from psake. We
+    # only want to pass the param if we want to override.
+    # all other parameters have safe defaults.
+    if ($errorMessage) {
+        exec $cmd `
+            -errorMessage $errorMessage `
+            -maxRetries $maxRetries `
+            -retryTriggerErrorPattern $retryTriggerErrorPattern `
+            -workingDirectory $workingDirectory
+    }
+    else {
+        exec $cmd `
+            -maxRetries $maxRetries `
+            -retryTriggerErrorPattern $retryTriggerErrorPattern `
+            -workingDirectory $workingDirectory
     }
 }
