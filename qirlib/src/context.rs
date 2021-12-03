@@ -10,30 +10,6 @@ use crate::{
     types::Types,
 };
 
-pub struct Bare<'ctx> {
-    pub context: &'ctx inkwell::context::Context,
-    pub module: inkwell::module::Module<'ctx>,
-    pub builder: inkwell::builder::Builder<'ctx>,
-}
-
-impl<'ctx> Bare<'ctx> {
-    /// # Errors
-    ///
-    /// Will return `Err` if module fails to load
-    pub fn new(
-        context: &'ctx inkwell::context::Context,
-        module_source: ModuleSource<'ctx>,
-    ) -> Result<Self, String> {
-        let builder = context.create_builder();
-        let module = module::load_module(context, module_source)?;
-        Ok(Bare {
-            context,
-            module,
-            builder,
-        })
-    }
-}
-
 pub struct Context<'ctx> {
     pub context: &'ctx inkwell::context::Context,
     pub module: inkwell::module::Module<'ctx>,
@@ -62,7 +38,7 @@ impl<'ctx> Context<'ctx> {
         module_source: ModuleSource<'ctx>,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
-        let module = module::load_module(context, module_source)?;
+        let module = module::load(context, module_source)?;
         let execution_engine = module
             .create_jit_execution_engine(OptimizationLevel::None)
             .expect("Could not create JIT Engine");
@@ -93,7 +69,7 @@ impl<'ctx> Context<'ctx> {
         module_source: ModuleSource<'ctx>,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
-        let module = module::load_module(context, module_source)?;
+        let module = module::load(context, module_source)?;
         let types = Types::new(&context, &module);
         let runtime_library = RuntimeLibrary::new(&module);
         let intrinsics = Intrinsics::new(&module);

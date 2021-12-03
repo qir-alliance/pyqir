@@ -12,10 +12,7 @@ use inkwell::{
 };
 use microsoft_quantum_qir_runtime_sys::runtime::BasicRuntimeDriver;
 
-use qirlib::{
-    context::{Bare, ModuleSource},
-    passes::run_basic_passes_on,
-};
+use qirlib::{context::ModuleSource, module, passes::run_basic_passes_on};
 use std::path::Path;
 
 /// # Panics
@@ -44,8 +41,8 @@ pub fn run_module_file(
         .to_owned();
 
     let module_source = ModuleSource::File(&path_str);
-    let context = Bare::new(&ctx, module_source)?;
-    run_module(&context.module, entry_point)
+    let module = module::load(&ctx, module_source)?;
+    run_module(&module, entry_point)
 }
 
 /// # Errors

@@ -7,7 +7,12 @@ use std::path::Path;
 
 use crate::context::ModuleSource;
 
-pub(crate) fn load_module<'ctx>(
+/// # Errors
+///
+/// Will return `Err` if
+/// - module fails to load
+/// - file path has an unknown extension
+pub fn load<'ctx>(
     context: &'ctx inkwell::context::Context,
     module_source: ModuleSource<'ctx>,
 ) -> Result<Module<'ctx>, String> {
@@ -19,7 +24,7 @@ pub(crate) fn load_module<'ctx>(
             let module = match ext {
                 Some("ll") => load_module_from_ir_file(file_path, context)?,
                 Some("bc") => load_module_from_bitcode_file(file_path, context)?,
-                _ => panic!("Unsupported module extension {:?}", ext),
+                _ => return Err(format!("Unsupported module extension {:?}", ext)),
             };
             module
         }
@@ -27,7 +32,7 @@ pub(crate) fn load_module<'ctx>(
     Ok(module)
 }
 
-pub(crate) fn load_module_from_bitcode_template<'ctx>(
+fn load_module_from_bitcode_template<'ctx>(
     context: &'ctx inkwell::context::Context,
     name: &'ctx str,
 ) -> Result<Module<'ctx>, String> {
@@ -36,14 +41,14 @@ pub(crate) fn load_module_from_bitcode_template<'ctx>(
     Module::parse_bitcode_from_buffer(&buffer, context).map_err(|e| e.to_string())
 }
 
-pub(crate) fn load_module_from_bitcode_file(
+fn load_module_from_bitcode_file(
     path: impl AsRef<Path>,
     context: &inkwell::context::Context,
 ) -> Result<Module, String> {
     Module::parse_bitcode_from_path(path, context).map_err(|e| e.to_string())
 }
 
-pub(crate) fn load_module_from_ir_file(
+fn load_module_from_ir_file(
     path: impl AsRef<Path>,
     context: &inkwell::context::Context,
 ) -> Result<Module, String> {
@@ -53,8 +58,6 @@ pub(crate) fn load_module_from_ir_file(
         .map_err(|e| e.to_string())
 }
 
-pub(crate) fn load_memory_buffer_from_ir_file(
-    path: impl AsRef<Path>,
-) -> Result<MemoryBuffer, String> {
+fn load_memory_buffer_from_ir_file(path: impl AsRef<Path>) -> Result<MemoryBuffer, String> {
     MemoryBuffer::create_from_file(path.as_ref()).map_err(|e| e.to_string())
 }
