@@ -8,7 +8,6 @@ use crate::interop::{
 use log;
 use pyo3::exceptions::PyOSError;
 use pyo3::prelude::*;
-use pyo3::PyErr;
 
 #[pymodule]
 fn pyqir_generator(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -169,35 +168,19 @@ impl PyQIR {
     }
 
     fn write(&self, file_name: &str) -> PyResult<()> {
-        if let Err(msg) = write_model_to_file(&self.model, file_name) {
-            let err: PyErr = PyOSError::new_err::<String>(msg);
-            return Err(err);
-        }
-        Ok(())
+        write_model_to_file(&self.model, file_name).map_err(PyOSError::new_err::<String>)
     }
 
     fn get_ir_string(&self) -> PyResult<String> {
-        match get_ir_string(&self.model) {
-            Err(msg) => {
-                let err: PyErr = PyOSError::new_err::<String>(msg);
-                Err(err)
-            }
-            Ok(ir) => Ok(ir),
-        }
+        get_ir_string(&self.model).map_err(PyOSError::new_err::<String>)
     }
 
     fn get_bitcode_base64_string(&self) -> PyResult<String> {
-        match get_bitcode_base64_string(&self.model) {
-            Err(msg) => {
-                let err: PyErr = PyOSError::new_err::<String>(msg);
-                Err(err)
-            }
-            Ok(ir) => Ok(ir),
-        }
+        get_bitcode_base64_string(&self.model).map_err(PyOSError::new_err::<String>)
     }
 
     #[allow(clippy::unused_self)]
     fn enable_logging(&self) -> PyResult<()> {
-        env_logger::try_init().map_err(|e| PyOSError::new_err(e.to_string()))
+        env_logger::try_init().map_err(|e| PyOSError::new_err::<String>(e.to_string()))
     }
 }
