@@ -13,7 +13,7 @@ use inkwell::{
 use microsoft_quantum_qir_runtime_sys::runtime::BasicRuntimeDriver;
 
 use qirlib::{
-    context::{Bare, ModuleType},
+    context::{Bare, ModuleSource},
     passes::run_basic_passes_on,
 };
 use std::path::Path;
@@ -43,8 +43,8 @@ pub fn run_module_file(
         .expect("Did not find a valid Unicode path string")
         .to_owned();
 
-    let module_type = ModuleType::File(&path_str);
-    let context = Bare::new(&ctx, module_type)?;
+    let module_source = ModuleSource::File(&path_str);
+    let context = Bare::new(&ctx, module_source)?;
     run_module(&context.module, entry_point)
 }
 

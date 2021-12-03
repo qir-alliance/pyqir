@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 
 use inkwell::values::BasicValueEnum;
-use qirlib::context::{Context, ModuleType};
+use qirlib::context::{Context, ModuleSource};
 
 use crate::{interop::SemanticModel, qir};
 use qirlib::passes::run_basic_passes_on;
@@ -53,8 +53,8 @@ pub fn populate_context<'a>(
     ctx: &'a inkwell::context::Context,
     model: &'a SemanticModel,
 ) -> Result<Context<'a>, String> {
-    let context_type = ModuleType::Template(&model.name);
-    match Context::new(ctx, context_type) {
+    let module_source = ModuleSource::Template(&model.name);
+    match Context::new(ctx, module_source) {
         Err(err) => Err(err),
         Ok(context) => {
             build_entry_function(&context, model)?;

@@ -22,10 +22,10 @@ impl<'ctx> Bare<'ctx> {
     /// Will return `Err` if module fails to load
     pub fn new(
         context: &'ctx inkwell::context::Context,
-        module_type: ModuleType<'ctx>,
+        module_source: ModuleSource<'ctx>,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
-        let module = module::load_module(context, module_type)?;
+        let module = module::load_module(context, module_source)?;
         Ok(Bare {
             context,
             module,
@@ -47,7 +47,7 @@ pub struct Context<'ctx> {
 }
 
 #[derive(Clone, Copy)]
-pub enum ModuleType<'ctx> {
+pub enum ModuleSource<'ctx> {
     Template(&'ctx String),
     File(&'ctx String),
 }
@@ -59,10 +59,10 @@ impl<'ctx> Context<'ctx> {
     /// Will return `Err` if module fails to load or LLVM native target fails to initialize
     pub fn new(
         context: &'ctx inkwell::context::Context,
-        context_type: ModuleType<'ctx>,
+        module_source: ModuleSource<'ctx>,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
-        let module = module::load_module(context, context_type)?;
+        let module = module::load_module(context, module_source)?;
         let execution_engine = module
             .create_jit_execution_engine(OptimizationLevel::None)
             .expect("Could not create JIT Engine");
@@ -90,10 +90,10 @@ impl<'ctx> Context<'ctx> {
     /// Will return `Err` if module fails to load
     pub fn new(
         context: &'ctx inkwell::context::Context,
-        context_type: ModuleType<'ctx>,
+        module_source: ModuleSource<'ctx>,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
-        let module = module::load_module(context, context_type)?;
+        let module = module::load_module(context, module_source)?;
         let types = Types::new(&context, &module);
         let runtime_library = RuntimeLibrary::new(&module);
         let intrinsics = Intrinsics::new(&module);
@@ -141,7 +141,7 @@ impl<'ctx> Context<'ctx> {
 
 #[cfg(test)]
 mod tests {
-    use crate::context::{Context, ModuleType};
+    use crate::context::{Context, ModuleSource};
     use std::fs::File;
     use std::io::prelude::*;
 
@@ -157,7 +157,7 @@ mod tests {
 
         let ctx = inkwell::context::Context::create();
         let name = String::from("temp");
-        let context = Context::new(&ctx, ModuleType::Template(&name)).unwrap();
+        let context = Context::new(&ctx, ModuleSource::Template(&name)).unwrap();
         context.emit_bitcode(file_path_string.as_str());
         let mut emitted_bitcode_file =
             File::open(file_path_string.as_str()).expect("Could not open emitted bitcode file");

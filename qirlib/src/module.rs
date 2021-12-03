@@ -5,15 +5,15 @@ use inkwell::{memory_buffer::MemoryBuffer, module::Module};
 
 use std::path::Path;
 
-use crate::context::ModuleType;
+use crate::context::ModuleSource;
 
 pub(crate) fn load_module<'ctx>(
     context: &'ctx inkwell::context::Context,
-    context_type: ModuleType<'ctx>,
+    module_source: ModuleSource<'ctx>,
 ) -> Result<Module<'ctx>, String> {
-    let module = match context_type {
-        ModuleType::Template(name) => load_module_from_bitcode_template(context, &name[..])?,
-        ModuleType::File(file_name) => {
+    let module = match module_source {
+        ModuleSource::Template(name) => load_module_from_bitcode_template(context, &name[..])?,
+        ModuleSource::File(file_name) => {
             let file_path = Path::new(&file_name[..]);
             let ext = file_path.extension().and_then(std::ffi::OsStr::to_str);
             let module = match ext {
