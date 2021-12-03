@@ -37,7 +37,8 @@ Task cargo-fmt {
 
 Task cargo-clippy -Depends init {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
-        cargo clippy --workspace --all-targets --all-features -- -D warnings 
+        $extraArgs = (Test-CI) ? @("--", "-D", "warnings") : @()
+        cargo clippy --workspace --all-targets --all-features @extraArgs
     }
 }
 

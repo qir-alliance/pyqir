@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#![deny(clippy::all, clippy::pedantic)]
+#![warn(clippy::all, clippy::pedantic)]
 
 pub mod constants;
 pub mod context;
