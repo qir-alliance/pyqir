@@ -36,7 +36,7 @@ pub unsafe extern "C" fn __quantum__qis__h__body(qubit: QUBIT) {
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-/// 
+///
 /// # Panics
 ///
 /// Will panic as it is not yet implemented.
@@ -72,7 +72,7 @@ pub unsafe extern "C" fn __quantum__qis__measure__body(
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-/// 
+///
 /// # Panics
 ///
 /// Will panic if an unknown Pauli value is supplied.
@@ -93,7 +93,7 @@ pub unsafe extern "C" fn __quantum__qis__r__body(pauli: PauliId, theta: f64, qub
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-/// 
+///
 /// # Panics
 ///
 /// Will panic as it is not yet implemented.
@@ -109,7 +109,7 @@ pub unsafe extern "C" fn __quantum__qis__r__adj(pauli: PauliId, theta: f64, qubi
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-/// 
+///
 /// # Panics
 ///
 /// Will panic as it is not yet implemented.
@@ -123,7 +123,7 @@ pub unsafe extern "C" fn __quantum__qis__r__ctl(ctls: *mut QirArray, qubit: *mut
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-/// 
+///
 /// # Panics
 ///
 /// Will panic as it is not yet implemented.
@@ -159,7 +159,7 @@ pub unsafe extern "C" fn __quantum__qis__s__adj(qubit: QUBIT) {
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-/// 
+///
 /// # Panics
 ///
 /// Will panic as it is not yet implemented.
@@ -173,7 +173,7 @@ pub unsafe extern "C" fn __quantum__qis__s__ctl(ctls: *mut QirArray, qubit: QUBI
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-/// 
+///
 /// # Panics
 ///
 /// Will panic as it is not yet implemented.
@@ -209,7 +209,7 @@ pub unsafe extern "C" fn __quantum__qis__t__adj(qubit: QUBIT) {
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-/// 
+///
 /// # Panics
 ///
 /// Will panic as it is not yet implemented.
@@ -223,7 +223,7 @@ pub unsafe extern "C" fn __quantum__qis__t__ctl(ctls: *mut QirArray, qubit: QUBI
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-/// 
+///
 /// # Panics
 ///
 /// Will panic as it is not yet implemented.
@@ -271,7 +271,7 @@ pub unsafe extern "C" fn __quantum__qis__y__body(qubit: QUBIT) {
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-/// 
+///
 /// # Panics
 ///
 /// Will panic as it is not yet implemented.
@@ -320,7 +320,7 @@ pub unsafe extern "C" fn __quantum__qis__dumpmachine__body(location: *mut u8) {
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-/// 
+///
 /// # Panics
 ///
 /// Will panic as it is not yet implemented.
