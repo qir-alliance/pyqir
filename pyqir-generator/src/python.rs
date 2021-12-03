@@ -1,21 +1,18 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-
-use log;
-use pyo3::exceptions::PyOSError;
-use pyo3::prelude::*;
-use pyo3::PyErr;
-
 use crate::emit::{get_bitcode_base64_string, get_ir_string, write_model_to_file};
 use crate::interop::{
     ClassicalRegister, Controlled, Instruction, Measured, QuantumRegister, Rotated, SemanticModel,
     Single,
 };
+use log;
+use pyo3::exceptions::PyOSError;
+use pyo3::prelude::*;
+use pyo3::PyErr;
 
 #[pymodule]
 fn pyqir_generator(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyQIR>()?;
-
     Ok(())
 }
 
@@ -39,7 +36,6 @@ impl PyQIR {
         log::info!("measure {} => {}", qubit, target);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn cx(&mut self, control: String, target: String) {
         log::info!("cx {} => {}", control, target);
         let controlled = Controlled::new(control, target);
@@ -47,7 +43,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn cz(&mut self, control: String, target: String) {
         log::info!("cz {} => {}", control, target);
         let controlled = Controlled::new(control, target);
@@ -55,7 +50,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn h(&mut self, qubit: String) {
         log::info!("h => {}", qubit);
         let single = Single::new(qubit);
@@ -63,7 +57,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn m(&mut self, qubit: String, target: String) {
         log::info!("m {}[{}]", qubit, target);
         let inst = Measured::new(qubit, target);
@@ -71,7 +64,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn reset(&mut self, qubit: String) {
         log::info!("reset => {}", qubit);
         let single = Single::new(qubit);
@@ -79,7 +71,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn rx(&mut self, theta: f64, qubit: String) {
         log::info!("rx {} => {}", qubit, theta);
         let rotated = Rotated::new(theta, qubit);
@@ -87,7 +78,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn ry(&mut self, theta: f64, qubit: String) {
         log::info!("ry {} => {}", qubit, theta);
         let rotated = Rotated::new(theta, qubit);
@@ -95,7 +85,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn rz(&mut self, theta: f64, qubit: String) {
         log::info!("rz {} => {}", qubit, theta);
         let rotated = Rotated::new(theta, qubit);
@@ -103,7 +92,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn s(&mut self, qubit: String) {
         log::info!("s => {}", qubit);
         let single = Single::new(qubit);
@@ -111,7 +99,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn s_adj(&mut self, qubit: String) {
         log::info!("s_adj => {}", qubit);
         let single = Single::new(qubit);
@@ -119,7 +106,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn t(&mut self, qubit: String) {
         log::info!("t => {}", qubit);
         let single = Single::new(qubit);
@@ -127,7 +113,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn t_adj(&mut self, qubit: String) {
         log::info!("t_adj => {}", qubit);
         let single = Single::new(qubit);
@@ -135,7 +120,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn x(&mut self, qubit: String) {
         log::info!("x => {}", qubit);
         let single = Single::new(qubit);
@@ -143,7 +127,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn y(&mut self, qubit: String) {
         log::info!("y => {}", qubit);
         let single = Single::new(qubit);
@@ -151,14 +134,12 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn dump_machine(&mut self) {
         log::info!("dump_machine");
         let inst = Instruction::DumpMachine;
         self.model.add_inst(inst);
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     fn z(&mut self, qubit: String) {
         log::info!("z => {}", qubit);
         let single = Single::new(qubit);
