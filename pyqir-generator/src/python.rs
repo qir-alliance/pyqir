@@ -34,175 +34,140 @@ impl PyQIR {
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
     #[allow(clippy::unused_self)]
-    fn add_measurement(&mut self, qubit: String, target: String) -> PyResult<()> {
+    fn add_measurement(&mut self, qubit: String, target: String) {
         log::info!("measure {} => {}", qubit, target);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn cx(&mut self, control: String, target: String) -> PyResult<()> {
+    fn cx(&mut self, control: String, target: String) {
         log::info!("cx {} => {}", control, target);
         let controlled = Controlled::new(control, target);
         let inst = Instruction::Cx(controlled);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn cz(&mut self, control: String, target: String) -> PyResult<()> {
+    fn cz(&mut self, control: String, target: String) {
         log::info!("cz {} => {}", control, target);
         let controlled = Controlled::new(control, target);
         let inst = Instruction::Cz(controlled);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn h(&mut self, qubit: String) -> PyResult<()> {
+    fn h(&mut self, qubit: String) {
         log::info!("h => {}", qubit);
         let single = Single::new(qubit);
         let inst = Instruction::H(single);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn m(&mut self, qubit: String, target: String) -> PyResult<()> {
+    fn m(&mut self, qubit: String, target: String) {
         log::info!("m {}[{}]", qubit, target);
         let inst = Measured::new(qubit, target);
         let inst = Instruction::M(inst);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn reset(&mut self, qubit: String) -> PyResult<()> {
+    fn reset(&mut self, qubit: String) {
         log::info!("reset => {}", qubit);
         let single = Single::new(qubit);
         let inst = Instruction::Reset(single);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn rx(&mut self, theta: f64, qubit: String) -> PyResult<()> {
+    fn rx(&mut self, theta: f64, qubit: String) {
         log::info!("rx {} => {}", qubit, theta);
         let rotated = Rotated::new(theta, qubit);
         let inst = Instruction::Rx(rotated);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn ry(&mut self, theta: f64, qubit: String) -> PyResult<()> {
+    fn ry(&mut self, theta: f64, qubit: String) {
         log::info!("ry {} => {}", qubit, theta);
         let rotated = Rotated::new(theta, qubit);
         let inst = Instruction::Ry(rotated);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn rz(&mut self, theta: f64, qubit: String) -> PyResult<()> {
+    fn rz(&mut self, theta: f64, qubit: String) {
         log::info!("rz {} => {}", qubit, theta);
         let rotated = Rotated::new(theta, qubit);
         let inst = Instruction::Rz(rotated);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn s(&mut self, qubit: String) -> PyResult<()> {
+    fn s(&mut self, qubit: String) {
         log::info!("s => {}", qubit);
         let single = Single::new(qubit);
         let inst = Instruction::S(single);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn s_adj(&mut self, qubit: String) -> PyResult<()> {
+    fn s_adj(&mut self, qubit: String) {
         log::info!("s_adj => {}", qubit);
         let single = Single::new(qubit);
         let inst = Instruction::SAdj(single);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn t(&mut self, qubit: String) -> PyResult<()> {
+    fn t(&mut self, qubit: String) {
         log::info!("t => {}", qubit);
         let single = Single::new(qubit);
         let inst = Instruction::T(single);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn t_adj(&mut self, qubit: String) -> PyResult<()> {
+    fn t_adj(&mut self, qubit: String) {
         log::info!("t_adj => {}", qubit);
         let single = Single::new(qubit);
         let inst = Instruction::TAdj(single);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn x(&mut self, qubit: String) -> PyResult<()> {
+    fn x(&mut self, qubit: String) {
         log::info!("x => {}", qubit);
         let single = Single::new(qubit);
         let inst = Instruction::X(single);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn y(&mut self, qubit: String) -> PyResult<()> {
+    fn y(&mut self, qubit: String) {
         log::info!("y => {}", qubit);
         let single = Single::new(qubit);
         let inst = Instruction::Y(single);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn dump_machine(&mut self) -> PyResult<()> {
+    fn dump_machine(&mut self) {
         log::info!("dump_machine");
         let inst = Instruction::DumpMachine;
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn z(&mut self, qubit: String) -> PyResult<()> {
+    fn z(&mut self, qubit: String) {
         log::info!("z => {}", qubit);
         let single = Single::new(qubit);
         let inst = Instruction::Z(single);
         self.model.add_inst(inst);
-        Ok(())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn add_quantum_register(&mut self, name: String, size: u64) -> PyResult<()> {
+    fn add_quantum_register(&mut self, name: String, size: u64) {
         let ns = name.as_str();
         for index in 0..size {
             let register_name = format!("{}[{}]", ns, index);
@@ -213,16 +178,13 @@ impl PyQIR {
             };
             self.model.add_reg(&reg.as_register());
         }
-        Ok(())
     }
 
-    #[allow(clippy::unnecessary_wraps)]
-    fn add_classical_register(&mut self, name: String, size: u64) -> PyResult<()> {
+    fn add_classical_register(&mut self, name: String, size: u64) {
         let ns = name.clone();
         let reg = ClassicalRegister { name, size };
         log::info!("Adding {}({})", ns, size);
         self.model.add_reg(&reg.as_register());
-        Ok(())
     }
 
     fn write(&self, file_name: &str) -> PyResult<()> {
@@ -253,10 +215,14 @@ impl PyQIR {
         }
     }
 
-    #[allow(clippy::unnecessary_wraps)]
     #[allow(clippy::unused_self)]
     fn enable_logging(&self) -> PyResult<()> {
-        let _ = env_logger::try_init();
-        Ok(())
+        match env_logger::try_init() {
+            Err(msg) => {
+                let err: PyErr = PyOSError::new_err::<String>(format!("{}", msg));
+                Err(err)
+            }
+            Ok(_) => Ok(()),
+        }
     }
 }
