@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 
 use inkwell::values::BasicValueEnum;
-use qirlib::codegen::{CodeGenerator, ModuleSource};
+use qirlib::{codegen::CodeGenerator, module::ModuleSource};
 
 use crate::{interop::SemanticModel, qir};
 use qirlib::passes::run_basic_passes_on;

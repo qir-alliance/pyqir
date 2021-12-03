@@ -70,7 +70,7 @@ impl<'ctx> Types<'ctx> {
 
 #[cfg(test)]
 mod tests {
-    use crate::codegen::{CodeGenerator, ModuleSource};
+    use crate::{codegen::CodeGenerator, module::ModuleSource};
 
     use super::*;
 

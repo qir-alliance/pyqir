@@ -12,7 +12,10 @@ use inkwell::{
 };
 use microsoft_quantum_qir_runtime_sys::runtime::BasicRuntimeDriver;
 
-use qirlib::{codegen::ModuleSource, module, passes::run_basic_passes_on};
+use qirlib::{
+    module::{self, ModuleSource},
+    passes::run_basic_passes_on,
+};
 use std::path::Path;
 
 /// # Panics

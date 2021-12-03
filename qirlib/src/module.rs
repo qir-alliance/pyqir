@@ -5,7 +5,11 @@ use inkwell::{memory_buffer::MemoryBuffer, module::Module};
 
 use std::path::Path;
 
-use crate::codegen::ModuleSource;
+#[derive(Clone, Copy)]
+pub enum ModuleSource<'ctx> {
+    Template(&'ctx String),
+    File(&'ctx String),
+}
 
 /// # Errors
 ///

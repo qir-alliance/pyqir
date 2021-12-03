@@ -4,7 +4,10 @@
 use std::path::Path;
 
 use crate::{
-    constants::Constants, intrinsics::Intrinsics, module, runtime_library::RuntimeLibrary,
+    constants::Constants,
+    intrinsics::Intrinsics,
+    module::{self, ModuleSource},
+    runtime_library::RuntimeLibrary,
     types::Types,
 };
 
@@ -16,12 +19,6 @@ pub struct CodeGenerator<'ctx> {
     pub runtime_library: RuntimeLibrary<'ctx>,
     pub intrinsics: Intrinsics<'ctx>,
     pub constants: Constants<'ctx>,
-}
-
-#[derive(Clone, Copy)]
-pub enum ModuleSource<'ctx> {
-    Template(&'ctx String),
-    File(&'ctx String),
 }
 
 impl<'ctx> CodeGenerator<'ctx> {
