@@ -5,9 +5,8 @@ use inkwell::{memory_buffer::MemoryBuffer, module::Module};
 
 use std::path::Path;
 
-#[allow(clippy::module_name_repetitions)]
 #[derive(Clone, Copy)]
-pub enum ModuleSource<'ctx> {
+pub enum Source<'ctx> {
     Template(&'ctx String),
     File(&'ctx String),
 }
@@ -19,11 +18,11 @@ pub enum ModuleSource<'ctx> {
 /// - file path has an unknown extension
 pub fn load<'ctx>(
     context: &'ctx inkwell::context::Context,
-    module_source: ModuleSource<'ctx>,
+    module_source: Source<'ctx>,
 ) -> Result<Module<'ctx>, String> {
     let module = match module_source {
-        ModuleSource::Template(name) => load_module_from_bitcode_template(context, &name[..])?,
-        ModuleSource::File(file_name) => {
+        Source::Template(name) => load_module_from_bitcode_template(context, &name[..])?,
+        Source::File(file_name) => {
             let file_path = Path::new(&file_name[..]);
             let ext = file_path.extension().and_then(std::ffi::OsStr::to_str);
             let module = match ext {

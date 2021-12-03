@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 
 use inkwell::values::BasicValueEnum;
-use qirlib::{codegen::CodeGenerator, module::ModuleSource};
+use qirlib::{codegen::CodeGenerator, module::Source};
 
 use crate::{interop::SemanticModel, qir};
 use qirlib::passes::run_basic_passes_on;
@@ -55,7 +55,7 @@ pub fn populate_context<'a>(
     ctx: &'a inkwell::context::Context,
     model: &'a SemanticModel,
 ) -> Result<CodeGenerator<'a>, String> {
-    let module_source = ModuleSource::Template(&model.name);
+    let module_source = Source::Template(&model.name);
     let generator = CodeGenerator::new(ctx, module_source)?;
     build_entry_function(&generator, model)?;
     Ok(generator)

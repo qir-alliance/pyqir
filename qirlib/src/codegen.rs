@@ -6,7 +6,7 @@ use std::path::Path;
 use crate::{
     constants::Constants,
     intrinsics::Intrinsics,
-    module::{self, ModuleSource},
+    module::{self, Source},
     runtime_library::RuntimeLibrary,
     types::Types,
 };
@@ -27,7 +27,7 @@ impl<'ctx> CodeGenerator<'ctx> {
     /// Will return `Err` if module fails to load
     pub fn new(
         context: &'ctx inkwell::context::Context,
-        module_source: ModuleSource<'ctx>,
+        module_source: Source<'ctx>,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
         let module = module::load(context, module_source)?;
@@ -78,7 +78,7 @@ impl<'ctx> CodeGenerator<'ctx> {
 
 #[cfg(test)]
 mod tests {
-    use crate::codegen::{CodeGenerator, ModuleSource};
+    use crate::codegen::{CodeGenerator, Source};
     use std::fs::File;
     use std::io::prelude::*;
 
@@ -94,7 +94,7 @@ mod tests {
 
         let ctx = inkwell::context::Context::create();
         let name = String::from("temp");
-        let generator = CodeGenerator::new(&ctx, ModuleSource::Template(&name)).unwrap();
+        let generator = CodeGenerator::new(&ctx, Source::Template(&name)).unwrap();
         generator.emit_bitcode(file_path_string.as_str());
         let mut emitted_bitcode_file =
             File::open(file_path_string.as_str()).expect("Could not open emitted bitcode file");
