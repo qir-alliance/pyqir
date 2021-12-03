@@ -11,7 +11,7 @@ use qirlib::passes::run_basic_passes_on;
 
 /// # Errors
 ///
-/// Will return `Err` if module fails verification.
+/// Will return `Err` if module fails verification that the current `Module` is valid.
 pub fn write_model_to_file(model: &SemanticModel, file_name: &str) -> Result<(), String> {
     let ctx = inkwell::context::Context::create();
     let context = populate_context(&ctx, model)?;
@@ -23,7 +23,7 @@ pub fn write_model_to_file(model: &SemanticModel, file_name: &str) -> Result<(),
 
 /// # Errors
 ///
-/// Will return `Err` if module fails verification.
+/// Will return `Err` if module fails verification that the current `Module` is valid.
 pub fn get_ir_string(model: &SemanticModel) -> Result<String, String> {
     let ctx = inkwell::context::Context::create();
     let context = populate_context(&ctx, model)?;
@@ -35,7 +35,7 @@ pub fn get_ir_string(model: &SemanticModel) -> Result<String, String> {
 
 /// # Errors
 ///
-/// Will return `Err` if module fails verification.
+/// Will return `Err` if module fails verification that the current `Module` is valid.
 pub fn get_bitcode_base64_string(model: &SemanticModel) -> Result<String, String> {
     let ctx = inkwell::context::Context::create();
     let context = populate_context(&ctx, model)?;
@@ -48,7 +48,7 @@ pub fn get_bitcode_base64_string(model: &SemanticModel) -> Result<String, String
 
 /// # Errors
 ///
-/// Will return `Err` if module fails verification.
+/// Will return `Err` if module fails verification that the current `Module` is valid.
 pub fn populate_context<'a>(
     ctx: &'a inkwell::context::Context,
     model: &'a SemanticModel,
