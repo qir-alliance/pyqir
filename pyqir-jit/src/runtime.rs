@@ -11,14 +11,13 @@ use qirlib::intrinsics::Intrinsics;
 use super::gates::GateScope;
 
 pub(crate) struct Simulator {
-    #[allow(unused)]
-    scope: GateScope,
+    _scope: GateScope,
 }
 
 impl<'ctx> Simulator {
     pub fn new(module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) -> Self {
         let simulator = Simulator {
-            scope: crate::gates::GateScope::new(),
+            _scope: crate::gates::GateScope::new(),
         };
 
         Simulator::bind(module, ee);
