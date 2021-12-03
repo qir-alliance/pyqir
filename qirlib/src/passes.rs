@@ -6,7 +6,7 @@ use inkwell::passes::PassManager;
 use inkwell::{passes::PassManagerBuilder, OptimizationLevel};
 
 // This method returns true if any of the passes modified the function or module and false otherwise.
-pub fn run_basic_passes_on(module: &Module<'_>) -> bool {
+pub fn run_basic_passes_on(module: &Module) -> bool {
     let pass_manager_builder = PassManagerBuilder::create();
     pass_manager_builder.set_optimization_level(OptimizationLevel::None);
     let fpm = PassManager::create(());

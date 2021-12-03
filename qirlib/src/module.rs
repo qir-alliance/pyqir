@@ -38,15 +38,15 @@ pub(crate) fn load_module_from_bitcode_template<'ctx>(
 
 pub(crate) fn load_module_from_bitcode_file(
     path: impl AsRef<Path>,
-    context: &'_ inkwell::context::Context,
-) -> Result<Module<'_>, String> {
+    context: &inkwell::context::Context,
+) -> Result<Module, String> {
     Module::parse_bitcode_from_path(path, context).map_err(|e| e.to_string())
 }
 
 pub(crate) fn load_module_from_ir_file(
     path: impl AsRef<Path>,
-    context: &'_ inkwell::context::Context,
-) -> Result<Module<'_>, String> {
+    context: &inkwell::context::Context,
+) -> Result<Module, String> {
     let memory_buffer = load_memory_buffer_from_ir_file(path)?;
     context
         .create_module_from_ir(memory_buffer)
