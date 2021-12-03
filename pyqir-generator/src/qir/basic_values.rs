@@ -3,10 +3,10 @@
 
 use inkwell::values::{BasicMetadataValueEnum, BasicValue};
 
-use qirlib::context::Context;
+use qirlib::codegen::CodeGenerator;
 
-pub(crate) fn i8_null_ptr<'ctx>(context: &Context<'ctx>) -> BasicMetadataValueEnum<'ctx> {
-    context
+pub(crate) fn i8_null_ptr<'ctx>(generator: &CodeGenerator<'ctx>) -> BasicMetadataValueEnum<'ctx> {
+    generator
         .context
         .i8_type()
         .ptr_type(inkwell::AddressSpace::Generic)
@@ -16,10 +16,10 @@ pub(crate) fn i8_null_ptr<'ctx>(context: &Context<'ctx>) -> BasicMetadataValueEn
 }
 
 pub(crate) fn f64_to_f64<'ctx>(
-    context: &Context<'ctx>,
+    generator: &CodeGenerator<'ctx>,
     value: f64,
 ) -> BasicMetadataValueEnum<'ctx> {
-    context
+    generator
         .types
         .double
         .const_float(value)
@@ -28,10 +28,10 @@ pub(crate) fn f64_to_f64<'ctx>(
 }
 
 pub(crate) fn u64_to_i32<'ctx>(
-    context: &Context<'ctx>,
+    generator: &CodeGenerator<'ctx>,
     value: u64,
 ) -> BasicMetadataValueEnum<'ctx> {
-    context
+    generator
         .context
         .i32_type()
         .const_int(value, false)
@@ -40,14 +40,14 @@ pub(crate) fn u64_to_i32<'ctx>(
 }
 
 pub(crate) fn i64_to_i32<'ctx>(
-    context: &Context<'ctx>,
+    generator: &CodeGenerator<'ctx>,
     value: i64,
 ) -> BasicMetadataValueEnum<'ctx> {
     // convert to capture negative values.
     #[allow(clippy::cast_sign_loss)]
     let target: u64 = value as u64;
 
-    context
+    generator
         .context
         .i32_type()
         .const_int(target, false)
@@ -56,10 +56,10 @@ pub(crate) fn i64_to_i32<'ctx>(
 }
 
 pub(crate) fn u64_to_i64<'ctx>(
-    context: &Context<'ctx>,
+    generator: &CodeGenerator<'ctx>,
     value: u64,
 ) -> BasicMetadataValueEnum<'ctx> {
-    context
+    generator
         .types
         .int
         .const_int(value, false)

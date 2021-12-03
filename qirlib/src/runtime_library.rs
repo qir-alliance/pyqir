@@ -99,7 +99,7 @@ impl<'ctx> RuntimeLibrary<'ctx> {
 
 #[cfg(test)]
 mod tests {
-    use crate::context::{Context, ModuleSource};
+    use crate::codegen::{CodeGenerator, ModuleSource};
 
     use super::*;
 
@@ -107,7 +107,7 @@ mod tests {
     fn runtime_library_can_be_loaded() {
         let ctx = inkwell::context::Context::create();
         let name = String::from("temp");
-        let context = Context::new(&ctx, ModuleSource::Template(&name)).unwrap();
-        let _ = RuntimeLibrary::new(&context.module);
+        let generator = CodeGenerator::new(&ctx, ModuleSource::Template(&name)).unwrap();
+        let _ = RuntimeLibrary::new(&generator.module);
     }
 }

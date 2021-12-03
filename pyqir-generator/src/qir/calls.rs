@@ -2,14 +2,14 @@
 // Licensed under the MIT License.
 
 use inkwell::values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue};
-use qirlib::context::Context;
+use qirlib::codegen::CodeGenerator;
 
 pub(crate) fn emit_void_call<'ctx>(
-    context: &Context<'ctx>,
+    generator: &CodeGenerator<'ctx>,
     function: FunctionValue<'ctx>,
     args: &[BasicMetadataValueEnum<'ctx>],
 ) {
-    let _ = context
+    let _ = generator
         .builder
         .build_call(function, args, "")
         .try_as_basic_value()
@@ -18,12 +18,12 @@ pub(crate) fn emit_void_call<'ctx>(
 }
 
 pub(crate) fn emit_call_with_return<'ctx>(
-    context: &Context<'ctx>,
+    generator: &CodeGenerator<'ctx>,
     function: FunctionValue<'ctx>,
     args: &[BasicMetadataValueEnum<'ctx>],
     name: &str,
 ) -> BasicValueEnum<'ctx> {
-    context
+    generator
         .builder
         .build_call(function, args, name)
         .try_as_basic_value()

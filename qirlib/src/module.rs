@@ -5,7 +5,7 @@ use inkwell::{memory_buffer::MemoryBuffer, module::Module};
 
 use std::path::Path;
 
-use crate::context::ModuleSource;
+use crate::codegen::ModuleSource;
 
 /// # Errors
 ///

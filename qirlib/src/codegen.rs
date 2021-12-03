@@ -8,7 +8,7 @@ use crate::{
     types::Types,
 };
 
-pub struct Context<'ctx> {
+pub struct CodeGenerator<'ctx> {
     pub context: &'ctx inkwell::context::Context,
     pub module: inkwell::module::Module<'ctx>,
     pub builder: inkwell::builder::Builder<'ctx>,
@@ -24,7 +24,7 @@ pub enum ModuleSource<'ctx> {
     File(&'ctx String),
 }
 
-impl<'ctx> Context<'ctx> {
+impl<'ctx> CodeGenerator<'ctx> {
     /// # Errors
     ///
     /// Will return `Err` if module fails to load
@@ -38,7 +38,7 @@ impl<'ctx> Context<'ctx> {
         let runtime_library = RuntimeLibrary::new(&module);
         let intrinsics = Intrinsics::new(&module);
         let constants = Constants::new(&module, &types);
-        Ok(Context {
+        Ok(CodeGenerator {
             context,
             module,
             builder,
@@ -50,7 +50,7 @@ impl<'ctx> Context<'ctx> {
     }
 }
 
-impl<'ctx> Context<'ctx> {
+impl<'ctx> CodeGenerator<'ctx> {
     pub fn emit_bitcode(&self, file_path: &str) {
         let bitcode_path = Path::new(file_path);
         self.module.write_bitcode_to_path(bitcode_path);
@@ -81,7 +81,7 @@ impl<'ctx> Context<'ctx> {
 
 #[cfg(test)]
 mod tests {
-    use crate::context::{Context, ModuleSource};
+    use crate::codegen::{CodeGenerator, ModuleSource};
     use std::fs::File;
     use std::io::prelude::*;
 
@@ -97,8 +97,8 @@ mod tests {
 
         let ctx = inkwell::context::Context::create();
         let name = String::from("temp");
-        let context = Context::new(&ctx, ModuleSource::Template(&name)).unwrap();
-        context.emit_bitcode(file_path_string.as_str());
+        let generator = CodeGenerator::new(&ctx, ModuleSource::Template(&name)).unwrap();
+        generator.emit_bitcode(file_path_string.as_str());
         let mut emitted_bitcode_file =
             File::open(file_path_string.as_str()).expect("Could not open emitted bitcode file");
         let mut buffer = vec![];
@@ -108,7 +108,7 @@ mod tests {
             .expect("Could not read emitted bitcode file");
         let emitted_bitcode_bytes = buffer.as_slice();
 
-        let b64_bitcode = context.get_bitcode_base64_string();
+        let b64_bitcode = generator.get_bitcode_base64_string();
         let decoded = base64::decode(b64_bitcode).expect("could not decode base64 encoded module");
         let decoded_bitcode_bytes = decoded.as_slice();
 
