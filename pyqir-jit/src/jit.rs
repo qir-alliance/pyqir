@@ -18,9 +18,20 @@ use qirlib::{
 };
 use std::path::Path;
 
+/// # Panics
+///
+/// Path to module was not a valid unicode path string
 /// # Errors
 ///
-/// Will return `Err` if module fails to load
+/// Will return `Err` if
+///   - Module fails to load
+///   - LLVM native target fails to initialize.
+///   - Unable to create target machine
+///   - Target doesn't have an ASM backend.
+///   - Target doesn't have a target machine
+///   - No matching entry point found.
+///   - Multiple matching entry points found.
+///   - JIT Engine could not created.
 pub fn run_module_file(
     path: impl AsRef<Path>,
     entry_point: Option<&str>,
@@ -39,13 +50,19 @@ pub fn run_module_file(
 
 /// # Errors
 ///
-/// Will return `Err` if LLVM native target fails to initialize
+/// Will return `Err` if
+///   - LLVM native target fails to initialize.
+///   - Unable to create target machine
+///   - Target doesn't have an ASM backend.
+///   - Target doesn't have a target machine
+///   - No matching entry point found.
+///   - Multiple matching entry points found.
+///   - JIT Engine could not created.
 pub fn run_module(module: &Module<'_>, entry_point: Option<&str>) -> Result<SemanticModel, String> {
-    Target::initialize_native(&InitializationConfig::default())
-        .expect("Failed to initialize native target.");
+    Target::initialize_native(&InitializationConfig::default())?;
 
     let default_triple = TargetMachine::get_default_triple();
-    let target = Target::from_triple(&default_triple).expect("Unable to create target machine");
+    let target = Target::from_triple(&default_triple).map_err(|e| e.to_string())?;
 
     if !target.has_asm_backend() {
         return Err("Target doesn't have an ASM backend.".to_owned());
@@ -65,7 +82,8 @@ pub fn run_module(module: &Module<'_>, entry_point: Option<&str>) -> Result<Sema
 
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::None)
-        .expect("Could not create JIT Engine");
+        .map_err(|e| e.to_string())?;
+
     let _simulator = Simulator::new(module, &execution_engine);
 
     unsafe {
