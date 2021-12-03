@@ -71,10 +71,12 @@ impl BaseProfile {
             self.max_id = qubit;
         }
     }
+
     #[must_use]
     pub fn get_model(&self) -> SemanticModel {
         self.model.clone()
     }
+
     pub fn infer_allocations(&mut self) {
         if !self.declared_cubits {
             return;
@@ -129,6 +131,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::Rx(BaseProfile::rotated(theta, qubit)));
     }
+
     pub fn ry(&mut self, theta: f64, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
@@ -136,6 +139,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::Ry(BaseProfile::rotated(theta, qubit)));
     }
+
     pub fn rz(&mut self, theta: f64, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
@@ -143,6 +147,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::Rz(BaseProfile::rotated(theta, qubit)));
     }
+
     pub fn s(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
@@ -150,6 +155,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::S(BaseProfile::single(qubit)));
     }
+
     pub fn s_adj(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
@@ -165,6 +171,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::T(BaseProfile::single(qubit)));
     }
+
     pub fn t_adj(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
@@ -180,6 +187,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::X(BaseProfile::single(qubit)));
     }
+
     pub fn y(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
@@ -187,6 +195,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::Y(BaseProfile::single(qubit)));
     }
+
     pub fn z(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
