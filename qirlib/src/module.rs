@@ -5,6 +5,7 @@ use inkwell::{memory_buffer::MemoryBuffer, module::Module};
 
 use std::path::Path;
 
+#[allow(clippy::module_name_repetitions)]
 #[derive(Clone, Copy)]
 pub enum ModuleSource<'ctx> {
     Template(&'ctx String),
