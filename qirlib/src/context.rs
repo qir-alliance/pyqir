@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::OptimizationLevel;
-
 use std::path::Path;
 
 use crate::{
@@ -13,8 +11,6 @@ use crate::{
 pub struct Context<'ctx> {
     pub context: &'ctx inkwell::context::Context,
     pub module: inkwell::module::Module<'ctx>,
-    #[cfg(feature = "jit")]
-    pub execution_engine: inkwell::execution_engine::ExecutionEngine<'ctx>,
     pub builder: inkwell::builder::Builder<'ctx>,
     pub types: Types<'ctx>,
     pub runtime_library: RuntimeLibrary<'ctx>,
@@ -28,38 +24,6 @@ pub enum ModuleSource<'ctx> {
     File(&'ctx String),
 }
 
-#[cfg(feature = "jit")]
-impl<'ctx> Context<'ctx> {
-    /// # Errors
-    ///
-    /// Will return `Err` if module fails to load or LLVM native target fails to initialize
-    pub fn new(
-        context: &'ctx inkwell::context::Context,
-        module_source: ModuleSource<'ctx>,
-    ) -> Result<Self, String> {
-        let builder = context.create_builder();
-        let module = module::load(context, module_source)?;
-        let execution_engine = module
-            .create_jit_execution_engine(OptimizationLevel::None)
-            .expect("Could not create JIT Engine");
-        let types = Types::new(context, &module);
-        let runtime_library = RuntimeLibrary::new(&module);
-        let intrinsics = Intrinsics::new(&module);
-        let constants = Constants::new(&module, &types);
-        Ok(Context {
-            context,
-            module,
-            execution_engine,
-            builder,
-            types,
-            runtime_library,
-            intrinsics,
-            constants,
-        })
-    }
-}
-
-#[cfg(not(feature = "jit"))]
 impl<'ctx> Context<'ctx> {
     /// # Errors
     ///
@@ -70,7 +34,7 @@ impl<'ctx> Context<'ctx> {
     ) -> Result<Self, String> {
         let builder = context.create_builder();
         let module = module::load(context, module_source)?;
-        let types = Types::new(&context, &module);
+        let types = Types::new(context, &module);
         let runtime_library = RuntimeLibrary::new(&module);
         let intrinsics = Intrinsics::new(&module);
         let constants = Constants::new(&module, &types);
