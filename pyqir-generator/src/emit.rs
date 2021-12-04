@@ -1,13 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use std::collections::HashMap;
-
-use inkwell::values::BasicValueEnum;
-use qirlib::{codegen::CodeGenerator, module::Source};
-
 use crate::{interop::SemanticModel, qir};
+use inkwell::values::BasicValueEnum;
 use qirlib::passes::run_basic_passes_on;
+use qirlib::{
+    codegen::CodeGenerator,
+    module::{self, Source},
+};
+use std::collections::HashMap;
 
 /// # Errors
 ///
@@ -55,7 +56,8 @@ pub fn populate_context<'a>(
     ctx: &'a inkwell::context::Context,
     model: &'a SemanticModel,
 ) -> Result<CodeGenerator<'a>, String> {
-    let generator = CodeGenerator::new(ctx, Source::Template)?;
+    let module = module::load(ctx, Source::Template)?;
+    let generator = CodeGenerator::new(ctx, module)?;
     build_entry_function(&generator, model)?;
     Ok(generator)
 }

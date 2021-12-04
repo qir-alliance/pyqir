@@ -1,15 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use std::path::Path;
-
 use crate::{
-    constants::Constants,
-    intrinsics::Intrinsics,
-    module::{self, Source},
-    runtime_library::RuntimeLibrary,
-    types::Types,
+    constants::Constants, intrinsics::Intrinsics, runtime_library::RuntimeLibrary, types::Types,
 };
+use inkwell::module::Module;
+use std::path::Path;
 
 pub struct CodeGenerator<'ctx> {
     pub context: &'ctx inkwell::context::Context,
@@ -27,10 +23,9 @@ impl<'ctx> CodeGenerator<'ctx> {
     /// Will return `Err` if module fails to load
     pub fn new(
         context: &'ctx inkwell::context::Context,
-        module_source: Source<'ctx>,
+        module: Module<'ctx>,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
-        let module = module::load(context, module_source)?;
         let types = Types::new(context, &module);
         let runtime_library = RuntimeLibrary::new(&module);
         let intrinsics = Intrinsics::new(&module);
@@ -78,10 +73,11 @@ impl<'ctx> CodeGenerator<'ctx> {
 
 #[cfg(test)]
 mod tests {
-    use crate::codegen::{CodeGenerator, Source};
+    use crate::codegen::CodeGenerator;
+    use crate::module::{self, Source};
+    use inkwell::context::Context;
     use std::fs::File;
     use std::io::prelude::*;
-
     use tempfile::tempdir;
 
     #[test]
@@ -92,8 +88,9 @@ mod tests {
         let file_path = tmp_path.join(format!("{}.bc", name));
         let file_path_string = file_path.display().to_string();
 
-        let ctx = inkwell::context::Context::create();
-        let generator = CodeGenerator::new(&ctx, Source::Template).unwrap();
+        let context = Context::create();
+        let module = module::load(&context, Source::Template).unwrap();
+        let generator = CodeGenerator::new(&context, module).unwrap();
         generator.emit_bitcode(file_path_string.as_str());
         let mut emitted_bitcode_file =
             File::open(file_path_string.as_str()).expect("Could not open emitted bitcode file");
