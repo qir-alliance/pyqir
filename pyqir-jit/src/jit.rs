@@ -115,7 +115,7 @@ mod tests {
     use super::run_module;
     use crate::interop::{Instruction, SemanticModel, Single};
     use inkwell::context::Context;
-    use qirlib::module::{self, Source};
+    use qirlib::module;
     use serial_test::serial;
 
     const BELL_QIR_MEASURE: &[u8] = include_bytes!("../tests/bell_qir_measure.bc");
@@ -232,7 +232,7 @@ mod tests {
 
     fn run_test_module(bytes: &[u8], entry_point: Option<&str>) -> Result<SemanticModel, String> {
         let context = Context::create();
-        let module = module::load(&context, Source::Memory(bytes))?;
+        let module = module::load_memory(bytes, &context)?;
         run_module(&module, entry_point)
     }
 }

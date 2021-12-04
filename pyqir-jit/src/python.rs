@@ -4,7 +4,7 @@
 use crate::{interop::Instruction, jit::run_module};
 use inkwell::context::Context;
 use pyo3::{exceptions::PyOSError, prelude::*, types::PyDict};
-use qirlib::module::{self, Source};
+use qirlib::module;
 use std::path::Path;
 
 #[pymodule]
@@ -77,8 +77,7 @@ impl PyNonadaptiveJit {
         }
 
         let context = Context::create();
-        let module =
-            module::load(&context, Source::File(Path::new(file))).map_err(PyOSError::new_err)?;
+        let module = module::load_file(Path::new(file), &context).map_err(PyOSError::new_err)?;
         let gen_model = run_module(&module, entry_point).map_err(PyOSError::new_err)?;
 
         Python::with_gil(|py| -> PyResult<()> {
