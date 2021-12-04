@@ -53,7 +53,7 @@ pub fn populate_context<'a>(
     ctx: &'a inkwell::context::Context,
     model: &'a SemanticModel,
 ) -> Result<CodeGenerator<'a>, String> {
-    let module = module::load_template(ctx)?;
+    let module = module::load_template(&model.name, ctx)?;
     let generator = CodeGenerator::new(ctx, module)?;
     build_entry_function(&generator, model)?;
     Ok(generator)

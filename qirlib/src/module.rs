@@ -7,8 +7,8 @@ use std::{ffi::OsStr, path::Path};
 /// # Errors
 ///
 /// - Module fails to load.
-pub fn load_template(context: &Context) -> Result<Module, String> {
-    load_memory(include_bytes!("module.bc"), context)
+pub fn load_template<'a>(name: &str, context: &'a Context) -> Result<Module<'a>, String> {
+    load_memory(include_bytes!("module.bc"), name, context)
 }
 
 /// # Errors
@@ -31,7 +31,11 @@ pub fn load_file(path: impl AsRef<Path>, context: &Context) -> Result<Module, St
 /// # Errors
 ///
 /// - Module fails to load.
-pub fn load_memory<'ctx>(bytes: &[u8], context: &'ctx Context) -> Result<Module<'ctx>, String> {
-    let buffer = MemoryBuffer::create_from_memory_range_copy(bytes, "QIR module");
+pub fn load_memory<'a>(
+    bytes: &[u8],
+    name: &str,
+    context: &'a Context,
+) -> Result<Module<'a>, String> {
+    let buffer = MemoryBuffer::create_from_memory_range_copy(bytes, name);
     Module::parse_bitcode_from_buffer(&buffer, context).map_err(|e| e.to_string())
 }

@@ -232,7 +232,7 @@ mod tests {
 
     fn run_test_module(bytes: &[u8], entry_point: Option<&str>) -> Result<SemanticModel, String> {
         let context = Context::create();
-        let module = module::load_memory(bytes, &context)?;
+        let module = module::load_memory(bytes, "test", &context)?;
         run_module(&module, entry_point)
     }
 }

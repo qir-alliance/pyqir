@@ -82,12 +82,12 @@ mod tests {
     fn emitted_bitcode_files_are_identical_to_base64_encoded() {
         let dir = tempdir().expect("");
         let tmp_path = dir.into_path();
-        let name = String::from("test");
+        let name = "test";
         let file_path = tmp_path.join(format!("{}.bc", name));
         let file_path_string = file_path.display().to_string();
 
         let context = Context::create();
-        let module = module::load_template(&context).unwrap();
+        let module = module::load_template(name, &context).unwrap();
         let generator = CodeGenerator::new(&context, module).unwrap();
         generator.emit_bitcode(file_path_string.as_str());
         let mut emitted_bitcode_file =

@@ -77,7 +77,7 @@ mod tests {
     #[test]
     fn types_can_be_loaded() {
         let context = Context::create();
-        let module = module::load_template(&context).unwrap();
+        let module = module::load_template("test", &context).unwrap();
         let generator = CodeGenerator::new(&context, module).unwrap();
         let _ = Types::new(generator.context, &generator.module);
     }
