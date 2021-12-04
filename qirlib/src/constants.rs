@@ -43,15 +43,15 @@ impl<'ctx> Constants<'ctx> {
 
 #[cfg(test)]
 mod tests {
-    use crate::context::{Context, ContextType};
+    use crate::{codegen::CodeGenerator, module::Source};
 
     use super::*;
 
     #[test]
     fn constants_can_be_loaded() {
         let ctx = inkwell::context::Context::create();
-        let context = Context::new(&ctx, ContextType::Template).unwrap();
-        let types = Types::new(&context.context, &context.module);
-        let _ = Constants::new(&context.module, &types);
+        let generator = CodeGenerator::new(&ctx, Source::Template).unwrap();
+        let types = Types::new(generator.context, &generator.module);
+        let _ = Constants::new(&generator.module, &types);
     }
 }

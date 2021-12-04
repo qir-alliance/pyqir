@@ -4,6 +4,7 @@
 use crate::{interop::SemanticModel, runtime::Simulator};
 use inkwell::{
     attributes::AttributeLoc,
+    context::Context,
     execution_engine::ExecutionEngine,
     module::Module,
     targets::{InitializationConfig, Target, TargetMachine},
@@ -12,30 +13,54 @@ use inkwell::{
 };
 use microsoft_quantum_qir_runtime_sys::runtime::BasicRuntimeDriver;
 use qirlib::{
-    context::{BareContext, ContextType},
+    module::{self, Source},
     passes::run_basic_passes_on,
 };
 
-pub fn run_context_module(
-    context_type: ContextType,
+/// # Errors
+///
+/// Will return `Err` if
+///   - Module fails to load
+///   - LLVM native target fails to initialize.
+///   - Unable to create target machine
+///   - Target doesn't have an ASM backend.
+///   - Target doesn't have a target machine
+///   - No matching entry point found.
+///   - Multiple matching entry points found.
+///   - JIT Engine could not created.
+pub fn run_module_from_source(
+    source: Source,
     entry_point: Option<&str>,
 ) -> Result<SemanticModel, String> {
-    let ctx = inkwell::context::Context::create();
-    let context = BareContext::new(&ctx, context_type)?;
-    run_module(&context.module, entry_point)
+    let context = Context::create();
+    let module = module::load(&context, source)?;
+    run_module(&module, entry_point)
 }
 
-pub fn run_module<'ctx>(
-    module: &Module<'ctx>,
-    entry_point: Option<&str>,
-) -> Result<SemanticModel, String> {
-    Target::initialize_native(&InitializationConfig::default()).unwrap();
-    let default_triple = TargetMachine::get_default_triple();
-    let target = Target::from_triple(&default_triple).expect("Unable to create target machine");
-    assert!(target.has_asm_backend());
-    assert!(target.has_target_machine());
+/// # Errors
+///
+/// Will return `Err` if
+///   - LLVM native target fails to initialize.
+///   - Unable to create target machine
+///   - Target doesn't have an ASM backend.
+///   - Target doesn't have a target machine
+///   - No matching entry point found.
+///   - Multiple matching entry points found.
+///   - JIT Engine could not created.
+pub fn run_module(module: &Module, entry_point: Option<&str>) -> Result<SemanticModel, String> {
+    Target::initialize_native(&InitializationConfig::default())?;
 
-    run_basic_passes_on(&module);
+    let default_triple = TargetMachine::get_default_triple();
+    let target = Target::from_triple(&default_triple).map_err(|e| e.to_string())?;
+
+    if !target.has_asm_backend() {
+        return Err("Target doesn't have an ASM backend.".to_owned());
+    }
+    if !target.has_target_machine() {
+        return Err("Target doesn't have a target machine.".to_owned());
+    }
+
+    run_basic_passes_on(module);
     let entry_point = choose_entry_point(module_functions(module), entry_point)?;
 
     unsafe {
@@ -46,14 +71,15 @@ pub fn run_module<'ctx>(
 
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::None)
-        .expect("Could not create JIT Engine");
-    let simulator = Simulator::new(&module, &execution_engine);
+        .map_err(|e| e.to_string())?;
+
+    let _simulator = Simulator::new(module, &execution_engine);
 
     unsafe {
         run_entry_point(&execution_engine, entry_point)?;
     }
 
-    Ok(simulator.get_model())
+    Ok(Simulator::get_model())
 }
 
 unsafe fn run_entry_point(
@@ -78,7 +104,7 @@ fn choose_entry_point<'ctx>(
 
     let entry_point = entry_points
         .next()
-        .ok_or("No matching entry point found.".to_owned())?;
+        .ok_or_else(|| "No matching entry point found.".to_owned())?;
 
     if entry_points.next().is_some() {
         Err("Multiple matching entry points found.".to_owned())
@@ -87,6 +113,7 @@ fn choose_entry_point<'ctx>(
     }
 }
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn is_entry_point(function: &FunctionValue) -> bool {
     function
         .get_string_attribute(AttributeLoc::Function, "EntryPoint")
@@ -101,7 +128,7 @@ fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = Functio
 
         fn next(&mut self) -> Option<Self::Item> {
             let function = self.0;
-            self.0 = function.and_then(|f| f.get_next_function());
+            self.0 = function.and_then(inkwell::values::FunctionValue::get_next_function);
             function
         }
     }
@@ -111,9 +138,9 @@ fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = Functio
 
 #[cfg(test)]
 mod tests {
-    use super::run_context_module;
+    use super::run_module_from_source;
     use crate::interop::{Instruction, Single};
-    use qirlib::context::ContextType;
+    use qirlib::module::Source;
     use serial_test::serial;
 
     const BELL_QIR_MEASURE: &[u8] = include_bytes!("../tests/bell_qir_measure.bc");
@@ -124,8 +151,8 @@ mod tests {
     #[serial]
     #[test]
     fn runs_bell_qir_measure() -> Result<(), String> {
-        let context_type = ContextType::Memory(BELL_QIR_MEASURE);
-        let model = run_context_module(context_type, None)?;
+        let source = Source::Memory(BELL_QIR_MEASURE);
+        let model = run_module_from_source(source, None)?;
         assert_eq!(model.instructions.len(), 2);
         Ok(())
     }
@@ -133,8 +160,8 @@ mod tests {
     #[serial]
     #[test]
     fn runs_single_entry_point_with_custom_name() -> Result<(), String> {
-        let context_type = ContextType::Memory(CUSTOM_ENTRY_POINT_NAME);
-        let model = run_context_module(context_type, None)?;
+        let source = Source::Memory(CUSTOM_ENTRY_POINT_NAME);
+        let model = run_module_from_source(source, None)?;
         assert_eq!(
             model.instructions,
             vec![Instruction::X(Single::new("0".to_owned()))]
@@ -145,8 +172,8 @@ mod tests {
     #[serial]
     #[test]
     fn runs_entry_point_by_name() -> Result<(), String> {
-        let context_type = ContextType::Memory(CUSTOM_ENTRY_POINT_NAME);
-        let model = run_context_module(context_type, Some("App__Foo"))?;
+        let source = Source::Memory(CUSTOM_ENTRY_POINT_NAME);
+        let model = run_module_from_source(source, Some("App__Foo"))?;
         assert_eq!(
             model.instructions,
             vec![Instruction::X(Single::new("0".to_owned()))]
@@ -157,8 +184,8 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_wrong_name_single_entry_point() -> Result<(), String> {
-        let context_type = ContextType::Memory(CUSTOM_ENTRY_POINT_NAME);
-        let result = run_context_module(context_type, Some("nonexistent"));
+        let source = Source::Memory(CUSTOM_ENTRY_POINT_NAME);
+        let result = run_module_from_source(source, Some("nonexistent"));
         assert_eq!(
             result.err(),
             Some("No matching entry point found.".to_owned())
@@ -169,8 +196,8 @@ mod tests {
     #[serial]
     #[test]
     fn fails_without_name_if_multiple_entry_points() -> Result<(), String> {
-        let context_type = ContextType::Memory(MULTIPLE_ENTRY_POINTS);
-        let result = run_context_module(context_type, None);
+        let source = Source::Memory(MULTIPLE_ENTRY_POINTS);
+        let result = run_module_from_source(source, None);
         assert_eq!(
             result.err(),
             Some("Multiple matching entry points found.".to_owned())
@@ -181,8 +208,8 @@ mod tests {
     #[serial]
     #[test]
     fn runs_first_entry_point_by_name() -> Result<(), String> {
-        let context_type = ContextType::Memory(MULTIPLE_ENTRY_POINTS);
-        let model = run_context_module(context_type, Some("App__Foo"))?;
+        let source = Source::Memory(MULTIPLE_ENTRY_POINTS);
+        let model = run_module_from_source(source, Some("App__Foo"))?;
         assert_eq!(
             model.instructions,
             vec![Instruction::X(Single::new("0".to_owned()))]
@@ -193,8 +220,8 @@ mod tests {
     #[serial]
     #[test]
     fn runs_second_entry_point_by_name() -> Result<(), String> {
-        let context_type = ContextType::Memory(MULTIPLE_ENTRY_POINTS);
-        let model = run_context_module(context_type, Some("App__Bar"))?;
+        let source = Source::Memory(MULTIPLE_ENTRY_POINTS);
+        let model = run_module_from_source(source, Some("App__Bar"))?;
         assert_eq!(
             model.instructions,
             vec![Instruction::H(Single::new("0".to_owned()))]
@@ -205,8 +232,8 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_wrong_name_multiple_entry_points() -> Result<(), String> {
-        let context_type = ContextType::Memory(MULTIPLE_ENTRY_POINTS);
-        let result = run_context_module(context_type, Some("nonexistent"));
+        let source = Source::Memory(MULTIPLE_ENTRY_POINTS);
+        let result = run_module_from_source(source, Some("nonexistent"));
         assert_eq!(
             result.err(),
             Some("No matching entry point found.".to_owned())
@@ -217,8 +244,8 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_entry_point_has_params() -> Result<(), String> {
-        let context_type = ContextType::Memory(ENTRY_POINT_TYPES);
-        let result = run_context_module(context_type, Some("App__IntParam"));
+        let source = Source::Memory(ENTRY_POINT_TYPES);
+        let result = run_module_from_source(source, Some("App__IntParam"));
         assert_eq!(
             result.err(),
             Some("Entry point has parameters or a non-void return type.".to_owned())
@@ -229,8 +256,8 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_entry_point_has_return_value() -> Result<(), String> {
-        let context_type = ContextType::Memory(ENTRY_POINT_TYPES);
-        let result = run_context_module(context_type, Some("App__IntReturn"));
+        let source = Source::Memory(ENTRY_POINT_TYPES);
+        let result = run_module_from_source(source, Some("App__IntReturn"));
         assert_eq!(
             result.err(),
             Some("Entry point has parameters or a non-void return type.".to_owned())

@@ -5,31 +5,34 @@ use crate::gates::CURRENT_GATES;
 use crate::interop::SemanticModel;
 use inkwell::execution_engine::ExecutionEngine;
 use inkwell::module::Module;
+
 use qirlib::intrinsics::Intrinsics;
 
 use super::gates::GateScope;
 
 pub(crate) struct Simulator {
-    scope: GateScope,
+    _scope: GateScope,
 }
 
 impl<'ctx> Simulator {
     pub fn new(module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) -> Self {
         let simulator = Simulator {
-            scope: crate::gates::GateScope::new(),
+            _scope: crate::gates::GateScope::new(),
         };
-        simulator.bind(module, ee);
+
+        Simulator::bind(module, ee);
+
         simulator
     }
 
-    pub fn get_model(&self) -> SemanticModel {
+    pub fn get_model() -> SemanticModel {
         let mut gs = CURRENT_GATES.write().unwrap();
         gs.infer_allocations();
         gs.get_model()
     }
 
-    fn bind(&self, module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) {
-        let intrinsics = Intrinsics::new(&module);
+    fn bind(module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) {
+        let intrinsics = Intrinsics::new(module);
 
         if let Some(ins) = intrinsics.h_ins {
             ee.add_global_mapping(&ins, super::intrinsics::__quantum__qis__h__body as usize);

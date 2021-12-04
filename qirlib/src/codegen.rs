@@ -1,41 +1,19 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::OptimizationLevel;
-
 use std::path::Path;
 
 use crate::{
-    constants::Constants, intrinsics::Intrinsics, module, runtime_library::RuntimeLibrary,
+    constants::Constants,
+    intrinsics::Intrinsics,
+    module::{self, Source},
+    runtime_library::RuntimeLibrary,
     types::Types,
 };
 
-pub struct BareContext<'ctx> {
+pub struct CodeGenerator<'ctx> {
     pub context: &'ctx inkwell::context::Context,
     pub module: inkwell::module::Module<'ctx>,
-    pub builder: inkwell::builder::Builder<'ctx>,
-}
-
-impl<'ctx> BareContext<'ctx> {
-    pub fn new(
-        context: &'ctx inkwell::context::Context,
-        context_type: ContextType<'ctx>,
-    ) -> Result<Self, String> {
-        let builder = context.create_builder();
-        let module = module::load_module(context, context_type)?;
-        Ok(BareContext {
-            builder,
-            module,
-            context,
-        })
-    }
-}
-
-pub struct Context<'ctx> {
-    pub context: &'ctx inkwell::context::Context,
-    pub module: inkwell::module::Module<'ctx>,
-    #[cfg(feature = "jit")]
-    pub execution_engine: inkwell::execution_engine::ExecutionEngine<'ctx>,
     pub builder: inkwell::builder::Builder<'ctx>,
     pub types: Types<'ctx>,
     pub runtime_library: RuntimeLibrary<'ctx>,
@@ -43,33 +21,25 @@ pub struct Context<'ctx> {
     pub constants: Constants<'ctx>,
 }
 
-pub enum ContextType<'ctx> {
-    Template,
-    File(&'ctx Path),
-    Memory(&'ctx [u8]),
-}
-
-#[cfg(feature = "jit")]
-impl<'ctx> Context<'ctx> {
+impl<'ctx> CodeGenerator<'ctx> {
+    /// # Errors
+    ///
+    /// Will return `Err` if module fails to load
     pub fn new(
         context: &'ctx inkwell::context::Context,
-        context_type: ContextType<'ctx>,
+        module_source: Source<'ctx>,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
-        let module = module::load_module(context, context_type)?;
-        let execution_engine = module
-            .create_jit_execution_engine(OptimizationLevel::None)
-            .expect("Could not create JIT Engine");
-        let types = Types::new(&context, &module);
+        let module = module::load(context, module_source)?;
+        let types = Types::new(context, &module);
         let runtime_library = RuntimeLibrary::new(&module);
         let intrinsics = Intrinsics::new(&module);
         let constants = Constants::new(&module, &types);
-        Ok(Context {
-            builder,
-            module,
-            execution_engine,
-            types,
+        Ok(CodeGenerator {
             context,
+            module,
+            builder,
+            types,
             runtime_library,
             intrinsics,
             constants,
@@ -77,36 +47,15 @@ impl<'ctx> Context<'ctx> {
     }
 }
 
-#[cfg(not(feature = "jit"))]
-impl<'ctx> Context<'ctx> {
-    pub fn new(
-        context: &'ctx inkwell::context::Context,
-        context_type: ContextType<'ctx>,
-    ) -> Result<Self, String> {
-        let builder = context.create_builder();
-        let module = module::load_module(context, context_type)?;
-        let types = Types::new(&context, &module);
-        let runtime_library = RuntimeLibrary::new(&module);
-        let intrinsics = Intrinsics::new(&module);
-        let constants = Constants::new(&module, &types);
-        Ok(Context {
-            builder,
-            module,
-            types,
-            context,
-            runtime_library,
-            intrinsics,
-            constants,
-        })
-    }
-}
-
-impl<'ctx> Context<'ctx> {
+impl<'ctx> CodeGenerator<'ctx> {
     pub fn emit_bitcode(&self, file_path: &str) {
         let bitcode_path = Path::new(file_path);
-        self.module.write_bitcode_to_path(&bitcode_path);
+        self.module.write_bitcode_to_path(bitcode_path);
     }
 
+    /// # Errors
+    ///
+    /// Will return `Err` if LLVM Module fails validation
     pub fn emit_ir(&self, file_path: &str) -> Result<(), String> {
         let ir_path = Path::new(file_path);
         if let Err(llvmstr) = self.module.print_to_file(ir_path) {
@@ -117,21 +66,19 @@ impl<'ctx> Context<'ctx> {
 
     pub fn get_ir_string(&self) -> String {
         let ir = self.module.print_to_string();
-        let result = ir.to_string();
-        result
+        ir.to_string()
     }
 
     pub fn get_bitcode_base64_string(&self) -> String {
         let buffer = self.module.write_bitcode_to_memory();
         let bytes = buffer.as_slice();
-        let result = base64::encode(bytes);
-        result
+        base64::encode(bytes)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::context::{Context, ContextType};
+    use crate::codegen::{CodeGenerator, Source};
     use std::fs::File;
     use std::io::prelude::*;
 
@@ -146,8 +93,8 @@ mod tests {
         let file_path_string = file_path.display().to_string();
 
         let ctx = inkwell::context::Context::create();
-        let context = Context::new(&ctx, ContextType::Template).unwrap();
-        context.emit_bitcode(file_path_string.as_str());
+        let generator = CodeGenerator::new(&ctx, Source::Template).unwrap();
+        generator.emit_bitcode(file_path_string.as_str());
         let mut emitted_bitcode_file =
             File::open(file_path_string.as_str()).expect("Could not open emitted bitcode file");
         let mut buffer = vec![];
@@ -157,7 +104,7 @@ mod tests {
             .expect("Could not read emitted bitcode file");
         let emitted_bitcode_bytes = buffer.as_slice();
 
-        let b64_bitcode = context.get_bitcode_base64_string();
+        let b64_bitcode = generator.get_bitcode_base64_string();
         let decoded = base64::decode(b64_bitcode).expect("could not decode base64 encoded module");
         let decoded_bitcode_bytes = decoded.as_slice();
 

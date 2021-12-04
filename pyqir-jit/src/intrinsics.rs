@@ -11,7 +11,7 @@ pub struct QirRTuple {
 
 pub type PauliId = i8;
 
-use microsoft_quantum_qir_runtime_sys::runtime::{QirArray,QirRuntime, QUBIT};
+use microsoft_quantum_qir_runtime_sys::runtime::{QirArray, QirRuntime, QUBIT};
 use mut_static::ForceSomeRwLockWriteGuard;
 
 use super::gates::BaseProfile;
@@ -21,6 +21,10 @@ fn get_current_gate_processor() -> ForceSomeRwLockWriteGuard<'static, BaseProfil
     v
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__h__body(qubit: QUBIT) {
     log::debug!("/__quantum__qis__h__body/");
@@ -28,6 +32,14 @@ pub unsafe extern "C" fn __quantum__qis__h__body(qubit: QUBIT) {
     gs.h(qubit);
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+///
+/// # Panics
+///
+/// Will panic as it is not yet implemented.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__h__ctl(ctls: *mut QirArray, qubit: QUBIT) {
     log::debug!("/__quantum__qis__h__ctl/");
@@ -37,6 +49,10 @@ pub unsafe extern "C" fn __quantum__qis__h__ctl(ctls: *mut QirArray, qubit: QUBI
     //gs.h_ctl(control, get_cubit_string(qubit));
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__measure__body(
     qubits: *mut QirArray,
@@ -52,6 +68,14 @@ pub unsafe extern "C" fn __quantum__qis__measure__body(
     // gs.m(qubit);
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+///
+/// # Panics
+///
+/// Will panic if an unknown Pauli value is supplied.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__r__body(pauli: PauliId, theta: f64, qubit: QUBIT) {
     log::debug!("/__quantum__qis__r__body/");
@@ -65,6 +89,14 @@ pub unsafe extern "C" fn __quantum__qis__r__body(pauli: PauliId, theta: f64, qub
     }
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+///
+/// # Panics
+///
+/// Will panic as it is not yet implemented.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__r__adj(pauli: PauliId, theta: f64, qubit: QUBIT) {
     log::debug!("/__quantum__qis__r__adj/");
@@ -73,18 +105,38 @@ pub unsafe extern "C" fn __quantum__qis__r__adj(pauli: PauliId, theta: f64, qubi
     //gs.r_adj(pauli, theta, get_cubit_string(qubit));
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+///
+/// # Panics
+///
+/// Will panic as it is not yet implemented.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__r__ctl(ctls: *mut QirArray, qubit: *mut QirRTuple) {
     log::debug!("/__quantum__qis__r__ctl/");
     todo!("Not yet implemented.");
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+///
+/// # Panics
+///
+/// Will panic as it is not yet implemented.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__r__ctladj(ctls: *mut QirArray, qubit: *mut QirRTuple) {
     log::debug!("/__quantum__qis__r__ctladj/");
     todo!("Not yet implemented.");
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__s__body(qubit: QUBIT) {
     log::debug!("/__quantum__qis__s__body/");
@@ -92,6 +144,10 @@ pub unsafe extern "C" fn __quantum__qis__s__body(qubit: QUBIT) {
     gs.s(qubit);
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__s__adj(qubit: QUBIT) {
     log::debug!("/__quantum__qis__s__adj/");
@@ -99,18 +155,38 @@ pub unsafe extern "C" fn __quantum__qis__s__adj(qubit: QUBIT) {
     gs.s_adj(qubit);
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+///
+/// # Panics
+///
+/// Will panic as it is not yet implemented.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__s__ctl(ctls: *mut QirArray, qubit: QUBIT) {
     log::debug!("/__quantum__qis__s__ctl/");
     todo!("Not yet implemented.");
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+///
+/// # Panics
+///
+/// Will panic as it is not yet implemented.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__s__ctladj(ctls: *mut QirArray, qubit: QUBIT) {
     log::debug!("/__quantum__qis__s__ctladj/");
     todo!("Not yet implemented.");
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__t__body(qubit: QUBIT) {
     log::debug!("/__quantum__qis__t__body/");
@@ -118,6 +194,10 @@ pub unsafe extern "C" fn __quantum__qis__t__body(qubit: QUBIT) {
     gs.t(qubit);
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__t__adj(qubit: QUBIT) {
     log::debug!("/__quantum__qis__t__adj/");
@@ -125,18 +205,38 @@ pub unsafe extern "C" fn __quantum__qis__t__adj(qubit: QUBIT) {
     gs.t_adj(qubit);
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+///
+/// # Panics
+///
+/// Will panic as it is not yet implemented.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__t__ctl(ctls: *mut QirArray, qubit: QUBIT) {
     log::debug!("/__quantum__qis__t__ctl/");
     todo!("Not yet implemented.");
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+///
+/// # Panics
+///
+/// Will panic as it is not yet implemented.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__t__ctladj(ctls: *mut QirArray, qubit: QUBIT) {
     log::debug!("/__quantum__qis__t__ctladj/");
     todo!("Not yet implemented.");
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__x__body(qubit: QUBIT) {
     log::debug!("/__quantum__qis__x__body/");
@@ -144,6 +244,10 @@ pub unsafe extern "C" fn __quantum__qis__x__body(qubit: QUBIT) {
     gs.x(qubit);
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__x__ctl(ctls: *mut QirArray, qubit: QUBIT) {
     log::debug!("/__quantum__qis__x__ctl/");
@@ -152,6 +256,10 @@ pub unsafe extern "C" fn __quantum__qis__x__ctl(ctls: *mut QirArray, qubit: QUBI
     gs.cx(control, qubit);
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__y__body(qubit: QUBIT) {
     log::debug!("/__quantum__qis__y__body/");
@@ -159,12 +267,24 @@ pub unsafe extern "C" fn __quantum__qis__y__body(qubit: QUBIT) {
     gs.y(qubit);
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+///
+/// # Panics
+///
+/// Will panic as it is not yet implemented.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__y__ctl(ctls: *mut QirArray, qubit: QUBIT) {
     log::debug!("/__quantum__qis__y__ctl/");
     todo!("Not yet implemented.");
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__z__body(qubit: QUBIT) {
     log::debug!("/__quantum__qis__z__body/");
@@ -172,6 +292,10 @@ pub unsafe extern "C" fn __quantum__qis__z__body(qubit: QUBIT) {
     gs.y(qubit);
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__z__ctl(ctls: *mut QirArray, qubit: QUBIT) {
     log::debug!("/__quantum__qis__z__ctl/");
@@ -180,6 +304,10 @@ pub unsafe extern "C" fn __quantum__qis__z__ctl(ctls: *mut QirArray, qubit: QUBI
     gs.cz(control, qubit);
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__dumpmachine__body(location: *mut u8) {
     log::debug!("/__quantum__qis__dumpmachine__body/");
@@ -188,6 +316,14 @@ pub unsafe extern "C" fn __quantum__qis__dumpmachine__body(location: *mut u8) {
     gs.dump_machine();
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+///
+/// # Panics
+///
+/// Will panic as it is not yet implemented.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__dumpregister__body(
     location: *mut u8,
@@ -197,11 +333,18 @@ pub unsafe extern "C" fn __quantum__qis__dumpregister__body(
     todo!("Not yet implemented.");
 }
 
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
 pub unsafe fn get_qubit_id(ctls: *mut QirArray) -> QUBIT {
-    let ctrl_qubit_ptr = QirRuntime::quantum_rt_array_get_element_ptr_1d(ctls, 0) as *mut u64;
+    #[allow(clippy::cast_ptr_alignment)]
+    let ctrl_qubit_ptr = QirRuntime::quantum_rt_array_get_element_ptr_1d(ctls, 0).cast::<i64>();
     let ctrl_qubit = *ctrl_qubit_ptr;
     log::debug!("ctrl_qubit {}", ctrl_qubit);
-    ctrl_qubit as QUBIT
+    #[allow(clippy::cast_sign_loss)]
+    let id = ctrl_qubit as QUBIT;
+    id
 }
 
 /*

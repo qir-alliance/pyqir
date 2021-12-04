@@ -5,18 +5,28 @@ use inkwell::{memory_buffer::MemoryBuffer, module::Module};
 
 use std::path::Path;
 
-use crate::context::ContextType;
+#[derive(Clone, Copy)]
+pub enum Source<'ctx> {
+    Template,
+    File(&'ctx Path),
+    Memory(&'ctx [u8]),
+}
 
-pub(crate) fn load_module<'ctx>(
+/// # Errors
+///
+/// Will return `Err` if
+/// - module fails to load
+/// - file path has an unknown extension
+pub fn load<'ctx>(
     context: &'ctx inkwell::context::Context,
-    context_type: ContextType<'ctx>,
+    module_source: Source<'ctx>,
 ) -> Result<Module<'ctx>, String> {
-    match context_type {
-        ContextType::Template => {
+    match module_source {
+        Source::Template => {
             let template = include_bytes!("module.bc");
             load_module_from_bytes(template, "template", context)
         }
-        ContextType::File(path) => {
+        Source::File(path) => {
             let ext = path.extension().and_then(std::ffi::OsStr::to_str);
             match ext {
                 Some("ll") => load_module_from_ir_file(path, context),
@@ -24,7 +34,7 @@ pub(crate) fn load_module<'ctx>(
                 _ => panic!("Unsupported module extension {:?}", ext),
             }
         }
-        ContextType::Memory(bytes) => load_module_from_bytes(bytes, "memory", context),
+        Source::Memory(bytes) => load_module_from_bytes(bytes, "memory", context),
     }
 }
 
@@ -37,17 +47,17 @@ fn load_module_from_bytes<'ctx>(
     Module::parse_bitcode_from_buffer(&buffer, context).map_err(|e| e.to_string())
 }
 
-pub(crate) fn load_module_from_bitcode_file<'ctx, P: AsRef<Path>>(
-    path: P,
-    context: &'ctx inkwell::context::Context,
-) -> Result<Module<'ctx>, String> {
+fn load_module_from_bitcode_file(
+    path: impl AsRef<Path>,
+    context: &inkwell::context::Context,
+) -> Result<Module, String> {
     Module::parse_bitcode_from_path(path, context).map_err(|e| e.to_string())
 }
 
-pub(crate) fn load_module_from_ir_file<'ctx, P: AsRef<Path>>(
-    path: P,
-    context: &'ctx inkwell::context::Context,
-) -> Result<Module<'ctx>, String> {
+fn load_module_from_ir_file(
+    path: impl AsRef<Path>,
+    context: &inkwell::context::Context,
+) -> Result<Module, String> {
     let buffer = MemoryBuffer::create_from_file(path.as_ref()).map_err(|e| e.to_string())?;
     context
         .create_module_from_ir(buffer)
