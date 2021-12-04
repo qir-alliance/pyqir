@@ -24,21 +24,33 @@ pub struct BaseProfile {
 pub struct GateScope {}
 
 impl GateScope {
+    #[must_use]
     pub fn new() -> GateScope {
-        let mut gs = CURRENT_GATES.write().unwrap();
+        let mut gs = CURRENT_GATES
+            .write()
+            .expect("Could not acquire lock on gate set.");
         gs.reset();
         GateScope {}
     }
 }
 
+impl Default for GateScope {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Drop for GateScope {
     fn drop(&mut self) {
-        let mut gs = CURRENT_GATES.write().unwrap();
+        let mut gs = CURRENT_GATES
+            .write()
+            .expect("Could not acquire lock on gate set.");
         gs.reset();
     }
 }
 
 impl BaseProfile {
+    #[must_use]
     pub fn new() -> Self {
         BaseProfile {
             model: SemanticModel::new(String::from("QIR")),
@@ -56,22 +68,25 @@ impl BaseProfile {
     fn record_max_qubit_id(&mut self, qubit: QUBIT) {
         self.declared_cubits = true;
         if qubit > self.max_id {
-            self.max_id = qubit
+            self.max_id = qubit;
         }
     }
+
+    #[must_use]
     pub fn get_model(&self) -> SemanticModel {
         self.model.clone()
     }
+
     pub fn infer_allocations(&mut self) {
-        if self.declared_cubits == false {
+        if !self.declared_cubits {
             return;
         }
-        for index in 0..self.max_id + 1 {
+        for index in 0..=self.max_id {
             let qr = QuantumRegister::new(String::from("qubit"), index);
-            self.model.add_reg(qr.as_register());
+            self.model.add_reg(&qr.as_register());
         }
         let cr = ClassicalRegister::new(String::from("output"), self.max_id + 1);
-        self.model.add_reg(cr.as_register());
+        self.model.add_reg(&cr.as_register());
     }
 
     pub fn cx(&mut self, control: QUBIT, target: QUBIT) {
@@ -116,6 +131,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::Rx(BaseProfile::rotated(theta, qubit)));
     }
+
     pub fn ry(&mut self, theta: f64, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
@@ -123,6 +139,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::Ry(BaseProfile::rotated(theta, qubit)));
     }
+
     pub fn rz(&mut self, theta: f64, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
@@ -130,6 +147,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::Rz(BaseProfile::rotated(theta, qubit)));
     }
+
     pub fn s(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
@@ -137,6 +155,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::S(BaseProfile::single(qubit)));
     }
+
     pub fn s_adj(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
@@ -152,6 +171,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::T(BaseProfile::single(qubit)));
     }
+
     pub fn t_adj(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
@@ -167,6 +187,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::X(BaseProfile::single(qubit)));
     }
+
     pub fn y(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
@@ -174,6 +195,7 @@ impl BaseProfile {
         self.model
             .add_inst(Instruction::Y(BaseProfile::single(qubit)));
     }
+
     pub fn z(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
@@ -182,6 +204,7 @@ impl BaseProfile {
             .add_inst(Instruction::Z(BaseProfile::single(qubit)));
     }
 
+    #[allow(clippy::unused_self)]
     pub fn dump_machine(&mut self) {
         log::debug!("dumpmachine");
     }
@@ -209,6 +232,6 @@ impl BaseProfile {
     }
 
     fn get_cubit_string(qubit: QUBIT) -> String {
-        String::from(format!("{}", qubit))
+        format!("{}", qubit)
     }
 }
