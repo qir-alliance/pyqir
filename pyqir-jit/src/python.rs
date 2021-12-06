@@ -3,7 +3,6 @@
 
 use crate::{interop::Instruction, jit::run_module_file};
 use pyo3::{exceptions::PyOSError, prelude::*, types::PyDict};
-use std::path::Path;
 
 #[pymodule]
 fn pyqir_jit(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -74,8 +73,7 @@ impl PyNonadaptiveJit {
             Ok(())
         }
 
-        let gen_model =
-            run_module_file(Path::new(file), entry_point).map_err(PyOSError::new_err)?;
+        let gen_model = run_module_file(file, entry_point).map_err(PyOSError::new_err)?;
 
         Python::with_gil(|py| -> PyResult<()> {
             for instruction in gen_model.instructions {
