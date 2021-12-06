@@ -4,6 +4,7 @@
 use crate::{interop::SemanticModel, runtime::Simulator};
 use inkwell::{
     attributes::AttributeLoc,
+    context::Context,
     execution_engine::ExecutionEngine,
     module::Module,
     targets::{InitializationConfig, Target, TargetMachine},
@@ -11,19 +12,19 @@ use inkwell::{
     OptimizationLevel,
 };
 use microsoft_quantum_qir_runtime_sys::runtime::BasicRuntimeDriver;
-use qirlib::passes::run_basic_passes_on;
+use qirlib::{module, passes::run_basic_passes_on};
+use std::path::Path;
 
-/// # Errors
-///
-/// Will return `Err` if
-///   - LLVM native target fails to initialize.
-///   - Unable to create target machine
-///   - Target doesn't have an ASM backend.
-///   - Target doesn't have a target machine
-///   - No matching entry point found.
-///   - Multiple matching entry points found.
-///   - JIT Engine could not created.
-pub fn run_module(module: &Module, entry_point: Option<&str>) -> Result<SemanticModel, String> {
+pub(crate) fn run_module_file(
+    path: impl AsRef<Path>,
+    entry_point: Option<&str>,
+) -> Result<SemanticModel, String> {
+    let context = Context::create();
+    let module = module::load_file(path, &context)?;
+    run_module(&module, entry_point)
+}
+
+fn run_module(module: &Module, entry_point: Option<&str>) -> Result<SemanticModel, String> {
     Target::initialize_native(&InitializationConfig::default())?;
 
     let default_triple = TargetMachine::get_default_triple();

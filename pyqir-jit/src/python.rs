@@ -1,10 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{interop::Instruction, jit::run_module};
-use inkwell::context::Context;
+use crate::{interop::Instruction, jit::run_module_file};
 use pyo3::{exceptions::PyOSError, prelude::*, types::PyDict};
-use qirlib::module;
 use std::path::Path;
 
 #[pymodule]
@@ -76,9 +74,8 @@ impl PyNonadaptiveJit {
             Ok(())
         }
 
-        let context = Context::create();
-        let module = module::load_file(Path::new(file), &context).map_err(PyOSError::new_err)?;
-        let gen_model = run_module(&module, entry_point).map_err(PyOSError::new_err)?;
+        let gen_model =
+            run_module_file(Path::new(file), entry_point).map_err(PyOSError::new_err)?;
 
         Python::with_gil(|py| -> PyResult<()> {
             for instruction in gen_model.instructions {
