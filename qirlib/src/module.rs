@@ -1,67 +1,41 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::{memory_buffer::MemoryBuffer, module::Module};
+use inkwell::{context::Context, memory_buffer::MemoryBuffer, module::Module};
+use std::{ffi::OsStr, path::Path};
 
-use std::path::Path;
-
-#[derive(Clone, Copy)]
-pub enum Source<'ctx> {
-    Template(&'ctx String),
-    File(&'ctx String),
+/// # Errors
+///
+/// - Module fails to load.
+pub fn load_template<'a>(name: &str, context: &'a Context) -> Result<Module<'a>, String> {
+    load_memory(include_bytes!("module.bc"), name, context)
 }
 
 /// # Errors
 ///
-/// Will return `Err` if
-/// - module fails to load
-/// - file path has an unknown extension
-pub fn load<'ctx>(
-    context: &'ctx inkwell::context::Context,
-    module_source: Source<'ctx>,
-) -> Result<Module<'ctx>, String> {
-    let module = match module_source {
-        Source::Template(name) => load_module_from_bitcode_template(context, &name[..])?,
-        Source::File(file_name) => {
-            let file_path = Path::new(&file_name[..]);
-            let ext = file_path.extension().and_then(std::ffi::OsStr::to_str);
-            let module = match ext {
-                Some("ll") => load_module_from_ir_file(file_path, context)?,
-                Some("bc") => load_module_from_bitcode_file(file_path, context)?,
-                _ => return Err(format!("Unsupported module extension {:?}", ext)),
-            };
-            module
-        }
-    };
-    Ok(module)
+/// - Path has an unsupported extension.
+/// - Module fails to load.
+pub fn load_file(path: impl AsRef<Path>, context: &Context) -> Result<Module, String> {
+    let path = path.as_ref();
+    let extension = path.extension().and_then(OsStr::to_str);
+
+    match extension {
+        Some("ll") => MemoryBuffer::create_from_file(path)
+            .and_then(|buffer| context.create_module_from_ir(buffer))
+            .map_err(|e| e.to_string()),
+        Some("bc") => Module::parse_bitcode_from_path(path, context).map_err(|e| e.to_string()),
+        _ => Err(format!("Unsupported file extension '{:?}'.", extension)),
+    }
 }
 
-fn load_module_from_bitcode_template<'ctx>(
-    context: &'ctx inkwell::context::Context,
-    name: &'ctx str,
-) -> Result<Module<'ctx>, String> {
-    let module_contents = include_bytes!("module.bc");
-    let buffer = MemoryBuffer::create_from_memory_range_copy(module_contents, name);
+/// # Errors
+///
+/// - Module fails to load.
+pub fn load_memory<'a>(
+    bytes: &[u8],
+    name: &str,
+    context: &'a Context,
+) -> Result<Module<'a>, String> {
+    let buffer = MemoryBuffer::create_from_memory_range_copy(bytes, name);
     Module::parse_bitcode_from_buffer(&buffer, context).map_err(|e| e.to_string())
-}
-
-fn load_module_from_bitcode_file(
-    path: impl AsRef<Path>,
-    context: &inkwell::context::Context,
-) -> Result<Module, String> {
-    Module::parse_bitcode_from_path(path, context).map_err(|e| e.to_string())
-}
-
-fn load_module_from_ir_file(
-    path: impl AsRef<Path>,
-    context: &inkwell::context::Context,
-) -> Result<Module, String> {
-    let memory_buffer = load_memory_buffer_from_ir_file(path)?;
-    context
-        .create_module_from_ir(memory_buffer)
-        .map_err(|e| e.to_string())
-}
-
-fn load_memory_buffer_from_ir_file(path: impl AsRef<Path>) -> Result<MemoryBuffer, String> {
-    MemoryBuffer::create_from_file(path.as_ref()).map_err(|e| e.to_string())
 }

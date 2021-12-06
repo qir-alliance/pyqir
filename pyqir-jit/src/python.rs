@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{interop::Instruction, jit};
+use crate::{interop::Instruction, jit::run_module_file};
 use pyo3::{exceptions::PyOSError, prelude::*, types::PyDict};
 
 #[pymodule]
@@ -22,7 +22,7 @@ impl PyNonadaptiveJit {
     }
 
     #[allow(clippy::unused_self)]
-    fn eval(&self, file: String, pyobj: &PyAny, entry_point: Option<&str>) -> PyResult<()> {
+    fn eval(&self, file: &str, pyobj: &PyAny, entry_point: Option<&str>) -> PyResult<()> {
         fn controlled(pyobj: &PyAny, gate: &str, control: String, target: String) -> PyResult<()> {
             let has_gate = pyobj.hasattr(gate)?;
             if has_gate {
@@ -73,7 +73,7 @@ impl PyNonadaptiveJit {
             Ok(())
         }
 
-        let gen_model = jit::run_module_file(file, entry_point).map_err(PyOSError::new_err)?;
+        let gen_model = run_module_file(file, entry_point).map_err(PyOSError::new_err)?;
 
         Python::with_gil(|py| -> PyResult<()> {
             for instruction in gen_model.instructions {

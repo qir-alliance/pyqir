@@ -4,6 +4,7 @@
 use crate::{interop::SemanticModel, runtime::Simulator};
 use inkwell::{
     attributes::AttributeLoc,
+    context::Context,
     execution_engine::ExecutionEngine,
     module::Module,
     targets::{InitializationConfig, Target, TargetMachine},
@@ -11,54 +12,19 @@ use inkwell::{
     OptimizationLevel,
 };
 use microsoft_quantum_qir_runtime_sys::runtime::BasicRuntimeDriver;
-
-use qirlib::{
-    module::{self, Source},
-    passes::run_basic_passes_on,
-};
+use qirlib::{module, passes::run_basic_passes_on};
 use std::path::Path;
 
-/// # Panics
-///
-/// Path to module was not a valid unicode path string
-/// # Errors
-///
-/// Will return `Err` if
-///   - Module fails to load
-///   - LLVM native target fails to initialize.
-///   - Unable to create target machine
-///   - Target doesn't have an ASM backend.
-///   - Target doesn't have a target machine
-///   - No matching entry point found.
-///   - Multiple matching entry points found.
-///   - JIT Engine could not created.
-pub fn run_module_file(
+pub(crate) fn run_module_file(
     path: impl AsRef<Path>,
     entry_point: Option<&str>,
 ) -> Result<SemanticModel, String> {
-    let ctx = inkwell::context::Context::create();
-    let path_str = path
-        .as_ref()
-        .to_str()
-        .expect("Did not find a valid Unicode path string")
-        .to_owned();
-
-    let module_source = Source::File(&path_str);
-    let module = module::load(&ctx, module_source)?;
+    let context = Context::create();
+    let module = module::load_file(path, &context)?;
     run_module(&module, entry_point)
 }
 
-/// # Errors
-///
-/// Will return `Err` if
-///   - LLVM native target fails to initialize.
-///   - Unable to create target machine
-///   - Target doesn't have an ASM backend.
-///   - Target doesn't have a target machine
-///   - No matching entry point found.
-///   - Multiple matching entry points found.
-///   - JIT Engine could not created.
-pub fn run_module(module: &Module<'_>, entry_point: Option<&str>) -> Result<SemanticModel, String> {
+fn run_module(module: &Module, entry_point: Option<&str>) -> Result<SemanticModel, String> {
     Target::initialize_native(&InitializationConfig::default())?;
 
     let default_triple = TargetMachine::get_default_triple();
@@ -110,8 +76,7 @@ fn choose_entry_point<'ctx>(
     name: Option<&str>,
 ) -> Result<FunctionValue<'ctx>, String> {
     let mut entry_points = functions
-        .filter(is_entry_point)
-        .filter(|f| name.iter().all(|n| f.get_name().to_str() == Ok(n)));
+        .filter(|f| is_entry_point(*f) && name.iter().all(|n| f.get_name().to_str() == Ok(n)));
 
     let entry_point = entry_points
         .next()
@@ -124,8 +89,7 @@ fn choose_entry_point<'ctx>(
     }
 }
 
-#[allow(clippy::trivially_copy_pass_by_ref)]
-fn is_entry_point(function: &FunctionValue) -> bool {
+fn is_entry_point(function: FunctionValue) -> bool {
     function
         .get_string_attribute(AttributeLoc::Function, "EntryPoint")
         .is_some()
@@ -149,11 +113,11 @@ fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = Functio
 
 #[cfg(test)]
 mod tests {
-    use super::run_module_file;
-    use crate::interop::{Instruction, Single};
+    use super::run_module;
+    use crate::interop::{Instruction, SemanticModel, Single};
+    use inkwell::context::Context;
+    use qirlib::module;
     use serial_test::serial;
-    use std::io::{self, Write};
-    use tempfile::NamedTempFile;
 
     const BELL_QIR_MEASURE: &[u8] = include_bytes!("../tests/bell_qir_measure.bc");
     const CUSTOM_ENTRY_POINT_NAME: &[u8] = include_bytes!("../tests/custom_entry_point_name.bc");
@@ -163,17 +127,15 @@ mod tests {
     #[serial]
     #[test]
     fn runs_bell_qir_measure() -> Result<(), String> {
-        let module_file = temp_bc_file(BELL_QIR_MEASURE).map_err(|e| e.to_string())?;
-        let generated_model = run_module_file(&module_file, None)?;
-        assert_eq!(generated_model.instructions.len(), 2);
+        let model = run_test_module(BELL_QIR_MEASURE, None)?;
+        assert_eq!(model.instructions.len(), 2);
         Ok(())
     }
 
     #[serial]
     #[test]
     fn runs_single_entry_point_with_custom_name() -> Result<(), String> {
-        let module_file = temp_bc_file(CUSTOM_ENTRY_POINT_NAME).map_err(|e| e.to_string())?;
-        let model = run_module_file(&module_file, None)?;
+        let model = run_test_module(CUSTOM_ENTRY_POINT_NAME, None)?;
         assert_eq!(
             model.instructions,
             vec![Instruction::X(Single::new("0".to_owned()))]
@@ -184,8 +146,7 @@ mod tests {
     #[serial]
     #[test]
     fn runs_entry_point_by_name() -> Result<(), String> {
-        let module_file = temp_bc_file(CUSTOM_ENTRY_POINT_NAME).map_err(|e| e.to_string())?;
-        let model = run_module_file(&module_file, Some("App__Foo"))?;
+        let model = run_test_module(CUSTOM_ENTRY_POINT_NAME, Some("App__Foo"))?;
         assert_eq!(
             model.instructions,
             vec![Instruction::X(Single::new("0".to_owned()))]
@@ -196,9 +157,9 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_wrong_name_single_entry_point() -> Result<(), String> {
-        let module_file = temp_bc_file(CUSTOM_ENTRY_POINT_NAME).map_err(|e| e.to_string())?;
+        let result = run_test_module(CUSTOM_ENTRY_POINT_NAME, Some("nonexistent"));
         assert_eq!(
-            run_module_file(&module_file, Some("nonexistent")).err(),
+            result.err(),
             Some("No matching entry point found.".to_owned())
         );
         Ok(())
@@ -207,9 +168,9 @@ mod tests {
     #[serial]
     #[test]
     fn fails_without_name_if_multiple_entry_points() -> Result<(), String> {
-        let module_file = temp_bc_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
+        let result = run_test_module(MULTIPLE_ENTRY_POINTS, None);
         assert_eq!(
-            run_module_file(&module_file, None).err(),
+            result.err(),
             Some("Multiple matching entry points found.".to_owned())
         );
         Ok(())
@@ -218,8 +179,7 @@ mod tests {
     #[serial]
     #[test]
     fn runs_first_entry_point_by_name() -> Result<(), String> {
-        let module_file = temp_bc_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
-        let model = run_module_file(&module_file, Some("App__Foo"))?;
+        let model = run_test_module(MULTIPLE_ENTRY_POINTS, Some("App__Foo"))?;
         assert_eq!(
             model.instructions,
             vec![Instruction::X(Single::new("0".to_owned()))]
@@ -230,8 +190,7 @@ mod tests {
     #[serial]
     #[test]
     fn runs_second_entry_point_by_name() -> Result<(), String> {
-        let module_file = temp_bc_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
-        let model = run_module_file(&module_file, Some("App__Bar"))?;
+        let model = run_test_module(MULTIPLE_ENTRY_POINTS, Some("App__Bar"))?;
         assert_eq!(
             model.instructions,
             vec![Instruction::H(Single::new("0".to_owned()))]
@@ -242,9 +201,9 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_wrong_name_multiple_entry_points() -> Result<(), String> {
-        let module_file = temp_bc_file(MULTIPLE_ENTRY_POINTS).map_err(|e| e.to_string())?;
+        let result = run_test_module(MULTIPLE_ENTRY_POINTS, Some("nonexistent"));
         assert_eq!(
-            run_module_file(&module_file, Some("nonexistent")).err(),
+            result.err(),
             Some("No matching entry point found.".to_owned())
         );
         Ok(())
@@ -253,9 +212,9 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_entry_point_has_params() -> Result<(), String> {
-        let module_file = temp_bc_file(ENTRY_POINT_TYPES).map_err(|e| e.to_string())?;
+        let result = run_test_module(ENTRY_POINT_TYPES, Some("App__IntParam"));
         assert_eq!(
-            run_module_file(&module_file, Some("App__IntParam")).err(),
+            result.err(),
             Some("Entry point has parameters or a non-void return type.".to_owned())
         );
         Ok(())
@@ -264,17 +223,17 @@ mod tests {
     #[serial]
     #[test]
     fn fails_if_entry_point_has_return_value() -> Result<(), String> {
-        let module_file = temp_bc_file(ENTRY_POINT_TYPES).map_err(|e| e.to_string())?;
+        let result = run_test_module(ENTRY_POINT_TYPES, Some("App__IntReturn"));
         assert_eq!(
-            run_module_file(&module_file, Some("App__IntReturn")).err(),
+            result.err(),
             Some("Entry point has parameters or a non-void return type.".to_owned())
         );
         Ok(())
     }
 
-    fn temp_bc_file(buf: &[u8]) -> io::Result<NamedTempFile> {
-        let mut temp_file = tempfile::Builder::new().suffix(".bc").tempfile()?;
-        temp_file.write_all(buf)?;
-        Ok(temp_file)
+    fn run_test_module(bytes: &[u8], entry_point: Option<&str>) -> Result<SemanticModel, String> {
+        let context = Context::create();
+        let module = module::load_memory(bytes, "test", &context)?;
+        run_module(&module, entry_point)
     }
 }
