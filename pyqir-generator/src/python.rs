@@ -1,180 +1,186 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-use crate::emit::{get_bitcode_base64_string, get_ir_string, write_model_to_file};
-use crate::interop::{
-    ClassicalRegister, Controlled, Instruction, Measured, QuantumRegister, Rotated, SemanticModel,
-    Single,
+
+use crate::{
+    emit::{get_bitcode_base64_string, get_ir_string, write_model_to_file},
+    interop::{
+        self, ClassicalRegister, Controlled, Measured, QuantumRegister, Rotated, SemanticModel,
+        Single,
+    },
 };
-use log;
-use pyo3::exceptions::PyOSError;
-use pyo3::prelude::*;
+use pyo3::{exceptions::PyOSError, prelude::*};
 
 #[pymodule]
 fn pyqir_generator(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyQIR>()?;
-    Ok(())
+    m.add_class::<Instruction>()?;
+    m.add_function(wrap_pyfunction!(cx, m)?)?;
+    m.add_function(wrap_pyfunction!(cz, m)?)?;
+    m.add_function(wrap_pyfunction!(h, m)?)?;
+    m.add_function(wrap_pyfunction!(m, m)?)?;
+    m.add_function(wrap_pyfunction!(reset, m)?)?;
+    m.add_function(wrap_pyfunction!(rx, m)?)?;
+    m.add_function(wrap_pyfunction!(ry, m)?)?;
+    m.add_function(wrap_pyfunction!(rz, m)?)?;
+    m.add_function(wrap_pyfunction!(s, m)?)?;
+    m.add_function(wrap_pyfunction!(s_adj, m)?)?;
+    m.add_function(wrap_pyfunction!(t, m)?)?;
+    m.add_function(wrap_pyfunction!(t_adj, m)?)?;
+    m.add_function(wrap_pyfunction!(x, m)?)?;
+    m.add_function(wrap_pyfunction!(y, m)?)?;
+    m.add_function(wrap_pyfunction!(z, m)?)?;
+    m.add(
+        "dump_machine",
+        Instruction(interop::Instruction::DumpMachine),
+    )?;
+
+    m.add_class::<Register>()?;
+    m.add_class::<Module>()?;
+
+    m.add_function(wrap_pyfunction!(enable_logging, m)?)
 }
 
 #[pyclass]
-pub struct PyQIR {
-    pub(super) model: SemanticModel,
+#[derive(Clone)]
+struct Instruction(interop::Instruction);
+
+#[pyfunction]
+fn cx(control: String, target: String) -> Instruction {
+    Instruction(interop::Instruction::Cx(Controlled { control, target }))
+}
+
+#[pyfunction]
+fn cz(control: String, target: String) -> Instruction {
+    Instruction(interop::Instruction::Cz(Controlled { control, target }))
+}
+
+#[pyfunction]
+fn h(qubit: String) -> Instruction {
+    Instruction(interop::Instruction::H(Single { qubit }))
+}
+
+#[pyfunction]
+fn m(qubit: String, target: String) -> Instruction {
+    Instruction(interop::Instruction::M(Measured { qubit, target }))
+}
+
+#[pyfunction]
+fn reset(qubit: String) -> Instruction {
+    Instruction(interop::Instruction::Reset(Single { qubit }))
+}
+
+#[pyfunction]
+fn rx(theta: f64, qubit: String) -> Instruction {
+    Instruction(interop::Instruction::Rx(Rotated { theta, qubit }))
+}
+
+#[pyfunction]
+fn ry(theta: f64, qubit: String) -> Instruction {
+    Instruction(interop::Instruction::Ry(Rotated { theta, qubit }))
+}
+
+#[pyfunction]
+fn rz(theta: f64, qubit: String) -> Instruction {
+    Instruction(interop::Instruction::Rz(Rotated { theta, qubit }))
+}
+
+#[pyfunction]
+fn s(qubit: String) -> Instruction {
+    Instruction(interop::Instruction::S(Single { qubit }))
+}
+
+#[pyfunction]
+fn s_adj(qubit: String) -> Instruction {
+    Instruction(interop::Instruction::SAdj(Single { qubit }))
+}
+
+#[pyfunction]
+fn t(qubit: String) -> Instruction {
+    Instruction(interop::Instruction::T(Single { qubit }))
+}
+
+#[pyfunction]
+fn t_adj(qubit: String) -> Instruction {
+    Instruction(interop::Instruction::TAdj(Single { qubit }))
+}
+
+#[pyfunction]
+fn x(qubit: String) -> Instruction {
+    Instruction(interop::Instruction::X(Single { qubit }))
+}
+
+#[pyfunction]
+fn y(qubit: String) -> Instruction {
+    Instruction(interop::Instruction::Y(Single { qubit }))
+}
+
+#[pyfunction]
+fn z(qubit: String) -> Instruction {
+    Instruction(interop::Instruction::Z(Single { qubit }))
+}
+
+#[pyclass]
+#[derive(Clone)]
+struct Register {
+    name: String,
+    size: u64,
 }
 
 #[pymethods]
-impl PyQIR {
+impl Register {
     #[new]
-    fn new(name: String) -> Self {
-        PyQIR {
-            model: SemanticModel::new(name),
-        }
+    fn new(name: String, size: u64) -> Register {
+        Register { name, size }
+    }
+}
+
+impl Register {
+    fn into_classical(self) -> ClassicalRegister {
+        ClassicalRegister::new(self.name, self.size)
     }
 
-    fn cx(&mut self, control: String, target: String) {
-        log::info!("cx {} => {}", control, target);
-        let controlled = Controlled::new(control, target);
-        let inst = Instruction::Cx(controlled);
-        self.model.add_inst(inst);
+    fn quantum(&self) -> impl Iterator<Item = QuantumRegister> + '_ {
+        (0..self.size).map(move |i| QuantumRegister::new(self.name.clone(), i))
+    }
+}
+
+#[pyclass]
+struct Module(SemanticModel);
+
+#[pymethods]
+impl Module {
+    #[new]
+    fn new(
+        name: String,
+        bits: Vec<Register>,
+        qubits: Vec<Register>,
+        instructions: Vec<Instruction>,
+    ) -> Module {
+        let registers = bits.into_iter().map(Register::into_classical).collect();
+        let qubits = qubits.iter().flat_map(Register::quantum).collect();
+        let instructions = instructions.into_iter().map(|i| i.0).collect();
+
+        Module(SemanticModel {
+            name,
+            registers,
+            qubits,
+            instructions,
+        })
     }
 
-    fn cz(&mut self, control: String, target: String) {
-        log::info!("cz {} => {}", control, target);
-        let controlled = Controlled::new(control, target);
-        let inst = Instruction::Cz(controlled);
-        self.model.add_inst(inst);
+    fn ir(&self) -> PyResult<String> {
+        get_ir_string(&self.0).map_err(PyOSError::new_err)
     }
 
-    fn h(&mut self, qubit: String) {
-        log::info!("h => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::H(single);
-        self.model.add_inst(inst);
+    fn bitcode_base64(&self) -> PyResult<String> {
+        get_bitcode_base64_string(&self.0).map_err(PyOSError::new_err)
     }
 
-    fn m(&mut self, qubit: String, target: String) {
-        log::info!("m {}[{}]", qubit, target);
-        let inst = Measured::new(qubit, target);
-        let inst = Instruction::M(inst);
-        self.model.add_inst(inst);
+    fn write(&self, path: &str) -> PyResult<()> {
+        write_model_to_file(&self.0, path).map_err(PyOSError::new_err)
     }
+}
 
-    fn reset(&mut self, qubit: String) {
-        log::info!("reset => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::Reset(single);
-        self.model.add_inst(inst);
-    }
-
-    fn rx(&mut self, theta: f64, qubit: String) {
-        log::info!("rx {} => {}", qubit, theta);
-        let rotated = Rotated::new(theta, qubit);
-        let inst = Instruction::Rx(rotated);
-        self.model.add_inst(inst);
-    }
-
-    fn ry(&mut self, theta: f64, qubit: String) {
-        log::info!("ry {} => {}", qubit, theta);
-        let rotated = Rotated::new(theta, qubit);
-        let inst = Instruction::Ry(rotated);
-        self.model.add_inst(inst);
-    }
-
-    fn rz(&mut self, theta: f64, qubit: String) {
-        log::info!("rz {} => {}", qubit, theta);
-        let rotated = Rotated::new(theta, qubit);
-        let inst = Instruction::Rz(rotated);
-        self.model.add_inst(inst);
-    }
-
-    fn s(&mut self, qubit: String) {
-        log::info!("s => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::S(single);
-        self.model.add_inst(inst);
-    }
-
-    fn s_adj(&mut self, qubit: String) {
-        log::info!("s_adj => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::SAdj(single);
-        self.model.add_inst(inst);
-    }
-
-    fn t(&mut self, qubit: String) {
-        log::info!("t => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::T(single);
-        self.model.add_inst(inst);
-    }
-
-    fn t_adj(&mut self, qubit: String) {
-        log::info!("t_adj => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::TAdj(single);
-        self.model.add_inst(inst);
-    }
-
-    fn x(&mut self, qubit: String) {
-        log::info!("x => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::X(single);
-        self.model.add_inst(inst);
-    }
-
-    fn y(&mut self, qubit: String) {
-        log::info!("y => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::Y(single);
-        self.model.add_inst(inst);
-    }
-
-    fn dump_machine(&mut self) {
-        log::info!("dump_machine");
-        let inst = Instruction::DumpMachine;
-        self.model.add_inst(inst);
-    }
-
-    fn z(&mut self, qubit: String) {
-        log::info!("z => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::Z(single);
-        self.model.add_inst(inst);
-    }
-
-    #[allow(clippy::needless_pass_by_value)]
-    fn add_quantum_register(&mut self, name: String, size: u64) {
-        let ns = name.as_str();
-        for index in 0..size {
-            let register_name = format!("{}[{}]", ns, index);
-            log::info!("Adding {}", register_name);
-            let reg = QuantumRegister {
-                name: String::from(ns),
-                index,
-            };
-            self.model.add_reg(&reg.as_register());
-        }
-    }
-
-    fn add_classical_register(&mut self, name: String, size: u64) {
-        let ns = name.clone();
-        let reg = ClassicalRegister { name, size };
-        log::info!("Adding {}({})", ns, size);
-        self.model.add_reg(&reg.as_register());
-    }
-
-    fn write(&self, file_name: &str) -> PyResult<()> {
-        write_model_to_file(&self.model, file_name).map_err(PyOSError::new_err::<String>)
-    }
-
-    fn get_ir_string(&self) -> PyResult<String> {
-        get_ir_string(&self.model).map_err(PyOSError::new_err::<String>)
-    }
-
-    fn get_bitcode_base64_string(&self) -> PyResult<String> {
-        get_bitcode_base64_string(&self.model).map_err(PyOSError::new_err::<String>)
-    }
-
-    #[allow(clippy::unused_self)]
-    fn enable_logging(&self) -> PyResult<()> {
-        env_logger::try_init().map_err(|e| PyOSError::new_err::<String>(e.to_string()))
-    }
+#[pyfunction]
+fn enable_logging() -> PyResult<()> {
+    env_logger::try_init().map_err(|e| PyOSError::new_err(e.to_string()))
 }
