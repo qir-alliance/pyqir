@@ -61,6 +61,10 @@ def _native_instruction(instruction: Instruction) -> native.Instruction:
         case Y(qubit): return native.y(qubit)
         case Z(qubit): return native.z(qubit)
         case DumpMachine(): return native.dump_machine
+        case If(condition, if_true, if_false):
+            if_true = list(map(_native_instruction, if_true))
+            if_false = list(map(_native_instruction, if_false))
+            return native.if_(condition, if_true, if_false)
         case _: raise ValueError("Unsupported instruction.")
 
 

@@ -113,6 +113,7 @@ pub enum Instruction {
     Y(Single),
     Z(Single),
     DumpMachine,
+    If(String, Vec<Instruction>, Vec<Instruction>),
 }
 
 #[derive(Clone, Default)]

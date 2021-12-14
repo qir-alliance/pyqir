@@ -114,5 +114,5 @@ class DumpMachine:
 @dataclass
 class If:
     condition: str
-    true: List[Instruction] = field(default_factory=list)
-    false: List[Instruction] = field(default_factory=list)
+    if_true: List[Instruction] = field(default_factory=list)
+    if_false: List[Instruction] = field(default_factory=list)

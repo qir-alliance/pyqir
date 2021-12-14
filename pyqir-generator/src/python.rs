@@ -32,6 +32,7 @@ fn pyqir_generator(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
         "dump_machine",
         Instruction(interop::Instruction::DumpMachine),
     )?;
+    m.add("if_", wrap_pyfunction!(if_, m)?)?;
 
     m.add_class::<Register>()?;
     m.add_class::<Module>()?;
@@ -118,6 +119,13 @@ fn z(qubit: String) -> Instruction {
     Instruction(interop::Instruction::Z(Single { qubit }))
 }
 
+#[pyfunction]
+fn if_(condition: String, if_true: Vec<Instruction>, if_false: Vec<Instruction>) -> Instruction {
+    let if_true = if_true.into_iter().map(|i| i.0).collect();
+    let if_false = if_false.into_iter().map(|i| i.0).collect();
+    Instruction(interop::Instruction::If(condition, if_true, if_false))
+}
+
 #[pyclass]
 #[derive(Clone)]
 struct Register {
@@ -148,6 +156,7 @@ struct Module(SemanticModel);
 
 #[pymethods]
 impl Module {
+    #[allow(clippy::needless_pass_by_value)]
     #[new]
     fn new(
         name: String,
