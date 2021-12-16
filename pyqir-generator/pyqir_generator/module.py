@@ -23,11 +23,11 @@ class Module:
     def ir(self) -> str:
         return self._native_module().ir()
 
+    def write_ir(self, path: str) -> None:
+        self._native_module().write_ir(path)
+
     def bitcode_base64(self) -> str:
         return self._native_module().bitcode_base64()
-
-    def write(self, path: str) -> None:
-        self._native_module().write(path)
 
     def _native_module(self) -> native.Module:
         # TODO: This is not very efficient to do every time.
@@ -61,10 +61,10 @@ def _native_instruction(instruction: Instruction) -> native.Instruction:
         case Y(qubit): return native.y(qubit)
         case Z(qubit): return native.z(qubit)
         case DumpMachine(): return native.dump_machine
-        case If(condition, if_true, if_false):
-            if_true = list(map(_native_instruction, if_true))
-            if_false = list(map(_native_instruction, if_false))
-            return native.if_(condition, if_true, if_false)
+        case If(condition, true, false):
+            true = list(map(_native_instruction, true))
+            false = list(map(_native_instruction, false))
+            return native.if_(condition, true, false)
         case _: raise ValueError("Unsupported instruction.")
 
 

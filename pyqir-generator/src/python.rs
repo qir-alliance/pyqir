@@ -120,9 +120,9 @@ fn z(qubit: String) -> Instruction {
 }
 
 #[pyfunction]
-fn if_(condition: String, if_true: Vec<Instruction>, if_false: Vec<Instruction>) -> Instruction {
-    let if_true = if_true.into_iter().map(|i| i.0).collect();
-    let if_false = if_false.into_iter().map(|i| i.0).collect();
+fn if_(condition: String, r#true: Vec<Instruction>, r#false: Vec<Instruction>) -> Instruction {
+    let if_true = r#true.into_iter().map(|i| i.0).collect();
+    let if_false = r#false.into_iter().map(|i| i.0).collect();
     Instruction(interop::Instruction::If(condition, if_true, if_false))
 }
 
@@ -180,12 +180,12 @@ impl Module {
         get_ir_string(&self.0).map_err(PyOSError::new_err)
     }
 
-    fn bitcode_base64(&self) -> PyResult<String> {
-        get_bitcode_base64_string(&self.0).map_err(PyOSError::new_err)
+    fn write_ir(&self, path: &str) -> PyResult<()> {
+        write_model_to_file(&self.0, path).map_err(PyOSError::new_err)
     }
 
-    fn write(&self, path: &str) -> PyResult<()> {
-        write_model_to_file(&self.0, path).map_err(PyOSError::new_err)
+    fn bitcode_base64(&self) -> PyResult<String> {
+        get_bitcode_base64_string(&self.0).map_err(PyOSError::new_err)
     }
 }
 

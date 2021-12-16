@@ -228,6 +228,6 @@ pub(crate) fn emit<'ctx>(
                 .expect("dumpmachine must be defined before use"),
             &[basic_values::i8_null_ptr(generator)],
         ),
-        Instruction::If(condition, if_true, if_false) => todo!("If"),
+        Instruction::If(_condition, _if_true, _if_false) => todo!("Instruction::If"),
     }
 }
