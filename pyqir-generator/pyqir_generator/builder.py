@@ -15,160 +15,142 @@ class QirBuilder:
     def __init__(self, module: str):
         self.pyqir = PyQIR(module)
 
-    def cx(self, control: str, target: str):
+    def cx(self, control: str, target: str) -> None:
         """
         Applies controlled X operation to the target qubit
 
         :param control: name of the control qubit
-        :type control: str
         :param target: name of the target qubit
-        :type target: str
         """
         self.pyqir.cx(control, target)
 
-    def cz(self, control: str, target: str):
+    def cz(self, control: str, target: str) -> None:
         """
         Applies controlled Z operation to the target qubit
 
         :param control: name of the control qubit
-        :type control: str
         :param target: name of the target qubit
-        :type target: str
         """
         self.pyqir.cz(control, target)
 
-    def h(self, target: str):
+    def h(self, target: str) -> None:
         """
         Applies H operation to the target qubit
 
         :param target: name of the target qubit
-        :type target: str
         """
         self.pyqir.h(target)
 
-    def m(self, qubit: str, target: str):
+    def m(self, qubit: str, target: str) -> None:
         """
         Applies measurement operation or the source qubit into the target register
 
         :param qubit: name of the source qubit
-        :type qubit: str
         :param target: name of the target register
-        :type target: str
         """
         self.pyqir.m(qubit, target)
 
-    def reset(self, target: str):
+    def reset(self, target: str) -> None:
         """
         Applies Reset operation to the target qubit
 
         :param target: name of the target qubit
-        :type target: str
         """
         self.pyqir.reset(target)
 
-    def rx(self, theta: float, qubit: str):
+    def rx(self, theta: float, qubit: str) -> None:
         """
         Applies Rx operation to the target qubit
 
         :param theta: rotation value for target qubit
         :type theta: float
         :param qubit: name of the target qubit
-        :type qubit: str
         """
         self.pyqir.rx(theta, qubit)
 
-    def ry(self, theta: float, qubit: str):
+    def ry(self, theta: float, qubit: str) -> None:
         """
         Applies Ry operation to the target qubit
 
         :param theta: rotation value for target qubit
         :type theta: float
         :param qubit: name of the target qubit
-        :type qubit: str
         """
         self.pyqir.ry(theta, qubit)
 
-    def rz(self, theta: float, qubit: str):
+    def rz(self, theta: float, qubit: str) -> None:
         """
         Applies Rz operation to the target qubit
 
         :param theta: rotation value for target qubit
         :type theta: float
         :param qubit: name of the target qubit
-        :type qubit: str
         """
         self.pyqir.rz(theta, qubit)
 
-    def s(self, qubit: str):
+    def s(self, qubit: str) -> None:
         """
         Applies S operation to the target qubit
 
         :param qubit: name of the target qubit
-        :type qubit: str
         """
         self.pyqir.s(qubit)
 
-    def s_adj(self, qubit: str):
+    def s_adj(self, qubit: str) -> None:
         """
         Applies SAdj operation to the target qubit
 
         :param qubit: name of the target qubit
-        :type qubit: str
         """
         self.pyqir.s_adj(qubit)
 
-    def t(self, qubit: str):
+    def t(self, qubit: str) -> None:
         """
         Applies T operation to the target qubit
 
         :param qubit: name of the target qubit
-        :type qubit: str
         """
         self.pyqir.t(qubit)
 
-    def t_adj(self, qubit: str):
+    def t_adj(self, qubit: str) -> None:
         """
         Applies TAdj operation to the target qubit
 
         :param qubit: name of the target qubit
-        :type qubit: str
         """
         self.pyqir.t_adj(qubit)
 
-    def x(self, qubit: str):
+    def x(self, qubit: str) -> None:
         """
         Applies X operation to the target qubit
 
         :param qubit: name of the target qubit
-        :type qubit: str
         """
         self.pyqir.x(qubit)
 
-    def y(self, qubit: str):
+    def y(self, qubit: str) -> None:
         """
         Applies Y operation to the target qubit
 
         :param qubit: name of the target qubit
-        :type qubit: str
         """
         self.pyqir.y(qubit)
 
-    def z(self, qubit: str):
+    def z(self, qubit: str) -> None:
         """
         Applies Z operation to the target qubit
 
         :param qubit: name of the target qubit
-        :type qubit: str
         """
         self.pyqir.z(qubit)
 
-    def dump_machine(self):
+    def dump_machine(self) -> None:
         """
 
         """
         self.pyqir.dump_machine()
 
-    def add_classical_register(self, name: str, size: int):
+    def add_classical_register(self, name: str, size: int) -> None:
         """
         Models a classical register of the given size. The individual values
         are accessed by name "<name><index>" with 0 based indicies.
@@ -189,7 +171,7 @@ class QirBuilder:
         """
         self.pyqir.add_classical_register(name, size)
 
-    def add_quantum_register(self, name: str, size: int):
+    def add_quantum_register(self, name: str, size: int) -> None:
         """
         Models an array of qubits of the given size. The individual values
         are accessed by name "<name><index>" with 0 based indicies.
@@ -210,7 +192,7 @@ class QirBuilder:
         """
         self.pyqir.add_quantum_register(name, size)
 
-    def build(self, file_path: str):
+    def build(self, file_path: str) -> None:
         """
         Writes the modeled circuit to the supplied file.
 
@@ -219,28 +201,20 @@ class QirBuilder:
         """
         self.pyqir.write(file_path)
 
-    def build_with(self, pyobj: Any):
-        """
-        JIT compiles the circuit delegating quantum operations to the supplied object
-
-        :param pyobj: python GateSet object defining the quantum operations
-        :type pyobj: str
-        """
-        self.pyqir.build_with_python(pyobj)
-
-    def get_ir_string(self):
+    def get_ir_string(self) -> str:
         """
         Returns the modeled circuit as an LLVM IR module (human readable) string.
         """
         return self.pyqir.get_ir_string()
 
-    def get_bitcode_base64_string(self):
+    def get_bitcode_base64_string(self) -> str:
         """
         Returns the modeled circuit as a base64 encoded LLVM bitcode module.
         """
         return self.pyqir.get_bitcode_base64_string()
 
-    def enable_logging(self):
+    @staticmethod
+    def enable_logging() -> None:
         """
         Enables the logging infrastructure
         Controlled via the RUST_LOG environment variable.
@@ -265,4 +239,4 @@ class QirBuilder:
         [2021-09-15T16:55:46Z INFO  pyqir::python] Adding qr[0]
         [2021-09-15T16:55:46Z INFO  pyqir::python] h => qr0
         """
-        self.pyqir.enable_logging()
+        PyQIR.enable_logging()

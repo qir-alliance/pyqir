@@ -173,8 +173,8 @@ impl PyQIR {
         get_bitcode_base64_string(&self.model).map_err(PyOSError::new_err::<String>)
     }
 
-    #[allow(clippy::unused_self)]
-    fn enable_logging(&self) -> PyResult<()> {
+    #[staticmethod]
+    fn enable_logging() -> PyResult<()> {
         env_logger::try_init().map_err(|e| PyOSError::new_err::<String>(e.to_string()))
     }
 }

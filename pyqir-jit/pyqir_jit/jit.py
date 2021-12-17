@@ -9,6 +9,7 @@ from .pyqir_jit import PyNonadaptiveJit
 class NonadaptiveJit(object):
     """
     The NonadaptiveJit object loads bitcode/QIR for evaluation and processing
+    with no classical logic such as branching based on measurement.
 
     jit: PyNonadaptiveJit
     """
@@ -16,7 +17,11 @@ class NonadaptiveJit(object):
     def __init__(self):
         self.jit = PyNonadaptiveJit()
 
-    def eval(self, file_path: str, gateset: GateSet, entry_point: Optional[str] = None):
+    def eval(self,
+             file_path: str,
+             gateset: GateSet,
+             entry_point: Optional[str] = None
+             ) -> None:
         """
         JIT compiles the circuit delegating quantum operations to the supplied
         GateSet

@@ -134,3 +134,13 @@ def test_bernstein_vazirani_ir_string():
 
     ir = builder.get_ir_string()
     assert ir.startswith("; ModuleID = 'Bernstein-Vazirani'")
+
+def test_logging(tmpdir):
+    QirBuilder.enable_logging()
+    builder = QirBuilder("logging test")
+    builder.add_quantum_register("qr", 1)
+    builder.h("qr0")
+
+    file = tmpdir.mkdir("sub").join("logging.ll")
+    print(f'Writing {file}')
+    builder.build(str(file))
