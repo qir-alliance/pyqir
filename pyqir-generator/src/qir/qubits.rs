@@ -12,7 +12,7 @@ pub(crate) fn emit_allocate<'ctx>(
 ) -> BasicValueEnum<'ctx> {
     let args = [];
     calls::emit_call_with_return(
-        generator,
+        &generator.builder,
         generator.runtime_library.qubit_allocate,
         &args,
         result_name,
@@ -21,5 +21,9 @@ pub(crate) fn emit_allocate<'ctx>(
 
 pub(crate) fn emit_release<'ctx>(generator: &CodeGenerator<'ctx>, qubit: &BasicValueEnum<'ctx>) {
     let args = [qubit.as_basic_value_enum().into()];
-    calls::emit_void_call(generator, generator.runtime_library.qubit_release, &args);
+    calls::emit_void_call(
+        &generator.builder,
+        generator.runtime_library.qubit_release,
+        &args,
+    );
 }

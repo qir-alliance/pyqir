@@ -140,7 +140,7 @@ pub(crate) fn emit_array_allocate1d<'ctx>(
         basic_values::u64_to_i64(generator, length),
     ];
     calls::emit_call_with_return(
-        generator,
+        &generator.builder,
         generator.runtime_library.array_create_1d,
         args,
         result_name,

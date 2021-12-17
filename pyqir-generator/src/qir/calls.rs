@@ -1,16 +1,17 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue};
-use qirlib::codegen::CodeGenerator;
+use inkwell::{
+    builder::Builder,
+    values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue},
+};
 
 pub(crate) fn emit_void_call<'ctx>(
-    generator: &CodeGenerator<'ctx>,
+    builder: &Builder<'ctx>,
     function: FunctionValue<'ctx>,
     args: &[BasicMetadataValueEnum<'ctx>],
 ) {
-    let _ = generator
-        .builder
+    builder
         .build_call(function, args, "")
         .try_as_basic_value()
         .right()
@@ -18,13 +19,12 @@ pub(crate) fn emit_void_call<'ctx>(
 }
 
 pub(crate) fn emit_call_with_return<'ctx>(
-    generator: &CodeGenerator<'ctx>,
+    builder: &Builder<'ctx>,
     function: FunctionValue<'ctx>,
     args: &[BasicMetadataValueEnum<'ctx>],
     name: &str,
 ) -> BasicValueEnum<'ctx> {
-    generator
-        .builder
+    builder
         .build_call(function, args, name)
         .try_as_basic_value()
         .left()
