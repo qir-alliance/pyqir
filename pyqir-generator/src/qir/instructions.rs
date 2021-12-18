@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 
 use crate::{
-    interop::Instruction,
+    interop::{If, Instruction},
     qir::{array1d, basic_values, calls},
 };
-use inkwell::values::{BasicValueEnum, FunctionValue};
+use inkwell::values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue};
 use qirlib::codegen::CodeGenerator;
 use std::collections::HashMap;
 
@@ -230,6 +230,71 @@ pub(crate) fn emit<'ctx>(
                 .expect("dumpmachine must be defined before use"),
             &[basic_values::i8_null_ptr(generator)],
         ),
-        Instruction::If(_condition, _if_true, _if_false) => todo!("Instruction::If"),
+        Instruction::If(if_inst) => emit_if(generator, registers, qubits, if_inst),
     }
+}
+
+// TODO: Clean this up.
+fn emit_if<'a>(
+    generator: &CodeGenerator<'a>,
+    registers: &HashMap<String, (BasicValueEnum<'a>, Option<u64>)>,
+    qubits: &HashMap<String, BasicValueEnum<'a>>,
+    if_inst: &If,
+) {
+    let entry = generator
+        .module
+        .get_function("QuantumApplication__Run__body")
+        .unwrap();
+
+    // TODO: Use unique block names.
+    let then_block = generator.context.append_basic_block(entry, "my_then0");
+    let else_block = generator.context.append_basic_block(entry, "my_else0");
+    let end_block = generator.context.append_basic_block(entry, "my_end0");
+
+    // TODO: Handle ref counts.
+    let (results, index) = registers.get(&if_inst.condition).unwrap();
+    let result_ptr =
+        array1d::get_bitcast_result_pointer_array_element(generator, index.unwrap(), results, "")
+            .into_pointer_value();
+    let result = generator
+        .builder
+        .build_load(result_ptr, "")
+        .into_pointer_value();
+
+    let result_one = calls::emit_call_with_return(
+        &generator.builder,
+        generator.runtime_library.result_get_one,
+        &[],
+        "",
+    )
+    .into_pointer_value();
+
+    let condition = calls::emit_call_with_return(
+        &generator.builder,
+        generator.runtime_library.result_equal,
+        &[
+            BasicMetadataValueEnum::PointerValue(result),
+            BasicMetadataValueEnum::PointerValue(result_one),
+        ],
+        "",
+    )
+    .into_int_value();
+
+    generator
+        .builder
+        .build_conditional_branch(condition, then_block, else_block);
+
+    generator.builder.position_at_end(then_block);
+    for inst in &if_inst.true_insts {
+        emit(generator, inst, qubits, registers);
+    }
+    generator.builder.build_unconditional_branch(end_block);
+
+    generator.builder.position_at_end(else_block);
+    for inst in &if_inst.false_insts {
+        emit(generator, inst, qubits, registers);
+    }
+    generator.builder.build_unconditional_branch(end_block);
+
+    generator.builder.position_at_end(end_block);
 }

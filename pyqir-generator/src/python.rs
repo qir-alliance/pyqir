@@ -4,7 +4,7 @@
 use crate::{
     emit::{get_bitcode_base64_string, get_ir_string, write_model_to_file},
     interop::{
-        self, ClassicalRegister, Controlled, Measured, QuantumRegister, Rotated, SemanticModel,
+        self, ClassicalRegister, Controlled, If, Measured, QuantumRegister, Rotated, SemanticModel,
         Single,
     },
 };
@@ -121,9 +121,14 @@ fn z(qubit: String) -> Instruction {
 
 #[pyfunction]
 fn if_(condition: String, r#true: Vec<Instruction>, r#false: Vec<Instruction>) -> Instruction {
-    let if_true = r#true.into_iter().map(|i| i.0).collect();
-    let if_false = r#false.into_iter().map(|i| i.0).collect();
-    Instruction(interop::Instruction::If(condition, if_true, if_false))
+    let true_insts = r#true.into_iter().map(|i| i.0).collect();
+    let false_insts = r#false.into_iter().map(|i| i.0).collect();
+
+    Instruction(interop::Instruction::If(If {
+        condition,
+        true_insts,
+        false_insts,
+    }))
 }
 
 #[pyclass]
