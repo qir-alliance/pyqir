@@ -5,7 +5,9 @@ use crate::{
     interop::{If, Instruction},
     qir::{array1d, basic_values, calls},
 };
-use inkwell::values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue};
+use inkwell::values::{
+    BasicMetadataValueEnum, BasicValueEnum, FunctionValue, IntValue, PointerValue,
+};
 use qirlib::codegen::CodeGenerator;
 use std::collections::HashMap;
 
@@ -234,67 +236,80 @@ pub(crate) fn emit<'ctx>(
     }
 }
 
-// TODO: Clean this up.
 fn emit_if<'a>(
     generator: &CodeGenerator<'a>,
     registers: &HashMap<String, (BasicValueEnum<'a>, Option<u64>)>,
     qubits: &HashMap<String, BasicValueEnum<'a>>,
     if_inst: &If,
 ) {
-    let entry = generator
-        .module
-        .get_function("QuantumApplication__Run__body")
-        .unwrap();
+    // TODO: Refactor this with qir::get_entry_function.
+    let entry_name = "QuantumApplication__Run__body";
+    let entry = generator.module.get_function(entry_name).unwrap();
 
-    // TODO: Use unique block names.
-    let then_block = generator.context.append_basic_block(entry, "my_then0");
-    let else_block = generator.context.append_basic_block(entry, "my_else0");
-    let end_block = generator.context.append_basic_block(entry, "my_end0");
+    // The reference count doesn't need to be updated because the result is only used for this
+    // condition and won't outlive the array.
+    let result = get_register_result(generator, registers, &if_inst.condition);
+    let condition = result_equals(generator, result, get_result_one(generator));
 
-    // TODO: Handle ref counts.
-    let (results, index) = registers.get(&if_inst.condition).unwrap();
-    let result_ptr =
-        array1d::get_bitcast_result_pointer_array_element(generator, index.unwrap(), results, "")
-            .into_pointer_value();
-    let result = generator
-        .builder
-        .build_load(result_ptr, "")
-        .into_pointer_value();
-
-    let result_one = calls::emit_call_with_return(
-        &generator.builder,
-        generator.runtime_library.result_get_one,
-        &[],
-        "",
-    )
-    .into_pointer_value();
-
-    let condition = calls::emit_call_with_return(
-        &generator.builder,
-        generator.runtime_library.result_equal,
-        &[
-            BasicMetadataValueEnum::PointerValue(result),
-            BasicMetadataValueEnum::PointerValue(result_one),
-        ],
-        "",
-    )
-    .into_int_value();
-
+    let then_block = generator.context.append_basic_block(entry, "then");
+    let else_block = generator.context.append_basic_block(entry, "else");
     generator
         .builder
         .build_conditional_branch(condition, then_block, else_block);
 
-    generator.builder.position_at_end(then_block);
-    for inst in &if_inst.true_insts {
-        emit(generator, inst, qubits, registers);
-    }
-    generator.builder.build_unconditional_branch(end_block);
+    let continue_block = generator.context.append_basic_block(entry, "continue");
+    let emit_block = |block, insts| {
+        generator.builder.position_at_end(block);
+        for inst in insts {
+            emit(generator, inst, qubits, registers);
+        }
+        generator.builder.build_unconditional_branch(continue_block);
+    };
 
-    generator.builder.position_at_end(else_block);
-    for inst in &if_inst.false_insts {
-        emit(generator, inst, qubits, registers);
-    }
-    generator.builder.build_unconditional_branch(end_block);
+    emit_block(then_block, &if_inst.true_insts);
+    emit_block(else_block, &if_inst.false_insts);
+    generator.builder.position_at_end(continue_block);
+}
 
-    generator.builder.position_at_end(end_block);
+fn get_register_result<'a>(
+    generator: &CodeGenerator<'a>,
+    registers: &HashMap<String, (BasicValueEnum<'a>, Option<u64>)>,
+    name: &str,
+) -> PointerValue<'a> {
+    let (register, index) = registers.get(name).unwrap();
+    let element =
+        array1d::get_bitcast_result_pointer_array_element(generator, index.unwrap(), register, "")
+            .into_pointer_value();
+
+    generator
+        .builder
+        .build_load(element, "")
+        .into_pointer_value()
+}
+
+fn get_result_one<'a>(generator: &CodeGenerator<'a>) -> PointerValue<'a> {
+    calls::emit_call_with_return(
+        &generator.builder,
+        generator.runtime_library.result_get_one,
+        &[],
+        "one",
+    )
+    .into_pointer_value()
+}
+
+fn result_equals<'a>(
+    generator: &CodeGenerator<'a>,
+    x: PointerValue<'a>,
+    y: PointerValue<'a>,
+) -> IntValue<'a> {
+    calls::emit_call_with_return(
+        &generator.builder,
+        generator.runtime_library.result_equal,
+        &[
+            BasicMetadataValueEnum::PointerValue(x),
+            BasicMetadataValueEnum::PointerValue(y),
+        ],
+        "",
+    )
+    .into_int_value()
 }
