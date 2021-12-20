@@ -15,8 +15,8 @@ use std::collections::HashMap;
 ///
 /// Panics if the qubit name doesn't exist
 fn get_qubit<'ctx>(
-    name: &str,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
+    name: &str,
 ) -> BasicValueEnum<'ctx> {
     *qubits
         .get(name)
@@ -27,13 +27,29 @@ fn get_qubit<'ctx>(
 ///
 /// Panics if the register name doesn't exist
 fn get_register<'ctx>(
-    name: &str,
     registers: &HashMap<String, (BasicValueEnum<'ctx>, Option<u64>)>,
+    name: &str,
 ) -> (BasicValueEnum<'ctx>, Option<u64>) {
     registers
         .get(name)
         .unwrap_or_else(|| panic!("Register {} not found.", name))
         .to_owned()
+}
+
+fn get_register_result<'a>(
+    generator: &CodeGenerator<'a>,
+    registers: &HashMap<String, (BasicValueEnum<'a>, Option<u64>)>,
+    name: &str,
+) -> PointerValue<'a> {
+    let (register, index) = get_register(registers, name);
+    let element =
+        array1d::get_bitcast_result_pointer_array_element(generator, index.unwrap(), &register, "")
+            .into_pointer_value();
+
+    generator
+        .builder
+        .build_load(element, "")
+        .into_pointer_value()
 }
 
 fn measure<'ctx>(
@@ -43,8 +59,8 @@ fn measure<'ctx>(
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     registers: &HashMap<String, (BasicValueEnum<'ctx>, Option<u64>)>,
 ) {
-    let find_qubit = |name| get_qubit(name, qubits);
-    let find_register = |name| get_register(name, registers);
+    let find_qubit = |name| get_qubit(qubits, name);
+    let find_register = |name| get_register(registers, name);
 
     // measure the qubit and save the result to a temporary value
     let result = calls::emit_call_with_return(
@@ -121,7 +137,7 @@ pub(crate) fn emit<'ctx>(
     registers: &HashMap<String, (BasicValueEnum<'ctx>, Option<u64>)>,
 ) {
     let intrinsics = &generator.intrinsics;
-    let find_qubit = |name| get_qubit(name, qubits);
+    let find_qubit = |name| get_qubit(qubits, name);
     let ctl = |value| array1d::create_ctl_wrapper(generator, value);
 
     match inst {
@@ -269,22 +285,6 @@ fn emit_if<'a>(
     emit_block(then_block, &if_inst.true_insts);
     emit_block(else_block, &if_inst.false_insts);
     generator.builder.position_at_end(continue_block);
-}
-
-fn get_register_result<'a>(
-    generator: &CodeGenerator<'a>,
-    registers: &HashMap<String, (BasicValueEnum<'a>, Option<u64>)>,
-    name: &str,
-) -> PointerValue<'a> {
-    let (register, index) = registers.get(name).unwrap();
-    let element =
-        array1d::get_bitcast_result_pointer_array_element(generator, index.unwrap(), register, "")
-            .into_pointer_value();
-
-    generator
-        .builder
-        .build_load(element, "")
-        .into_pointer_value()
 }
 
 fn get_result_one<'a>(generator: &CodeGenerator<'a>) -> PointerValue<'a> {
