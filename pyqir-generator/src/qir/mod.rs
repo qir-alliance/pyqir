@@ -8,6 +8,7 @@ pub mod basic_values;
 pub mod calls;
 pub mod instructions;
 pub mod qubits;
+mod result;
 
 pub(crate) fn get_entry_function<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     let ns = "QuantumApplication";

@@ -1,13 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{
-    interop::{If, Instruction},
-    qir::{array1d, basic_values, calls},
-};
-use inkwell::values::{
-    BasicMetadataValueEnum, BasicValueEnum, FunctionValue, IntValue, PointerValue,
-};
+use super::{array1d, basic_values, calls, result};
+use crate::interop::{If, Instruction};
+use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue};
 use qirlib::codegen::CodeGenerator;
 use std::collections::HashMap;
 
@@ -265,7 +261,7 @@ fn emit_if<'a>(
     // The reference count doesn't need to be updated because the result is only used for this
     // condition and won't outlive the array.
     let result = get_register_result(generator, registers, &if_inst.condition);
-    let condition = result_equals(generator, result, get_result_one(generator));
+    let condition = result::equals(generator, result, result::get_one(generator));
 
     let then_block = generator.context.append_basic_block(entry, "then");
     let else_block = generator.context.append_basic_block(entry, "else");
@@ -285,31 +281,4 @@ fn emit_if<'a>(
     emit_block(then_block, &if_inst.true_insts);
     emit_block(else_block, &if_inst.false_insts);
     generator.builder.position_at_end(continue_block);
-}
-
-fn get_result_one<'a>(generator: &CodeGenerator<'a>) -> PointerValue<'a> {
-    calls::emit_call_with_return(
-        &generator.builder,
-        generator.runtime_library.result_get_one,
-        &[],
-        "one",
-    )
-    .into_pointer_value()
-}
-
-fn result_equals<'a>(
-    generator: &CodeGenerator<'a>,
-    x: PointerValue<'a>,
-    y: PointerValue<'a>,
-) -> IntValue<'a> {
-    calls::emit_call_with_return(
-        &generator.builder,
-        generator.runtime_library.result_equal,
-        &[
-            BasicMetadataValueEnum::PointerValue(x),
-            BasicMetadataValueEnum::PointerValue(y),
-        ],
-        "",
-    )
-    .into_int_value()
 }
