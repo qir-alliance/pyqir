@@ -19,17 +19,17 @@ fn get_qubit<'ctx>(
         .unwrap_or_else(|| panic!("Qubit {} not found.", name))
 }
 
-/// # Panics
-///
-/// Panics if the register name doesn't exist
-fn get_register<'ctx>(
-    registers: &HashMap<String, (BasicValueEnum<'ctx>, Option<u64>)>,
+fn get_register_result_pointer<'a>(
+    generator: &CodeGenerator<'a>,
+    registers: &HashMap<String, (BasicValueEnum<'a>, Option<u64>)>,
     name: &str,
-) -> (BasicValueEnum<'ctx>, Option<u64>) {
-    registers
+) -> PointerValue<'a> {
+    let (register, index) = registers
         .get(name)
-        .unwrap_or_else(|| panic!("Register {} not found.", name))
-        .to_owned()
+        .unwrap_or_else(|| panic!("Register {} not found.", name));
+
+    array1d::get_bitcast_result_pointer_array_element(generator, index.unwrap(), register, "")
+        .into_pointer_value()
 }
 
 fn get_register_result<'a>(
@@ -37,15 +37,23 @@ fn get_register_result<'a>(
     registers: &HashMap<String, (BasicValueEnum<'a>, Option<u64>)>,
     name: &str,
 ) -> PointerValue<'a> {
-    let (register, index) = get_register(registers, name);
-    let element =
-        array1d::get_bitcast_result_pointer_array_element(generator, index.unwrap(), &register, "")
-            .into_pointer_value();
-
     generator
         .builder
-        .build_load(element, "")
+        .build_load(get_register_result_pointer(generator, registers, name), "")
         .into_pointer_value()
+}
+
+fn set_register_result<'a>(
+    generator: &CodeGenerator<'a>,
+    registers: &HashMap<String, (BasicValueEnum<'a>, Option<u64>)>,
+    name: &str,
+    result: PointerValue<'a>,
+) {
+    let pointer = get_register_result_pointer(generator, registers, name);
+    let old_result = generator.builder.build_load(pointer, "");
+    result::update_reference_count(generator, old_result, -1);
+    result::update_reference_count(generator, result, 1);
+    generator.builder.build_store(pointer, result);
 }
 
 fn measure<'ctx>(
@@ -55,54 +63,20 @@ fn measure<'ctx>(
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     registers: &HashMap<String, (BasicValueEnum<'ctx>, Option<u64>)>,
 ) {
-    let find_qubit = |name| get_qubit(qubits, name);
-    let find_register = |name| get_register(registers, name);
+    let m = generator
+        .intrinsics
+        .m
+        .expect("m must be defined in the template");
 
-    // measure the qubit and save the result to a temporary value
     let result = calls::emit_call_with_return(
         &generator.builder,
-        generator
-            .intrinsics
-            .m
-            .expect("m must be defined in the template"),
-        &[find_qubit(qubit).into()],
+        m,
+        &[get_qubit(qubits, qubit).into()],
         "measurement",
-    );
+    )
+    .into_pointer_value();
 
-    // find the parent register and offset for the given target
-    let (register, index) = find_register(target);
-
-    // get the bitcast pointer to the target location
-    let bitcast_indexed_target_register = array1d::get_bitcast_result_pointer_array_element(
-        generator,
-        index.unwrap(),
-        &register,
-        target,
-    );
-
-    // get the existing value from that location and decrement its ref count as its
-    // being replaced with the measurement.
-    let existing_value = generator.builder.build_load(
-        bitcast_indexed_target_register.into_pointer_value(),
-        "existing_value",
-    );
-    let minus_one = basic_values::i64_to_i32(generator, -1);
-    generator.builder.build_call(
-        generator.runtime_library.result_update_reference_count,
-        &[existing_value.into(), minus_one],
-        "",
-    );
-
-    // increase the ref count of the new value and store it in the target register
-    let one = basic_values::i64_to_i32(generator, 1);
-    generator.builder.build_call(
-        generator.runtime_library.result_update_reference_count,
-        &[result.into(), one],
-        "",
-    );
-    let _ = generator
-        .builder
-        .build_store(bitcast_indexed_target_register.into_pointer_value(), result);
+    set_register_result(generator, registers, target, result);
 }
 
 fn controlled<'ctx>(

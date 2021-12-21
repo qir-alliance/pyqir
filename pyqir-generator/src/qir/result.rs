@@ -1,4 +1,4 @@
-use super::calls;
+use super::{basic_values, calls};
 use inkwell::values::{BasicMetadataValueEnum, IntValue, PointerValue};
 use qirlib::codegen::CodeGenerator;
 
@@ -27,4 +27,17 @@ pub(crate) fn equals<'a>(
         "",
     )
     .into_int_value()
+}
+
+pub(crate) fn update_reference_count<'a>(
+    generator: &CodeGenerator,
+    result: impl Into<BasicMetadataValueEnum<'a>>,
+    delta: i32,
+) {
+    let delta = basic_values::i64_to_i32(generator, delta.into());
+    generator.builder.build_call(
+        generator.runtime_library.result_update_reference_count,
+        &[result.into(), delta],
+        "",
+    );
 }
