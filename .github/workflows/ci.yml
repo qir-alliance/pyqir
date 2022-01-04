@@ -64,11 +64,19 @@ jobs:
     runs-on: "windows-2019"
     needs: build
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+
       - name: Download Build Artifacts
         uses: actions/download-artifact@v2
         with:
           name: artifacts
           path: wheelhouse
+
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
 
       - name: Build Docs
         run: |
