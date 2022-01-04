@@ -8,5 +8,5 @@ maxdepth: 2
 ---
 
 building
-compatability
+compatibility
 :::
