@@ -52,13 +52,33 @@ jobs:
         run: choco install llvm --version=11.1.0 --allow-downgrade
         if: ${{ matrix.config.os == 'windows-2019' }}
       - name: "Build all"
-        run: ./eng/build.ps1 -taskList @("default", "docs")
+        run: ./build.ps1
         shell: pwsh
       - name: Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: artifacts
           path: target/wheels/*
+
+  docs:
+    runs-on: "windows-2019"
+    needs: build
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: artifacts
+          path: wheelhouse
+
+      - name: Build Docs
+        run: |
+          $properties = @{
+            "wheelhouse" = (Resolve-Path "wheelhouse/*-win_amd64.whl")
+          };
+          ./eng/build.ps1 `
+            -taskList docs `
+            -properties $properties
+        shell: pwsh
 
       # Always publish docs as an artifact, but only publish docs to GitHub Pages
       # when pushing to main.

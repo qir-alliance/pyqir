@@ -26,6 +26,8 @@ properties {
     $docs.build = @{}
     $docs.build.dir = Join-Path $docs.root "_build"
     $docs.build.opts = @()
+
+    $wheelhouse = Join-Path $repo.root "target" "wheels" "*.whl"
 }
 
 Include settings.ps1
@@ -66,7 +68,12 @@ Task parser -Depends init {
     Build-PyQIR($pyqir.parser.name)
 }
 
-Task docs -Depends generator, jit, parser {
+Task rebuild -Depends generator, jit, parser
+Task wheelhouse `
+    -Precondition { -not (Test-Path $wheelhouse -ErrorAction SilentlyContinue) } `
+    { Invoke-Task rebuild }
+
+Task docs -Depends wheelhouse {
     # - Install artifacts into new venv along with sphinx.
     # - Run sphinx from within new venv.
     $envPath = Join-Path $repo.root ".docs-venv"
@@ -74,7 +81,7 @@ Task docs -Depends generator, jit, parser {
     Create-DocsEnv `
         -EnvironmentPath $envPath `
         -RequirementsPath (Join-Path $repo.root "eng" "docs-requirements.txt") `
-        -ArtifactPaths (Get-ChildItem (Join-Path $repo.root "target" "wheels" "*.whl"))
+        -ArtifactPaths (Get-Item $wheelhouse)
     & (Join-Path $envPath "bin" "Activate.ps1")
     try {
         sphinx-build -M html $docs.root $docs.build.dir @sphinxOpts
