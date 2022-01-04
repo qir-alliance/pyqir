@@ -73,4 +73,4 @@ jobs:
         with:
           branch: gh-pages
           folder: docs/_build/html
-        if: ${{ github.event_name == "push" }}
+        if: ${{ github.event_name == 'push' }}
