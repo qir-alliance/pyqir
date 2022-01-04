@@ -52,10 +52,25 @@ jobs:
         run: choco install llvm --version=11.1.0 --allow-downgrade
         if: ${{ matrix.config.os == 'windows-2019' }}
       - name: "Build all"
-        run: ./build.ps1
+        run: ./build.ps1 -taskList @("default", "docs")
         shell: pwsh
       - name: Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: artifacts
           path: target/wheels/*
+
+      # Always publish docs as an artifact, but only publish docs to GitHub Pages
+      # when pushing to main.
+      - name: Publish Docs as Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: docs
+          path: docs/_build
+
+      - name: Publish Docs to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@4.1.7
+        with:
+          branch: gh-pages
+          folder: docs/_build/html
+        if: ${{ github.event_name == "push" }}
