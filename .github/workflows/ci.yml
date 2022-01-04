@@ -52,7 +52,7 @@ jobs:
         run: choco install llvm --version=11.1.0 --allow-downgrade
         if: ${{ matrix.config.os == 'windows-2019' }}
       - name: "Build all"
-        run: ./build.ps1 -taskList default, docs
+        run: ./eng/build.ps1 -taskList @("default", "docs")
         shell: pwsh
       - name: Artifacts
         uses: actions/upload-artifact@v2
