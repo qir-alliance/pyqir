@@ -66,17 +66,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          submodules: 'recursive'
+          submodules: false
 
       - name: Download Build Artifacts
         uses: actions/download-artifact@v2
         with:
           name: artifacts
           path: wheelhouse
-
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
 
       - name: Build Docs
         run: |
