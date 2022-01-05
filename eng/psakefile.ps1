@@ -371,8 +371,15 @@ function Create-DocsEnv() {
         $ArtifactPaths
     )
 
+    Write-Verbose "Creating virtual environment for use with docs at $EnvironmentPath...";
     python -m venv $EnvironmentPath
-    & (Join-Path $envPath "bin" "Activate.ps1");
+
+    $activateScript = (Join-Path $EnvironmentPath "bin" "Activate.ps1");
+    if (-not (Test-Path $activateScript -ErrorAction SilentlyContinue)) {
+        throw "No activate script found for virtual environment at $EnvironmentPath; environment creation failed.";
+    }
+
+    & $activateScript;
     try {
         pip install -r $RequirementsPath;
         foreach ($artifact in $ArtifactPaths) {
