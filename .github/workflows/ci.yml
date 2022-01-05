@@ -61,7 +61,7 @@ jobs:
           path: target/wheels/*
 
   docs:
-    runs-on: "windows-2019"
+    runs-on: "ubuntu-20.04"
     needs: build
     steps:
       - uses: actions/checkout@v2
@@ -77,7 +77,7 @@ jobs:
       - name: Build Docs
         run: |
           $properties = @{
-            "wheelhouse" = (Resolve-Path "wheelhouse/*-win_amd64.whl")
+            "wheelhouse" = (Resolve-Path "wheelhouse/*-linux_x86_64.whl")
           };
           ./eng/build.ps1 `
             -taskList docs `
