@@ -44,7 +44,6 @@
     :undoc-members:
 :::
 
-
 :::{eval-rst}
 .. autoclass:: pyqir_parser.QirStructType
     :show-inheritance:
