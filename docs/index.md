@@ -14,8 +14,8 @@ maxdepth: 2
 ---
 
 getting-started/index
-apiref/index
-devguide/index
+api-reference/index
+development-guide/index
 :::
 
 
