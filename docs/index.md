@@ -1,4 +1,4 @@
-# Welcome to PyQIR's documentation!
+# Welcome to PyQIR's Documentation
 
 ## Introduction
 
@@ -18,9 +18,8 @@ api-reference/index
 development-guide/index
 ```
 
-
 ## Indices and tables
 
-* {ref}`genindex`
-* {ref}`modindex`
-* {ref}`search`
+- {ref}`genindex`
+- {ref}`modindex`
+- {ref}`search`
