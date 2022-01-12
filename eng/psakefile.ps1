@@ -87,7 +87,7 @@ Task docs -Depends wheelhouse {
         sphinx-build -M html $docs.root $docs.build.dir @sphinxOpts
     }
     finally {
-        deactivate;
+        deactivate
     }
 }
 
@@ -371,7 +371,7 @@ function Create-DocsEnv() {
         $ArtifactPaths
     )
 
-    Write-Host "##[info]Creating virtual environment for use with docs at $EnvironmentPath...";
+    Write-Host "##[info]Creating virtual environment for use with docs at $EnvironmentPath..."
     python -m venv $EnvironmentPath
 
     $activateScript = (Join-Path $EnvironmentPath "bin" "Activate.ps1");
@@ -380,7 +380,7 @@ function Create-DocsEnv() {
         throw "No activate script found for virtual environment at $EnvironmentPath; environment creation failed."
     }
 
-    & $activateScript;
+    & $activateScript
     try {
         pip install -r $RequirementsPath;
         foreach ($artifact in $ArtifactPaths) {
@@ -388,6 +388,6 @@ function Create-DocsEnv() {
         }
     }
     finally {
-        deactivate;
+        deactivate
     }
 }
