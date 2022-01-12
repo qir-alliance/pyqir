@@ -8,7 +8,7 @@
 
 % TODO
 
-:::{toctree}
+```{toctree}
 ---
 maxdepth: 2
 ---
@@ -16,7 +16,7 @@ maxdepth: 2
 getting-started/index
 api-reference/index
 development-guide/index
-:::
+```
 
 
 ## Indices and tables

@@ -29,7 +29,8 @@ author = 'QIR Alliance'
 # ones.
 extensions = [
     "myst_parser",
-    "sphinx.ext.autodoc"
+    "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx"
 ]
 myst_enable_extensions = [
     "colon_fence"
@@ -43,6 +44,10 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
+intersphinx_mapping = {
+    'sphinx': ('https://www.sphinx-doc.org/en/master', None),
+    'myst-parser': ('https://myst-parser.readthedocs.io/en/latest/', None)
+}
 
 # -- Options for HTML output -------------------------------------------------
 

@@ -2,9 +2,9 @@
 
 ## `QirBuilder` class
 
-:::{eval-rst}
+```{eval-rst}
 .. autoclass:: pyqir_generator.QirBuilder
     :show-inheritance:
     :members:
     :undoc-members:
-:::
+```

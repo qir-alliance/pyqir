@@ -2,10 +2,10 @@
 
 % TODO: Add articles to below.
 
-:::{toctree}
+```{toctree}
 ---
 maxdepth: 2
 ---
 
 installing
-:::
+```

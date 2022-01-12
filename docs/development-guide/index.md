@@ -2,11 +2,12 @@
 
 % TODO: Add articles to below.
 
-:::{toctree}
+```{toctree}
 ---
 maxdepth: 2
 ---
 
 building
 compatibility
-:::
+docs-authoring
+```

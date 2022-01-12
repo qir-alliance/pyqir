@@ -28,8 +28,7 @@ Install Rust from [rustup](https://rustup.rs/).
 Install Python 3.6+ from one of the following and make sure it is added to the
 path.
 
-- [Windows
-  store](https://docs.microsoft.com/en-us/windows/python/beginners#install-python)
+- [Windows store](https://docs.microsoft.com/en-us/windows/python/beginners#install-python)
 - [Miniconda](https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links)
 - [Python.org](https://www.python.org/downloads/)
 
@@ -86,7 +85,7 @@ the root `.cargo/config.toml`
 ## Development
 
 Running `build.(ps1|sh|cmd)` will initialize your local environment and build
-the solution. The [Environment Variables](#environment-variables) section
+the solution. The {ref}`building/environment-variables` section
 details ways to change this behavior.
 
 Within each project folder, the build can be run specifically for that project.
@@ -117,6 +116,7 @@ Two targets are available for tox:
 - `python -m tox -e pack`
 - Packages all wheels in an isolated environment
 
+(building/environment-variables)=
 ### Environment Variables
 
 - `PYQIR_LLVM_EXTERNAL_DIR`
