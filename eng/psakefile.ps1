@@ -382,7 +382,7 @@ function Create-DocsEnv() {
 
     & $activateScript
     try {
-        pip install -r $RequirementsPath;
+        pip install -r $RequirementsPath
         foreach ($artifact in $ArtifactPaths) {
             pip install $artifact
         }
