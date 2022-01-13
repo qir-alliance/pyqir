@@ -1,0 +1,19 @@
+default: true
+line-length: false
+
+# Allow bare URLs since they work well in GitHub renderings.
+no-bare-urls: false
+
+# Require unordered lists to be typeset with dashes.
+ul-style:
+  style: dash
+
+# Allow duplicate headings if they are not siblings.
+no-duplicate-heading:
+  siblings_only: true
+
+no-inline-html:
+  allowed_elements:
+    # We want to enable a more readable alternative to the "two spaces at the
+    # end of a line" default in Markdown.
+    - br
