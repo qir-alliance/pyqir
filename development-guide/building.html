@@ -1,0 +1,270 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Building PyQIR from Source &#8212; PyQIR  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PyQIR compatible systems" href="compatibility.html" />
+    <link rel="prev" title="Development Guide" href="index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section class="tex2jax_ignore mathjax_ignore" id="building-pyqir-from-source">
+<h1>Building PyQIR from Source<a class="headerlink" href="#building-pyqir-from-source" title="Permalink to this headline">¶</a></h1>
+<section id="local-environment">
+<h2>Local Environment<a class="headerlink" href="#local-environment" title="Permalink to this headline">¶</a></h2>
+<section id="requirements">
+<h3>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://rustup.rs/">Rust 1.56+</a></p></li>
+<li><p><a class="reference external" href="https://www.python.org">Python 3.6+</a></p></li>
+<li><p><a class="reference external" href="https://github.com/powershell/powershell#get-powershell">PowerShell 7+
+(Core)</a></p></li>
+<li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 11.1.0</a> - See <a class="reference external" href="#installing-llvm">Installing
+LLVM</a></p></li>
+</ul>
+</section>
+<section id="linux-ubuntu">
+<h3>Linux (Ubuntu)<a class="headerlink" href="#linux-ubuntu" title="Permalink to this headline">¶</a></h3>
+<p>Install python and libs:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt-get install -y --no-install-recommends python3-dev python3-pip
+python3 -m pip install --user -U pip
+python3 -m pip install --user maturin tox
+</pre></div>
+</div>
+<p>Install Rust from <a class="reference external" href="https://rustup.rs/">rustup</a>.</p>
+</section>
+<section id="windows">
+<h3>Windows<a class="headerlink" href="#windows" title="Permalink to this headline">¶</a></h3>
+<p>Install Python 3.6+ from one of the following and make sure it is added to the
+path.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://docs.microsoft.com/en-us/windows/python/beginners#install-python">Windows store</a></p></li>
+<li><p><a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links">Miniconda</a></p></li>
+<li><p><a class="reference external" href="https://www.python.org/downloads/">Python.org</a></p></li>
+</ul>
+<p>In a command prompt:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python -m pip install --user maturin tox
+</pre></div>
+</div>
+<p>Install Rust from <a class="reference external" href="https://rustup.rs/">rustup</a>.</p>
+</section>
+<section id="macos">
+<h3>MacOS<a class="headerlink" href="#macos" title="Permalink to this headline">¶</a></h3>
+<p>Install Python 3.6+ from <a class="reference external" href="https://www.python.org/downloads/macos/">Python.org</a>.</p>
+<p>or brew:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>brew install <span class="s1">&#39;python@3.9&#39;</span>
+python -m pip install --user maturin tox
+</pre></div>
+</div>
+<p>Install Rust from <a class="reference external" href="https://rustup.rs/">rustup</a>.</p>
+</section>
+<section id="installing-clang">
+<h3>Installing Clang<a class="headerlink" href="#installing-clang" title="Permalink to this headline">¶</a></h3>
+<p>If you have a working installation of LLVM and <a class="reference external" href="https://clang.llvm.org/">Clang</a>,
+each project can be built by running <code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">build</span></code> in the project directory. If
+not, you can install Clang manually:</p>
+<ul>
+<li><p>Linux (Ubuntu)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>apt-get update apt-get install -y clang-11 lldb-11 lld-11 clangd-11
+</pre></div>
+</div>
+</li>
+<li><p>Windows</p>
+<ul class="simple">
+<li><p>Download and install the <code class="docutils literal notranslate"><span class="pre">LLVM-11.1.0-win64.exe</span></code> from the <a class="reference external" href="https://github.com/llvm/llvm-project/releases/tag/llvmorg-11.1.0">11.1.0
+Release</a>
+page.</p></li>
+<li><p>This package only contains the Clang components. There is no package that
+contains Clang and LLVM.</p></li>
+<li><p>MacOS</p></li>
+<li><p>Should be preinstalled.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="installing-llvm">
+<h3>Installing LLVM<a class="headerlink" href="#installing-llvm" title="Permalink to this headline">¶</a></h3>
+<p>The build scripts will automatically download an LLVM toolchain which is
+detailed in the <a class="reference external" href="#development">Development</a> section. The build installs the
+toolchain to <code class="docutils literal notranslate"><span class="pre">$HOME/.pyqir</span></code> (Windows: <code class="docutils literal notranslate"><span class="pre">$HOME\.pyqir</span></code>) and configures Rust to use
+this installation by setting the <code class="docutils literal notranslate"><span class="pre">LLVM_SYS_110_PREFIX</span></code> environment variable in
+the root <code class="docutils literal notranslate"><span class="pre">.cargo/config.toml</span></code></p>
+</section>
+</section>
+<section id="development">
+<h2>Development<a class="headerlink" href="#development" title="Permalink to this headline">¶</a></h2>
+<p>Running <code class="docutils literal notranslate"><span class="pre">build.(ps1|sh|cmd)</span></code> will initialize your local environment and build
+the solution. The <a class="reference internal" href="#building-environment-variables"><span class="std std-ref">Environment Variables</span></a> section
+details ways to change this behavior.</p>
+<p>Within each project folder, the build can be run specifically for that project.</p>
+<p>Build commands:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">build</span></code>: Build the crate into python packages</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">build</span> <span class="pre">--release</span></code>: Build and pass –release to cargo</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">build</span> <span class="pre">--help</span></code>: to view more options</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">develop</span></code>: Installs the crate as module in the current virtualenv</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">develop</span> <span class="pre">&amp;&amp;</span> <span class="pre">pytest</span></code>: Installs the crate as module in the current
+virtualenv and runs the Python tests</p></li>
+</ul>
+<p>If you do not wish to package and test the Python wheels, <code class="docutils literal notranslate"><span class="pre">cargo</span></code> can be used to
+build the project and run Rust tests.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">build</span></code>: Build the Rust cdylib</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">build</span> <span class="pre">--release</span></code>: Build the Rust cdylib in release mode</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">test</span></code>: Build and run the Rust cdylib tests</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">test</span> <span class="pre">--release</span></code>: Build and run the Rust cdylib tests in release mode</p></li>
+</ul>
+<p><a class="reference external" href="https://tox.readthedocs.io/">Tox</a> can be used as well:</p>
+<p>Two targets are available for tox:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">tox</span> <span class="pre">-e</span> <span class="pre">test</span></code></p></li>
+<li><p>Runs the python tests in an isolated environment</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">tox</span> <span class="pre">-e</span> <span class="pre">pack</span></code></p></li>
+<li><p>Packages all wheels in an isolated environment</p></li>
+</ul>
+<section id="environment-variables">
+<span id="building-environment-variables"></span><h3>Environment Variables<a class="headerlink" href="#environment-variables" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">PYQIR_LLVM_EXTERNAL_DIR</span></code></p></li>
+<li><p>Path to where LLVM is already installed by user. Useful if you want to use
+your own LLVM builds for testing.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PYQIR_DOWNLOAD_LLVM</span></code></p></li>
+<li><p>Indicator to whether the build should download LLVM cached builds.</p></li>
+<li><p>Build will download LLVM if needed unless this variable is defined and set to
+<code class="docutils literal notranslate"><span class="pre">false</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PYQIR_LLVM_BUILDS_URL</span></code></p></li>
+<li><p>Url from where LLVM builds will be downloaded.</p></li>
+<li><p>Default: <code class="docutils literal notranslate"><span class="pre">https://msquantumpublic.blob.core.windows.net/llvm-builds</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PYQIR_CACHE_DIR</span></code></p></li>
+<li><p>Root insallation path for LLVM builds</p></li>
+<li><p>Default if not specified:</p>
+<ul>
+<li><p>Linux/Mac: <code class="docutils literal notranslate"><span class="pre">$HOME/.pyqir</span></code></p></li>
+<li><p>Windows: <code class="docutils literal notranslate"><span class="pre">$HOME\.pyqir</span></code></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LLVM_SYS_110_PREFIX</span></code></p></li>
+<li><p>Required by <code class="docutils literal notranslate"><span class="pre">llvm-sys</span></code> and will be set to the version of LLVM used for
+configuration.</p></li>
+<li><p>Version dependent and will change as LLVM is updated. (<code class="docutils literal notranslate"><span class="pre">LLVM_SYS_120_PREFIX</span></code>,
+<code class="docutils literal notranslate"><span class="pre">LLVM_SYS_130_PREFIX</span></code>, etc)</p></li>
+<li><p>Not needed if you have a working LLVM installation on the path.</p></li>
+</ul>
+</section>
+<section id="packaging">
+<h3>Packaging<a class="headerlink" href="#packaging" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">build.(ps1|sh|cmd)</span></code>, <code class="docutils literal notranslate"><span class="pre">maturin</span></code>, and <code class="docutils literal notranslate"><span class="pre">tox</span></code> builds all generate Python wheels
+to the <code class="docutils literal notranslate"><span class="pre">target/wheels</span></code> folder. The default Python3 installation will be used
+targeting Python ABI 3.6.</p>
+<p>The manylinux support uses a Docker image in the build scripts to run the builds
+in the CI environment.</p>
+<p>The Windows packaging will look for python installations available and build for
+them. More information on <a class="reference external" href="https://tox.readthedocs.io/en/latest/developers.html?highlight=windows#multiple-python-versions-on-windows">supporting multiple python versions on
+Windows</a></p>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">PyQIR</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api-reference/index.html">API Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Development Guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Building PyQIR from Source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compatibility.html">PyQIR compatible systems</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs-authoring.html">Authoring PyQIR Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Development Guide</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Development Guide</a></li>
+      <li>Next: <a href="compatibility.html" title="next chapter">PyQIR compatible systems</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, QIR Alliance.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/development-guide/building.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
