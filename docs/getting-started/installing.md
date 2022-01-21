@@ -57,8 +57,8 @@ Then run the installation script:
 ## Supported Platforms
 
 For more information about what platforms are supported, please see
-[Compatibility](compatibility.md). Alternatively, instructions for how to build
-PyQIR from source can be found [here](building.md)
+{doc}`Compatibility </development-guide/compatibility>`. Alternatively, instructions for how to build
+PyQIR from source can be found at {doc}`/development-guide/building`.
 
 ## Uninstalling the Packages
 

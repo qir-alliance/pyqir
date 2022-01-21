@@ -4,7 +4,7 @@
 properties {
     $repo = @{}
     $repo.root = Resolve-Path (Split-Path -parent $PSScriptRoot)
-    
+
     $pyqir = @{}
 
     $pyqir.parser = @{}
@@ -20,6 +20,14 @@ properties {
     $pyqir.jit.name = "pyqir-jit"
     $pyqir.jit.dir = Join-Path $repo.root "pyqir-jit"
     $pyqir.jit.examples_dir = Join-Path $repo.root "examples" "jit"
+
+    $docs = @{}
+    $docs.root = Join-Path $repo.root "docs"
+    $docs.build = @{}
+    $docs.build.dir = Join-Path $docs.root "_build"
+    $docs.build.opts = @()
+
+    $wheelhouse = Join-Path $repo.root "target" "wheels" "*.whl"
 }
 
 Include settings.ps1
@@ -58,6 +66,29 @@ Task jit -Depends init {
 
 Task parser -Depends init {
     Build-PyQIR($pyqir.parser.name)
+}
+
+Task rebuild -Depends generator, jit, parser
+Task wheelhouse `
+    -Precondition { -not (Test-Path $wheelhouse -ErrorAction SilentlyContinue) } `
+    { Invoke-Task rebuild }
+
+Task docs -Depends wheelhouse {
+    # - Install artifacts into new venv along with sphinx.
+    # - Run sphinx from within new venv.
+    $envPath = Join-Path $repo.root ".docs-venv"
+    $sphinxOpts = $docs.build.opts
+    Create-DocsEnv `
+        -EnvironmentPath $envPath `
+        -RequirementsPath (Join-Path $repo.root "eng" "docs-requirements.txt") `
+        -ArtifactPaths (Get-Item $wheelhouse)
+    & (Join-Path $envPath "bin" "Activate.ps1")
+    try {
+        sphinx-build -M html $docs.root $docs.build.dir @sphinxOpts
+    }
+    finally {
+        deactivate
+    }
 }
 
 function Use-ExternalLlvmInstallation {
@@ -330,3 +361,33 @@ task run-examples -Depends init {
     
 }
 
+function Create-DocsEnv() {
+    param(
+        [string]
+        $EnvironmentPath,
+        [string]
+        $RequirementsPath,
+        [string[]]
+        $ArtifactPaths
+    )
+
+    Write-Host "##[info]Creating virtual environment for use with docs at $EnvironmentPath..."
+    python -m venv $EnvironmentPath
+
+    $activateScript = (Join-Path $EnvironmentPath "bin" "Activate.ps1")
+    if (-not (Test-Path $activateScript -ErrorAction SilentlyContinue)) {
+        Get-ChildItem $EnvironmentPath | Write-Host
+        throw "No activate script found for virtual environment at $EnvironmentPath; environment creation failed."
+    }
+
+    & $activateScript
+    try {
+        pip install -r $RequirementsPath
+        foreach ($artifact in $ArtifactPaths) {
+            pip install $artifact
+        }
+    }
+    finally {
+        deactivate
+    }
+}

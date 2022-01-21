@@ -193,7 +193,9 @@ class QirBuilder:
         """
         Models an array of qubits of the given size. The individual values
         are accessed by name "<name><index>" with 0 based indicies.
-        Example:
+
+        Example::
+
             builder = QirBuilder("Bell circuit")
             builder.add_quantum_register("qr", 2)
             builder.add_classical_register("qc", 2)
@@ -246,8 +248,9 @@ class QirBuilder:
         Controlled via the RUST_LOG environment variable.
         See https://docs.rs/env_logger/0.9.0/env_logger/#enabling-logging for details
 
-        Example:
-        in tests.py:
+        Example::
+
+            # In tests.py:
             def test_logging():
                 builder = QirBuilder("logging test")
                 builder.enable_logging()
@@ -255,14 +258,18 @@ class QirBuilder:
                 builder.h("qr0")
                 builder.build("test.ll")
 
-        PowerShell:
+        PowerShell::
+
             $env:RUST_LOG="info"
             python -m pytest
-        Bash:
+
+        Bash::
+
             RUST_LOG=info python -m pytest
 
-        Example Output:
-        [2021-09-15T16:55:46Z INFO  pyqir::python] Adding qr[0]
-        [2021-09-15T16:55:46Z INFO  pyqir::python] h => qr0
+        Example Output::
+
+            [2021-09-15T16:55:46Z INFO  pyqir::python] Adding qr[0]
+            [2021-09-15T16:55:46Z INFO  pyqir::python] h => qr0
         """
         self.pyqir.enable_logging()

@@ -1,0 +1,14 @@
+// This configuration file sets options for spell-checking pull requests
+// onto this repository. Please see
+//     https://github.com/streetsidesoftware/cspell/tree/main/packages/cspell#cspelljson
+// for more documentation about this config file.
+{
+    "ignoreWords": [
+    ],
+    // By definition, everything in flagWords is considered to be spelled
+    // wrong. Thus we disable spell checking for the list of misspelled words...
+    // cspell:disable
+    "flagWords": [
+    ]
+    // cspell:enable
+}
