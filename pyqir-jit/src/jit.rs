@@ -1,73 +1,239 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use crate::{interop::SemanticModel, runtime::Simulator};
+use inkwell::{
+    attributes::AttributeLoc,
+    context::Context,
+    execution_engine::ExecutionEngine,
+    module::Module,
+    targets::{InitializationConfig, Target, TargetMachine},
+    values::FunctionValue,
+    OptimizationLevel,
+};
+use microsoft_quantum_qir_runtime_sys::runtime::BasicRuntimeDriver;
+use qirlib::{module, passes::run_basic_passes_on};
 use std::path::Path;
 
-use crate::interop::SemanticModel;
-use crate::runtime::Simulator;
-use inkwell::targets::TargetMachine;
-use inkwell::targets::{InitializationConfig, Target};
-use microsoft_quantum_qir_runtime_sys::runtime::BasicRuntimeDriver;
-use qirlib::context::{Context, ContextType};
-use qirlib::passes::run_basic_passes_on;
-
-pub fn run_module<P: AsRef<Path>>(path: P) -> Result<SemanticModel, String> {
-    let ctx = inkwell::context::Context::create();
-    let path_str = path
-        .as_ref()
-        .to_str()
-        .expect("Did not find a valid Unicode path string")
-        .to_owned();
-    let context_type = ContextType::File(&path_str);
-    let context = Context::new(&ctx, context_type)?;
-    let model = run_ctx(context)?;
-    Ok(model)
+pub(crate) fn run_module_file(
+    path: impl AsRef<Path>,
+    entry_point: Option<&str>,
+) -> Result<SemanticModel, String> {
+    let context = Context::create();
+    let module = module::load_file(path, &context)?;
+    run_module(&module, entry_point)
 }
 
-pub fn run_ctx<'ctx>(context: Context<'ctx>) -> Result<SemanticModel, String> {
-    Target::initialize_native(&InitializationConfig::default()).unwrap();
+fn run_module(module: &Module, entry_point: Option<&str>) -> Result<SemanticModel, String> {
+    Target::initialize_native(&InitializationConfig::default())?;
 
     let default_triple = TargetMachine::get_default_triple();
+    let target = Target::from_triple(&default_triple).map_err(|e| e.to_string())?;
 
-    let target = Target::from_triple(&default_triple).expect("Unable to create target machine");
+    if !target.has_asm_backend() {
+        return Err("Target doesn't have an ASM backend.".to_owned());
+    }
+    if !target.has_target_machine() {
+        return Err("Target doesn't have a target machine.".to_owned());
+    }
 
-    assert!(target.has_asm_backend());
-    assert!(target.has_target_machine());
-
-    run_basic_passes_on(&context);
+    run_basic_passes_on(module);
+    let entry_point = choose_entry_point(module_functions(module), entry_point)?;
 
     unsafe {
         BasicRuntimeDriver::initialize_qir_context(true);
-        let _ = microsoft_quantum_qir_runtime_sys::foundation::QSharpFoundation::new();
-
-        let _ = inkwell::support::load_library_permanently("");
-        let simulator = Simulator::new(&context, &context.execution_engine);
-        let main = context
-            .execution_engine
-            .get_function::<unsafe extern "C" fn() -> ()>("QuantumApplication__Run")
-            .unwrap();
-        main.call();
-        Ok(simulator.get_model())
+        microsoft_quantum_qir_runtime_sys::foundation::QSharpFoundation::new();
+        inkwell::support::load_library_permanently("");
     }
+
+    let execution_engine = module
+        .create_jit_execution_engine(OptimizationLevel::None)
+        .map_err(|e| e.to_string())?;
+
+    let _simulator = Simulator::new(module, &execution_engine);
+
+    unsafe {
+        run_entry_point(&execution_engine, entry_point)?;
+    }
+
+    Ok(Simulator::get_model())
+}
+
+unsafe fn run_entry_point(
+    execution_engine: &ExecutionEngine,
+    entry_point: FunctionValue,
+) -> Result<(), String> {
+    if entry_point.count_params() == 0 && entry_point.get_type().get_return_type().is_none() {
+        execution_engine.run_function(entry_point, &[]);
+        Ok(())
+    } else {
+        Err("Entry point has parameters or a non-void return type.".to_owned())
+    }
+}
+
+fn choose_entry_point<'ctx>(
+    functions: impl Iterator<Item = FunctionValue<'ctx>>,
+    name: Option<&str>,
+) -> Result<FunctionValue<'ctx>, String> {
+    let mut entry_points = functions
+        .filter(|f| is_entry_point(*f) && name.iter().all(|n| f.get_name().to_str() == Ok(n)));
+
+    let entry_point = entry_points
+        .next()
+        .ok_or_else(|| "No matching entry point found.".to_owned())?;
+
+    if entry_points.next().is_some() {
+        Err("Multiple matching entry points found.".to_owned())
+    } else {
+        Ok(entry_point)
+    }
+}
+
+fn is_entry_point(function: FunctionValue) -> bool {
+    function
+        .get_string_attribute(AttributeLoc::Function, "EntryPoint")
+        .is_some()
+}
+
+fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = FunctionValue<'ctx>> {
+    struct FunctionValueIter<'ctx>(Option<FunctionValue<'ctx>>);
+
+    impl<'ctx> Iterator for FunctionValueIter<'ctx> {
+        type Item = FunctionValue<'ctx>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            let function = self.0;
+            self.0 = function.and_then(inkwell::values::FunctionValue::get_next_function);
+            function
+        }
+    }
+
+    FunctionValueIter(module.get_first_function())
 }
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
-    use std::io::Write;
-    use tempfile::tempdir;
+    use super::run_module;
+    use crate::interop::{Instruction, SemanticModel, Single};
+    use inkwell::context::Context;
+    use qirlib::module;
+    use serial_test::serial;
 
+    const BELL_QIR_MEASURE: &[u8] = include_bytes!("../tests/bell_qir_measure.bc");
+    const CUSTOM_ENTRY_POINT_NAME: &[u8] = include_bytes!("../tests/custom_entry_point_name.bc");
+    const MULTIPLE_ENTRY_POINTS: &[u8] = include_bytes!("../tests/multiple_entry_points.bc");
+    const ENTRY_POINT_TYPES: &[u8] = include_bytes!("../tests/entry_point_types.bc");
+
+    #[serial]
     #[test]
-    fn eval_test() -> Result<(), String> {
-        let bell_qir_measure_contents = include_bytes!("../tests/bell_qir_measure.ll");
-        let dir = tempdir().expect("Could not create temp dir");
-        let file_path = dir.path().join("bell_qir_measure.ll");
-        let mut buffer = File::create(&file_path).unwrap();
-        buffer.write_all(bell_qir_measure_contents).unwrap();
-
-        let generated_model = super::run_module(file_path)?;
-
-        assert_eq!(generated_model.instructions.len(), 2);
+    fn runs_bell_qir_measure() -> Result<(), String> {
+        let model = run_test_module(BELL_QIR_MEASURE, None)?;
+        assert_eq!(model.instructions.len(), 2);
         Ok(())
+    }
+
+    #[serial]
+    #[test]
+    fn runs_single_entry_point_with_custom_name() -> Result<(), String> {
+        let model = run_test_module(CUSTOM_ENTRY_POINT_NAME, None)?;
+        assert_eq!(
+            model.instructions,
+            vec![Instruction::X(Single::new("0".to_owned()))]
+        );
+        Ok(())
+    }
+
+    #[serial]
+    #[test]
+    fn runs_entry_point_by_name() -> Result<(), String> {
+        let model = run_test_module(CUSTOM_ENTRY_POINT_NAME, Some("App__Foo"))?;
+        assert_eq!(
+            model.instructions,
+            vec![Instruction::X(Single::new("0".to_owned()))]
+        );
+        Ok(())
+    }
+
+    #[serial]
+    #[test]
+    fn fails_if_wrong_name_single_entry_point() -> Result<(), String> {
+        let result = run_test_module(CUSTOM_ENTRY_POINT_NAME, Some("nonexistent"));
+        assert_eq!(
+            result.err(),
+            Some("No matching entry point found.".to_owned())
+        );
+        Ok(())
+    }
+
+    #[serial]
+    #[test]
+    fn fails_without_name_if_multiple_entry_points() -> Result<(), String> {
+        let result = run_test_module(MULTIPLE_ENTRY_POINTS, None);
+        assert_eq!(
+            result.err(),
+            Some("Multiple matching entry points found.".to_owned())
+        );
+        Ok(())
+    }
+
+    #[serial]
+    #[test]
+    fn runs_first_entry_point_by_name() -> Result<(), String> {
+        let model = run_test_module(MULTIPLE_ENTRY_POINTS, Some("App__Foo"))?;
+        assert_eq!(
+            model.instructions,
+            vec![Instruction::X(Single::new("0".to_owned()))]
+        );
+        Ok(())
+    }
+
+    #[serial]
+    #[test]
+    fn runs_second_entry_point_by_name() -> Result<(), String> {
+        let model = run_test_module(MULTIPLE_ENTRY_POINTS, Some("App__Bar"))?;
+        assert_eq!(
+            model.instructions,
+            vec![Instruction::H(Single::new("0".to_owned()))]
+        );
+        Ok(())
+    }
+
+    #[serial]
+    #[test]
+    fn fails_if_wrong_name_multiple_entry_points() -> Result<(), String> {
+        let result = run_test_module(MULTIPLE_ENTRY_POINTS, Some("nonexistent"));
+        assert_eq!(
+            result.err(),
+            Some("No matching entry point found.".to_owned())
+        );
+        Ok(())
+    }
+
+    #[serial]
+    #[test]
+    fn fails_if_entry_point_has_params() -> Result<(), String> {
+        let result = run_test_module(ENTRY_POINT_TYPES, Some("App__IntParam"));
+        assert_eq!(
+            result.err(),
+            Some("Entry point has parameters or a non-void return type.".to_owned())
+        );
+        Ok(())
+    }
+
+    #[serial]
+    #[test]
+    fn fails_if_entry_point_has_return_value() -> Result<(), String> {
+        let result = run_test_module(ENTRY_POINT_TYPES, Some("App__IntReturn"));
+        assert_eq!(
+            result.err(),
+            Some("Entry point has parameters or a non-void return type.".to_owned())
+        );
+        Ok(())
+    }
+
+    fn run_test_module(bytes: &[u8], entry_point: Option<&str>) -> Result<SemanticModel, String> {
+        let context = Context::create();
+        let module = module::load_memory(bytes, "test", &context)?;
+        run_module(&module, entry_point)
     }
 }

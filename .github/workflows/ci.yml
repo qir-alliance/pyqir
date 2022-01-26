@@ -59,3 +59,42 @@ jobs:
         with:
           name: artifacts
           path: target/wheels/*
+
+  docs:
+    runs-on: "ubuntu-20.04"
+    needs: build
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: false
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: artifacts
+          path: wheelhouse
+
+      - name: Build Docs
+        run: |
+          $properties = @{
+            "wheelhouse" = (Resolve-Path "wheelhouse/*-linux_x86_64.whl")
+          };
+          ./eng/build.ps1 `
+            -taskList docs `
+            -properties $properties
+        shell: pwsh
+
+      # Always publish docs as an artifact, but only publish docs to GitHub Pages
+      # when pushing to main.
+      - name: Publish Docs as Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: docs
+          path: docs/_build
+
+      - name: Publish Docs to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@4.1.7
+        with:
+          branch: gh-pages
+          folder: docs/_build/html
+        if: ${{ github.event_name == 'push' }}

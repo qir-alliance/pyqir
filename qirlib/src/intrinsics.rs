@@ -91,16 +91,8 @@ impl<'ctx> Intrinsics<'ctx> {
             dumpmachine: Intrinsics::get_qis_intrinsic_function_body(module, "dumpmachine"),
             dumpregister: Intrinsics::get_qis_intrinsic_function_body(module, "dumpregister"),
         };
-        //Intrinsics::test_template_intrinsics(&intrinsics);
-        intrinsics
-    }
 
-    fn get_qis_intrinsic_function(
-        module: &Module<'ctx>,
-        name: &str,
-    ) -> Option<FunctionValue<'ctx>> {
-        let function_name = format!("__quantum__qis__{}", name.to_lowercase());
-        Intrinsics::get_function(module, function_name.as_str())
+        intrinsics
     }
 
     fn get_qis_intrinsic_function_ctl(
@@ -151,7 +143,7 @@ impl<'ctx> Intrinsics<'ctx> {
     }
 
     fn get_function(module: &Module<'ctx>, function_name: &str) -> Option<FunctionValue<'ctx>> {
-        let defined_function = module.get_function(&function_name);
+        let defined_function = module.get_function(function_name);
         match defined_function {
             None => {
                 log::debug!(
@@ -163,40 +155,19 @@ impl<'ctx> Intrinsics<'ctx> {
             Some(value) => Some(value),
         }
     }
-
-    fn test_template_intrinsics(intrinsics: &Intrinsics<'ctx>) {
-        intrinsics.m.expect("M gate must be defined");
-        intrinsics.r_x.expect("Rx gate must be defined");
-        intrinsics.r_y.expect("Ry gate must be defined");
-        intrinsics.r_z.expect("Rz gate must be defined");
-        intrinsics.reset.expect("Reset gate must be defined");
-        intrinsics.h.expect("H gate must be defined");
-        intrinsics.x.expect("X gate must be defined");
-        intrinsics.x_ctl.expect("X_ctl function must be defined");
-        intrinsics.x_ctl_ins.expect("X_ctl gate must be defined");
-        intrinsics.y.expect("Y gate must be defined");
-        intrinsics.z.expect("Z gate must be defined");
-        intrinsics.z_ctl.expect("Z_ctl function must be defined");
-        intrinsics.z_ctl_ins.expect("Z_ctl gate must be defined");
-        intrinsics.s.expect("S gate must be defined");
-        intrinsics.s_adj.expect("S_adj gate must be defined");
-        intrinsics.t.expect("T gate must be defined");
-        intrinsics.t_adj.expect("T_adj gate must be defined");
-        intrinsics.dumpmachine.expect("dumpmachine must be defined");
-    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::context::{Context, ContextType};
-
     use super::*;
+    use crate::{codegen::CodeGenerator, module};
+    use inkwell::context::Context;
 
     #[test]
     fn intrinsics_can_be_loaded() {
-        let ctx = inkwell::context::Context::create();
-        let name = String::from("temp");
-        let context = Context::new(&ctx, ContextType::Template(&name)).unwrap();
-        let _ = Intrinsics::new(&context.module);
+        let context = Context::create();
+        let module = module::load_template("test", &context).unwrap();
+        let generator = CodeGenerator::new(&context, module).unwrap();
+        let _ = Intrinsics::new(&generator.module);
     }
 }

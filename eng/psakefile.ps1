@@ -4,7 +4,7 @@
 properties {
     $repo = @{}
     $repo.root = Resolve-Path (Split-Path -parent $PSScriptRoot)
-    
+
     $pyqir = @{}
 
     $pyqir.parser = @{}
@@ -20,12 +20,35 @@ properties {
     $pyqir.jit.name = "pyqir-jit"
     $pyqir.jit.dir = Join-Path $repo.root "pyqir-jit"
     $pyqir.jit.examples_dir = Join-Path $repo.root "examples" "jit"
+
+    $docs = @{}
+    $docs.root = Join-Path $repo.root "docs"
+    $docs.build = @{}
+    $docs.build.dir = Join-Path $docs.root "_build"
+    $docs.build.opts = @()
+
+    $wheelhouse = Join-Path $repo.root "target" "wheels" "*.whl"
 }
 
 Include settings.ps1
 Include utils.ps1
 
-Task default -Depends parser, generator, jit, run-examples, run-examples-in-containers
+Task default -Depends checks, parser, generator, jit, run-examples, run-examples-in-containers
+
+Task checks -Depends cargo-fmt, cargo-clippy
+
+Task cargo-fmt {
+    Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please run 'cargo fmt --all' before pushing" {
+        cargo fmt --all -- --check
+    }
+}
+
+Task cargo-clippy -Depends init {
+    Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
+        $extraArgs = (Test-CI) ? @("--", "-D", "warnings") : @()
+        cargo clippy --workspace --all-targets --all-features @extraArgs
+    }
+}
 
 Task init {
     Restore-ConfigTomlWithLlvmInfo
@@ -43,6 +66,29 @@ Task jit -Depends init {
 
 Task parser -Depends init {
     Build-PyQIR($pyqir.parser.name)
+}
+
+Task rebuild -Depends generator, jit, parser
+Task wheelhouse `
+    -Precondition { -not (Test-Path $wheelhouse -ErrorAction SilentlyContinue) } `
+    { Invoke-Task rebuild }
+
+Task docs -Depends wheelhouse {
+    # - Install artifacts into new venv along with sphinx.
+    # - Run sphinx from within new venv.
+    $envPath = Join-Path $repo.root ".docs-venv"
+    $sphinxOpts = $docs.build.opts
+    Create-DocsEnv `
+        -EnvironmentPath $envPath `
+        -RequirementsPath (Join-Path $repo.root "eng" "docs-requirements.txt") `
+        -ArtifactPaths (Get-Item $wheelhouse)
+    & (Join-Path $envPath "bin" "Activate.ps1")
+    try {
+        sphinx-build -M html $docs.root $docs.build.dir @sphinxOpts
+    }
+    finally {
+        deactivate
+    }
 }
 
 function Use-ExternalLlvmInstallation {
@@ -224,7 +270,7 @@ function Build-PyQIR([string]$project) {
     if (Test-RunInContainer) {
         function Build-ContainerImage {
             Write-BuildLog "Building container image manylinux-llvm-builder"
-            exec -workingDirectory (Join-Path $srcPath eng) {
+            Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
                 Get-Content manylinux.Dockerfile | docker build -t manylinux2014_x86_64_maturin -
             }
         }
@@ -234,19 +280,20 @@ function Build-PyQIR([string]$project) {
             $llvmVolume = "$($installationDirectory):/usr/lib/llvm"
             $userSpec = ""
 
-            Write-BuildLog "docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output cargo test --release --lib -vv -- --nocapture" "command"
-            exec {
+            Invoke-LoggedCommand {
                 docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output cargo test --release --lib -vv -- --nocapture
             }
 
-            Write-BuildLog "docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output /usr/bin/maturin build --release" "command"
-            exec {
+            Invoke-LoggedCommand {
                 docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output /usr/bin/maturin build --release
             }
 
-            Write-BuildLog "docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output python -m tox -e test" "command"
-            exec {
+            Invoke-LoggedCommand {
                 docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output python -m tox -e test
+            }
+            
+            Invoke-LoggedCommand {
+                docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output cargo test --release -vv -- --nocapture
             }
         }
 
@@ -254,23 +301,28 @@ function Build-PyQIR([string]$project) {
         Invoke-ContainerImage
     }
     else {
+
         exec -workingDirectory (Join-Path $srcPath $project) {
-            Write-BuildLog "& $python -m pip install --user -U pip" "command"
-            exec { & $python -m pip install --user -U pip }
+            Invoke-LoggedCommand {
+                & $python -m pip install --user -U pip
+            }
 
-            Write-BuildLog "& $python -m pip install --user maturin tox" "command"
-            exec { & $python -m pip install --user maturin tox }
+            Invoke-LoggedCommand {
+                & $python -m pip install --user maturin tox
+            }
 
-            Write-BuildLog "& $python -m tox -e test" "command"
-            exec { & $python -m tox -e test }
-            #exec { & maturin develop && pytest }
+            Invoke-LoggedCommand {
+                & $python -m tox -e test
+            }
 
-            Write-BuildLog "& $python -m tox -e pack" "command"
-            exec { & $python -m tox -e pack }
+            Invoke-LoggedCommand {
+                & $python -m tox -e pack
+            }
         }
 
-        #Write-BuildLog "& cargo test --package qirlib --lib -vv -- --nocapture" "command"
-        #exec -workingDirectory $srcPath { & cargo test --package qirlib --lib -vv -- --nocapture }
+        Invoke-LoggedCommand -workingDirectory $srcPath {
+            & cargo test --release -vv -- --nocapture
+        }
     }
 }
 
@@ -324,3 +376,33 @@ task run-examples {
     
 }
 
+function Create-DocsEnv() {
+    param(
+        [string]
+        $EnvironmentPath,
+        [string]
+        $RequirementsPath,
+        [string[]]
+        $ArtifactPaths
+    )
+
+    Write-Host "##[info]Creating virtual environment for use with docs at $EnvironmentPath..."
+    python -m venv $EnvironmentPath
+
+    $activateScript = (Join-Path $EnvironmentPath "bin" "Activate.ps1")
+    if (-not (Test-Path $activateScript -ErrorAction SilentlyContinue)) {
+        Get-ChildItem $EnvironmentPath | Write-Host
+        throw "No activate script found for virtual environment at $EnvironmentPath; environment creation failed."
+    }
+
+    & $activateScript
+    try {
+        pip install -r $RequirementsPath
+        foreach ($artifact in $ArtifactPaths) {
+            pip install $artifact
+        }
+    }
+    finally {
+        deactivate
+    }
+}
