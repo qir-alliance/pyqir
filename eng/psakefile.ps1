@@ -33,7 +33,7 @@ properties {
 Include settings.ps1
 Include utils.ps1
 
-Task default -Depends checks, parser, generator, jit, run-examples
+Task default -Depends checks, parser, generator, jit, run-examples, run-examples-in-containers
 
 Task checks -Depends cargo-fmt, cargo-clippy
 
@@ -326,7 +326,22 @@ function Build-PyQIR([string]$project) {
     }
 }
 
-task run-examples -Depends init {   
+task run-examples-in-containers -precondition { $IsLinux -and (Test-CI) } {
+    $userName = [Environment]::UserName
+    $userId = $(id -u)
+    $groupId = $(id -g)
+    $images = @("buster", "bullseye", "bionic", "focal")
+    foreach ($image in $images) {
+        exec -workingDirectory (Join-Path $repo.root "eng") {
+            get-content "$($image).Dockerfile" | docker build --build-arg USERNAME=$userName --build-arg USER_UID=$userId --build-arg USER_GID=$groupId -t "$image-samples" -
+        }
+        exec {
+            docker run --rm --user $userName -v "$($repo.root):/home/$userName" "$image-samples" build.ps1 -t run-examples
+        }
+    }
+}
+
+task run-examples {   
     exec -workingDirectory $repo.root {
         $wheels = Join-Path $repo.root "target" "wheels"
         & $python -m pip install -r requirements.txt --no-index --find-links=$wheels -v
