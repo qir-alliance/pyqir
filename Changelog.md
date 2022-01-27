@@ -2,7 +2,6 @@
 
 ## [Unreleased]
 
-
 ## [0.1.1a1] - 2022-01-27
 
 ### Core
@@ -32,8 +31,7 @@
 
 ## 0.1.0a1 - 2021-11-24
 
- * Initial Release
-
+- Initial Release
 
 [Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.1.1a1...HEAD
 [0.1.1a1]: https://github.com/qir-alliance/pyqir/compare/v0.1.0a1...v0.1.1a1
