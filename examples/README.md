@@ -32,4 +32,4 @@ Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec).
 
 For more information about how to install the PyQIR packages to run the
 examples, see the
-[docs](https://github.com/qir-alliance/pyqir/blob/main/docs/installing.md).
+[docs](https://github.com/qir-alliance/pyqir/blob/main/getting-started/installing.md).
