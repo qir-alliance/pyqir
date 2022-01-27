@@ -86,7 +86,7 @@ entry:
 
 ## Building and Testing
 
-See [Building](https://github.com/qir-alliance/pyqir/blob/main/docs/building.md)
+See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html)
 
 ## Current Limitations
 
