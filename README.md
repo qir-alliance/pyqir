@@ -36,10 +36,10 @@ by the above Python packages.
 ## Documentation
 
 - [Installing
-  PyQIR](https://github.com/qir-alliance/pyqir/blob/main/docs/installing.md)
+  PyQIR](https://qir-alliance.github.io/pyqir/getting-started/installing.html)
 - [Building PyQIR from
-  source](https://github.com/qir-alliance/pyqir/blob/main/docs/building.md)
-- [Compatibility](https://github.com/qir-alliance/pyqir/blob/main/docs/compatibility.md)
+  source](https://qir-alliance.github.io/pyqir/development-guide/building.html)
+- [Compatibility](https://qir-alliance.github.io/pyqir/development-guide/compatibility.html)
 
 ## Feedback
 
