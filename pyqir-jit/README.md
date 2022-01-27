@@ -5,7 +5,7 @@ purpose of
 
 1. easily testing and experimenting with QIR code
 2. connecting it to low-level Python-based lab software such as e.g.
-   [QCoDes.](https://qcodes.github.io/Qcodes/user/intro.html)
+   [QCoDeS](https://qcodes.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html#Introduction)
 
 It contains the necessary [just-in-time
 compilation](https://en.wikipedia.org/wiki/Just-in-time_compilation)
@@ -86,7 +86,7 @@ measure qubits[8] -> out[8]
 
 ## Building and Testing
 
-See [Building](https://github.com/qir-alliance/pyqir/blob/main/docs/building.md)
+See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html)
 
 ## Current Limitations
 
