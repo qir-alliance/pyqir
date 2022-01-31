@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 FROM quay.io/pypa/manylinux2014_x86_64 as builder
 
 ENV PATH /root/.cargo/bin:$PATH

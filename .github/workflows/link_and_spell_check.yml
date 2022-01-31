@@ -1,4 +1,7 @@
 on:
+  push:
+    branches:
+    - main
   workflow_dispatch:
   pull_request:
     branches:
@@ -35,7 +38,8 @@ jobs:
       uses: gaurav-nelson/github-action-markdown-link-check@v1
       with:
         use-verbose-mode: 'yes'
-      if: ${{ success() || failure() }}
+        config-file: 'utils/mlc_config.json'
+      if: ${{ github.event_name == 'push' }}
     - name: "Check spelling in changed files"
       # cspell:words streetsidesoftware
       uses: streetsidesoftware/cspell-action@v1.2.4
