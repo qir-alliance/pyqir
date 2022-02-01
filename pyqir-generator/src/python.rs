@@ -31,7 +31,7 @@ struct SimpleModule {
 #[pymethods]
 impl SimpleModule {
     #[new]
-    fn new(name: String, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
+    fn new(py: Python, name: String, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
         let registers = vec![ClassicalRegister::new(RESULT_NAME.to_string(), num_results)];
 
         let qubits = (0..num_qubits)
@@ -45,10 +45,8 @@ impl SimpleModule {
             instructions: Vec::new(),
         };
 
-        Python::with_gil(|py| {
-            let builder = Py::new(py, Builder::new())?;
-            Ok(SimpleModule { model, builder })
-        })
+        let builder = Py::new(py, Builder::new())?;
+        Ok(SimpleModule { model, builder })
     }
 
     #[getter]
@@ -73,12 +71,16 @@ impl SimpleModule {
         self.builder.clone()
     }
 
-    fn ir(&mut self) -> PyResult<String> {
-        Python::with_gil(|py| {
-            let builder = self.builder.as_ref(py).try_borrow()?;
-            self.model.instructions = builder.instructions.first().unwrap().clone();
-            get_ir_string(&self.model).map_err(PyOSError::new_err)
-        })
+    fn ir(&mut self, py: Python) -> PyResult<String> {
+        let builder = self.builder.as_ref(py).borrow();
+
+        match builder.frames[..] {
+            [ref instructions] => {
+                self.model.instructions = instructions.clone();
+                get_ir_string(&self.model).map_err(PyOSError::new_err)
+            }
+            _ => panic!("Builder does not contain exactly one stack frame."),
+        }
     }
 
     fn bitcode(&self) -> &[u8] {
@@ -113,13 +115,13 @@ enum RefKind {
 
 #[pyclass]
 struct Builder {
-    instructions: Vec<Vec<Instruction>>,
+    frames: Vec<Vec<Instruction>>,
 }
 
 impl Builder {
     fn new() -> Builder {
         Builder {
-            instructions: vec![vec![]],
+            frames: vec![vec![]],
         }
     }
 }
@@ -138,77 +140,77 @@ impl BasicQisBuilder {
 
     fn cx(&self, py: Python, control: &Qubit, target: &Qubit) {
         let controlled = Controlled::new(control.id(), target.id());
-        self.add_inst(py, Instruction::Cx(controlled));
+        self.push_inst(py, Instruction::Cx(controlled));
     }
 
     fn cz(&self, py: Python, control: &Qubit, target: &Qubit) {
         let controlled = Controlled::new(control.id(), target.id());
-        self.add_inst(py, Instruction::Cz(controlled));
+        self.push_inst(py, Instruction::Cz(controlled));
     }
 
     fn h(&self, py: Python, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(py, Instruction::H(single));
+        self.push_inst(py, Instruction::H(single));
     }
 
     fn m(&self, py: Python, qubit: &Qubit, result: &Ref) {
         let measured = Measured::new(qubit.id(), result.id());
-        self.add_inst(py, Instruction::M(measured));
+        self.push_inst(py, Instruction::M(measured));
     }
 
     fn reset(&self, py: Python, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(py, Instruction::Reset(single));
+        self.push_inst(py, Instruction::Reset(single));
     }
 
     fn rx(&self, py: Python, theta: f64, qubit: &Qubit) {
         let rotated = Rotated::new(theta, qubit.id());
-        self.add_inst(py, Instruction::Rx(rotated));
+        self.push_inst(py, Instruction::Rx(rotated));
     }
 
     fn ry(&self, py: Python, theta: f64, qubit: &Qubit) {
         let rotated = Rotated::new(theta, qubit.id());
-        self.add_inst(py, Instruction::Ry(rotated));
+        self.push_inst(py, Instruction::Ry(rotated));
     }
 
     fn rz(&self, py: Python, theta: f64, qubit: &Qubit) {
         let rotated = Rotated::new(theta, qubit.id());
-        self.add_inst(py, Instruction::Rz(rotated));
+        self.push_inst(py, Instruction::Rz(rotated));
     }
 
     fn s(&self, py: Python, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(py, Instruction::S(single));
+        self.push_inst(py, Instruction::S(single));
     }
 
     fn s_adj(&self, py: Python, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(py, Instruction::SAdj(single));
+        self.push_inst(py, Instruction::SAdj(single));
     }
 
     fn t(&self, py: Python, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(py, Instruction::T(single));
+        self.push_inst(py, Instruction::T(single));
     }
 
     fn t_adj(&self, py: Python, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(py, Instruction::TAdj(single));
+        self.push_inst(py, Instruction::TAdj(single));
     }
 
     fn x(&self, py: Python, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(py, Instruction::X(single));
+        self.push_inst(py, Instruction::X(single));
     }
 
     fn y(&self, py: Python, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(py, Instruction::Y(single));
+        self.push_inst(py, Instruction::Y(single));
     }
 
     fn z(&self, py: Python, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(py, Instruction::Z(single));
+        self.push_inst(py, Instruction::Z(single));
     }
 
     fn if_result(&self, py: Python, result: &Ref, one: &PyAny, zero: &PyAny) -> PyResult<()> {
@@ -226,24 +228,24 @@ impl BasicQisBuilder {
             else_insts,
         };
 
-        self.add_inst(py, Instruction::If(if_inst));
+        self.push_inst(py, Instruction::If(if_inst));
         Ok(())
     }
 }
 
 impl BasicQisBuilder {
-    fn add_inst(&self, py: Python, inst: Instruction) {
+    fn push_inst(&self, py: Python, inst: Instruction) {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.instructions.last_mut().unwrap().push(inst);
+        builder.frames.last_mut().unwrap().push(inst);
     }
 
     fn push_frame(&self, py: Python) {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.instructions.push(vec![]);
+        builder.frames.push(vec![]);
     }
 
     fn pop_frame(&self, py: Python) -> Option<Vec<Instruction>> {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.instructions.pop()
+        builder.frames.pop()
     }
 }
