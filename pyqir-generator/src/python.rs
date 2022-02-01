@@ -135,141 +135,91 @@ impl BasicQisBuilder {
     }
 
     fn cx(&self, control: &Qubit, target: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let controlled = Controlled::new(control.id(), target.id());
-            builder.model.add_inst(Instruction::Cx(controlled));
-            Ok(())
-        })
+        let controlled = Controlled::new(control.id(), target.id());
+        self.add_inst(Instruction::Cx(controlled))
     }
 
     fn cz(&self, control: &Qubit, target: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let controlled = Controlled::new(control.id(), target.id());
-            builder.model.add_inst(Instruction::Cz(controlled));
-            Ok(())
-        })
+        let controlled = Controlled::new(control.id(), target.id());
+        self.add_inst(Instruction::Cz(controlled))
     }
 
     fn h(&self, qubit: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let single = Single::new(qubit.id());
-            builder.model.add_inst(Instruction::H(single));
-            Ok(())
-        })
+        let single = Single::new(qubit.id());
+        self.add_inst(Instruction::H(single))
     }
 
     fn m(&self, qubit: &Qubit, result: &Ref) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let measured = Measured::new(qubit.id(), result.id());
-            builder.model.add_inst(Instruction::M(measured));
-            Ok(())
-        })
+        let measured = Measured::new(qubit.id(), result.id());
+        self.add_inst(Instruction::M(measured))
     }
 
     fn reset(&self, qubit: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let single = Single::new(qubit.id());
-            builder.model.add_inst(Instruction::Reset(single));
-            Ok(())
-        })
+        let single = Single::new(qubit.id());
+        self.add_inst(Instruction::Reset(single))
     }
 
     fn rx(&self, theta: f64, qubit: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let rotated = Rotated::new(theta, qubit.id());
-            builder.model.add_inst(Instruction::Rx(rotated));
-            Ok(())
-        })
+        let rotated = Rotated::new(theta, qubit.id());
+        self.add_inst(Instruction::Rx(rotated))
     }
 
     fn ry(&self, theta: f64, qubit: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let rotated = Rotated::new(theta, qubit.id());
-            builder.model.add_inst(Instruction::Ry(rotated));
-            Ok(())
-        })
+        let rotated = Rotated::new(theta, qubit.id());
+        self.add_inst(Instruction::Ry(rotated))
     }
 
     fn rz(&self, theta: f64, qubit: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let rotated = Rotated::new(theta, qubit.id());
-            builder.model.add_inst(Instruction::Rz(rotated));
-            Ok(())
-        })
+        let rotated = Rotated::new(theta, qubit.id());
+        self.add_inst(Instruction::Rz(rotated))
     }
 
     fn s(&self, qubit: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let single = Single::new(qubit.id());
-            builder.model.add_inst(Instruction::S(single));
-            Ok(())
-        })
+        let single = Single::new(qubit.id());
+        self.add_inst(Instruction::S(single))
     }
 
     fn s_adj(&self, qubit: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let single = Single::new(qubit.id());
-            builder.model.add_inst(Instruction::SAdj(single));
-            Ok(())
-        })
+        let single = Single::new(qubit.id());
+        self.add_inst(Instruction::SAdj(single))
     }
 
     fn t(&self, qubit: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let single = Single::new(qubit.id());
-            builder.model.add_inst(Instruction::T(single));
-            Ok(())
-        })
+        let single = Single::new(qubit.id());
+        self.add_inst(Instruction::T(single))
     }
 
     fn t_adj(&self, qubit: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let single = Single::new(qubit.id());
-            builder.model.add_inst(Instruction::TAdj(single));
-            Ok(())
-        })
+        let single = Single::new(qubit.id());
+        self.add_inst(Instruction::TAdj(single))
     }
 
     fn x(&self, qubit: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let single = Single::new(qubit.id());
-            builder.model.add_inst(Instruction::X(single));
-            Ok(())
-        })
+        let single = Single::new(qubit.id());
+        self.add_inst(Instruction::X(single))
     }
 
     fn y(&self, qubit: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let single = Single::new(qubit.id());
-            builder.model.add_inst(Instruction::Y(single));
-            Ok(())
-        })
+        let single = Single::new(qubit.id());
+        self.add_inst(Instruction::Y(single))
     }
 
     fn z(&self, qubit: &Qubit) -> PyResult<()> {
-        Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            let single = Single::new(qubit.id());
-            builder.model.add_inst(Instruction::Z(single));
-            Ok(())
-        })
+        let single = Single::new(qubit.id());
+        self.add_inst(Instruction::Z(single))
     }
 
     fn if_result(&self, result: &Ref, one: &PyAny, zero: &PyAny) {
         todo!()
+    }
+}
+
+impl BasicQisBuilder {
+    fn add_inst(&self, inst: Instruction) -> PyResult<()> {
+        Python::with_gil(|py| {
+            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
+            builder.model.add_inst(inst);
+            Ok(())
+        })
     }
 }

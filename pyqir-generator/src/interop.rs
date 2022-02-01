@@ -97,8 +97,8 @@ impl Single {
 #[derive(Clone, Debug, PartialEq)]
 pub struct If {
     pub condition: String,
-    pub true_insts: Vec<Instruction>,
-    pub false_insts: Vec<Instruction>,
+    pub then_insts: Vec<Instruction>,
+    pub else_insts: Vec<Instruction>,
 }
 
 // https://github.com/microsoft/qsharp-language/blob/ageller/profile/Specifications/QIR/Base-Profile.md

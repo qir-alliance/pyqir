@@ -249,10 +249,11 @@ fn emit_if<'a>(
         for inst in insts {
             emit(generator, inst, qubits, registers);
         }
+
         generator.builder.build_unconditional_branch(continue_block);
     };
 
-    emit_block(then_block, &if_inst.true_insts);
-    emit_block(else_block, &if_inst.false_insts);
+    emit_block(then_block, &if_inst.then_insts);
+    emit_block(else_block, &if_inst.else_insts);
     generator.builder.position_at_end(continue_block);
 }
