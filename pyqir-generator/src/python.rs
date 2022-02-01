@@ -4,7 +4,7 @@
 use crate::{
     emit::get_ir_string,
     interop::{
-        ClassicalRegister, Controlled, Instruction, Measured, QuantumRegister, Rotated,
+        ClassicalRegister, Controlled, If, Instruction, Measured, QuantumRegister, Rotated,
         SemanticModel, Single,
     },
 };
@@ -24,6 +24,7 @@ const QUBIT_NAME: &str = "qubit";
 
 #[pyclass]
 struct SimpleModule {
+    model: SemanticModel,
     builder: Py<Builder>,
 }
 
@@ -45,34 +46,26 @@ impl SimpleModule {
         };
 
         Python::with_gil(|py| {
-            let builder = Py::new(py, Builder { model })?;
-            Ok(SimpleModule { builder })
+            let builder = Py::new(py, Builder::new())?;
+            Ok(SimpleModule { model, builder })
         })
     }
 
     #[getter]
-    fn qubits(&self) -> PyResult<Vec<Qubit>> {
-        Python::with_gil(|py| {
-            let builder = self.builder.as_ref(py).try_borrow()?;
-            Ok(builder
-                .model
-                .qubits
-                .iter()
-                .map(|q| Qubit { index: q.index })
-                .collect())
-        })
+    fn qubits(&self) -> Vec<Qubit> {
+        self.model
+            .qubits
+            .iter()
+            .map(|q| Qubit { index: q.index })
+            .collect()
     }
 
     #[getter]
-    fn results(&self) -> PyResult<Vec<Ref>> {
-        Python::with_gil(|py| {
-            let builder = self.builder.as_ref(py).try_borrow()?;
-            let size = builder.model.registers.first().unwrap().size;
-
-            Ok((0..size)
-                .map(|index| Ref(RefKind::Result { index }))
-                .collect())
-        })
+    fn results(&self) -> Vec<Ref> {
+        let size = self.model.registers.first().unwrap().size;
+        (0..size)
+            .map(|index| Ref(RefKind::Result { index }))
+            .collect()
     }
 
     #[getter]
@@ -80,10 +73,11 @@ impl SimpleModule {
         self.builder.clone()
     }
 
-    fn ir(&self) -> PyResult<String> {
+    fn ir(&mut self) -> PyResult<String> {
         Python::with_gil(|py| {
             let builder = self.builder.as_ref(py).try_borrow()?;
-            get_ir_string(&builder.model).map_err(PyOSError::new_err)
+            self.model.instructions = builder.instructions.first().unwrap().clone();
+            get_ir_string(&self.model).map_err(PyOSError::new_err)
         })
     }
 
@@ -119,7 +113,15 @@ enum RefKind {
 
 #[pyclass]
 struct Builder {
-    model: SemanticModel,
+    instructions: Vec<Vec<Instruction>>,
+}
+
+impl Builder {
+    fn new() -> Builder {
+        Builder {
+            instructions: vec![vec![]],
+        }
+    }
 }
 
 #[pyclass]
@@ -134,92 +136,120 @@ impl BasicQisBuilder {
         BasicQisBuilder { builder }
     }
 
-    fn cx(&self, control: &Qubit, target: &Qubit) -> PyResult<()> {
+    fn cx(&self, control: &Qubit, target: &Qubit) {
         let controlled = Controlled::new(control.id(), target.id());
-        self.add_inst(Instruction::Cx(controlled))
+        self.add_inst(Instruction::Cx(controlled));
     }
 
-    fn cz(&self, control: &Qubit, target: &Qubit) -> PyResult<()> {
+    fn cz(&self, control: &Qubit, target: &Qubit) {
         let controlled = Controlled::new(control.id(), target.id());
-        self.add_inst(Instruction::Cz(controlled))
+        self.add_inst(Instruction::Cz(controlled));
     }
 
-    fn h(&self, qubit: &Qubit) -> PyResult<()> {
+    fn h(&self, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(Instruction::H(single))
+        self.add_inst(Instruction::H(single));
     }
 
-    fn m(&self, qubit: &Qubit, result: &Ref) -> PyResult<()> {
+    fn m(&self, qubit: &Qubit, result: &Ref) {
         let measured = Measured::new(qubit.id(), result.id());
-        self.add_inst(Instruction::M(measured))
+        self.add_inst(Instruction::M(measured));
     }
 
-    fn reset(&self, qubit: &Qubit) -> PyResult<()> {
+    fn reset(&self, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(Instruction::Reset(single))
+        self.add_inst(Instruction::Reset(single));
     }
 
-    fn rx(&self, theta: f64, qubit: &Qubit) -> PyResult<()> {
+    fn rx(&self, theta: f64, qubit: &Qubit) {
         let rotated = Rotated::new(theta, qubit.id());
-        self.add_inst(Instruction::Rx(rotated))
+        self.add_inst(Instruction::Rx(rotated));
     }
 
-    fn ry(&self, theta: f64, qubit: &Qubit) -> PyResult<()> {
+    fn ry(&self, theta: f64, qubit: &Qubit) {
         let rotated = Rotated::new(theta, qubit.id());
-        self.add_inst(Instruction::Ry(rotated))
+        self.add_inst(Instruction::Ry(rotated));
     }
 
-    fn rz(&self, theta: f64, qubit: &Qubit) -> PyResult<()> {
+    fn rz(&self, theta: f64, qubit: &Qubit) {
         let rotated = Rotated::new(theta, qubit.id());
-        self.add_inst(Instruction::Rz(rotated))
+        self.add_inst(Instruction::Rz(rotated));
     }
 
-    fn s(&self, qubit: &Qubit) -> PyResult<()> {
+    fn s(&self, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(Instruction::S(single))
+        self.add_inst(Instruction::S(single));
     }
 
-    fn s_adj(&self, qubit: &Qubit) -> PyResult<()> {
+    fn s_adj(&self, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(Instruction::SAdj(single))
+        self.add_inst(Instruction::SAdj(single));
     }
 
-    fn t(&self, qubit: &Qubit) -> PyResult<()> {
+    fn t(&self, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(Instruction::T(single))
+        self.add_inst(Instruction::T(single));
     }
 
-    fn t_adj(&self, qubit: &Qubit) -> PyResult<()> {
+    fn t_adj(&self, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(Instruction::TAdj(single))
+        self.add_inst(Instruction::TAdj(single));
     }
 
-    fn x(&self, qubit: &Qubit) -> PyResult<()> {
+    fn x(&self, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(Instruction::X(single))
+        self.add_inst(Instruction::X(single));
     }
 
-    fn y(&self, qubit: &Qubit) -> PyResult<()> {
+    fn y(&self, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(Instruction::Y(single))
+        self.add_inst(Instruction::Y(single));
     }
 
-    fn z(&self, qubit: &Qubit) -> PyResult<()> {
+    fn z(&self, qubit: &Qubit) {
         let single = Single::new(qubit.id());
-        self.add_inst(Instruction::Z(single))
+        self.add_inst(Instruction::Z(single));
     }
 
-    fn if_result(&self, result: &Ref, one: &PyAny, zero: &PyAny) {
-        todo!()
+    fn if_result(&self, result: &Ref, one: &PyAny, zero: &PyAny) -> PyResult<()> {
+        self.push_frame();
+        one.call0()?;
+        let then_insts = self.pop_frame().unwrap();
+
+        self.push_frame();
+        zero.call0()?;
+        let else_insts = self.pop_frame().unwrap();
+
+        let if_inst = If {
+            condition: result.id(),
+            then_insts,
+            else_insts,
+        };
+
+        self.add_inst(Instruction::If(if_inst));
+        Ok(())
     }
 }
 
 impl BasicQisBuilder {
-    fn add_inst(&self, inst: Instruction) -> PyResult<()> {
+    fn add_inst(&self, inst: Instruction) {
         Python::with_gil(|py| {
-            let mut builder = self.builder.as_ref(py).try_borrow_mut()?;
-            builder.model.add_inst(inst);
-            Ok(())
+            let mut builder = self.builder.as_ref(py).borrow_mut();
+            builder.instructions.last_mut().unwrap().push(inst);
+        });
+    }
+
+    fn push_frame(&self) {
+        Python::with_gil(|py| {
+            let mut builder = self.builder.as_ref(py).borrow_mut();
+            builder.instructions.push(vec![]);
+        });
+    }
+
+    fn pop_frame(&self) -> Option<Vec<Instruction>> {
+        Python::with_gil(|py| {
+            let mut builder = self.builder.as_ref(py).borrow_mut();
+            builder.instructions.pop()
         })
     }
 }
