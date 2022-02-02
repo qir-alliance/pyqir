@@ -488,121 +488,121 @@ class QirOpInstr(QirInstr):
 
 class QirAddInstr(QirOpInstr):
     """
-    Instances of QirAddIntr represent an integer addition instruction that takes two operands.
+    Instances of QirAddInstr represent an integer addition instruction that takes two operands.
     """
     pass
 
 class QirSubInstr(QirOpInstr):
     """
-    Instances of QirSubIntr represent an integer subtraction instruction that takes two operands.
+    Instances of QirSubInstr represent an integer subtraction instruction that takes two operands.
     """
     pass
 
 class QirMulInstr(QirOpInstr):
     """
-    Instances of QirMulIntr represent an integer multiplication instruction that takes two operands.
+    Instances of QirMulInstr represent an integer multiplication instruction that takes two operands.
     """
     pass
 
 class QirUDivInstr(QirOpInstr):
     """
-    Instances of QirUDivIntr represent an unsigned integer division instruction that takes two operands.
+    Instances of QirUDivInstr represent an unsigned integer division instruction that takes two operands.
     """
     pass
 
 class QirSDivInstr(QirOpInstr):
     """
-    Instances of QirSDivIntr represent a signed integer division instruction that takes two operands.
+    Instances of QirSDivInstr represent a signed integer division instruction that takes two operands.
     """
     pass
 
 class QirURemInstr(QirOpInstr):
     """
-    Instances of QirURemIntr represent an unsigned integer remainder instruction that takes two operands.
+    Instances of QirURemInstr represent an unsigned integer remainder instruction that takes two operands.
     """
     pass
 
 class QirSRemInstr(QirOpInstr):
     """
-    Instances of QirSRemIntr represent a signed integer remainder instruction that takes two operands.
+    Instances of QirSRemInstr represent a signed integer remainder instruction that takes two operands.
     """
     pass
 
 class QirAndInstr(QirOpInstr):
     """
-    Instances of QirAndIntr represent a boolean and instruction that takes two operands.
+    Instances of QirAndInstr represent a boolean and instruction that takes two operands.
     """
     pass
 
 class QirOrInstr(QirOpInstr):
     """
-    Instances of QirOrIntr represent a boolean or instruction that takes two operands.
+    Instances of QirOrInstr represent a boolean or instruction that takes two operands.
     """
     pass
 
 class QirXorInstr(QirOpInstr):
     """
-    Instances of QirXorIntr represent a boolean xor instruction that takes two operands.
+    Instances of QirXorInstr represent a boolean xor instruction that takes two operands.
     """
     pass
 
 class QirShlInstr(QirOpInstr):
     """
-    Instances of QirShlIntr represent a bitwise shift left instruction that takes two operands.
+    Instances of QirShlInstr represent a bitwise shift left instruction that takes two operands.
     """
     pass
 
 class QirLShrInstr(QirOpInstr):
     """
-    Instances of QirLShrIntr represent a logical bitwise shift right instruction that takes two operands.
+    Instances of QirLShrInstr represent a logical bitwise shift right instruction that takes two operands.
     """
     pass
 
 class QirAShrInstr(QirOpInstr):
     """
-    Instances of QirLShrIntr represent an arithmetic bitwise shift right instruction that takes two operands.
+    Instances of QirAShrInstr represent an arithmetic bitwise shift right instruction that takes two operands.
     """
     pass
 
 class QirFAddInstr(QirOpInstr):
     """
-    Instances of QirFAddIntr represent a floating-point addition instruction that takes two operands.
+    Instances of QirFAddInstr represent a floating-point addition instruction that takes two operands.
     """
     pass
 
 class QirFSubInstr(QirOpInstr):
     """
-    Instances of QirFSubIntr represent a floating-point subtraction instruction that takes two operands.
+    Instances of QirFSubInstr represent a floating-point subtraction instruction that takes two operands.
     """
     pass
 
 class QirFMulInstr(QirOpInstr):
     """
-    Instances of QirFMulIntr represent a floating-point multiplication instruction that takes two operands.
+    Instances of QirFMulInstr represent a floating-point multiplication instruction that takes two operands.
     """
     pass
 
 class QirFDivInstr(QirOpInstr):
     """
-    Instances of QirFDivIntr represent a floating-point division instruction that takes two operands.
+    Instances of QirFDivInstr represent a floating-point division instruction that takes two operands.
     """
     pass
 
 class QirFRemInstr(QirOpInstr):
     """
-    Instances of QirFRemIntr represent a floating-point remainder instruction that takes two operands.
+    Instances of QirFRemInstr represent a floating-point remainder instruction that takes two operands.
     """
     pass
 
 class QirFNegInstr(QirOpInstr):
     """
-    Instances of QirFNegIntr represent a floating-point negation instruction that takes one operand.
+    Instances of QirFNegInstr represent a floating-point negation instruction that takes one operand.
     """
     pass
 
 class QirICmpInstr(QirOpInstr):
     """
-    Instances of QirICmpIntr represent an integer comparison instruction that takes two operands,
+    Instances of QirICmpInstr represent an integer comparison instruction that takes two operands,
     and uses a specific predicate to output the boolean result of the comparison.
     """
 
