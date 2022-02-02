@@ -14,6 +14,7 @@
 - [Ninja 1.10.0+](https://ninja-build.org/)
 
 ### Optional
+
 - [sccache](https://github.com/mozilla/sccache)
 
 ### Linux (Ubuntu)
