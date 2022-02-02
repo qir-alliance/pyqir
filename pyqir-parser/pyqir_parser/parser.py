@@ -64,7 +64,9 @@ class QirPointerType(QirType):
         """
         Gets the QirType this to which this pointer points.
         """
-        return QirType(self.ty.pointer_type)
+        if not hasattr(self, "_type"):
+            self._type = QirType(self.ty.pointer_type)
+        return self._type
 
     @property
     def addrspace(self):
@@ -89,7 +91,9 @@ class QirArrayType(QirType):
         """
         Gets the ordered list of QirTypes representing the underlying array types.
         """
-        return [QirType(i) for i in self.ty.array_element_type]
+        if not hasattr(self, "_element_types"):
+            self._element_types = [QirType(i) for i in self.ty.array_element_type]
+        return self._element_types
 
     @property
     def element_count(self) -> int:
@@ -108,7 +112,9 @@ class QirStructType(QirType):
         """
         Gets the ordered list of QirTypes representing the underlying struct types.
         """
-        return [QirType(i) for i in self.ty.struct_element_types]
+        if not hasattr(self, "_struct_element_types"):
+            self._struct_element_types = [QirType(i) for i in self.ty.struct_element_types]
+        return self._struct_element_types
 
 class QirNamedStructType(QirType):
     """
@@ -183,7 +189,9 @@ class QirLocalOperand(QirOperand):
         """
         Gets the QirType instance representing the type for this operand.
         """
-        return QirType(self.op.local_type)
+        if not hasattr(self, "_type"):
+            self._type = QirType(self.op.local_type)
+        return self._type
 
 class QirConstant(QirOperand):
     """
@@ -195,7 +203,9 @@ class QirConstant(QirOperand):
         """
         Gets the QirType instance representing the type of this constant.
         """
-        return QirType(self.const.type)
+        if not hasattr(self, "_type"):
+            self._type = QirType(self.const.type)
+        return self._type
 
 class QirIntConstant(QirConstant):
     """
@@ -312,7 +322,9 @@ class QirRetTerminator(QirTerminator):
         """
         Gets the operand that will be returned by the ret instruction.
         """
-        return QirOperand(self.term.ret_operand)
+        if not hasattr(self, "_operand"):
+            self._operand = QirOperand(self.term.ret_operand)
+        return self._operand
 
 class QirBrTerminator(QirTerminator):
     """
@@ -338,7 +350,9 @@ class QirCondBrTerminator(QirTerminator):
         """
         Gets the QirOperand representing the condition used to determine the block to jump to.
         """
-        return QirOperand(self.term.condbr_condition)
+        if not hasattr(self, "_condition"):
+            self._condition = QirOperand(self.term.condbr_condition)
+        return self._condition
 
     @property
     def true_dest(self) -> str:
@@ -366,7 +380,9 @@ class QirSwitchTerminator(QirTerminator):
         """
         Gets the operand variable of the switch statement.
         """
-        return QirLocalOperand(self.term.switch_operand)
+        if not hasattr(self, "_operand"):
+            self._operand = QirLocalOperand(self.term.switch_operand)
+        return self._operand
 
     @property
     def dest_pairs(self) -> List[Tuple[QirConstant, str]]:
@@ -374,7 +390,9 @@ class QirSwitchTerminator(QirTerminator):
         Gets a list of pairs representing the constant values to compare the operand against and the
         matching block name to jump to if the comparison succeeds.
         """
-        return [(QirConstant(p[0]), p[1]) for p in self.term.switch_dests]
+        if not hasattr(self, "_dest_pairs"):
+            self._dest_pairs = [(QirConstant(p[0]), p[1]) for p in self.term.switch_dests]
+        return self._dest_pairs
 
     @property
     def default_dest(self) -> str:
@@ -456,6 +474,7 @@ class QirInstr:
 
     def __init__(self, instr: PyQirInstruction):
         self.instr = instr
+        self._type = None
 
     @property
     def output_name(self) -> Optional[str]:
@@ -471,7 +490,9 @@ class QirInstr:
         Gets the QirType instance representing the output of this instruction. If the instruction
         has no output, the type will be an instance of QirVoidType.
         """
-        return QirType(self.instr.type)
+        if self._type == None:
+            self._type = QirType(self.instr.type)
+        return self._type
 
 class QirOpInstr(QirInstr):
     """
@@ -484,7 +505,9 @@ class QirOpInstr(QirInstr):
         """
         Gets the list of operands that this instruction operates on.
         """
-        return [QirOperand(i) for i in self.instr.target_operands]
+        if not hasattr(self, "_target_operads"):
+            self._target_operads = [QirOperand(i) for i in self.instr.target_operands]
+        return self._target_operads
 
 class QirAddInstr(QirOpInstr):
     """
@@ -641,7 +664,9 @@ class QirPhiInstr(QirInstr):
         Gets a list of all the incoming value pairs for this phi node, where each pair is the QirOperand
         for the value to use and the string name of the originating block.
         """
-        return [(QirOperand(p[0]), p[1]) for p in self.instr.phi_incoming_values]
+        if not hasattr(self, "_incoming_values"):
+            self._incoming_values = [(QirOperand(p[0]), p[1]) for p in self.instr.phi_incoming_values]
+        return self._incoming_values
 
     def get_incoming_value_for_name(self, name: str) -> Optional[QirOperand]:
         """
@@ -672,7 +697,9 @@ class QirCallInstr(QirInstr):
         """
         Gets the list of QirOperand instances that are passed as arguments to the function call.
         """
-        return [QirOperand(i) for i in self.instr.call_func_params]
+        if not hasattr(self, "_func_args"):
+            self._func_args = [QirOperand(i) for i in self.instr.call_func_params]
+        return self._func_args
 
 class QirQisCallInstr(QirCallInstr):
     """
@@ -704,6 +731,9 @@ class QirBlock:
 
     def __init__(self, block: PyQirBasicBlock):
         self.block = block
+        self._instructions = None
+        self._terminator = None
+        self._phi_nodes = None
 
     @property
     def name(self) -> str:
@@ -720,7 +750,9 @@ class QirBlock:
         executed from first to last unconditionally. This list does not include the special 
         terminator instruction (see QirBlock.terminator).
         """
-        return [QirInstr(i) for i in self.block.instructions]
+        if self._instructions == None:
+            self._instructions = [QirInstr(i) for i in self.block.instructions]
+        return self._instructions
 
     @property
     def terminator(self) -> QirTerminator:
@@ -728,7 +760,9 @@ class QirBlock:
         Gets the terminator instruction for this block. Every block has exactly one terminator
         and it is the last intruction in the block.
         """
-        return QirTerminator(self.block.terminator)
+        if self._terminator == None:
+            self._terminator = QirTerminator(self.block.terminator)
+        return self._terminator
 
     @property
     def phi_nodes(self) -> List[QirPhiInstr]:
@@ -738,7 +772,9 @@ class QirBlock:
         of phi nodes, but they are always the first instructions in any given block. A block with no
         phi nodes will return an empty list.
         """
-        return [QirPhiInstr(i) for i in self.block.phi_nodes]
+        if self._phi_nodes == None:
+            self._phi_nodes = [QirPhiInstr(i) for i in self.block.phi_nodes]
+        return self._phi_nodes
 
     def get_phi_pairs_by_source_name(self, name: str) -> List[Tuple[str, QirOperand]]:
         """
@@ -756,6 +792,7 @@ class QirParameter:
 
     def __init__(self, param: PyQirParameter):
         self.param = param
+        self._type = None
 
     @property
     def name(self) -> str:
@@ -770,7 +807,9 @@ class QirParameter:
         """
         Gets the type of this parameter as represented in the QIR.
         """
-        return QirType(self.param.type)
+        if self._type == None:
+            self._type = QirType(self.param.type)
+        return self._type
 
 class QirFunction:
     """
@@ -780,6 +819,10 @@ class QirFunction:
 
     def __init__(self, func: PyQirFunction):
         self.func = func
+        self._parameters = None
+        self._parameters = None
+        self._return_type = None
+        self._blocks = None
 
     @property
     def name(self) -> str:
@@ -793,21 +836,27 @@ class QirFunction:
         """
         Gets the list of parameters used when calling this function.
         """
-        return [QirParameter(i) for i in self.func.parameters]
+        if self._parameters == None:
+            self._parameters = [QirParameter(i) for i in self.func.parameters]
+        return self._parameters
 
     @property
     def return_type(self) -> QirType:
         """
         Gets the return type for this function.
         """
-        return QirType(self.func.return_type)
+        if self._return_type == None:
+            self._return_type = QirType(self.func.return_type)
+        return self._return_type
 
     @property
     def blocks(self) -> List[QirBlock]:
         """
         Gets all the basic blocks for this function.
         """
-        return [QirBlock(i) for i in self.func.blocks]
+        if self._blocks == None:
+            self._blocks = [QirBlock(i) for i in self.func.blocks]
+        return self._blocks
 
     @property
     def required_qubits(self) -> Optional[int]:
@@ -870,13 +919,18 @@ class QirModule:
             self.module = module_from_bitcode(args[0])
         else:
             raise TypeError("Unrecognized argument type. Input must be string path to bitcode or PyQirModule object.")
+        self._functions = None
+        self._interop_funcs = None
+        self._entrypoint_funcs = None
 
     @property
     def functions(self) -> List[QirFunction]:
         """
         Gets all the functions defined in this module.
         """
-        return [QirFunction(i) for i in self.module.functions]
+        if self._functions == None:
+            self._functions = [QirFunction(i) for i in self.module.functions]
+        return self._functions
 
 
     def get_func_by_name(self, name: str) -> Optional[QirFunction]:
@@ -902,11 +956,15 @@ class QirModule:
         """
         Gets any functions with the "EntryPoint" attribute.
         """
-        return [QirFunction(i) for i in self.module.get_entrypoint_funcs()]
+        if self._entrypoint_funcs == None:
+            self._entrypoint_funcs = [QirFunction(i) for i in self.module.get_entrypoint_funcs()]
+        return self._entrypoint_funcs
 
     @property
     def interop_funcs(self) -> List[QirFunction]:
         """
         Gets any functions with the "InteropFriendly" attribute.
         """
-        return [QirFunction(i) for i in self.module.get_interop_funcs()]
+        if self._interop_funcs == None:
+            self._interop_funcs = [QirFunction(i) for i in self.module.get_interop_funcs()]
+        return self._interop_funcs
