@@ -2,8 +2,10 @@
 # Licensed under the MIT License.
 
 class Qubit:
-    pass
+    """A qubit."""
+    ...
 
 
 class Ref:
-    pass
+    """A reference to an element in memory."""
+    ...

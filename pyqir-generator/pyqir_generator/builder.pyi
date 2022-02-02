@@ -2,4 +2,5 @@
 # Licensed under the MIT License.
 
 class Builder:
-    pass
+    """An instruction builder."""
+    ...
