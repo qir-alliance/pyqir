@@ -9,6 +9,7 @@ def test_parser_pythonic():
     func_list = mod.functions
     assert(len(func_list) == 1)
     assert(func_list[0].name == func_name)
+    assert(hash(func_list[0]) == hash(mod.functions[0]))
     interop_funcs = mod.get_funcs_by_attr("InteropFriendly")
     assert(len(interop_funcs) == 1)
     assert(len(mod.interop_funcs) == 1)
@@ -16,6 +17,8 @@ def test_parser_pythonic():
     assert(len(mod.entrypoint_funcs) == 0)
     blocks = func.blocks
     assert(len(blocks) == 9)
+    assert(hash(blocks[0]) == hash(func.blocks[0]))
+    assert(hash(blocks[0].instructions[0]) == hash(func.blocks[0].instructions[0]))
     assert(blocks[0].name == "entry")
     term = blocks[0].terminator
     assert(isinstance(term, QirTerminator))
