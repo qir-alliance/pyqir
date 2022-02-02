@@ -213,19 +213,26 @@ impl BasicQisBuilder {
         self.push_inst(py, Instruction::Z(single));
     }
 
-    fn if_result(&self, py: Python, result: &Ref, one: &PyAny, zero: &PyAny) -> PyResult<()> {
-        self.push_frame(py);
-        one.call0()?;
-        let then_insts = self.pop_frame(py).unwrap();
+    fn if_result(
+        &self,
+        py: Python,
+        result: &Ref,
+        one: Option<&PyAny>,
+        zero: Option<&PyAny>,
+    ) -> PyResult<()> {
+        let build_frame = |callback: Option<&PyAny>| -> PyResult<_> {
+            self.push_frame(py);
+            if let Some(callback) = callback {
+                callback.call0()?;
+            }
 
-        self.push_frame(py);
-        zero.call0()?;
-        let else_insts = self.pop_frame(py).unwrap();
+            Ok(self.pop_frame(py).unwrap())
+        };
 
         let if_inst = If {
             condition: result.id(),
-            then_insts,
-            else_insts,
+            then_insts: build_frame(one)?,
+            else_insts: build_frame(zero)?,
         };
 
         self.push_inst(py, Instruction::If(if_inst));
