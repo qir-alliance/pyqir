@@ -1,5 +1,5 @@
-from pyqir_generator.module import SimpleModule
-from pyqir_generator.qis import BasicQisBuilder
+from pyqir.generator.module import SimpleModule
+from pyqir.generator.qis import BasicQisBuilder
 from pyqir_jit import NonadaptiveJit, GateLogger
 from pyqir_jit.gateset import GateSet
 import tempfile

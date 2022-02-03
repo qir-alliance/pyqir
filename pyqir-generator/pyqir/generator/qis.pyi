@@ -2,8 +2,8 @@
 # Licensed under the MIT License.
 
 from typing import Callable
-from pyqir_generator.builder import Builder
-from pyqir_generator.value import Qubit, Ref
+from pyqir.generator.builder import Builder
+from pyqir.generator.value import Qubit, Ref
 
 
 class BasicQisBuilder:

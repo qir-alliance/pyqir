@@ -1,8 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir_generator.builder import Builder
-from pyqir_generator.value import Qubit, Ref
+from pyqir.generator.builder import Builder
+from pyqir.generator.value import Qubit, Ref
 from typing import Tuple
 
 

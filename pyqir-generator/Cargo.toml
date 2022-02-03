@@ -27,7 +27,8 @@ name = "pyqir_generator"
 crate-type = ["cdylib"]
 
 [package.metadata.maturin]
-classifier=[
+name = "pyqir.generator._native"
+classifier = [
     "License :: OSI Approved :: MIT License",
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",

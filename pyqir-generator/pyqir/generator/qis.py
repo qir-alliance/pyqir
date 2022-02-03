@@ -1,4 +1,4 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir_generator.pyqir_generator import Qubit as Qubit, Ref as Ref
+from pyqir.generator._native import BasicQisBuilder as BasicQisBuilder

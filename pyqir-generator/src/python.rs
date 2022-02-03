@@ -11,7 +11,7 @@ use crate::{
 use pyo3::{exceptions::PyOSError, prelude::*};
 
 #[pymodule]
-fn pyqir_generator(_py: Python, m: &PyModule) -> PyResult<()> {
+fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<SimpleModule>()?;
     m.add_class::<Qubit>()?;
     m.add_class::<Ref>()?;
