@@ -46,6 +46,14 @@
 (Core)</a></p></li>
 <li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 11.1.0</a> - See <a class="reference external" href="#installing-llvm">Installing
 LLVM</a></p></li>
+<li><p><a class="reference external" href="https://github.com/Kitware/CMake/releases/tag/v3.20.5">CMake 3.20+</a></p></li>
+<li><p><a class="reference external" href="https://ninja-build.org/">Ninja 1.10.0+</a></p></li>
+</ul>
+</section>
+<section id="optional">
+<h3>Optional<a class="headerlink" href="#optional" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/mozilla/sccache">sccache</a></p></li>
 </ul>
 </section>
 <section id="linux-ubuntu">
@@ -83,14 +91,16 @@ python -m pip install --user maturin tox
 </div>
 <p>Install Rust from <a class="reference external" href="https://rustup.rs/">rustup</a>.</p>
 </section>
-<section id="installing-clang">
-<h3>Installing Clang<a class="headerlink" href="#installing-clang" title="Permalink to this headline">¶</a></h3>
+<section id="installing-clang-and-ninja">
+<h3>Installing Clang and Ninja<a class="headerlink" href="#installing-clang-and-ninja" title="Permalink to this headline">¶</a></h3>
 <p>If you have a working installation of LLVM and <a class="reference external" href="https://clang.llvm.org/">Clang</a>,
 each project can be built by running <code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">build</span></code> in the project directory. If
 not, you can install Clang manually:</p>
 <ul>
 <li><p>Linux (Ubuntu)</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>apt-get update apt-get install -y clang-11 lldb-11 lld-11 clangd-11
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>apt-get update
+apt-get install -y clang-11 lldb-11 lld-11 clangd-11
+apt-get install -y --no-install-recommends ninja-build clang-tidy-11 build-essential
 </pre></div>
 </div>
 </li>
@@ -115,11 +125,30 @@ toolchain to <code class="docutils literal notranslate"><span class="pre">$HOME/
 this installation by setting the <code class="docutils literal notranslate"><span class="pre">LLVM_SYS_110_PREFIX</span></code> environment variable in
 the root <code class="docutils literal notranslate"><span class="pre">.cargo/config.toml</span></code></p>
 </section>
+<section id="installing-cmake">
+<h3>Installing CMake<a class="headerlink" href="#installing-cmake" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Linux (Ubuntu)</p></li>
+</ul>
+<p>Using <code class="docutils literal notranslate"><span class="pre">apt-get</span></code> will install 3.16, but compiling the QIR runtime requires 3.20. To install the latest version on Ubuntu, install directly from the CMake releases from GitHub:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl -SsL https://github.com/Kitware/CMake/releases/download/v3.20.5/cmake-3.20.5-linux-x86_64.sh -o cmakeinstall.sh
+<span class="nb">echo</span> <span class="s2">&quot;f582e02696ceee81818dc3378531804b2213ed41c2a8bc566253d16d894cefab cmakeinstall.sh&quot;</span> <span class="p">|</span> sha256sum -c --strict -
+chmod +x cmakeinstall.sh
+./cmakeinstall.sh --prefix<span class="o">=</span>/usr/local --exclude-subdir
+rm cmakeinstall.sh
+</pre></div>
+</div>
+</section>
 </section>
 <section id="development">
 <h2>Development<a class="headerlink" href="#development" title="Permalink to this headline">¶</a></h2>
-<p>Running <code class="docutils literal notranslate"><span class="pre">build.(ps1|sh|cmd)</span></code> will initialize your local environment and build
-the solution. The <a class="reference internal" href="#building-environment-variables"><span class="std std-ref">Environment Variables</span></a> section
+<p>To initialize your local environment and build
+the solution, run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./build.ps1
+</pre></div>
+</div>
+<p>Alternatively, you can use <code class="docutils literal notranslate"><span class="pre">build.sh</span></code> or <code class="docutils literal notranslate"><span class="pre">build.cmd</span></code>.</p>
+<p>The <a class="reference internal" href="#building-environment-variables"><span class="std std-ref">Environment Variables</span></a> section
 details ways to change this behavior.</p>
 <p>Within each project folder, the build can be run specifically for that project.</p>
 <p>Build commands:</p>
