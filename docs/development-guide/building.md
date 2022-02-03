@@ -10,6 +10,12 @@
   (Core)](https://github.com/powershell/powershell#get-powershell)
 - [LLVM/Clang 11.1.0](https://llvm.org/) - See [Installing
   LLVM](#installing-llvm)
+- [CMake 3.20+](https://github.com/Kitware/CMake/releases/tag/v3.20.5)
+- [Ninja 1.10.0+](https://ninja-build.org/)
+
+### Optional
+
+- [sccache](https://github.com/mozilla/sccache)
 
 ### Linux (Ubuntu)
 
@@ -53,7 +59,7 @@ python -m pip install --user maturin tox
 
 Install Rust from [rustup](https://rustup.rs/).
 
-### Installing Clang
+### Installing Clang and Ninja
 
 If you have a working installation of LLVM and [Clang](https://clang.llvm.org/),
 each project can be built by running `cargo build` in the project directory. If
@@ -62,7 +68,9 @@ not, you can install Clang manually:
 - Linux (Ubuntu)
 
   ```bash
-  apt-get update apt-get install -y clang-11 lldb-11 lld-11 clangd-11
+  apt-get update
+  apt-get install -y clang-11 lldb-11 lld-11 clangd-11
+  apt-get install -y --no-install-recommends ninja-build clang-tidy-11 build-essential
   ```
 
 - Windows
@@ -82,10 +90,32 @@ toolchain to `$HOME/.pyqir` (Windows: `$HOME\.pyqir`) and configures Rust to use
 this installation by setting the `LLVM_SYS_110_PREFIX` environment variable in
 the root `.cargo/config.toml`
 
+### Installing CMake
+
+- Linux (Ubuntu)
+
+Using `apt-get` will install 3.16, but compiling the QIR runtime requires 3.20. To install the latest version on Ubuntu, install directly from the CMake releases from GitHub:
+
+```bash
+curl -SsL https://github.com/Kitware/CMake/releases/download/v3.20.5/cmake-3.20.5-linux-x86_64.sh -o cmakeinstall.sh
+echo "f582e02696ceee81818dc3378531804b2213ed41c2a8bc566253d16d894cefab cmakeinstall.sh" | sha256sum -c --strict -
+chmod +x cmakeinstall.sh
+./cmakeinstall.sh --prefix=/usr/local --exclude-subdir
+rm cmakeinstall.sh
+```
+
 ## Development
 
-Running `build.(ps1|sh|cmd)` will initialize your local environment and build
-the solution. The {ref}`building/environment-variables` section
+To initialize your local environment and build
+the solution, run
+
+```bash
+./build.ps1
+```
+
+Alternatively, you can use `build.sh` or `build.cmd`.
+
+The {ref}`building/environment-variables` section
 details ways to change this behavior.
 
 Within each project folder, the build can be run specifically for that project.
