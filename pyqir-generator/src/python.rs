@@ -127,12 +127,6 @@ impl PyQIR {
         self.model.add_inst(inst);
     }
 
-    fn dump_machine(&mut self) {
-        log::info!("dump_machine");
-        let inst = Instruction::DumpMachine;
-        self.model.add_inst(inst);
-    }
-
     fn z(&mut self, qubit: String) {
         log::info!("z => {}", qubit);
         let single = Single::new(qubit);

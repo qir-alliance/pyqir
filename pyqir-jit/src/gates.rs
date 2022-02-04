@@ -204,11 +204,6 @@ impl BaseProfile {
             .add_inst(Instruction::Z(BaseProfile::single(qubit)));
     }
 
-    #[allow(clippy::unused_self)]
-    pub fn dump_machine(&mut self) {
-        log::debug!("dumpmachine");
-    }
-
     fn controlled(control: QUBIT, target: QUBIT) -> Controlled {
         Controlled::new(
             BaseProfile::get_cubit_string(control),
