@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{interop::SemanticModel, qir};
+use inkwell::context::Context;
 use inkwell::values::BasicValueEnum;
 use qirlib::passes::run_basic_passes_on;
 use qirlib::{codegen::CodeGenerator, module};
@@ -10,38 +11,21 @@ use std::collections::HashMap;
 /// # Errors
 ///
 /// Will return `Err` if module fails verification that the current `Module` is valid.
-pub fn write_model_to_file(model: &SemanticModel, file_name: &str) -> Result<(), String> {
-    let ctx = inkwell::context::Context::create();
+pub(crate) fn ir(model: &SemanticModel) -> Result<String, String> {
+    let ctx = Context::create();
     let generator = populate_context(&ctx, model)?;
     run_basic_passes_on(&generator.module);
-    generator.emit_ir(file_name)?;
-
-    Ok(())
+    Ok(generator.ir())
 }
 
 /// # Errors
 ///
 /// Will return `Err` if module fails verification that the current `Module` is valid.
-pub fn get_ir_string(model: &SemanticModel) -> Result<String, String> {
-    let ctx = inkwell::context::Context::create();
+pub(crate) fn bitcode(model: &SemanticModel) -> Result<Vec<u8>, String> {
+    let ctx = Context::create();
     let generator = populate_context(&ctx, model)?;
     run_basic_passes_on(&generator.module);
-    let ir = generator.get_ir_string();
-
-    Ok(ir)
-}
-
-/// # Errors
-///
-/// Will return `Err` if module fails verification that the current `Module` is valid.
-pub fn get_bitcode_base64_string(model: &SemanticModel) -> Result<String, String> {
-    let ctx = inkwell::context::Context::create();
-    let generator = populate_context(&ctx, model)?;
-    run_basic_passes_on(&generator.module);
-
-    let b64 = generator.get_bitcode_base64_string();
-
-    Ok(b64)
+    Ok(generator.bitcode().as_slice().to_vec())
 }
 
 /// # Errors
@@ -50,7 +34,7 @@ pub fn get_bitcode_base64_string(model: &SemanticModel) -> Result<String, String
 ///  - module cannot be loaded.
 ///  - module fails verification that the current `Module` is valid.
 pub fn populate_context<'a>(
-    ctx: &'a inkwell::context::Context,
+    ctx: &'a Context,
     model: &'a SemanticModel,
 ) -> Result<CodeGenerator<'a>, String> {
     let module = module::load_template(&model.name, ctx)?;

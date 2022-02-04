@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    emit::get_ir_string,
+    emit,
     interop::{
         ClassicalRegister, Controlled, If, Instruction, Measured, QuantumRegister, Rotated,
         SemanticModel, Single,
@@ -72,19 +72,24 @@ impl SimpleModule {
     }
 
     fn ir(&mut self, py: Python) -> PyResult<String> {
+        self.update_instructions(py);
+        emit::ir(&self.model).map_err(PyOSError::new_err)
+    }
+
+    fn bitcode(&mut self, py: Python) -> PyResult<Vec<u8>> {
+        self.update_instructions(py);
+        emit::bitcode(&self.model).map_err(PyOSError::new_err)
+    }
+}
+
+impl SimpleModule {
+    fn update_instructions(&mut self, py: Python) {
         let builder = self.builder.as_ref(py).borrow();
 
         match builder.frames[..] {
-            [ref instructions] => {
-                self.model.instructions = instructions.clone();
-                get_ir_string(&self.model).map_err(PyOSError::new_err)
-            }
+            [ref instructions] => self.model.instructions = instructions.clone(),
             _ => panic!("Builder does not contain exactly one stack frame."),
         }
-    }
-
-    fn bitcode(&self) -> &[u8] {
-        todo!()
     }
 }
 
