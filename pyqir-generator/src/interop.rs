@@ -133,7 +133,7 @@ impl SemanticModel {
             qubits: vec![],
             instructions: vec![],
             static_alloc: false,
-            initialize_registers: true,
+            initialize_registers: false,
         }
     }
 
