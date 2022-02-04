@@ -73,7 +73,7 @@ mod tests {
         let module = module::load_template("test", &context).unwrap();
         let generator = CodeGenerator::new(&context, module).unwrap();
 
-        verify_opaque_struct("Qubit", generator.qubit_type())
+        verify_opaque_struct("Qubit", generator.qubit_type());
     }
 
     #[test]
@@ -82,7 +82,7 @@ mod tests {
         let module = module::load_template("test", &context).unwrap();
         let generator = CodeGenerator::new(&context, module).unwrap();
 
-        verify_opaque_struct("Result", generator.result_type())
+        verify_opaque_struct("Result", generator.result_type());
     }
 
     #[test]
@@ -91,10 +91,10 @@ mod tests {
         let module = module::load_template("test", &context).unwrap();
         let generator = CodeGenerator::new(&context, module).unwrap();
 
-        verify_opaque_struct("Array", generator.array_type())
+        verify_opaque_struct("Array", generator.array_type());
     }
 
-    fn verify_opaque_struct<'ctx>(name: &str, struct_type: StructType<'ctx>) {
+    fn verify_opaque_struct(name: &str, struct_type: StructType) {
         assert_eq!(struct_type.get_name().unwrap().to_str(), Ok(name));
         assert!(struct_type.is_opaque());
         assert_eq!(struct_type.get_field_types(), &[]);

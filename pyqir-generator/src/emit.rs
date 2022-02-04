@@ -12,7 +12,6 @@ use qirlib::codegen::types::Types;
 use qirlib::passes::run_basic_passes_on;
 use qirlib::{codegen::CodeGenerator, module};
 use std::collections::HashMap;
-use std::panic;
 
 /// # Errors
 ///
@@ -72,7 +71,7 @@ fn build_entry_function(
 ) -> Result<(), String> {
     let entrypoint = qir::get_entry_function(&generator.module);
 
-    if model.static_alloc == true {
+    if model.static_alloc {
         let num_qubits = format!("{}", model.qubits.len());
         let required_qubits = generator
             .context
@@ -89,7 +88,7 @@ fn build_entry_function(
 
     write_instructions(model, generator, &qubits, &mut registers);
 
-    if model.static_alloc == false {
+    if !model.static_alloc {
         free_qubits(generator, &qubits);
     }
 
@@ -111,12 +110,13 @@ fn write_qubits<'ctx>(
     model: &SemanticModel,
     generator: &CodeGenerator<'ctx>,
 ) -> HashMap<String, BasicValueEnum<'ctx>> {
-    if model.static_alloc == true {
-        let mut id: u64 = 0;
+    if model.static_alloc {
         let mut qubits: HashMap<String, BasicValueEnum<'ctx>> = HashMap::new();
-        for qubit in model.qubits.iter() {
+        for (id, qubit) in model.qubits.iter().enumerate() {
             let indexed_name = format!("{}{}", &qubit.name[..], qubit.index);
-            let int_value = generator.u64_to_basic_value_enum(id).into_int_value();
+            let int_value = generator
+                .u64_to_basic_value_enum(id as u64)
+                .into_int_value();
             let qubit_ptr_type = generator.qubit_type().ptr_type(AddressSpace::Generic);
 
             let intptr =
@@ -124,7 +124,6 @@ fn write_qubits<'ctx>(
                     .builder
                     .build_int_to_ptr(int_value, qubit_ptr_type, &indexed_name);
             qubits.insert(indexed_name, intptr.into());
-            id += 1;
         }
         qubits
     } else {
@@ -149,7 +148,7 @@ fn write_registers<'ctx>(
     let mut registers = HashMap::new();
     let number_of_registers = model.registers.len() as u64;
     if number_of_registers > 0 {
-        for register in model.registers.iter() {
+        for register in &model.registers {
             for index in 0..register.size {
                 let name = format!("{}{}", register.name, index);
                 if model.initialize_registers {
