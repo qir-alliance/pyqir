@@ -3,9 +3,6 @@
 
 use inkwell::{module::Module, values::FunctionValue};
 
-pub mod array1d;
-pub mod basic_values;
-pub mod calls;
 pub mod instructions;
 pub mod qubits;
 

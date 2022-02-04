@@ -63,9 +63,6 @@ class GateLogger(GateSet):
     def z(self, qubit: str):
         self.instructions.append(f"z qubit[{qubit}]")
 
-    def dump_machine(self):
-        self.instructions.append("dumpmachine")
-
     def finish(self, metadata: dict):
         super().finish(metadata)
         self.number_of_qubits = metadata["number_of_qubits"]

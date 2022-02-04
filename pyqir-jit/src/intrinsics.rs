@@ -308,35 +308,6 @@ pub unsafe extern "C" fn __quantum__qis__z__ctl(ctls: *mut QirArray, qubit: QUBI
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__dumpmachine__body(location: *mut u8) {
-    log::debug!("/__quantum__qis__dumpmachine__body/");
-    log::debug!("/__quantum__qis__h__body/");
-    let mut gs = get_current_gate_processor();
-    gs.dump_machine();
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
-///
-/// # Panics
-///
-/// Will panic as it is not yet implemented.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__dumpregister__body(
-    location: *mut u8,
-    qubits: *mut QirArray,
-) {
-    log::debug!("/__quantum__qis__dumpregister__body/");
-    todo!("Not yet implemented.");
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
 pub unsafe fn get_qubit_id(ctls: *mut QirArray) -> QUBIT {
     #[allow(clippy::cast_ptr_alignment)]
     let ctrl_qubit_ptr = QirRuntime::quantum_rt_array_get_element_ptr_1d(ctls, 0).cast::<i64>();
