@@ -4,14 +4,28 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-#[repr(C)]
-pub struct QirRTuple {
-    private: [u8; 0],
+use bitvec::prelude::*;
+use lazy_static::lazy_static;
+use std::ffi::c_void;
+use std::sync::atomic::{AtomicUsize, Ordering::Relaxed};
+use std::sync::Mutex;
+
+lazy_static! {
+    static ref RESULTS: Mutex<BitVec> = Mutex::new(bitvec![0]);
+    static ref MAX_QUBIT_ID: AtomicUsize = AtomicUsize::new(0);
 }
 
-pub type PauliId = i8;
+pub(crate) fn reset_max_qubit_id() {
+    (*MAX_QUBIT_ID).store(0, Relaxed);
+}
 
-use microsoft_quantum_qir_runtime_sys::runtime::{QirArray, QirRuntime, QUBIT};
+pub fn set_measure_stream(bits: BitVec) {
+    let mut res = RESULTS.lock().unwrap();
+    res.append(&mut bits.to_owned());
+}
+
+type QUBIT = u64;
+
 use mut_static::ForceSomeRwLockWriteGuard;
 
 use super::gates::BaseProfile;
@@ -26,111 +40,32 @@ fn get_current_gate_processor() -> ForceSomeRwLockWriteGuard<'static, BaseProfil
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
 #[no_mangle]
+pub unsafe extern "C" fn __quantum__qis__cnot__body(control: QUBIT, qubit: QUBIT) {
+    log::debug!("/__quantum__qis__cnot__body/");
+    let mut gs = get_current_gate_processor();
+    gs.cx(control, qubit);
+}
+
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+#[no_mangle]
+pub unsafe extern "C" fn __quantum__qis__cz__body(control: QUBIT, qubit: QUBIT) {
+    log::debug!("/__quantum__qis__cz__body/");
+    let mut gs = get_current_gate_processor();
+    gs.cz(control, qubit);
+}
+
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+#[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__h__body(qubit: QUBIT) {
     log::debug!("/__quantum__qis__h__body/");
     let mut gs = get_current_gate_processor();
     gs.h(qubit);
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
-///
-/// # Panics
-///
-/// Will panic as it is not yet implemented.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__h__ctl(ctls: *mut QirArray, qubit: QUBIT) {
-    log::debug!("/__quantum__qis__h__ctl/");
-    let control = get_qubit_id(ctls);
-    //let mut gs = get_current_gate_processor();
-    todo!("Not yet implemented.");
-    //gs.h_ctl(control, get_cubit_string(qubit));
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__measure__body(
-    qubits: *mut QirArray,
-    registers: *mut QirArray,
-) {
-    log::debug!("/__quantum__qis__measure__body/");
-
-    // get_qubit_id may return something like 94420488984834
-    // which will use up all computer memory
-
-    // let qubit = get_qubit_id(qubits);
-    // let mut gs = get_current_gate_processor();
-    // gs.m(qubit);
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
-///
-/// # Panics
-///
-/// Will panic if an unknown Pauli value is supplied.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__r__body(pauli: PauliId, theta: f64, qubit: QUBIT) {
-    log::debug!("/__quantum__qis__r__body/");
-    let mut gs = get_current_gate_processor();
-    match pauli {
-        0 => { /* identity */ }
-        1 => gs.rx(theta, qubit),
-        3 => gs.ry(theta, qubit),
-        2 => gs.rz(theta, qubit),
-        _ => panic!("Unsupported Pauli value: {}", pauli),
-    }
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
-///
-/// # Panics
-///
-/// Will panic as it is not yet implemented.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__r__adj(pauli: PauliId, theta: f64, qubit: QUBIT) {
-    log::debug!("/__quantum__qis__r__adj/");
-    //let mut gs = get_current_gate_processor();
-    todo!("Not yet implemented.");
-    //gs.r_adj(pauli, theta, get_cubit_string(qubit));
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
-///
-/// # Panics
-///
-/// Will panic as it is not yet implemented.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__r__ctl(ctls: *mut QirArray, qubit: *mut QirRTuple) {
-    log::debug!("/__quantum__qis__r__ctl/");
-    todo!("Not yet implemented.");
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
-///
-/// # Panics
-///
-/// Will panic as it is not yet implemented.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__r__ctladj(ctls: *mut QirArray, qubit: *mut QirRTuple) {
-    log::debug!("/__quantum__qis__r__ctladj/");
-    todo!("Not yet implemented.");
 }
 
 /// # Safety
@@ -159,34 +94,6 @@ pub unsafe extern "C" fn __quantum__qis__s__adj(qubit: QUBIT) {
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-///
-/// # Panics
-///
-/// Will panic as it is not yet implemented.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__s__ctl(ctls: *mut QirArray, qubit: QUBIT) {
-    log::debug!("/__quantum__qis__s__ctl/");
-    todo!("Not yet implemented.");
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
-///
-/// # Panics
-///
-/// Will panic as it is not yet implemented.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__s__ctladj(ctls: *mut QirArray, qubit: QUBIT) {
-    log::debug!("/__quantum__qis__s__ctladj/");
-    todo!("Not yet implemented.");
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__t__body(qubit: QUBIT) {
     log::debug!("/__quantum__qis__t__body/");
@@ -209,51 +116,11 @@ pub unsafe extern "C" fn __quantum__qis__t__adj(qubit: QUBIT) {
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-///
-/// # Panics
-///
-/// Will panic as it is not yet implemented.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__t__ctl(ctls: *mut QirArray, qubit: QUBIT) {
-    log::debug!("/__quantum__qis__t__ctl/");
-    todo!("Not yet implemented.");
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
-///
-/// # Panics
-///
-/// Will panic as it is not yet implemented.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__t__ctladj(ctls: *mut QirArray, qubit: QUBIT) {
-    log::debug!("/__quantum__qis__t__ctladj/");
-    todo!("Not yet implemented.");
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__x__body(qubit: QUBIT) {
     log::debug!("/__quantum__qis__x__body/");
     let mut gs = get_current_gate_processor();
     gs.x(qubit);
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__x__ctl(ctls: *mut QirArray, qubit: QUBIT) {
-    log::debug!("/__quantum__qis__x__ctl/");
-    let control = get_qubit_id(ctls);
-    let mut gs = get_current_gate_processor();
-    gs.cx(control, qubit);
 }
 
 /// # Safety
@@ -271,25 +138,11 @@ pub unsafe extern "C" fn __quantum__qis__y__body(qubit: QUBIT) {
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-///
-/// # Panics
-///
-/// Will panic as it is not yet implemented.
-#[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__y__ctl(ctls: *mut QirArray, qubit: QUBIT) {
-    log::debug!("/__quantum__qis__y__ctl/");
-    todo!("Not yet implemented.");
-}
-
-/// # Safety
-///
-/// This function should not be called directly. It is intended to be
-/// called by QIR applications during JIT execution.
 #[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__z__body(qubit: QUBIT) {
     log::debug!("/__quantum__qis__z__body/");
     let mut gs = get_current_gate_processor();
-    gs.y(qubit);
+    gs.z(qubit);
 }
 
 /// # Safety
@@ -297,61 +150,87 @@ pub unsafe extern "C" fn __quantum__qis__z__body(qubit: QUBIT) {
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
 #[no_mangle]
-pub unsafe extern "C" fn __quantum__qis__z__ctl(ctls: *mut QirArray, qubit: QUBIT) {
-    log::debug!("/__quantum__qis__z__ctl/");
-    let control = get_qubit_id(ctls);
+pub unsafe extern "C" fn __quantum__qis__rx__body(theta: f64, qubit: QUBIT) {
+    log::debug!("/__quantum__qis__rx__body/");
     let mut gs = get_current_gate_processor();
-    gs.cz(control, qubit);
+    gs.rx(theta, qubit);
 }
 
 /// # Safety
 ///
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
-pub unsafe fn get_qubit_id(ctls: *mut QirArray) -> QUBIT {
-    #[allow(clippy::cast_ptr_alignment)]
-    let ctrl_qubit_ptr = QirRuntime::quantum_rt_array_get_element_ptr_1d(ctls, 0).cast::<i64>();
-    let ctrl_qubit = *ctrl_qubit_ptr;
-    log::debug!("ctrl_qubit {}", ctrl_qubit);
-    #[allow(clippy::cast_sign_loss)]
-    let id = ctrl_qubit as QUBIT;
-    id
+#[no_mangle]
+pub unsafe extern "C" fn __quantum__qis__ry__body(theta: f64, qubit: QUBIT) {
+    log::debug!("/__quantum__qis__ry__body/");
+    let mut gs = get_current_gate_processor();
+    gs.ry(theta, qubit);
 }
 
-/*
-extern "C"
-{
-    // Q# Gate Set
-    QIR_SHARED_API void __quantum__qis__exp__body(QirArray*, double, QirArray*); // NOLINT
-    QIR_SHARED_API void __quantum__qis__exp__adj(QirArray*, double, QirArray*);  // NOLINT
-    QIR_SHARED_API void __quantum__qis__exp__ctl(QirArray*, QirExpTuple*);       // NOLINT
-    QIR_SHARED_API void __quantum__qis__exp__ctladj(QirArray*, QirExpTuple*);    // NOLINT
-    QIR_SHARED_API void __quantum__qis__h__body(QUBIT*);                         // NOLINT
-    QIR_SHARED_API void __quantum__qis__h__ctl(QirArray*, QUBIT*);               // NOLINT
-    QIR_SHARED_API RESULT* __quantum__qis__measure__body(QirArray*, QirArray*);  // NOLINT
-    QIR_SHARED_API void __quantum__qis__r__body(PauliId, double, QUBIT*);        // NOLINT
-    QIR_SHARED_API void __quantum__qis__r__adj(PauliId, double, QUBIT*);         // NOLINT
-    QIR_SHARED_API void __quantum__qis__r__ctl(QirArray*, QirRTuple*);           // NOLINT
-    QIR_SHARED_API void __quantum__qis__r__ctladj(QirArray*, QirRTuple*);        // NOLINT
-    QIR_SHARED_API void __quantum__qis__s__body(QUBIT*);                         // NOLINT
-    QIR_SHARED_API void __quantum__qis__s__adj(QUBIT*);                          // NOLINT
-    QIR_SHARED_API void __quantum__qis__s__ctl(QirArray*, QUBIT*);               // NOLINT
-    QIR_SHARED_API void __quantum__qis__s__ctladj(QirArray*, QUBIT*);            // NOLINT
-    QIR_SHARED_API void __quantum__qis__t__body(QUBIT*);                         // NOLINT
-    QIR_SHARED_API void __quantum__qis__t__adj(QUBIT*);                          // NOLINT
-    QIR_SHARED_API void __quantum__qis__t__ctl(QirArray*, QUBIT*);               // NOLINT
-    QIR_SHARED_API void __quantum__qis__t__ctladj(QirArray*, QUBIT*);            // NOLINT
-    QIR_SHARED_API void __quantum__qis__x__body(QUBIT*);                         // NOLINT
-    QIR_SHARED_API void __quantum__qis__x__ctl(QirArray*, QUBIT*);               // NOLINT
-    QIR_SHARED_API void __quantum__qis__y__body(QUBIT*);                         // NOLINT
-    QIR_SHARED_API void __quantum__qis__y__ctl(QirArray*, QUBIT*);               // NOLINT
-    QIR_SHARED_API void __quantum__qis__z__body(QUBIT*);                         // NOLINT
-    QIR_SHARED_API void __quantum__qis__z__ctl(QirArray*, QUBIT*);               // NOLINT
-
-    // Q# Dump:
-    // Note: The param `location` must be `const void*`,
-    // but it is called from .ll, where `const void*` is not supported.
-    QIR_SHARED_API void __quantum__qis__dumpmachine__body(uint8_t* location);                          // NOLINT
-    QIR_SHARED_API void __quantum__qis__dumpregister__body(uint8_t* location, const QirArray* qubits); // NOLINT
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+#[no_mangle]
+pub unsafe extern "C" fn __quantum__qis__rz__body(theta: f64, qubit: QUBIT) {
+    log::debug!("/__quantum__qis__rz__body/");
+    let mut gs = get_current_gate_processor();
+    gs.rz(theta, qubit);
 }
-*/
+
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+#[no_mangle]
+pub unsafe extern "C" fn __quantum__qis__reset__body(qubit: QUBIT) {
+    log::debug!("/__quantum__qis__reset__body/");
+    let mut gs = get_current_gate_processor();
+    gs.reset(qubit);
+}
+
+/// # Panics
+///
+/// This function will panic if the global state cannot be locked or if the result index is too
+/// large.
+#[no_mangle]
+pub extern "C" fn __quantum__qis__m__body(_qubit: QUBIT) -> *mut c_void {
+    log::debug!("/__quantum__qis__m__body/");
+    let mut res = RESULTS.lock().unwrap();
+
+    if res.pop() == Some(true) {
+        __quantum__rt__result_get_one()
+    } else {
+        __quantum__rt__result_get_zero()
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn __quantum__rt__result_get_zero() -> *mut c_void {
+    log::debug!("/__quantum__rt__result_get_zero/");
+    std::ptr::null_mut()
+}
+
+#[no_mangle]
+pub extern "C" fn __quantum__rt__result_get_one() -> *mut c_void {
+    log::debug!("/__quantum__rt__result_get_one/");
+    1 as *mut c_void
+}
+
+#[no_mangle]
+pub extern "C" fn __quantum__rt__result_equal(r1: *mut c_void, r2: *mut c_void) -> bool {
+    log::debug!("/__quantum__rt__result_equal/");
+    r1 == r2
+}
+
+#[no_mangle]
+pub extern "C" fn __quantum__rt__qubit_allocate() -> QUBIT {
+    log::debug!("/__quantum__rt__qubit_allocate/");
+    (*MAX_QUBIT_ID).fetch_add(1, Relaxed) as QUBIT
+}
+
+#[no_mangle]
+pub extern "C" fn __quantum__rt__qubit_release(qubit: QUBIT) {
+    log::debug!("/__quantum__rt__qubit_release/");
+    (*MAX_QUBIT_ID).fetch_sub(1, Relaxed);
+}

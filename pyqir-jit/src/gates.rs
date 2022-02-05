@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use lazy_static::lazy_static;
-use microsoft_quantum_qir_runtime_sys::runtime::QUBIT;
+type QUBIT = u64;
 use mut_static::MutStatic;
 
 use crate::interop::{
@@ -29,7 +29,7 @@ impl GateScope {
         let mut gs = CURRENT_GATES
             .write()
             .expect("Could not acquire lock on gate set.");
-        gs.reset();
+        gs.clear_gateset();
         GateScope {}
     }
 }
@@ -45,7 +45,7 @@ impl Drop for GateScope {
         let mut gs = CURRENT_GATES
             .write()
             .expect("Could not acquire lock on gate set.");
-        gs.reset();
+        gs.clear_gateset();
     }
 }
 
@@ -59,7 +59,15 @@ impl BaseProfile {
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self, qubit: QUBIT) {
+        self.record_max_qubit_id(qubit);
+
+        log::debug!("reset {}", qubit);
+        self.model
+            .add_inst(Instruction::Reset(Single::new(qubit.to_string())));
+    }
+
+    pub fn clear_gateset(&mut self) {
         self.model = SemanticModel::new(String::from("QIR"));
         self.max_id = 0;
         self.declared_cubits = false;
@@ -115,11 +123,10 @@ impl BaseProfile {
             .add_inst(Instruction::H(BaseProfile::single(qubit)));
     }
 
-    pub fn m(&mut self, qubit: QUBIT /* , target: QUBIT */) {
+    pub fn m(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
-        //self.record_max_qubit_id(target);
 
-        log::debug!("m {}", qubit /* , target*/);
+        log::debug!("m {}", qubit);
         self.model
             .add_inst(Instruction::M(BaseProfile::measured(qubit)));
     }
@@ -206,27 +213,27 @@ impl BaseProfile {
 
     fn controlled(control: QUBIT, target: QUBIT) -> Controlled {
         Controlled::new(
-            BaseProfile::get_cubit_string(control),
-            BaseProfile::get_cubit_string(target),
+            BaseProfile::get_qubit_string(control),
+            BaseProfile::get_qubit_string(target),
         )
     }
 
     fn measured(qubit: QUBIT /*, target: QUBIT*/) -> Measured {
         Measured::new(
-            BaseProfile::get_cubit_string(qubit),
-            String::from(""), /*BaseProfile::get_cubit_string(target),*/
+            BaseProfile::get_qubit_string(qubit),
+            String::from(""), /*BaseProfile::get_qubit_string(target),*/
         )
     }
 
     fn rotated(theta: f64, qubit: QUBIT) -> Rotated {
-        Rotated::new(theta, BaseProfile::get_cubit_string(qubit))
+        Rotated::new(theta, BaseProfile::get_qubit_string(qubit))
     }
 
     fn single(qubit: QUBIT) -> Single {
-        Single::new(BaseProfile::get_cubit_string(qubit))
+        Single::new(BaseProfile::get_qubit_string(qubit))
     }
 
-    fn get_cubit_string(qubit: QUBIT) -> String {
+    fn get_qubit_string(qubit: QUBIT) -> String {
         format!("{}", qubit)
     }
 }
