@@ -82,27 +82,39 @@ impl<'ctx> Simulator {
         }
 
         if let Some(ins) = intrinsics.m {
-            ee.add_global_mapping(
-                &ins,
-                super::intrinsics::__quantum__qis__m__body as usize,
-            );
+            ee.add_global_mapping(&ins, super::intrinsics::__quantum__qis__m__body as usize);
         }
 
         let runtime = Runtime::new(module);
         if let Some(ins) = runtime.result_get_one {
-            ee.add_global_mapping(&ins, super::intrinsics::__quantum__rt__result_get_one as usize);
+            ee.add_global_mapping(
+                &ins,
+                super::intrinsics::__quantum__rt__result_get_one as usize,
+            );
         }
         if let Some(ins) = runtime.result_get_zero {
-            ee.add_global_mapping(&ins, super::intrinsics::__quantum__rt__result_get_zero as usize);
+            ee.add_global_mapping(
+                &ins,
+                super::intrinsics::__quantum__rt__result_get_zero as usize,
+            );
         }
         if let Some(ins) = runtime.result_equal {
-            ee.add_global_mapping(&ins, super::intrinsics::__quantum__rt__result_equal as usize);
+            ee.add_global_mapping(
+                &ins,
+                super::intrinsics::__quantum__rt__result_equal as usize,
+            );
         }
         if let Some(ins) = runtime.qubit_allocate {
-            ee.add_global_mapping(&ins, super::intrinsics::__quantum__rt__qubit_allocate as usize);
+            ee.add_global_mapping(
+                &ins,
+                super::intrinsics::__quantum__rt__qubit_allocate as usize,
+            );
         }
         if let Some(ins) = runtime.qubit_release {
-            ee.add_global_mapping(&ins, super::intrinsics::__quantum__rt__qubit_release as usize);
+            ee.add_global_mapping(
+                &ins,
+                super::intrinsics::__quantum__rt__qubit_release as usize,
+            );
         }
     }
 }
