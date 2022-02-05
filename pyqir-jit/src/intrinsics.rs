@@ -19,11 +19,16 @@ pub(crate) fn reset_max_qubit_id() {
     (*MAX_QUBIT_ID).store(0, Relaxed);
 }
 
-pub fn set_measure_stream(bits: BitVec) {
+/// # Panics
+///
+/// This function will panic if the global state cannot be locked or if the result index is too
+/// large.
+pub fn set_measure_stream(bits: &BitVec) {
     let mut res = RESULTS.lock().unwrap();
-    res.append(&mut bits.to_owned());
+    res.append(&mut bits.clone());
 }
 
+#[allow(clippy::upper_case_acronyms)]
 type QUBIT = u64;
 
 use mut_static::ForceSomeRwLockWriteGuard;

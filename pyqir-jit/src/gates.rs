@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use lazy_static::lazy_static;
+#[allow(clippy::upper_case_acronyms)]
 type QUBIT = u64;
 use mut_static::MutStatic;
 
