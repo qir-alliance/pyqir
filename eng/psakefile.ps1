@@ -366,8 +366,10 @@ task run-examples {
         $bz_first_lines = @($bz_output | Select-Object -first 5)
         $bz_expected = @(
             "# output from GateLogger",
-            "qubits[9]",
-            "out[9]"
+            "qubits[6]",
+            "out[6]",
+            "x qubit[5]",
+            "h qubit[0]"
         )
         Assert (@(Compare-Object $bz_first_lines $bz_expected).Length -eq 0) "Expected $bz_expected found $bz_first_lines"
     }
