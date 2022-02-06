@@ -7,6 +7,7 @@ use inkwell::values::{BasicValueEnum, PointerValue};
 use inkwell::AddressSpace;
 use qirlib::codegen::basicvalues::BasicValues;
 use qirlib::codegen::calls::Calls;
+use qirlib::codegen::qubits::Qubits;
 use qirlib::codegen::rt::RuntimeLibrary;
 use qirlib::codegen::types::Types;
 use qirlib::passes::run_basic_passes_on;
@@ -102,7 +103,7 @@ fn free_qubits<'ctx>(
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
 ) {
     for (_, value) in qubits.iter() {
-        qir::qubits::emit_release(generator, value);
+        generator.release_qubit(value);
     }
 }
 
@@ -132,7 +133,7 @@ fn write_qubits<'ctx>(
             .iter()
             .map(|reg| {
                 let indexed_name = format!("{}{}", &reg.name[..], reg.index);
-                let value = qir::qubits::emit_allocate(generator, indexed_name.as_str());
+                let value = generator.allocate_qubit(indexed_name.as_str());
                 (indexed_name, value)
             })
             .collect();
