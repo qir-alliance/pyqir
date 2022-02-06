@@ -69,7 +69,7 @@ fn build_entry_function(
     generator: &CodeGenerator<'_>,
     model: &SemanticModel,
 ) -> Result<(), String> {
-    let entrypoint = qir::get_entry_function(&generator.module);
+    let entrypoint = qir::create_entrypoint_function(generator.context, &generator.module)?;
 
     if model.static_alloc {
         let num_qubits = format!("{}", model.qubits.len());
