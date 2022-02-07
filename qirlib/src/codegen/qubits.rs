@@ -3,11 +3,11 @@
 
 use inkwell::values::{BasicValue, BasicValueEnum, InstructionValue};
 
-use super::{CodeGenerator, calls::Calls, rt::RuntimeLibrary};
+use super::{calls::Calls, rt::RuntimeLibrary, CodeGenerator};
 
 pub trait Qubits<'ctx> {
     fn allocate_qubit(&self, result_name: &str) -> BasicValueEnum<'ctx>;
-    fn release_qubit(&self, qubit: &BasicValueEnum<'ctx>)-> InstructionValue<'ctx>;
+    fn release_qubit(&self, qubit: &BasicValueEnum<'ctx>) -> InstructionValue<'ctx>;
 }
 
 impl<'ctx> Qubits<'ctx> for CodeGenerator<'ctx> {
@@ -20,15 +20,15 @@ impl<'ctx> Qubits<'ctx> for CodeGenerator<'ctx> {
     }
 }
 
-fn emit_allocate<'ctx>(
-    generator: &CodeGenerator<'ctx>,
-    result_name: &str,
-) -> BasicValueEnum<'ctx> {
+fn emit_allocate<'ctx>(generator: &CodeGenerator<'ctx>, result_name: &str) -> BasicValueEnum<'ctx> {
     let args = [];
     generator.emit_call_with_return(generator.qubit_allocate(), &args, result_name)
 }
 
-fn emit_release<'ctx>(generator: &CodeGenerator<'ctx>, qubit: &BasicValueEnum<'ctx>)  -> InstructionValue<'ctx> {
+fn emit_release<'ctx>(
+    generator: &CodeGenerator<'ctx>,
+    qubit: &BasicValueEnum<'ctx>,
+) -> InstructionValue<'ctx> {
     let args = [qubit.as_basic_value_enum().into()];
     generator.emit_void_call(generator.qubit_release(), &args)
 }
