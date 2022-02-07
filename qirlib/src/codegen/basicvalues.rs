@@ -11,7 +11,6 @@ pub trait BasicValues<'ctx> {
     fn u64_to_i32(&self, value: u64) -> BasicMetadataValueEnum<'ctx>;
     fn i64_to_i32(&self, value: i64) -> BasicMetadataValueEnum<'ctx>;
     fn u64_to_i64(&self, value: u64) -> BasicMetadataValueEnum<'ctx>;
-    fn u64_to_basic_value_enum(&self, value: u64) -> BasicMetadataValueEnum<'ctx>;
 }
 
 impl<'ctx> BasicValues<'ctx> for CodeGenerator<'ctx> {
@@ -52,13 +51,6 @@ impl<'ctx> BasicValues<'ctx> for CodeGenerator<'ctx> {
     }
 
     fn u64_to_i64(&self, value: u64) -> BasicMetadataValueEnum<'ctx> {
-        self.int_type()
-            .const_int(value, false)
-            .as_basic_value_enum()
-            .into()
-    }
-
-    fn u64_to_basic_value_enum(&self, value: u64) -> BasicMetadataValueEnum<'ctx> {
         self.int_type()
             .const_int(value, false)
             .as_basic_value_enum()
