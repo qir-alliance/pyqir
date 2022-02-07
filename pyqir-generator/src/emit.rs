@@ -115,9 +115,7 @@ fn write_qubits<'ctx>(
         let mut qubits: HashMap<String, BasicValueEnum<'ctx>> = HashMap::new();
         for (id, qubit) in model.qubits.iter().enumerate() {
             let indexed_name = format!("{}{}", &qubit.name[..], qubit.index);
-            let int_value = generator
-                .u64_to_basic_value_enum(id as u64)
-                .into_int_value();
+            let int_value = generator.u64_to_i64(id as u64).into_int_value();
             let qubit_ptr_type = generator.qubit_type().ptr_type(AddressSpace::Generic);
 
             let intptr =
