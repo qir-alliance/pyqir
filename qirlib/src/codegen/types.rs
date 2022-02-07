@@ -8,7 +8,9 @@ use inkwell::types::StructType;
 use crate::codegen::CodeGenerator;
 
 pub trait Types<'ctx> {
-    fn int_type(&self) -> IntType<'ctx>;
+    fn int64_type(&self) -> IntType<'ctx>;
+    fn int32_type(&self) -> IntType<'ctx>;
+    fn int8_type(&self) -> IntType<'ctx>;
     fn double_type(&self) -> FloatType<'ctx>;
     fn bool_type(&self) -> IntType<'ctx>;
     fn qubit_type(&self) -> StructType<'ctx>;
@@ -17,8 +19,16 @@ pub trait Types<'ctx> {
 }
 
 impl<'ctx> Types<'ctx> for CodeGenerator<'ctx> {
-    fn int_type(&self) -> IntType<'ctx> {
-        self.context.i64_type()
+    fn int64_type(&self) -> IntType<'ctx> {
+        int64_type(self.context)
+    }
+
+    fn int32_type(&self) -> IntType<'ctx> {
+        int32_type(self.context)
+    }
+
+    fn int8_type(&self) -> IntType<'ctx> {
+        int8_type(self.context)
     }
 
     fn double_type(&self) -> FloatType<'ctx> {
@@ -30,20 +40,73 @@ impl<'ctx> Types<'ctx> for CodeGenerator<'ctx> {
     }
 
     fn qubit_type(&self) -> StructType<'ctx> {
-        get_or_define_struct(self, "Qubit")
+        get_or_define_struct(self.context, &self.module, "Qubit")
     }
 
     fn result_type(&self) -> StructType<'ctx> {
-        get_or_define_struct(self, "Result")
+        get_or_define_struct(self.context, &self.module, "Result")
     }
 
     fn array_type(&self) -> StructType<'ctx> {
-        get_or_define_struct(self, "Array")
+        get_or_define_struct(self.context, &self.module, "Array")
     }
 }
 
-fn get_struct<'ctx>(generator: &CodeGenerator<'ctx>, name: &str) -> Option<StructType<'ctx>> {
-    let defined_struct = generator.module.get_struct_type(name);
+#[must_use]
+pub fn int64_type(context: &inkwell::context::Context) -> IntType {
+    context.i64_type()
+}
+
+#[must_use]
+pub fn int32_type(context: &inkwell::context::Context) -> IntType {
+    context.i32_type()
+}
+
+#[must_use]
+pub fn int8_type(context: &inkwell::context::Context) -> IntType {
+    context.i8_type()
+}
+
+#[must_use]
+pub fn double_type(context: &inkwell::context::Context) -> FloatType {
+    context.f64_type()
+}
+
+#[must_use]
+pub fn bool_type(context: &inkwell::context::Context) -> IntType {
+    context.bool_type()
+}
+
+#[must_use]
+pub fn qubit_type<'ctx>(
+    context: &'ctx inkwell::context::Context,
+    module: &inkwell::module::Module<'ctx>,
+) -> StructType<'ctx> {
+    get_or_define_struct(context, module, "Qubit")
+}
+
+#[must_use]
+pub fn result_type<'ctx>(
+    context: &'ctx inkwell::context::Context,
+    module: &inkwell::module::Module<'ctx>,
+) -> StructType<'ctx> {
+    get_or_define_struct(context, module, "Result")
+}
+
+#[must_use]
+pub fn array_type<'ctx>(
+    context: &'ctx inkwell::context::Context,
+    module: &inkwell::module::Module<'ctx>,
+) -> StructType<'ctx> {
+    get_or_define_struct(context, module, "Array")
+}
+
+#[must_use]
+pub fn get_struct<'ctx>(
+    module: &inkwell::module::Module<'ctx>,
+    name: &str,
+) -> Option<StructType<'ctx>> {
+    let defined_struct = module.get_struct_type(name);
     match defined_struct {
         None => {
             log::debug!("{} was not defined in the module", name);
@@ -53,11 +116,15 @@ fn get_struct<'ctx>(generator: &CodeGenerator<'ctx>, name: &str) -> Option<Struc
     }
 }
 
-fn get_or_define_struct<'ctx>(generator: &CodeGenerator<'ctx>, name: &str) -> StructType<'ctx> {
-    if let Some(struct_type) = get_struct(generator, name) {
+pub fn get_or_define_struct<'ctx>(
+    context: &'ctx inkwell::context::Context,
+    module: &inkwell::module::Module<'ctx>,
+    name: &str,
+) -> StructType<'ctx> {
+    if let Some(struct_type) = get_struct(module, name) {
         struct_type
     } else {
-        generator.context.opaque_struct_type(name)
+        context.opaque_struct_type(name)
     }
 }
 
