@@ -140,11 +140,11 @@ pub trait Qubits<'ctx> {
 
 impl<'ctx> Qubits<'ctx> for CodeGenerator<'ctx> {
     fn emit_allocate_qubit(&self, result_name: &str) -> BasicValueEnum<'ctx> {
-        emit_allocate_qubit(&self.builder, &self.module, result_name)
+        emit_allocate_qubit(self.context, &self.builder, &self.module, result_name)
     }
 
     fn emit_release_qubit(&self, qubit: &BasicValueEnum<'ctx>) -> InstructionValue<'ctx> {
-        emit_release_qubit(&self.builder, &self.module, qubit)
+        emit_release_qubit(self.context, &self.builder, &self.module, qubit)
     }
 }
 
@@ -158,23 +158,23 @@ pub trait RuntimeLibrary<'ctx> {
 
 impl<'ctx> RuntimeLibrary<'ctx> for CodeGenerator<'ctx> {
     fn result_get_zero(&self) -> FunctionValue<'ctx> {
-        result_get_zero(&self.module)
+        result_get_zero(self.context, &self.module)
     }
 
     fn result_get_one(&self) -> FunctionValue<'ctx> {
-        result_get_one(&self.module)
+        result_get_one(self.context, &self.module)
     }
 
     fn result_equal(&self) -> FunctionValue<'ctx> {
-        result_equal(&self.module)
+        result_equal(self.context, &self.module)
     }
 
     fn qubit_allocate(&self) -> FunctionValue<'ctx> {
-        qubit_allocate(&self.module)
+        qubit_allocate(self.context, &self.module)
     }
 
     fn qubit_release(&self) -> FunctionValue<'ctx> {
-        qubit_release(&self.module)
+        qubit_release(self.context, &self.module)
     }
 }
 
