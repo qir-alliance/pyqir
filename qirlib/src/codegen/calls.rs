@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, InstructionValue};
+use inkwell::{
+    builder::Builder,
+    values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, InstructionValue},
+};
 
 use super::CodeGenerator;
 
@@ -44,4 +47,31 @@ impl<'ctx> Calls<'ctx> for CodeGenerator<'ctx> {
             .left()
             .unwrap()
     }
+}
+
+#[must_use]
+pub fn emit_void_call<'ctx>(
+    builder: &Builder<'ctx>,
+    function: FunctionValue<'ctx>,
+    args: &[BasicMetadataValueEnum<'ctx>],
+) -> InstructionValue<'ctx> {
+    builder
+        .build_call(function, args, "")
+        .try_as_basic_value()
+        .right()
+        .expect("Failed to create void call for target function.")
+}
+
+#[must_use]
+pub fn emit_call_with_return<'ctx>(
+    builder: &Builder<'ctx>,
+    function: FunctionValue<'ctx>,
+    args: &[BasicMetadataValueEnum<'ctx>],
+    name: &str,
+) -> BasicValueEnum<'ctx> {
+    builder
+        .build_call(function, args, name)
+        .try_as_basic_value()
+        .left()
+        .expect("Failed to create call for target function.")
 }
