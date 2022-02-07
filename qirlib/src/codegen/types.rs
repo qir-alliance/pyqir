@@ -5,80 +5,33 @@ use inkwell::types::FloatType;
 use inkwell::types::IntType;
 use inkwell::types::StructType;
 
-use crate::codegen::CodeGenerator;
-
-pub trait Types<'ctx> {
-    fn int64_type(&self) -> IntType<'ctx>;
-    fn int32_type(&self) -> IntType<'ctx>;
-    fn int8_type(&self) -> IntType<'ctx>;
-    fn double_type(&self) -> FloatType<'ctx>;
-    fn bool_type(&self) -> IntType<'ctx>;
-    fn qubit_type(&self) -> StructType<'ctx>;
-    fn result_type(&self) -> StructType<'ctx>;
-    fn array_type(&self) -> StructType<'ctx>;
-}
-
-impl<'ctx> Types<'ctx> for CodeGenerator<'ctx> {
-    fn int64_type(&self) -> IntType<'ctx> {
-        int64_type(self.context)
-    }
-
-    fn int32_type(&self) -> IntType<'ctx> {
-        int32_type(self.context)
-    }
-
-    fn int8_type(&self) -> IntType<'ctx> {
-        int8_type(self.context)
-    }
-
-    fn double_type(&self) -> FloatType<'ctx> {
-        self.context.f64_type()
-    }
-
-    fn bool_type(&self) -> IntType<'ctx> {
-        self.context.bool_type()
-    }
-
-    fn qubit_type(&self) -> StructType<'ctx> {
-        get_or_define_struct(self.context, &self.module, "Qubit")
-    }
-
-    fn result_type(&self) -> StructType<'ctx> {
-        get_or_define_struct(self.context, &self.module, "Result")
-    }
-
-    fn array_type(&self) -> StructType<'ctx> {
-        get_or_define_struct(self.context, &self.module, "Array")
-    }
-}
-
 #[must_use]
-pub fn int64_type(context: &inkwell::context::Context) -> IntType {
+pub fn int64(context: &inkwell::context::Context) -> IntType {
     context.i64_type()
 }
 
 #[must_use]
-pub fn int32_type(context: &inkwell::context::Context) -> IntType {
+pub fn int32(context: &inkwell::context::Context) -> IntType {
     context.i32_type()
 }
 
 #[must_use]
-pub fn int8_type(context: &inkwell::context::Context) -> IntType {
+pub fn int8(context: &inkwell::context::Context) -> IntType {
     context.i8_type()
 }
 
 #[must_use]
-pub fn double_type(context: &inkwell::context::Context) -> FloatType {
+pub fn double(context: &inkwell::context::Context) -> FloatType {
     context.f64_type()
 }
 
 #[must_use]
-pub fn bool_type(context: &inkwell::context::Context) -> IntType {
+pub fn bool(context: &inkwell::context::Context) -> IntType {
     context.bool_type()
 }
 
 #[must_use]
-pub fn qubit_type<'ctx>(
+pub fn qubit<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &inkwell::module::Module<'ctx>,
 ) -> StructType<'ctx> {
@@ -86,7 +39,7 @@ pub fn qubit_type<'ctx>(
 }
 
 #[must_use]
-pub fn result_type<'ctx>(
+pub fn result<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &inkwell::module::Module<'ctx>,
 ) -> StructType<'ctx> {
@@ -94,7 +47,7 @@ pub fn result_type<'ctx>(
 }
 
 #[must_use]
-pub fn array_type<'ctx>(
+pub fn array<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &inkwell::module::Module<'ctx>,
 ) -> StructType<'ctx> {
@@ -140,7 +93,7 @@ mod tests {
         let module = module::load_template("test", &context).unwrap();
         let generator = CodeGenerator::new(&context, module).unwrap();
 
-        verify_opaque_struct("Qubit", generator.qubit_type());
+        verify_opaque_struct("Qubit", qubit(generator.context, &generator.module));
     }
 
     #[test]
@@ -149,7 +102,7 @@ mod tests {
         let module = module::load_template("test", &context).unwrap();
         let generator = CodeGenerator::new(&context, module).unwrap();
 
-        verify_opaque_struct("Result", generator.result_type());
+        verify_opaque_struct("Result", result(generator.context, &generator.module));
     }
 
     #[test]
@@ -158,7 +111,7 @@ mod tests {
         let module = module::load_template("test", &context).unwrap();
         let generator = CodeGenerator::new(&context, module).unwrap();
 
-        verify_opaque_struct("Array", generator.array_type());
+        verify_opaque_struct("Array", array(generator.context, &generator.module));
     }
 
     fn verify_opaque_struct(name: &str, struct_type: StructType) {

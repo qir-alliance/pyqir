@@ -6,89 +6,67 @@ use log;
 use inkwell::module::Module;
 use inkwell::values::FunctionValue;
 
-use super::CodeGenerator;
-
-pub trait Intrinsics<'ctx> {
-    fn qis_cnot_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_cz_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_h_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_s_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_s_adj(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_t_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_t_adj(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_x_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_y_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_z_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_rx_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_ry_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_rz_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_reset_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_m_body(&self) -> Option<FunctionValue<'ctx>>;
+pub fn cnot_body<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_body(module, "cnot")
 }
 
-impl<'ctx> Intrinsics<'ctx> for CodeGenerator<'ctx> {
-    fn qis_cnot_body(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_body(&self.module, "cnot")
-    }
-
-    fn qis_cz_body(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_body(&self.module, "cz")
-    }
-
-    fn qis_h_body(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_body(&self.module, "h")
-    }
-
-    fn qis_s_body(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_body(&self.module, "s")
-    }
-
-    fn qis_s_adj(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_adj(&self.module, "s")
-    }
-
-    fn qis_t_body(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_body(&self.module, "t")
-    }
-
-    fn qis_t_adj(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_adj(&self.module, "t")
-    }
-
-    fn qis_x_body(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_body(&self.module, "x")
-    }
-
-    fn qis_y_body(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_body(&self.module, "y")
-    }
-
-    fn qis_z_body(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_body(&self.module, "z")
-    }
-
-    fn qis_rx_body(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_body(&self.module, "rx")
-    }
-
-    fn qis_ry_body(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_body(&self.module, "ry")
-    }
-
-    fn qis_rz_body(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_body(&self.module, "rz")
-    }
-
-    fn qis_reset_body(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_body(&self.module, "reset")
-    }
-
-    fn qis_m_body(&self) -> Option<FunctionValue<'ctx>> {
-        get_qis_intrinsic_function_body(&self.module, "m")
-    }
+pub fn cz_body<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_body(module, "cz")
 }
 
-fn get_qis_intrinsic_function_body<'ctx>(
+pub fn h_body<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_body(module, "h")
+}
+
+pub fn s_body<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_body(module, "s")
+}
+
+pub fn s_adj<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_adj(module, "s")
+}
+
+pub fn t_body<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_body(module, "t")
+}
+
+pub fn t_adj<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_adj(module, "t")
+}
+
+pub fn x_body<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_body(module, "x")
+}
+
+pub fn y_body<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_body(module, "y")
+}
+
+pub fn z_body<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_body(module, "z")
+}
+
+pub fn rx_body<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_body(module, "rx")
+}
+
+pub fn ry_body<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_body(module, "ry")
+}
+
+pub fn rz_body<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_body(module, "rz")
+}
+
+pub fn reset_body<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_body(module, "reset")
+}
+
+pub fn m_body<'ctx>(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+    get_intrinsic_function_body(module, "m")
+}
+
+pub fn get_intrinsic_function_body<'ctx>(
     module: &Module<'ctx>,
     name: &str,
 ) -> Option<FunctionValue<'ctx>> {
@@ -96,7 +74,7 @@ fn get_qis_intrinsic_function_body<'ctx>(
     get_function(module, function_name.as_str())
 }
 
-fn get_qis_intrinsic_function_adj<'ctx>(
+pub fn get_intrinsic_function_adj<'ctx>(
     module: &Module<'ctx>,
     name: &str,
 ) -> Option<FunctionValue<'ctx>> {
@@ -104,7 +82,10 @@ fn get_qis_intrinsic_function_adj<'ctx>(
     get_function(module, function_name.as_str())
 }
 
-fn get_function<'ctx>(module: &Module<'ctx>, function_name: &str) -> Option<FunctionValue<'ctx>> {
+pub fn get_function<'ctx>(
+    module: &Module<'ctx>,
+    function_name: &str,
+) -> Option<FunctionValue<'ctx>> {
     let defined_function = module.get_function(function_name);
     match defined_function {
         None => {

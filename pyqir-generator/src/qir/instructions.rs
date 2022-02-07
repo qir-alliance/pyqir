@@ -5,8 +5,8 @@ use crate::interop::Instruction;
 
 use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue};
 use qirlib::codegen::calls::Calls;
+use qirlib::codegen::ext::{BasicValues, Intrinsics};
 use qirlib::codegen::CodeGenerator;
-use qirlib::codegen::{basicvalues::BasicValues, qis::Intrinsics};
 use std::collections::HashMap;
 
 /// # Panics

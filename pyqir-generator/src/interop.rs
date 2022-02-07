@@ -121,7 +121,6 @@ pub struct SemanticModel {
     pub qubits: Vec<QuantumRegister>,
     pub instructions: Vec<Instruction>,
     pub static_alloc: bool,
-    pub initialize_registers: bool,
 }
 
 impl SemanticModel {
@@ -133,7 +132,6 @@ impl SemanticModel {
             qubits: vec![],
             instructions: vec![],
             static_alloc: false,
-            initialize_registers: false,
         }
     }
 

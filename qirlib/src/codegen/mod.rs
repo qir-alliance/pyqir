@@ -6,6 +6,7 @@ use std::path::Path;
 
 pub mod basicvalues;
 pub mod calls;
+pub mod ext;
 pub mod qis;
 pub mod qubits;
 pub mod rt;

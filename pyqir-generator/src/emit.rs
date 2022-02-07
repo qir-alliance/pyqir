@@ -5,11 +5,7 @@ use crate::{interop::SemanticModel, qir};
 use inkwell::attributes::AttributeLoc;
 use inkwell::values::{BasicValueEnum, PointerValue};
 use inkwell::AddressSpace;
-use qirlib::codegen::basicvalues::BasicValues;
-use qirlib::codegen::calls::Calls;
-use qirlib::codegen::qubits::Qubits;
-use qirlib::codegen::rt::RuntimeLibrary;
-use qirlib::codegen::types::Types;
+use qirlib::codegen::ext::{BasicValues, Qubits, Types};
 use qirlib::passes::run_basic_passes_on;
 use qirlib::{codegen::CodeGenerator, module};
 use std::collections::HashMap;
@@ -85,7 +81,7 @@ fn build_entry_function(
 
     let qubits = write_qubits(model, generator);
 
-    let mut registers = write_registers(model, generator);
+    let mut registers = write_registers(model);
 
     write_instructions(model, generator, &qubits, &mut registers);
 
@@ -103,7 +99,7 @@ fn free_qubits<'ctx>(
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
 ) {
     for (_, value) in qubits.iter() {
-        generator.release_qubit(value);
+        generator.emit_release_qubit(value);
     }
 }
 
@@ -115,7 +111,7 @@ fn write_qubits<'ctx>(
         let mut qubits: HashMap<String, BasicValueEnum<'ctx>> = HashMap::new();
         for (id, qubit) in model.qubits.iter().enumerate() {
             let indexed_name = format!("{}{}", &qubit.name[..], qubit.index);
-            let int_value = generator.u64_to_i64(id as u64).into_int_value();
+            let int_value = generator.usize_to_i64(id).into_int_value();
             let qubit_ptr_type = generator.qubit_type().ptr_type(AddressSpace::Generic);
 
             let intptr =
@@ -131,7 +127,7 @@ fn write_qubits<'ctx>(
             .iter()
             .map(|reg| {
                 let indexed_name = format!("{}{}", &reg.name[..], reg.index);
-                let value = generator.allocate_qubit(indexed_name.as_str());
+                let value = generator.emit_allocate_qubit(indexed_name.as_str());
                 (indexed_name, value)
             })
             .collect();
@@ -140,26 +136,14 @@ fn write_qubits<'ctx>(
     }
 }
 
-fn write_registers<'ctx>(
-    model: &SemanticModel,
-    generator: &CodeGenerator<'ctx>,
-) -> HashMap<String, Option<PointerValue<'ctx>>> {
+fn write_registers<'ctx>(model: &SemanticModel) -> HashMap<String, Option<PointerValue<'ctx>>> {
     let mut registers = HashMap::new();
     let number_of_registers = model.registers.len() as u64;
     if number_of_registers > 0 {
         for register in &model.registers {
             for index in 0..register.size {
                 let name = format!("{}{}", register.name, index);
-                if model.initialize_registers {
-                    let initial_value = generator.emit_call_with_return(
-                        generator.result_get_zero(),
-                        &[],
-                        name.as_str(),
-                    );
-                    registers.insert(name, Some(initial_value.into_pointer_value()));
-                } else {
-                    registers.insert(name, None);
-                }
+                registers.insert(name, None);
             }
         }
     }
