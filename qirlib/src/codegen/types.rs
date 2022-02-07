@@ -84,13 +84,13 @@ pub fn get_or_define_struct<'ctx>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{codegen::CodeGenerator, module};
+    use crate::codegen::CodeGenerator;
     use inkwell::context::Context;
 
     #[test]
     fn qubit_can_be_declared() {
         let context = Context::create();
-        let module = module::load_template("test", &context).unwrap();
+        let module = context.create_module("test");
         let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Qubit", qubit(generator.context, &generator.module));
@@ -99,7 +99,7 @@ mod tests {
     #[test]
     fn result_can_be_declared() {
         let context = Context::create();
-        let module = module::load_template("test", &context).unwrap();
+        let module = context.create_module("test");
         let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Result", result(generator.context, &generator.module));
@@ -108,7 +108,7 @@ mod tests {
     #[test]
     fn array_can_be_declared() {
         let context = Context::create();
-        let module = module::load_template("test", &context).unwrap();
+        let module = context.create_module("test");
         let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Array", array(generator.context, &generator.module));

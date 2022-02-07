@@ -6,8 +6,8 @@ use inkwell::attributes::AttributeLoc;
 use inkwell::values::{BasicValueEnum, PointerValue};
 use inkwell::AddressSpace;
 use qirlib::codegen::ext::{BasicValues, Qubits, Types};
+use qirlib::codegen::CodeGenerator;
 use qirlib::passes::run_basic_passes_on;
-use qirlib::{codegen::CodeGenerator, module};
 use std::collections::HashMap;
 
 /// # Errors
@@ -56,7 +56,7 @@ pub fn populate_context<'a>(
     ctx: &'a inkwell::context::Context,
     model: &'a SemanticModel,
 ) -> Result<CodeGenerator<'a>, String> {
-    let module = module::load_template(&model.name, ctx)?;
+    let module = ctx.create_module(&model.name);
     let generator = CodeGenerator::new(ctx, module)?;
     build_entry_function(&generator, model)?;
     Ok(generator)

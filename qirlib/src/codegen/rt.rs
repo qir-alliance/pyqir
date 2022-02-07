@@ -9,7 +9,7 @@ use inkwell::{
 
 use super::types::{self, qubit, result};
 
-/// declare %Result* @__quantum__rt__result_get_zero()
+/// `declare %Result* @__quantum__rt__result_get_zero()`
 pub fn result_get_zero<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
@@ -29,7 +29,7 @@ pub fn result_get_zero<'ctx>(
     }
 }
 
-/// declare %Result* @__quantum__rt__result_get_one()
+/// `declare %Result* @__quantum__rt__result_get_one()`
 pub fn result_get_one<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
@@ -49,7 +49,7 @@ pub fn result_get_one<'ctx>(
     }
 }
 
-/// declare i1 @__quantum__rt__result_equal(%Result*, %Result*)
+/// `declare i1 @__quantum__rt__result_equal(%Result*, %Result*)`
 pub fn result_equal<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
@@ -69,7 +69,7 @@ pub fn result_equal<'ctx>(
     }
 }
 
-/// declare %Qubit* @__quantum__rt__qubit_allocate()
+/// `declare %Qubit* @__quantum__rt__qubit_allocate()`
 pub fn qubit_allocate<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
@@ -88,7 +88,7 @@ pub fn qubit_allocate<'ctx>(
     }
 }
 
-/// declare void @__quantum__rt__qubit_release(%Qubit*)
+/// `declare void @__quantum__rt__qubit_release(%Qubit*)`
 pub fn qubit_release<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &inkwell::module::Module<'ctx>,

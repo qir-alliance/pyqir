@@ -31,21 +31,20 @@ pub(crate) fn create_entrypoint_function<'ctx>(
 mod tests {
     use super::*;
     use inkwell::context::Context;
-    use qirlib::{codegen::CodeGenerator, module, passes::run_basic_passes_on};
+    use qirlib::codegen::CodeGenerator;
 
     #[test]
     fn entrypoint_function_has_correct_signature_and_default_attribute() {
         let context = Context::create();
-        let module = module::load_template("test", &context).unwrap();
+        let module = context.create_module("test");
         let generator = CodeGenerator::new(&context, module).unwrap();
 
         let entrypoint = create_entrypoint_function(generator.context, &generator.module).unwrap();
         let entry = generator.context.append_basic_block(entrypoint, "entry");
         generator.builder.position_at_end(entry);
         generator.builder.build_return(None);
-        run_basic_passes_on(&generator.module);
         let ir_string = generator.get_ir_string();
-        let expected = "; ModuleID = 'test'\nsource_filename = \"./module.ll\"\n\ndefine void @QuantumApplication__Run() #0 {\nentry:\n  ret void\n}\n\nattributes #0 = { \"EntryPoint\" }\n";
+        let expected = "; ModuleID = 'test'\nsource_filename = \"test\"\n\ndefine void @QuantumApplication__Run() #0 {\nentry:\n  ret void\n}\n\nattributes #0 = { \"EntryPoint\" }\n";
         assert_eq!(expected, ir_string);
     }
 }

@@ -54,82 +54,82 @@ impl<'ctx> BasicValues<'ctx> for CodeGenerator<'ctx> {
 }
 
 pub trait Intrinsics<'ctx> {
-    fn qis_cnot_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_cz_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_h_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_s_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_s_adj(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_t_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_t_adj(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_x_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_y_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_z_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_rx_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_ry_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_rz_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_reset_body(&self) -> Option<FunctionValue<'ctx>>;
-    fn qis_m_body(&self) -> Option<FunctionValue<'ctx>>;
+    fn qis_cnot_body(&self) -> FunctionValue<'ctx>;
+    fn qis_cz_body(&self) -> FunctionValue<'ctx>;
+    fn qis_h_body(&self) -> FunctionValue<'ctx>;
+    fn qis_s_body(&self) -> FunctionValue<'ctx>;
+    fn qis_s_adj(&self) -> FunctionValue<'ctx>;
+    fn qis_t_body(&self) -> FunctionValue<'ctx>;
+    fn qis_t_adj(&self) -> FunctionValue<'ctx>;
+    fn qis_x_body(&self) -> FunctionValue<'ctx>;
+    fn qis_y_body(&self) -> FunctionValue<'ctx>;
+    fn qis_z_body(&self) -> FunctionValue<'ctx>;
+    fn qis_rx_body(&self) -> FunctionValue<'ctx>;
+    fn qis_ry_body(&self) -> FunctionValue<'ctx>;
+    fn qis_rz_body(&self) -> FunctionValue<'ctx>;
+    fn qis_reset_body(&self) -> FunctionValue<'ctx>;
+    fn qis_m_body(&self) -> FunctionValue<'ctx>;
 }
 
 impl<'ctx> Intrinsics<'ctx> for CodeGenerator<'ctx> {
-    fn qis_cnot_body(&self) -> Option<FunctionValue<'ctx>> {
-        cnot_body(&self.module)
+    fn qis_cnot_body(&self) -> FunctionValue<'ctx> {
+        cnot_body(self.context, &self.module)
     }
 
-    fn qis_cz_body(&self) -> Option<FunctionValue<'ctx>> {
-        cz_body(&self.module)
+    fn qis_cz_body(&self) -> FunctionValue<'ctx> {
+        cz_body(self.context, &self.module)
     }
 
-    fn qis_h_body(&self) -> Option<FunctionValue<'ctx>> {
-        h_body(&self.module)
+    fn qis_h_body(&self) -> FunctionValue<'ctx> {
+        h_body(self.context, &self.module)
     }
 
-    fn qis_s_body(&self) -> Option<FunctionValue<'ctx>> {
-        s_body(&self.module)
+    fn qis_s_body(&self) -> FunctionValue<'ctx> {
+        s_body(self.context, &self.module)
     }
 
-    fn qis_s_adj(&self) -> Option<FunctionValue<'ctx>> {
-        s_adj(&self.module)
+    fn qis_s_adj(&self) -> FunctionValue<'ctx> {
+        s_adj(self.context, &self.module)
     }
 
-    fn qis_t_body(&self) -> Option<FunctionValue<'ctx>> {
-        t_body(&self.module)
+    fn qis_t_body(&self) -> FunctionValue<'ctx> {
+        t_body(self.context, &self.module)
     }
 
-    fn qis_t_adj(&self) -> Option<FunctionValue<'ctx>> {
-        t_adj(&self.module)
+    fn qis_t_adj(&self) -> FunctionValue<'ctx> {
+        t_adj(self.context, &self.module)
     }
 
-    fn qis_x_body(&self) -> Option<FunctionValue<'ctx>> {
-        x_body(&self.module)
+    fn qis_x_body(&self) -> FunctionValue<'ctx> {
+        x_body(self.context, &self.module)
     }
 
-    fn qis_y_body(&self) -> Option<FunctionValue<'ctx>> {
-        y_body(&self.module)
+    fn qis_y_body(&self) -> FunctionValue<'ctx> {
+        y_body(self.context, &self.module)
     }
 
-    fn qis_z_body(&self) -> Option<FunctionValue<'ctx>> {
-        z_body(&self.module)
+    fn qis_z_body(&self) -> FunctionValue<'ctx> {
+        z_body(self.context, &self.module)
     }
 
-    fn qis_rx_body(&self) -> Option<FunctionValue<'ctx>> {
-        rx_body(&self.module)
+    fn qis_rx_body(&self) -> FunctionValue<'ctx> {
+        rx_body(self.context, &self.module)
     }
 
-    fn qis_ry_body(&self) -> Option<FunctionValue<'ctx>> {
-        ry_body(&self.module)
+    fn qis_ry_body(&self) -> FunctionValue<'ctx> {
+        ry_body(self.context, &self.module)
     }
 
-    fn qis_rz_body(&self) -> Option<FunctionValue<'ctx>> {
-        rz_body(&self.module)
+    fn qis_rz_body(&self) -> FunctionValue<'ctx> {
+        rz_body(self.context, &self.module)
     }
 
-    fn qis_reset_body(&self) -> Option<FunctionValue<'ctx>> {
-        reset_body(&self.module)
+    fn qis_reset_body(&self) -> FunctionValue<'ctx> {
+        reset_body(self.context, &self.module)
     }
 
-    fn qis_m_body(&self) -> Option<FunctionValue<'ctx>> {
-        m_body(&self.module)
+    fn qis_m_body(&self) -> FunctionValue<'ctx> {
+        m_body(self.context, &self.module)
     }
 }
 
@@ -226,13 +226,13 @@ impl<'ctx> Types<'ctx> for CodeGenerator<'ctx> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{codegen::CodeGenerator, module};
+    use crate::codegen::CodeGenerator;
     use inkwell::context::Context;
 
     #[test]
     fn qubit_can_be_declared() {
         let context = Context::create();
-        let module = module::load_template("test", &context).unwrap();
+        let module = context.create_module("test");
         let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Qubit", generator.qubit_type());
@@ -241,7 +241,7 @@ mod tests {
     #[test]
     fn result_can_be_declared() {
         let context = Context::create();
-        let module = module::load_template("test", &context).unwrap();
+        let module = context.create_module("test");
         let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Result", generator.result_type());
@@ -250,7 +250,7 @@ mod tests {
     #[test]
     fn array_can_be_declared() {
         let context = Context::create();
-        let module = module::load_template("test", &context).unwrap();
+        let module = context.create_module("test");
         let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Array", generator.array_type());
