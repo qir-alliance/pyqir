@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use std::collections::HashMap;
+
+use inkwell::values::{BasicValueEnum, PointerValue};
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct QuantumRegister {
     pub name: String,
@@ -124,11 +128,11 @@ pub enum Instruction {
 
 #[derive(Clone, Default)]
 pub struct SemanticModel {
-    pub name: String,
-    pub registers: Vec<ClassicalRegister>,
-    pub qubits: Vec<QuantumRegister>,
-    pub instructions: Vec<Instruction>,
-    pub static_alloc: bool,
+    name: String,
+    registers: Vec<ClassicalRegister>,
+    qubits: Vec<QuantumRegister>,
+    instructions: Vec<Instruction>,
+    static_alloc: bool,
 }
 
 impl SemanticModel {
@@ -152,5 +156,63 @@ impl SemanticModel {
 
     pub fn add_inst(&mut self, inst: Instruction) {
         self.instructions.push(inst);
+    }
+}
+
+pub trait CodeGenModel {
+    fn name(&self) -> String;
+
+    fn number_of_registers(&self) -> usize;
+
+    fn number_of_qubits(&self) -> usize;
+
+    fn registers(&self) -> Vec<ClassicalRegister>;
+
+    fn qubits(&self) -> Vec<QuantumRegister>;
+
+    fn static_alloc(&self) -> bool;
+
+    fn write_instructions<'ctx>(
+        &self,
+        generator: &qirlib::codegen::CodeGenerator<'ctx>,
+        qubits: &HashMap<String, BasicValueEnum<'ctx>>,
+        registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    );
+}
+
+impl CodeGenModel for SemanticModel {
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn number_of_qubits(&self) -> usize {
+        self.qubits.len()
+    }
+
+    fn number_of_registers(&self) -> usize {
+        self.registers.len()
+    }
+
+    fn registers(&self) -> Vec<ClassicalRegister> {
+        self.registers.clone()
+    }
+
+    fn qubits(&self) -> Vec<QuantumRegister> {
+        self.qubits.clone()
+    }
+
+    fn static_alloc(&self) -> bool {
+        self.static_alloc
+    }
+
+    fn write_instructions<'ctx>(
+        &self,
+        generator: &qirlib::codegen::CodeGenerator<'ctx>,
+        qubits: &HashMap<String, BasicValueEnum<'ctx>>,
+        registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    ) {
+        for inst in &self.instructions {
+            crate::qir::instructions::emit(generator, inst, qubits, registers);
+        }
     }
 }
