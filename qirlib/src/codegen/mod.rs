@@ -66,7 +66,7 @@ impl<'ctx> CodeGenerator<'ctx> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{codegen::CodeGenerator, module};
+    use crate::codegen::CodeGenerator;
     use inkwell::context::Context;
     use std::{fs::File, io::prelude::*};
     use tempfile::tempdir;
@@ -80,7 +80,7 @@ mod tests {
         let file_path_string = file_path.display().to_string();
 
         let context = Context::create();
-        let module = module::load_template(name, &context).unwrap();
+        let module = context.create_module(name);
         let generator = CodeGenerator::new(&context, module).unwrap();
         generator.emit_bitcode(file_path_string.as_str());
         let mut emitted_bitcode_file =
