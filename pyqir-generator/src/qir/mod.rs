@@ -11,7 +11,7 @@ pub(crate) fn create_entrypoint_function<'ctx>(
 ) -> Result<FunctionValue<'ctx>, String> {
     let ns = "QuantumApplication";
     let method = "Run";
-    let entrypoint_name = format!("{}__{}__body", ns, method);
+    let entrypoint_name = format!("{}__{}", ns, method);
 
     let void_type = context.void_type();
     let fn_type = void_type.fn_type(&[], false);
@@ -45,7 +45,7 @@ mod tests {
         generator.builder.build_return(None);
         run_basic_passes_on(&generator.module);
         let ir_string = generator.get_ir_string();
-        let expected = "; ModuleID = 'test'\nsource_filename = \"./module.ll\"\n\ndefine void @QuantumApplication__Run__body() #0 {\nentry:\n  ret void\n}\n\nattributes #0 = { \"EntryPoint\" }\n";
+        let expected = "; ModuleID = 'test'\nsource_filename = \"./module.ll\"\n\ndefine void @QuantumApplication__Run() #0 {\nentry:\n  ret void\n}\n\nattributes #0 = { \"EntryPoint\" }\n";
         assert_eq!(expected, ir_string);
     }
 }
