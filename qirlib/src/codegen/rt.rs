@@ -10,7 +10,7 @@ use inkwell::{
 use super::types::{self, qubit, result};
 
 /// `declare %Result* @__quantum__rt__result_get_zero()`
-pub fn result_get_zero<'ctx>(
+pub(crate) fn result_get_zero<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
@@ -30,7 +30,7 @@ pub fn result_get_zero<'ctx>(
 }
 
 /// `declare %Result* @__quantum__rt__result_get_one()`
-pub fn result_get_one<'ctx>(
+pub(crate) fn result_get_one<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
@@ -50,7 +50,7 @@ pub fn result_get_one<'ctx>(
 }
 
 /// `declare i1 @__quantum__rt__result_equal(%Result*, %Result*)`
-pub fn result_equal<'ctx>(
+pub(crate) fn result_equal<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
@@ -70,7 +70,7 @@ pub fn result_equal<'ctx>(
 }
 
 /// `declare %Qubit* @__quantum__rt__qubit_allocate()`
-pub fn qubit_allocate<'ctx>(
+pub(crate) fn qubit_allocate<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
@@ -89,7 +89,7 @@ pub fn qubit_allocate<'ctx>(
 }
 
 /// `declare void @__quantum__rt__qubit_release(%Qubit*)`
-pub fn qubit_release<'ctx>(
+pub(crate) fn qubit_release<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &inkwell::module::Module<'ctx>,
 ) -> FunctionValue<'ctx> {
@@ -116,7 +116,7 @@ fn get_function_name(suffix: &str) -> String {
     format!("__quantum__rt__{}", suffix)
 }
 
-pub fn get_function<'ctx>(module: &Module<'ctx>, name: &str) -> Option<FunctionValue<'ctx>> {
+pub(crate) fn get_function<'ctx>(module: &Module<'ctx>, name: &str) -> Option<FunctionValue<'ctx>> {
     let function_name = format!("__quantum__rt__{}", name);
     let defined_function = module.get_function(&function_name[..]);
 
