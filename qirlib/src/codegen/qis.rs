@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use inkwell::types::BasicMetadataTypeEnum;
 use inkwell::AddressSpace;
 use log;
 
@@ -120,17 +121,13 @@ pub(crate) fn get_controlled_intrinsic_function_body<'ctx>(
     module: &Module<'ctx>,
     name: &str,
 ) -> FunctionValue<'ctx> {
-    let function_name = format!("__quantum__qis__{}__body", name.to_lowercase());
-    if let Some(function) = get_function(module, function_name.as_str()) {
-        function
-    } else {
-        let void_type = context.void_type();
-        let qubit_ptr_type = qubit(context, module).ptr_type(AddressSpace::Generic);
-        let fn_type = void_type.fn_type(&[qubit_ptr_type.into(), qubit_ptr_type.into()], false);
-        let fn_value =
-            module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
-        fn_value
-    }
+    let qubit_ptr_type = qubit(context, module).ptr_type(AddressSpace::Generic);
+    get_intrinsic_function_body_impl(
+        context,
+        module,
+        name,
+        &[qubit_ptr_type.into(), qubit_ptr_type.into()],
+    )
 }
 
 /// `declare void @__quantum__qis__{}__body(double, %Qubit*)`
@@ -139,17 +136,13 @@ pub(crate) fn get_rotated_intrinsic_function_body<'ctx>(
     module: &Module<'ctx>,
     name: &str,
 ) -> FunctionValue<'ctx> {
-    let function_name = format!("__quantum__qis__{}__body", name.to_lowercase());
-    if let Some(function) = get_function(module, function_name.as_str()) {
-        function
-    } else {
-        let void_type = context.void_type();
-        let qubit_ptr_type = qubit(context, module).ptr_type(AddressSpace::Generic);
-        let fn_type = void_type.fn_type(&[double(context).into(), qubit_ptr_type.into()], false);
-        let fn_value =
-            module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
-        fn_value
-    }
+    let qubit_ptr_type = qubit(context, module).ptr_type(AddressSpace::Generic);
+    get_intrinsic_function_body_impl(
+        context,
+        module,
+        name,
+        &[double(context).into(), qubit_ptr_type.into()],
+    )
 }
 
 /// `declare void @__quantum__qis__{}__body(%Qubit*)`
@@ -158,13 +151,22 @@ pub(crate) fn get_intrinsic_function_body<'ctx>(
     module: &Module<'ctx>,
     name: &str,
 ) -> FunctionValue<'ctx> {
+    let qubit_ptr_type = qubit(context, module).ptr_type(AddressSpace::Generic);
+    get_intrinsic_function_body_impl(context, module, name, &[qubit_ptr_type.into()])
+}
+
+fn get_intrinsic_function_body_impl<'ctx>(
+    context: &'ctx inkwell::context::Context,
+    module: &Module<'ctx>,
+    name: &str,
+    param_types: &[BasicMetadataTypeEnum<'ctx>],
+) -> FunctionValue<'ctx> {
     let function_name = format!("__quantum__qis__{}__body", name.to_lowercase());
     if let Some(function) = get_function(module, function_name.as_str()) {
         function
     } else {
         let void_type = context.void_type();
-        let qubit_ptr_type = qubit(context, module).ptr_type(AddressSpace::Generic);
-        let fn_type = void_type.fn_type(&[qubit_ptr_type.into()], false);
+        let fn_type = void_type.fn_type(param_types, false);
         let fn_value =
             module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
         fn_value
