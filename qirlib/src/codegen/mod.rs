@@ -17,7 +17,7 @@ use self::{
     },
     qubits::{emit_allocate_qubit, emit_release_qubit},
     rt::{qubit_allocate, qubit_release, result_equal, result_get_one, result_get_zero},
-    types::{array, int32, int64, int8, qubit, result},
+    types::{int32, int64, int8, qubit, result},
 };
 
 pub mod basicvalues;
@@ -246,10 +246,6 @@ impl<'ctx> CodeGenerator<'ctx> {
     pub fn result_type(&self) -> StructType<'ctx> {
         result(self.context, &self.module)
     }
-
-    pub fn array_type(&self) -> StructType<'ctx> {
-        array(self.context, &self.module)
-    }
 }
 
 #[cfg(test)]
@@ -310,15 +306,6 @@ mod types_tests {
         let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Result", generator.result_type());
-    }
-
-    #[test]
-    fn array_can_be_declared() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module).unwrap();
-
-        verify_opaque_struct("Array", generator.array_type());
     }
 
     fn verify_opaque_struct(name: &str, struct_type: StructType) {
