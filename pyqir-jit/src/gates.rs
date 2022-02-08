@@ -219,11 +219,8 @@ impl BaseProfile {
         )
     }
 
-    fn measured(qubit: QUBIT /*, target: QUBIT*/) -> Measured {
-        Measured::new(
-            BaseProfile::get_qubit_string(qubit),
-            String::from(""), /*BaseProfile::get_qubit_string(target),*/
-        )
+    fn measured(qubit: QUBIT) -> Measured {
+        Measured::new(BaseProfile::get_qubit_string(qubit), String::from(""))
     }
 
     fn rotated(theta: f64, qubit: QUBIT) -> Rotated {
