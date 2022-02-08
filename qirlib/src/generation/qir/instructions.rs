@@ -10,7 +10,7 @@ use std::collections::HashMap;
 /// # Panics
 ///
 /// Panics if the qubit name doesn't exist
-fn get_qubit<'ctx>(
+pub fn get_qubit<'ctx>(
     name: &str,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
 ) -> BasicValueEnum<'ctx> {
@@ -19,7 +19,7 @@ fn get_qubit<'ctx>(
         .unwrap_or_else(|| panic!("Qubit {} not found.", name))
 }
 
-fn measure<'ctx>(
+pub fn measure<'ctx>(
     generator: &CodeGenerator<'ctx>,
     qubit: &str,
     target: &str,
@@ -38,7 +38,7 @@ fn measure<'ctx>(
     registers.insert(target.to_owned(), Some(new_value.into_pointer_value()));
 }
 
-fn controlled<'ctx>(
+pub fn controlled<'ctx>(
     generator: &CodeGenerator<'ctx>,
     intrinsic: FunctionValue<'ctx>,
     control: BasicValueEnum<'ctx>,
