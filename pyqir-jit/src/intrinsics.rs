@@ -4,11 +4,16 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use super::gates::BaseProfile;
 use bitvec::prelude::*;
 use lazy_static::lazy_static;
+use mut_static::ForceSomeRwLockWriteGuard;
 use std::ffi::c_void;
 use std::sync::atomic::{AtomicUsize, Ordering::Relaxed};
 use std::sync::Mutex;
+
+#[allow(clippy::upper_case_acronyms)]
+type QUBIT = u64;
 
 lazy_static! {
     static ref RESULTS: Mutex<BitVec> = Mutex::new(bitvec![0]);
@@ -27,13 +32,6 @@ pub fn set_measure_stream(bits: &BitVec) {
     let mut res = RESULTS.lock().unwrap();
     res.append(&mut bits.clone());
 }
-
-#[allow(clippy::upper_case_acronyms)]
-type QUBIT = u64;
-
-use mut_static::ForceSomeRwLockWriteGuard;
-
-use super::gates::BaseProfile;
 
 fn get_current_gate_processor() -> ForceSomeRwLockWriteGuard<'static, BaseProfile> {
     let v = crate::gates::CURRENT_GATES.write().unwrap();
