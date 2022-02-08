@@ -225,3 +225,189 @@ pub(crate) fn get_function<'ctx>(
         Some(value) => Some(value),
     }
 }
+
+#[cfg(test)]
+mod qis_declaration_tests {
+    use super::*;
+    use inkwell::{context::Context, values::AnyValue};
+
+    #[test]
+    fn cnot_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = cnot_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__cnot__body(%Qubit*, %Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn cz_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = cz_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__cz__body(%Qubit*, %Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn h_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = h_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__h__body(%Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn s_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = s_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__s__body(%Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn s_adj_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = s_adj(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__s__adj(%Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn t_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = t_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__t__body(%Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn t_adj_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = t_adj(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__t__adj(%Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn x_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = x_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__x__body(%Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn y_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = y_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__y__body(%Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn z_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = z_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__z__body(%Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn rx_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = rx_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__rx__body(double, %Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn ry_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = ry_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__ry__body(double, %Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn rz_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = rz_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__rz__body(double, %Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn reset_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = reset_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__reset__body(%Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn m_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = m_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare %Result* @__quantum__qis__m__body(%Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+}
