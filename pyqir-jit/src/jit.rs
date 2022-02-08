@@ -39,6 +39,7 @@ fn run_module(module: &Module, entry_point: Option<&str>) -> Result<SemanticMode
     run_basic_passes_on(module);
     let entry_point = choose_entry_point(module_functions(module), entry_point)?;
 
+    // load the symbols for the current process (empty/null string)
     inkwell::support::load_library_permanently("");
 
     reset_max_qubit_id();
