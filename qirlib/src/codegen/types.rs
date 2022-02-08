@@ -47,14 +47,6 @@ pub(crate) fn result<'ctx>(
 }
 
 #[must_use]
-pub(crate) fn array<'ctx>(
-    context: &'ctx inkwell::context::Context,
-    module: &inkwell::module::Module<'ctx>,
-) -> StructType<'ctx> {
-    get_or_define_struct(context, module, "Array")
-}
-
-#[must_use]
 pub(crate) fn get_struct<'ctx>(
     module: &inkwell::module::Module<'ctx>,
     name: &str,
@@ -103,15 +95,6 @@ mod tests {
         let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Result", result(generator.context, &generator.module));
-    }
-
-    #[test]
-    fn array_can_be_declared() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module).unwrap();
-
-        verify_opaque_struct("Array", array(generator.context, &generator.module));
     }
 
     fn verify_opaque_struct(name: &str, struct_type: StructType) {
