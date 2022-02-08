@@ -5,7 +5,6 @@ use crate::{interop::SemanticModel, qir};
 use inkwell::attributes::AttributeLoc;
 use inkwell::values::{BasicValueEnum, PointerValue};
 use inkwell::AddressSpace;
-use qirlib::codegen::ext::{BasicValues, Qubits, Types};
 use qirlib::codegen::CodeGenerator;
 use qirlib::passes::run_basic_passes_on;
 use std::collections::HashMap;

@@ -6,32 +6,32 @@ use inkwell::types::IntType;
 use inkwell::types::StructType;
 
 #[must_use]
-pub fn int64(context: &inkwell::context::Context) -> IntType {
+pub(crate) fn int64(context: &inkwell::context::Context) -> IntType {
     context.i64_type()
 }
 
 #[must_use]
-pub fn int32(context: &inkwell::context::Context) -> IntType {
+pub(crate) fn int32(context: &inkwell::context::Context) -> IntType {
     context.i32_type()
 }
 
 #[must_use]
-pub fn int8(context: &inkwell::context::Context) -> IntType {
+pub(crate) fn int8(context: &inkwell::context::Context) -> IntType {
     context.i8_type()
 }
 
 #[must_use]
-pub fn double(context: &inkwell::context::Context) -> FloatType {
+pub(crate) fn double(context: &inkwell::context::Context) -> FloatType {
     context.f64_type()
 }
 
 #[must_use]
-pub fn bool(context: &inkwell::context::Context) -> IntType {
+pub(crate) fn bool(context: &inkwell::context::Context) -> IntType {
     context.bool_type()
 }
 
 #[must_use]
-pub fn qubit<'ctx>(
+pub(crate) fn qubit<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &inkwell::module::Module<'ctx>,
 ) -> StructType<'ctx> {
@@ -39,7 +39,7 @@ pub fn qubit<'ctx>(
 }
 
 #[must_use]
-pub fn result<'ctx>(
+pub(crate) fn result<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &inkwell::module::Module<'ctx>,
 ) -> StructType<'ctx> {
@@ -47,7 +47,7 @@ pub fn result<'ctx>(
 }
 
 #[must_use]
-pub fn array<'ctx>(
+pub(crate) fn array<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &inkwell::module::Module<'ctx>,
 ) -> StructType<'ctx> {
@@ -55,7 +55,7 @@ pub fn array<'ctx>(
 }
 
 #[must_use]
-pub fn get_struct<'ctx>(
+pub(crate) fn get_struct<'ctx>(
     module: &inkwell::module::Module<'ctx>,
     name: &str,
 ) -> Option<StructType<'ctx>> {
@@ -69,7 +69,7 @@ pub fn get_struct<'ctx>(
     }
 }
 
-pub fn get_or_define_struct<'ctx>(
+pub(crate) fn get_or_define_struct<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &inkwell::module::Module<'ctx>,
     name: &str,
