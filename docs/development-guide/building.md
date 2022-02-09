@@ -5,13 +5,13 @@
 ### Requirements
 
 - [Rust 1.56+](https://rustup.rs/)
-- [Python 3.6+](https://www.python.org)
+- [Python 3.7+](https://www.python.org)
 - [PowerShell 7+
   (Core)](https://github.com/powershell/powershell#get-powershell)
 - [LLVM/Clang 11.1.0](https://llvm.org/) - See [Installing
   LLVM](#installing-llvm)
-- [CMake 3.20+](https://github.com/Kitware/CMake/releases/tag/v3.20.5)
-- [Ninja 1.10.0+](https://ninja-build.org/)
+- [CMake 3.13.4+](https://github.com/Kitware/CMake/releases/tag/v3.20.5) if building LLVM
+- [Ninja 1.10.0+](https://ninja-build.org/) if building LLVM
 
 ### Optional
 
@@ -31,7 +31,7 @@ Install Rust from [rustup](https://rustup.rs/).
 
 ### Windows
 
-Install Python 3.6+ from one of the following and make sure it is added to the
+Install Python 3.7+ from one of the following and make sure it is added to the
 path.
 
 - [Windows store](https://docs.microsoft.com/en-us/windows/python/beginners#install-python)
@@ -48,7 +48,7 @@ Install Rust from [rustup](https://rustup.rs/).
 
 ### MacOS
 
-Install Python 3.6+ from [Python.org](https://www.python.org/downloads/macos/).
+Install Python 3.7+ from [Python.org](https://www.python.org/downloads/macos/).
 
 or brew:
 
@@ -94,15 +94,10 @@ the root `.cargo/config.toml`
 
 - Linux (Ubuntu)
 
-Using `apt-get` will install 3.16, but compiling the QIR runtime requires 3.20. To install the latest version on Ubuntu, install directly from the CMake releases from GitHub:
-
-```bash
-curl -SsL https://github.com/Kitware/CMake/releases/download/v3.20.5/cmake-3.20.5-linux-x86_64.sh -o cmakeinstall.sh
-echo "f582e02696ceee81818dc3378531804b2213ed41c2a8bc566253d16d894cefab cmakeinstall.sh" | sha256sum -c --strict -
-chmod +x cmakeinstall.sh
-./cmakeinstall.sh --prefix=/usr/local --exclude-subdir
-rm cmakeinstall.sh
-```
+  ```bash
+  apt-get update
+  apt-get install -y cmake
+  ```
 
 ## Development
 
@@ -176,7 +171,7 @@ Two targets are available for tox:
 
 The `build.(ps1|sh|cmd)`, `maturin`, and `tox` builds all generate Python wheels
 to the `target/wheels` folder. The default Python3 installation will be used
-targeting Python ABI 3.6.
+targeting Python ABI 3.7.
 
 The manylinux support uses a Docker image in the build scripts to run the builds
 in the CI environment.
