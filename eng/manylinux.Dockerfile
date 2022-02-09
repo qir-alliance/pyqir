@@ -5,8 +5,7 @@ FROM quay.io/pypa/manylinux2014_x86_64 as builder
 
 ENV PATH /root/.cargo/bin:$PATH
 
-# todo, lock down version
-RUN curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain 1.56.0 -y
 
 WORKDIR /tmp
 RUN curl -SsL https://github.com/PyO3/maturin/archive/refs/tags/v0.11.1.tar.gz -o v0.11.1.tar.gz && \
