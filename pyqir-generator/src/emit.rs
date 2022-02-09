@@ -2,12 +2,13 @@
 // Licensed under the MIT License.
 
 use crate::{interop::SemanticModel, qir};
-use inkwell::attributes::AttributeLoc;
-use inkwell::context::Context;
-use inkwell::values::{BasicValueEnum, PointerValue};
-use inkwell::AddressSpace;
-use qirlib::codegen::CodeGenerator;
-use qirlib::passes::run_basic_passes_on;
+use inkwell::{
+    attributes::AttributeLoc,
+    context::Context,
+    values::{BasicValueEnum, FunctionValue, PointerValue},
+    AddressSpace,
+};
+use qirlib::{codegen::CodeGenerator, passes::run_basic_passes_on};
 use std::collections::HashMap;
 
 /// # Errors
@@ -66,7 +67,7 @@ fn build_entry_function(
 
     let mut registers = write_registers(model);
 
-    write_instructions(model, generator, &qubits, &mut registers);
+    write_instructions(model, generator, &qubits, &mut registers, entrypoint);
 
     if !model.static_alloc {
         free_qubits(generator, &qubits);
@@ -138,8 +139,9 @@ fn write_instructions<'ctx>(
     generator: &CodeGenerator<'ctx>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    entry_point: FunctionValue,
 ) {
     for inst in &model.instructions {
-        qir::instructions::emit(generator, inst, qubits, registers);
+        qir::instructions::emit(generator, inst, qubits, registers, entry_point);
     }
 }

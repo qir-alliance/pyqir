@@ -53,6 +53,7 @@ pub(crate) fn emit<'ctx>(
     inst: &Instruction,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    entry_point: FunctionValue,
 ) {
     let find_qubit = |name| get_qubit(name, qubits);
     match inst {
@@ -126,7 +127,7 @@ pub(crate) fn emit<'ctx>(
         Instruction::Z(inst) => {
             generator.emit_void_call(generator.qis_z_body(), &[find_qubit(&inst.qubit).into()]);
         }
-        Instruction::If(if_inst) => emit_if(generator, registers, qubits, if_inst),
+        Instruction::If(if_inst) => emit_if(generator, registers, qubits, entry_point, if_inst),
     }
 }
 
@@ -134,29 +135,29 @@ fn emit_if<'ctx>(
     generator: &CodeGenerator<'ctx>,
     registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
+    entry_point: FunctionValue,
     if_inst: &If,
 ) {
-    // TODO: Refactor this with qir::get_entry_function.
-    let entry_name = "QuantumApplication__Run__body";
-    let entry = generator.module.get_function(entry_name).unwrap();
-
     let result = registers
         .get(&if_inst.condition)
         .and_then(|v| *v)
         .unwrap_or_else(|| panic!("Result {} not found.", &if_inst.condition));
     let condition = result::equal(generator, result, result::get_one(generator));
 
-    let then_block = generator.context.append_basic_block(entry, "then");
-    let else_block = generator.context.append_basic_block(entry, "else");
+    let then_block = generator.context.append_basic_block(entry_point, "then");
+    let else_block = generator.context.append_basic_block(entry_point, "else");
     generator
         .builder
         .build_conditional_branch(condition, then_block, else_block);
 
-    let continue_block = generator.context.append_basic_block(entry, "continue");
+    let continue_block = generator
+        .context
+        .append_basic_block(entry_point, "continue");
+
     let mut emit_block = |block, insts| {
         generator.builder.position_at_end(block);
         for inst in insts {
-            emit(generator, inst, qubits, registers);
+            emit(generator, inst, qubits, registers, entry_point);
         }
 
         generator.builder.build_unconditional_branch(continue_block);
