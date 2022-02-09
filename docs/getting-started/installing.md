@@ -5,7 +5,7 @@ We are working on making them available via other common distribution channels.
 
 ## Prerequisites
 
-- [Python 3.6+](https://www.python.org)
+- [Python 3.7+](https://www.python.org)
 
 ## Installing PyQIR from GitHub Releases
 
