@@ -107,11 +107,6 @@ pub enum Instruction {
     Cx(Controlled),
     Cz(Controlled),
     H(Single),
-    M(Measured),
-    Reset(Single),
-    Rx(Rotated),
-    Ry(Rotated),
-    Rz(Rotated),
     S(Single),
     SAdj(Single),
     T(Single),
@@ -119,7 +114,11 @@ pub enum Instruction {
     X(Single),
     Y(Single),
     Z(Single),
-    DumpMachine,
+    Rx(Rotated),
+    Ry(Rotated),
+    Rz(Rotated),
+    Reset(Single),
+    M(Measured),
     If(If),
 }
 
@@ -129,6 +128,7 @@ pub struct SemanticModel {
     pub registers: Vec<ClassicalRegister>,
     pub qubits: Vec<QuantumRegister>,
     pub instructions: Vec<Instruction>,
+    pub static_alloc: bool,
 }
 
 impl SemanticModel {
@@ -139,6 +139,7 @@ impl SemanticModel {
             registers: vec![],
             qubits: vec![],
             instructions: vec![],
+            static_alloc: false,
         }
     }
 

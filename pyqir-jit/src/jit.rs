@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{interop::SemanticModel, runtime::Simulator};
+use crate::{interop::SemanticModel, intrinsics::reset_max_qubit_id, runtime::Simulator};
 use inkwell::{
     attributes::AttributeLoc,
     context::Context,
@@ -11,7 +11,6 @@ use inkwell::{
     values::FunctionValue,
     OptimizationLevel,
 };
-use microsoft_quantum_qir_runtime_sys::runtime::BasicRuntimeDriver;
 use qirlib::{module, passes::run_basic_passes_on};
 use std::path::Path;
 
@@ -40,11 +39,10 @@ fn run_module(module: &Module, entry_point: Option<&str>) -> Result<SemanticMode
     run_basic_passes_on(module);
     let entry_point = choose_entry_point(module_functions(module), entry_point)?;
 
-    unsafe {
-        BasicRuntimeDriver::initialize_qir_context(true);
-        microsoft_quantum_qir_runtime_sys::foundation::QSharpFoundation::new();
-        inkwell::support::load_library_permanently("");
-    }
+    // load the symbols for the current process (empty/null string)
+    inkwell::support::load_library_permanently("");
+
+    reset_max_qubit_id();
 
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::None)

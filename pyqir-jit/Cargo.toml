@@ -1,7 +1,7 @@
 [package]
 authors = ["Microsoft"]
 name = "pyqir-jit"
-version = "0.1.1-alpha"
+version = "0.2.0-alpha"
 edition = "2018"
 license = "MIT"
 description = "Python based QIR JIT library."
@@ -10,12 +10,12 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-microsoft-quantum-qir-runtime-sys = { git = "https://github.com/microsoft/qsharp-runtime", rev = "f4f28123601d8372a5fe120bdab1f2be25b51522", default-features = false, features = ["runtime", "foundation", "llvm-libloading"] }
 qirlib = { path = "../qirlib" }
 inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["llvm11-0", "target-x86"] }
 lazy_static = "1.4.0"
 mut_static = "5.0.0"
 log = "0.4.14"
+bitvec = "1.0.0"
 
 [dependencies.pyo3]
 version = "0.15.1"

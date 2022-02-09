@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Cache parser values for better hashing in Python [#41](https://github.com/qir-alliance/pyqir/pull/41)
+- Moving to minimal API and eliminating bitcode template [#46](https://github.com/qir-alliance/pyqir/pull/46)
 
 ## [0.1.1a1] - 2022-01-31
 

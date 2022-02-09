@@ -2,10 +2,12 @@
 // Licensed under the MIT License.
 
 use crate::{interop::SemanticModel, qir};
+use inkwell::attributes::AttributeLoc;
 use inkwell::context::Context;
-use inkwell::values::BasicValueEnum;
+use inkwell::values::{BasicValueEnum, PointerValue};
+use inkwell::AddressSpace;
+use qirlib::codegen::CodeGenerator;
 use qirlib::passes::run_basic_passes_on;
-use qirlib::{codegen::CodeGenerator, module};
 use std::collections::HashMap;
 
 /// # Errors
@@ -15,7 +17,7 @@ pub(crate) fn ir(model: &SemanticModel) -> Result<String, String> {
     let ctx = Context::create();
     let generator = populate_context(&ctx, model)?;
     run_basic_passes_on(&generator.module);
-    Ok(generator.ir())
+    Ok(generator.get_ir())
 }
 
 /// # Errors
@@ -25,7 +27,7 @@ pub(crate) fn bitcode(model: &SemanticModel) -> Result<Vec<u8>, String> {
     let ctx = Context::create();
     let generator = populate_context(&ctx, model)?;
     run_basic_passes_on(&generator.module);
-    Ok(generator.bitcode().as_slice().to_vec())
+    Ok(generator.get_bitcode().as_slice().to_vec())
 }
 
 /// # Errors
@@ -37,7 +39,7 @@ pub fn populate_context<'a>(
     ctx: &'a Context,
     model: &'a SemanticModel,
 ) -> Result<CodeGenerator<'a>, String> {
-    let module = module::load_template(&model.name, ctx)?;
+    let module = ctx.create_module(&model.name);
     let generator = CodeGenerator::new(ctx, module)?;
     build_entry_function(&generator, model)?;
     Ok(generator)
@@ -47,21 +49,30 @@ fn build_entry_function(
     generator: &CodeGenerator<'_>,
     model: &SemanticModel,
 ) -> Result<(), String> {
-    let entrypoint = qir::get_entry_function(&generator.module);
+    let entrypoint = qir::create_entrypoint_function(generator.context, &generator.module)?;
+
+    if model.static_alloc {
+        let num_qubits = format!("{}", model.qubits.len());
+        let required_qubits = generator
+            .context
+            .create_string_attribute("requiredQubits", &num_qubits);
+        entrypoint.add_attribute(AttributeLoc::Function, required_qubits);
+    }
 
     let entry = generator.context.append_basic_block(entrypoint, "entry");
     generator.builder.position_at_end(entry);
 
     let qubits = write_qubits(model, generator);
 
-    let registers = write_registers(model, generator);
+    let mut registers = write_registers(model);
 
-    write_instructions(model, generator, &qubits, &registers);
+    write_instructions(model, generator, &qubits, &mut registers);
 
-    free_qubits(generator, &qubits);
+    if !model.static_alloc {
+        free_qubits(generator, &qubits);
+    }
 
-    let output = registers.get("results").unwrap();
-    generator.builder.build_return(Some(&output.0));
+    generator.builder.build_return(None);
 
     generator.module.verify().map_err(|e| e.to_string())
 }
@@ -71,7 +82,7 @@ fn free_qubits<'ctx>(
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
 ) {
     for (_, value) in qubits.iter() {
-        qir::qubits::emit_release(generator, value);
+        generator.emit_release_qubit(value);
     }
 }
 
@@ -79,43 +90,45 @@ fn write_qubits<'ctx>(
     model: &SemanticModel,
     generator: &CodeGenerator<'ctx>,
 ) -> HashMap<String, BasicValueEnum<'ctx>> {
-    let qubits = model
-        .qubits
-        .iter()
-        .map(|reg| {
-            let indexed_name = format!("{}{}", &reg.name[..], reg.index);
-            let value = qir::qubits::emit_allocate(generator, indexed_name.as_str());
-            (indexed_name, value)
-        })
-        .collect();
+    if model.static_alloc {
+        let mut qubits: HashMap<String, BasicValueEnum<'ctx>> = HashMap::new();
+        for (id, qubit) in model.qubits.iter().enumerate() {
+            let indexed_name = format!("{}{}", &qubit.name[..], qubit.index);
+            let int_value = generator.usize_to_i64(id).into_int_value();
+            let qubit_ptr_type = generator.qubit_type().ptr_type(AddressSpace::Generic);
 
-    qubits
+            let intptr =
+                generator
+                    .builder
+                    .build_int_to_ptr(int_value, qubit_ptr_type, &indexed_name);
+            qubits.insert(indexed_name, intptr.into());
+        }
+        qubits
+    } else {
+        let qubits = model
+            .qubits
+            .iter()
+            .map(|reg| {
+                let indexed_name = format!("{}{}", &reg.name[..], reg.index);
+                let value = generator.emit_allocate_qubit(indexed_name.as_str());
+                (indexed_name, value)
+            })
+            .collect();
+
+        qubits
+    }
 }
 
-fn write_registers<'ctx>(
-    model: &SemanticModel,
-    generator: &CodeGenerator<'ctx>,
-) -> HashMap<String, (BasicValueEnum<'ctx>, Option<u64>)> {
+fn write_registers<'ctx>(model: &SemanticModel) -> HashMap<String, Option<PointerValue<'ctx>>> {
     let mut registers = HashMap::new();
     let number_of_registers = model.registers.len() as u64;
     if number_of_registers > 0 {
-        let results =
-            qir::array1d::emit_array_allocate1d(generator, 8, number_of_registers, "results");
-        registers.insert(String::from("results"), (results, None));
-        let mut sub_results = vec![];
-        for reg in &model.registers {
-            let (sub_result, entries) =
-                qir::array1d::emit_array_1d(generator, reg.name.as_str(), reg.size);
-            sub_results.push(sub_result);
-            registers.insert(reg.name.clone(), (sub_result, None));
-            for (index, _) in entries {
-                registers.insert(format!("{}{}", reg.name, index), (sub_result, Some(index)));
+        for register in &model.registers {
+            for index in 0..register.size {
+                let name = format!("{}{}", register.name, index);
+                registers.insert(name, None);
             }
         }
-        qir::array1d::set_elements(generator, &results, &sub_results, "results");
-    } else {
-        let results = qir::array1d::emit_empty_result_array_allocate1d(generator, "results");
-        registers.insert(String::from("results"), (results, None));
     }
     registers
 }
@@ -124,7 +137,7 @@ fn write_instructions<'ctx>(
     model: &SemanticModel,
     generator: &CodeGenerator<'ctx>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    registers: &HashMap<String, (BasicValueEnum<'ctx>, Option<u64>)>,
+    registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
 ) {
     for inst in &model.instructions {
         qir::instructions::emit(generator, inst, qubits, registers);

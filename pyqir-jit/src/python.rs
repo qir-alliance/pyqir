@@ -99,9 +99,6 @@ impl PyNonadaptiveJit {
                     Instruction::X(ins) => single(pyobj, "x", ins.qubit)?,
                     Instruction::Y(ins) => single(pyobj, "y", ins.qubit)?,
                     Instruction::Z(ins) => single(pyobj, "z", ins.qubit)?,
-                    Instruction::DumpMachine => {
-                        todo!("Not Implemented")
-                    }
                 }
             }
             let dict = PyDict::new(py);

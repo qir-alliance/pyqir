@@ -3,21 +3,23 @@
 
 use inkwell::{
     builder::Builder,
-    values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue},
+    values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, InstructionValue},
 };
 
+#[must_use]
 pub(crate) fn emit_void_call<'ctx>(
     builder: &Builder<'ctx>,
     function: FunctionValue<'ctx>,
     args: &[BasicMetadataValueEnum<'ctx>],
-) {
+) -> InstructionValue<'ctx> {
     builder
         .build_call(function, args, "")
         .try_as_basic_value()
         .right()
-        .unwrap();
+        .expect("Failed to create void call for target function.")
 }
 
+#[must_use]
 pub(crate) fn emit_call_with_return<'ctx>(
     builder: &Builder<'ctx>,
     function: FunctionValue<'ctx>,
@@ -28,5 +30,5 @@ pub(crate) fn emit_call_with_return<'ctx>(
         .build_call(function, args, name)
         .try_as_basic_value()
         .left()
-        .unwrap()
+        .expect("Failed to create call for target function.")
 }

@@ -71,7 +71,7 @@ Task parser -Depends init {
 Task rebuild -Depends generator, jit, parser
 Task wheelhouse `
     -Precondition { -not (Test-Path $wheelhouse -ErrorAction SilentlyContinue) } `
-    { Invoke-Task rebuild }
+{ Invoke-Task rebuild }
 
 Task docs -Depends wheelhouse {
     # - Install artifacts into new venv along with sphinx.
@@ -365,11 +365,11 @@ task run-examples {
         & $python "bernstein_vazirani.py" | Tee-Object -Variable bz_output
         $bz_first_lines = @($bz_output | Select-Object -first 5)
         $bz_expected = @(
-            "# NonadaptiveJit output returning the uninitialized output",
-            "[[Zero, Zero, Zero, Zero, Zero, Zero, Zero, Zero]]",
             "# output from GateLogger",
-            "qubits[9]",
-            "out[9]"
+            "qubits[6]",
+            "out[6]",
+            "x qubit[5]",
+            "h qubit[0]"
         )
         Assert (@(Compare-Object $bz_first_lines $bz_expected).Length -eq 0) "Expected $bz_expected found $bz_first_lines"
     }

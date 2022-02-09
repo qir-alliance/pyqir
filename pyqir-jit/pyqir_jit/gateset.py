@@ -52,9 +52,6 @@ class GateSet(object):
     def z(self, qubit: str):
         pass
 
-    def dump_machine(self):
-        pass
-
     def finish(self, metadata: dict):
         """
         Called at the end of JIT execution supplying run metadata.

@@ -43,6 +43,7 @@ impl SimpleModule {
             registers,
             qubits,
             instructions: Vec::new(),
+            static_alloc: true,
         };
 
         let builder = Py::new(py, Builder::new())?;

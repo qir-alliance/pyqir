@@ -6,13 +6,6 @@ use std::{ffi::OsStr, path::Path};
 
 /// # Errors
 ///
-/// - Module fails to load.
-pub fn load_template<'a>(name: &str, context: &'a Context) -> Result<Module<'a>, String> {
-    load_memory(include_bytes!("module.bc"), name, context)
-}
-
-/// # Errors
-///
 /// - Path has an unsupported extension.
 /// - Module fails to load.
 pub fn load_file(path: impl AsRef<Path>, context: &Context) -> Result<Module, String> {
