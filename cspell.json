@@ -4,6 +4,37 @@
 // for more documentation about this config file.
 {
     "ignoreWords": [
+        // The name of the package itself.
+        "pyqir",
+        "qirlib",
+        
+        // General quantum terminology.
+        "qubit",
+        "qubits",
+        
+        // General classical terminology.
+        "codegen",
+        "toolchain",
+        
+        // Python and Rust specific terminology.
+        "maturin",
+        "venv",
+        "virtualenv",
+        "pytest",
+        "cdylib",
+        "conda",
+        "pypa",
+        "manylinux",
+        "rustfmt",
+        "clippy",       
+        
+        // LLVM terminology and keywords.
+        "entrypoint",
+        
+        // CI and build pipeline terminology.
+        "ccache",
+        "sccache",
+        "pwsh"
     ],
     // By definition, everything in flagWords is considered to be spelled
     // wrong. Thus we disable spell checking for the list of misspelled words...
