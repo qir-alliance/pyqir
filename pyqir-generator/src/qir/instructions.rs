@@ -47,7 +47,6 @@ fn controlled<'ctx>(
     generator.emit_void_call(intrinsic, &[control.into(), qubit.into()]);
 }
 
-#[allow(clippy::too_many_lines)]
 pub(crate) fn emit<'ctx>(
     generator: &CodeGenerator<'ctx>,
     inst: &Instruction,
