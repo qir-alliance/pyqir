@@ -87,13 +87,3 @@ measure qubits[8] -> out[8]
 ## Building and Testing
 
 See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html)
-
-## Current Limitations
-
-- QIR entry point for JIT must be named `QuantumApplication__Run`
-- Entry point arguments are not yet supported
-- QIR must contain the defined runtime in
-  [module.ll](https://github.com/qir-alliance/pyqir/tree/main/qirlib/src/module.ll);
-  it is automatically included when using the
-  [pyqir_generator](https://github.com/qir-alliance/pyqir/tree/main/pyqir-generator)
-  package to generate QIR
