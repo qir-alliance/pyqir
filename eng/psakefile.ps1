@@ -35,7 +35,7 @@ Include utils.ps1
 
 Task default -Depends checks, parser, generator, jit, run-examples, run-examples-in-containers
 
-Task checks -Depends cargo-fmt, cargo-clippy
+Task checks -Depends cargo-fmt, cargo-clippy, pyqir-tests
 
 Task cargo-fmt {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please run 'cargo fmt --all' before pushing" {
@@ -66,6 +66,12 @@ Task jit -Depends init {
 
 Task parser -Depends init {
     Build-PyQIR($pyqir.parser.name)
+}
+
+Task pyqir-tests -Depends init {
+    Invoke-LoggedCommand -workingDirectory (Join-Path $repo.root pyqir-tests) {
+        python -m tox -e test
+    }
 }
 
 Task rebuild -Depends generator, jit, parser
@@ -304,11 +310,7 @@ function Build-PyQIR([string]$project) {
 
         exec -workingDirectory (Join-Path $srcPath $project) {
             Invoke-LoggedCommand {
-                & $python -m pip install --user -U pip
-            }
-
-            Invoke-LoggedCommand {
-                & $python -m pip install --user maturin tox
+                & $python -m pip install tox
             }
 
             Invoke-LoggedCommand {

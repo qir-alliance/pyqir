@@ -93,6 +93,7 @@ class IfTestCase(unittest.TestCase):
         qis = BasicQisBuilder(module.builder)
         qis.if_result(module.results[0])
 
+        # TODO: The generator should treat unmeasured results as zero.
         with self.assertRaises(BaseException):
             module.ir()
 
