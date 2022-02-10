@@ -89,13 +89,17 @@ class IfTestCase(unittest.TestCase):
         module = SimpleModule(
             "test_if_not_measured", num_qubits=1, num_results=1
         )
-
         qis = BasicQisBuilder(module.builder)
-        qis.if_result(module.results[0])
 
-        # TODO: The generator should treat unmeasured results as zero.
-        with self.assertRaises(BaseException):
-            module.ir()
+        qis.if_result(
+            module.results[0],
+            one=lambda: qis.x(module.qubits[0]),
+            zero=lambda: qis.h(module.qubits[0])
+        )
+
+        logger = GateLogger()
+        _eval(module, logger)
+        self.assertEqual(logger.instructions, ["h qubit[0]"])
 
 
 def _eval(module: SimpleModule, gates: GateSet) -> None:

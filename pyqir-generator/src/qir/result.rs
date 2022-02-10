@@ -1,6 +1,12 @@
 use inkwell::values::{BasicMetadataValueEnum, IntValue, PointerValue};
 use qirlib::codegen::CodeGenerator;
 
+pub(crate) fn get_zero<'a>(generator: &CodeGenerator<'a>) -> PointerValue<'a> {
+    generator
+        .emit_call_with_return(generator.rt_result_get_zero(), &[], "zero")
+        .into_pointer_value()
+}
+
 pub(crate) fn get_one<'a>(generator: &CodeGenerator<'a>) -> PointerValue<'a> {
     generator
         .emit_call_with_return(generator.rt_result_get_one(), &[], "one")
