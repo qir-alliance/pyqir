@@ -70,7 +70,8 @@ Task parser -Depends init {
 
 Task pyqir-tests -Depends init {
     Invoke-LoggedCommand -workingDirectory (Join-Path $repo.root pyqir-tests) {
-        python -m tox -e test
+        & $python -m pip install tox
+        & $python -m tox -e test
     }
 }
 
