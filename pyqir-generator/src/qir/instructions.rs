@@ -139,8 +139,8 @@ fn emit_if<'ctx>(
 ) {
     let result = registers
         .get(&if_inst.condition)
-        .and_then(|v| *v)
-        .unwrap_or_else(|| panic!("Result {} not found.", &if_inst.condition));
+        .unwrap_or_else(|| panic!("Result {} not found.", &if_inst.condition))
+        .unwrap_or_else(|| panic!("Result {} not measured yet.", &if_inst.condition));
     let condition = result::equal(generator, result, result::get_one(generator));
 
     let then_block = generator.context.append_basic_block(entry_point, "then");
