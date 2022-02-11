@@ -1,7 +1,7 @@
 # Copyright(c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from .pyqir_parser import *
+from pyqir.parser._native import *
 from typing import List, Optional, Tuple
 
 

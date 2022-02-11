@@ -20,7 +20,7 @@ use pyo3::prelude::*;
 use std::convert::TryFrom;
 
 #[pymodule]
-fn pyqir_parser(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+fn _native(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyQirModule>()?;
     m.add_class::<PyQirFunction>()?;
     m.add_class::<PyQirParameter>()?;
