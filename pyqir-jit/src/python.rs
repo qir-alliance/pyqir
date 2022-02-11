@@ -5,7 +5,7 @@ use crate::{interop::Instruction, jit::run_module_file};
 use pyo3::{exceptions::PyOSError, prelude::*, types::PyDict};
 
 #[pymodule]
-fn pyqir_jit(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+fn _native(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyNonadaptiveJit>()?;
 
     Ok(())

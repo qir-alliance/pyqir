@@ -2,8 +2,8 @@
 # Licensed under the MIT License.
 
 from typing import Optional
-from pyqir_jit import GateSet
-from .pyqir_jit import PyNonadaptiveJit
+from pyqir.jit.gateset import GateSet
+from pyqir.jit._native import PyNonadaptiveJit as PyNonadaptiveJit
 
 
 class NonadaptiveJit(object):

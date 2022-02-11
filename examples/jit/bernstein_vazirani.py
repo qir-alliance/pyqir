@@ -3,7 +3,8 @@
 # Copyright(c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir_jit import NonadaptiveJit, GateLogger
+from pyqir.jit.nonadaptivejit import NonadaptiveJit
+from pyqir.jit.gatelogger import GateLogger
 
 from pathlib import Path
 import os

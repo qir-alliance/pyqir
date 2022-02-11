@@ -32,6 +32,7 @@ name = "pyqir_jit"
 crate-type = ["cdylib"]
 
 [package.metadata.maturin]
+name = "pyqir.jit._native"
 classifier=[
     "License :: OSI Approved :: MIT License",
     "Development Status :: 3 - Alpha",
