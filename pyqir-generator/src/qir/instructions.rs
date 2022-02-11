@@ -137,6 +137,8 @@ fn emit_if<'ctx>(
     entry_point: FunctionValue,
     if_inst: &If,
 ) {
+    // panic if we reference a register that hasn't been declared
+    // default the register value to zero if if hasn't been measured/declared
     let result = registers
         .get(&if_inst.condition)
         .unwrap_or_else(|| panic!("Result {} not found.", &if_inst.condition))

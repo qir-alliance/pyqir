@@ -30,7 +30,7 @@ pub(crate) fn reset_max_qubit_id() {
 /// large.
 pub fn set_measure_stream(bits: &BitVec) {
     let mut res = RESULTS.lock().unwrap();
-    res.append(&mut bits.clone());
+    *res = bits.clone();
 }
 
 fn get_current_gate_processor() -> ForceSomeRwLockWriteGuard<'static, BaseProfile> {

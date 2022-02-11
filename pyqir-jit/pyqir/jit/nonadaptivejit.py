@@ -16,7 +16,11 @@ class NonadaptiveJit(object):
     def __init__(self):
         self.jit = PyNonadaptiveJit()
 
-    def eval(self, file_path: str, gateset: GateSet, entry_point: Optional[str] = None):
+    def eval(self,
+             file_path: str,
+             gateset: GateSet,
+             entry_point: Optional[str] = None,
+             result_stream: Optional[list] = None):
         """
         JIT compiles the circuit delegating quantum operations to the supplied
         GateSet
@@ -25,4 +29,4 @@ class NonadaptiveJit(object):
         :param gateset: python GateSet based object defining the operations
         :param entry_point: entry point name; required if QIR contains multiple entry points
         """
-        self.jit.eval(file_path, gateset, entry_point)
+        self.jit.eval(file_path, gateset, entry_point, result_stream)

@@ -1,3 +1,4 @@
+from typing import Optional
 from pyqir.generator.module import SimpleModule
 from pyqir.generator.qis import BasicQisBuilder
 from pyqir.jit.nonadaptivejit import NonadaptiveJit
@@ -8,17 +9,17 @@ import unittest
 
 
 class IfTestCase(unittest.TestCase):
-    def test_if(self) -> None:
+    def test_one_block_executes_on_one(self) -> None:
         module = SimpleModule("test_if", num_qubits=1, num_results=1)
         qis = BasicQisBuilder(module.builder)
         qis.m(module.qubits[0], module.results[0])
         qis.if_result(module.results[0], lambda: qis.x(module.qubits[0]))
 
         logger = GateLogger()
-        _eval(module, logger)
-        self.assertEqual(logger.instructions, [])
+        _eval(module, logger, [True])
+        self.assertEqual(logger.instructions, ["x qubit[0]"])
 
-    def test_if_not(self) -> None:
+    def test_zero_block_executes_on_zero(self) -> None:
         module = SimpleModule("test_if_not", num_qubits=1, num_results=1)
         qis = BasicQisBuilder(module.builder)
         qis.m(module.qubits[0], module.results[0])
@@ -28,7 +29,7 @@ class IfTestCase(unittest.TestCase):
         _eval(module, logger)
         self.assertEqual(logger.instructions, ["x qubit[0]"])
 
-    def test_if_continue(self) -> None:
+    def test_execution_continues_after_hit_conditional_one(self) -> None:
         module = SimpleModule("test_if", num_qubits=1, num_results=1)
         qis = BasicQisBuilder(module.builder)
         qis.m(module.qubits[0], module.results[0])
@@ -36,10 +37,21 @@ class IfTestCase(unittest.TestCase):
         qis.h(module.qubits[0])
 
         logger = GateLogger()
-        _eval(module, logger)
+        _eval(module, logger, [True])
+        self.assertEqual(logger.instructions, ["x qubit[0]", "h qubit[0]"])
+
+    def test_execution_continues_after_missed_conditional_one(self) -> None:
+        module = SimpleModule("test_if", num_qubits=1, num_results=1)
+        qis = BasicQisBuilder(module.builder)
+        qis.m(module.qubits[0], module.results[0])
+        qis.if_result(module.results[0], lambda: qis.x(module.qubits[0]))
+        qis.h(module.qubits[0])
+
+        logger = GateLogger()
+        _eval(module, logger, [False])
         self.assertEqual(logger.instructions, ["h qubit[0]"])
 
-    def test_if_not_continue(self) -> None:
+    def test_execution_continues_after_hit_conditional_zero(self) -> None:
         module = SimpleModule("test_if_not", num_qubits=1, num_results=1)
         qis = BasicQisBuilder(module.builder)
         qis.m(module.qubits[0], module.results[0])
@@ -47,8 +59,33 @@ class IfTestCase(unittest.TestCase):
         qis.h(module.qubits[0])
 
         logger = GateLogger()
-        _eval(module, logger)
+        _eval(module, logger, [False])
         self.assertEqual(logger.instructions, ["x qubit[0]", "h qubit[0]"])
+
+    def test_execution_continues_after_missed_conditional_zero(self) -> None:
+        module = SimpleModule("test_if_not", num_qubits=1, num_results=1)
+        qis = BasicQisBuilder(module.builder)
+        qis.m(module.qubits[0], module.results[0])
+        qis.if_result(module.results[0], zero=lambda: qis.x(module.qubits[0]))
+        qis.h(module.qubits[0])
+
+        logger = GateLogger()
+        _eval(module, logger, [True])
+        self.assertEqual(logger.instructions, ["h qubit[0]"])
+
+    def test_execution_continues_after_conditional_if_else(self) -> None:
+        module = SimpleModule("test_if_not", num_qubits=1, num_results=1)
+        qis = BasicQisBuilder(module.builder)
+        qis.m(module.qubits[0], module.results[0])
+        qis.if_result(module.results[0],
+                      lambda: qis.x(module.qubits[0]),
+                      lambda: qis.y(module.qubits[0])
+                      )
+        qis.h(module.qubits[0])
+
+        logger = GateLogger()
+        _eval(module, logger)
+        self.assertEqual(logger.instructions, ["y qubit[0]", "h qubit[0]"])
 
     def test_nested_if(self) -> None:
         module = SimpleModule("test_if", num_qubits=1, num_results=2)
@@ -60,13 +97,13 @@ class IfTestCase(unittest.TestCase):
             module.results[0],
             lambda: qis.if_result(
                 module.results[1],
-                zero=lambda: qis.x(module.qubits[0])
+                lambda: qis.x(module.qubits[0])
             )
         )
 
         logger = GateLogger()
-        _eval(module, logger)
-        self.assertEqual(logger.instructions, [])
+        _eval(module, logger, [True, True])
+        self.assertEqual(logger.instructions, ["x qubit[0]"])
 
     def test_nested_if_not(self) -> None:
         module = SimpleModule("test_if", num_qubits=1, num_results=2)
@@ -83,10 +120,10 @@ class IfTestCase(unittest.TestCase):
         )
 
         logger = GateLogger()
-        _eval(module, logger)
+        _eval(module, logger, [False, False])
         self.assertEqual(logger.instructions, ["x qubit[0]"])
 
-    def test_if_not_measured(self) -> None:
+    def test_results_default_to_zero_if_not_read(self) -> None:
         module = SimpleModule(
             "test_if_not_measured", num_qubits=1, num_results=1
         )
@@ -103,11 +140,13 @@ class IfTestCase(unittest.TestCase):
         self.assertEqual(logger.instructions, ["h qubit[0]"])
 
 
-def _eval(module: SimpleModule, gates: GateSet) -> None:
+def _eval(module: SimpleModule,
+          gates: GateSet,
+          result_stream: Optional[list] = None) -> None:
     with tempfile.NamedTemporaryFile(suffix=".ll") as f:
         f.write(module.ir().encode("utf-8"))
         f.flush()
-        NonadaptiveJit().eval(f.name, gates)
+        NonadaptiveJit().eval(f.name, gates, None, result_stream)
 
 
 if __name__ == "__main__":

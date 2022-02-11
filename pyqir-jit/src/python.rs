@@ -2,7 +2,12 @@
 // Licensed under the MIT License.
 
 use crate::{interop::Instruction, jit::run_module_file};
-use pyo3::{exceptions::PyOSError, prelude::*, types::PyDict};
+use bitvec::prelude::BitVec;
+use pyo3::{
+    exceptions::PyOSError,
+    prelude::*,
+    types::{PyDict, PyList},
+};
 
 #[pymodule]
 fn _native(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -22,7 +27,13 @@ impl PyNonadaptiveJit {
     }
 
     #[allow(clippy::unused_self)]
-    fn eval(&self, file: &str, pyobj: &PyAny, entry_point: Option<&str>) -> PyResult<()> {
+    fn eval(
+        &self,
+        file: &str,
+        pyobj: &PyAny,
+        entry_point: Option<&str>,
+        result_stream: Option<&PyList>,
+    ) -> PyResult<()> {
         fn controlled(pyobj: &PyAny, gate: &str, control: String, target: String) -> PyResult<()> {
             let has_gate = pyobj.hasattr(gate)?;
             if has_gate {
@@ -73,7 +84,21 @@ impl PyNonadaptiveJit {
             Ok(())
         }
 
-        let gen_model = run_module_file(file, entry_point).map_err(PyOSError::new_err)?;
+        let result_vec = if let Some(results) = result_stream {
+            let mut bitvec: BitVec = BitVec::new();
+            for result in results.iter() {
+                let value = result
+                    .extract::<bool>()
+                    .expect("Could not read bool value from result stream");
+                bitvec.push(value);
+            }
+
+            Some(bitvec)
+        } else {
+            None
+        };
+        let gen_model =
+            run_module_file(file, entry_point, result_vec).map_err(PyOSError::new_err)?;
 
         Python::with_gil(|py| -> PyResult<()> {
             for instruction in gen_model.instructions {
