@@ -33,9 +33,9 @@ properties {
 Include settings.ps1
 Include utils.ps1
 
-Task default -Depends checks, parser, generator, jit, run-examples, run-examples-in-containers
+Task default -Depends checks, parser, generator, jit, pyqir-tests, run-examples, run-examples-in-containers
 
-Task checks -Depends cargo-fmt, cargo-clippy, pyqir-tests
+Task checks -Depends cargo-fmt, cargo-clippy
 
 Task cargo-fmt {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please run 'cargo fmt --all' before pushing" {
