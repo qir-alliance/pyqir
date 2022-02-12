@@ -114,12 +114,8 @@ impl PyNonadaptiveJit {
             let mut current_register = 0;
             for instruction in gen_model.instructions {
                 match instruction {
-                    Instruction::Cx(ins) => {
-                        controlled(pyobj, "cx", ins.control, ins.target)?;
-                    }
-                    Instruction::Cz(ins) => {
-                        controlled(pyobj, "cz", ins.control, ins.target)?;
-                    }
+                    Instruction::Cx(ins) => controlled(pyobj, "cx", ins.control, ins.target)?,
+                    Instruction::Cz(ins) => controlled(pyobj, "cz", ins.control, ins.target)?,
                     Instruction::H(ins) => single(pyobj, "h", ins.qubit)?,
                     Instruction::M(ins) => {
                         measured(pyobj, "m", ins.qubit, current_register.to_string())?;
