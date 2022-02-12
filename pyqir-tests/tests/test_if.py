@@ -138,6 +138,50 @@ class IfTestCase(unittest.TestCase):
                          "x qubit[0]"
                          ])
 
+    def test_nested_if_then_else(self) -> None:
+        module = SimpleModule("test_if_then_else", num_qubits=1, num_results=2)
+        qis = BasicQisBuilder(module.builder)
+        qis.m(module.qubits[0], module.results[0])
+        qis.m(module.qubits[0], module.results[1])
+
+        qis.if_result(
+            module.results[0],
+            one=lambda: qis.if_result(
+                module.results[1],
+                zero=lambda: qis.x(module.qubits[0])
+            )
+        )
+
+        logger = GateLogger()
+        _eval(module, logger, [True, False])
+        self.assertEqual(logger.instructions, [
+                         "m qubit[0] => out[0]",
+                         "m qubit[0] => out[1]",
+                         "x qubit[0]"
+                         ])
+
+    def test_nested_else_then_if(self) -> None:
+        module = SimpleModule("test_else_then_if", num_qubits=1, num_results=2)
+        qis = BasicQisBuilder(module.builder)
+        qis.m(module.qubits[0], module.results[0])
+        qis.m(module.qubits[0], module.results[1])
+
+        qis.if_result(
+            module.results[0],
+            zero=lambda: qis.if_result(
+                module.results[1],
+                one=lambda: qis.x(module.qubits[0])
+            )
+        )
+
+        logger = GateLogger()
+        _eval(module, logger, [False, True])
+        self.assertEqual(logger.instructions, [
+                         "m qubit[0] => out[0]",
+                         "m qubit[0] => out[1]",
+                         "x qubit[0]"
+                         ])
+
     def test_results_default_to_zero_if_not_read(self) -> None:
         module = SimpleModule(
             "test_if_not_measured", num_qubits=1, num_results=1
