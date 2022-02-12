@@ -74,6 +74,3 @@ class GateLogger(GateSet):
 
         for instruction in self.instructions:
             print(instruction)
-
-        for q in range(0, self.number_of_qubits):
-            print(f"measure qubits[{q}] -> out[{q}]")

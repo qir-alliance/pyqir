@@ -64,6 +64,16 @@ impl PyNonadaptiveJit {
             Ok(())
         }
 
+        fn reset(pyobj: &PyAny, qubit: String) -> PyResult<()> {
+            let has_gate = pyobj.hasattr("reset")?;
+            if has_gate {
+                let func = pyobj.getattr("reset")?;
+                let args = (qubit,);
+                func.call1(args)?;
+            }
+            Ok(())
+        }
+
         fn rotated(pyobj: &PyAny, gate: &str, theta: f64, qubit: String) -> PyResult<()> {
             let has_gate = pyobj.hasattr(gate)?;
             if has_gate {
@@ -101,6 +111,7 @@ impl PyNonadaptiveJit {
             run_module_file(file, entry_point, result_vec).map_err(PyOSError::new_err)?;
 
         Python::with_gil(|py| -> PyResult<()> {
+            let mut current_register = 0;
             for instruction in gen_model.instructions {
                 match instruction {
                     Instruction::Cx(ins) => {
@@ -110,10 +121,11 @@ impl PyNonadaptiveJit {
                         controlled(pyobj, "cz", ins.control, ins.target)?;
                     }
                     Instruction::H(ins) => single(pyobj, "h", ins.qubit)?,
-                    Instruction::M(ins) => measured(pyobj, "m", ins.qubit, ins.target)?,
-                    Instruction::Reset(_ins) => {
-                        todo!("Not Implemented")
+                    Instruction::M(ins) => {
+                        measured(pyobj, "m", ins.qubit, current_register.to_string())?;
+                        current_register += 1;
                     }
+                    Instruction::Reset(ins) => reset(pyobj, ins.qubit)?,
                     Instruction::Rx(ins) => rotated(pyobj, "rx", ins.theta, ins.qubit)?,
                     Instruction::Ry(ins) => rotated(pyobj, "ry", ins.theta, ins.qubit)?,
                     Instruction::Rz(ins) => rotated(pyobj, "rz", ins.theta, ins.qubit)?,

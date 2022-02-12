@@ -139,7 +139,7 @@ mod tests {
     #[test]
     fn runs_bell_qir_measure() -> Result<(), String> {
         let model = run_test_module(BELL_QIR_MEASURE, None)?;
-        assert_eq!(model.instructions.len(), 2);
+        assert_eq!(model.instructions.len(), 4);
         Ok(())
     }
 

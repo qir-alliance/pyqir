@@ -197,8 +197,11 @@ pub unsafe extern "C" fn __quantum__qis__reset__body(qubit: QUBIT) {
 /// This function will panic if the global state cannot be locked or if the result index is too
 /// large.
 #[no_mangle]
-pub extern "C" fn __quantum__qis__m__body(_qubit: QUBIT) -> *mut c_void {
+pub extern "C" fn __quantum__qis__m__body(qubit: QUBIT) -> *mut c_void {
     log::debug!("/__quantum__qis__m__body/");
+    let mut gs = get_current_gate_processor();
+    gs.m(qubit);
+
     let mut res = RESULTS.lock().unwrap();
 
     if res.pop() == Some(true) {

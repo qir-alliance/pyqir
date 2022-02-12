@@ -4,6 +4,7 @@
 from pyqir.jit.nonadaptivejit import NonadaptiveJit
 from pyqir.jit.gatelogger import GateLogger
 
+
 def test_bell_qir():
     file = "tests/bell_qir_measure.bc"
     jit = NonadaptiveJit()
@@ -12,6 +13,8 @@ def test_bell_qir():
 
     logger.print()
 
-    assert len(logger.instructions) == 2
-    assert str(logger.instructions[0]).startswith("h")
-    assert str(logger.instructions[1]).startswith("cx")
+    assert len(logger.instructions) == 4
+    assert str(logger.instructions[0]) == "h qubit[0]"
+    assert str(logger.instructions[1]) == "cx qubit[0], qubit[1]"
+    assert str(logger.instructions[2]) == "m qubit[0] => out[0]"
+    assert str(logger.instructions[3]) == "m qubit[1] => out[1]"

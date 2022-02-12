@@ -17,7 +17,8 @@ class IfTestCase(unittest.TestCase):
 
         logger = GateLogger()
         _eval(module, logger, [True])
-        self.assertEqual(logger.instructions, ["x qubit[0]"])
+        self.assertEqual(logger.instructions, [
+                         "m qubit[0] => out[0]", "x qubit[0]"])
 
     def test_zero_block_executes_on_zero(self) -> None:
         module = SimpleModule("test_if_not", num_qubits=1, num_results=1)
@@ -27,7 +28,8 @@ class IfTestCase(unittest.TestCase):
 
         logger = GateLogger()
         _eval(module, logger)
-        self.assertEqual(logger.instructions, ["x qubit[0]"])
+        self.assertEqual(logger.instructions, [
+                         "m qubit[0] => out[0]", "x qubit[0]"])
 
     def test_execution_continues_after_hit_conditional_one(self) -> None:
         module = SimpleModule("test_if", num_qubits=1, num_results=1)
@@ -38,7 +40,8 @@ class IfTestCase(unittest.TestCase):
 
         logger = GateLogger()
         _eval(module, logger, [True])
-        self.assertEqual(logger.instructions, ["x qubit[0]", "h qubit[0]"])
+        self.assertEqual(logger.instructions, [
+                         "m qubit[0] => out[0]", "x qubit[0]", "h qubit[0]"])
 
     def test_execution_continues_after_missed_conditional_one(self) -> None:
         module = SimpleModule("test_if", num_qubits=1, num_results=1)
@@ -49,7 +52,8 @@ class IfTestCase(unittest.TestCase):
 
         logger = GateLogger()
         _eval(module, logger, [False])
-        self.assertEqual(logger.instructions, ["h qubit[0]"])
+        self.assertEqual(logger.instructions, [
+                         "m qubit[0] => out[0]", "h qubit[0]"])
 
     def test_execution_continues_after_hit_conditional_zero(self) -> None:
         module = SimpleModule("test_if_not", num_qubits=1, num_results=1)
@@ -60,7 +64,8 @@ class IfTestCase(unittest.TestCase):
 
         logger = GateLogger()
         _eval(module, logger, [False])
-        self.assertEqual(logger.instructions, ["x qubit[0]", "h qubit[0]"])
+        self.assertEqual(logger.instructions, [
+                         "m qubit[0] => out[0]", "x qubit[0]", "h qubit[0]"])
 
     def test_execution_continues_after_missed_conditional_zero(self) -> None:
         module = SimpleModule("test_if_not", num_qubits=1, num_results=1)
@@ -71,7 +76,8 @@ class IfTestCase(unittest.TestCase):
 
         logger = GateLogger()
         _eval(module, logger, [True])
-        self.assertEqual(logger.instructions, ["h qubit[0]"])
+        self.assertEqual(logger.instructions, [
+                         "m qubit[0] => out[0]", "h qubit[0]"])
 
     def test_execution_continues_after_conditional_if_else(self) -> None:
         module = SimpleModule("test_if_not", num_qubits=1, num_results=1)
@@ -85,7 +91,8 @@ class IfTestCase(unittest.TestCase):
 
         logger = GateLogger()
         _eval(module, logger)
-        self.assertEqual(logger.instructions, ["y qubit[0]", "h qubit[0]"])
+        self.assertEqual(logger.instructions, [
+                         "m qubit[0] => out[0]", "y qubit[0]", "h qubit[0]"])
 
     def test_nested_if(self) -> None:
         module = SimpleModule("test_if", num_qubits=1, num_results=2)
@@ -103,7 +110,11 @@ class IfTestCase(unittest.TestCase):
 
         logger = GateLogger()
         _eval(module, logger, [True, True])
-        self.assertEqual(logger.instructions, ["x qubit[0]"])
+        self.assertEqual(logger.instructions, [
+                         "m qubit[0] => out[0]",
+                         "m qubit[0] => out[1]",
+                         "x qubit[0]"
+                         ])
 
     def test_nested_if_not(self) -> None:
         module = SimpleModule("test_if", num_qubits=1, num_results=2)
@@ -121,7 +132,11 @@ class IfTestCase(unittest.TestCase):
 
         logger = GateLogger()
         _eval(module, logger, [False, False])
-        self.assertEqual(logger.instructions, ["x qubit[0]"])
+        self.assertEqual(logger.instructions, [
+                         "m qubit[0] => out[0]",
+                         "m qubit[0] => out[1]",
+                         "x qubit[0]"
+                         ])
 
     def test_results_default_to_zero_if_not_read(self) -> None:
         module = SimpleModule(
