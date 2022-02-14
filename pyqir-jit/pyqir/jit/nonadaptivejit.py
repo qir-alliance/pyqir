@@ -28,5 +28,6 @@ class NonadaptiveJit(object):
         :param file_path: file path of existing QIR in a ll or bc file
         :param gateset: python GateSet based object defining the operations
         :param entry_point: entry point name; required if QIR contains multiple entry points
+        :param result_stream: list of boolean result values representing the QIS measure results
         """
         self.jit.eval(file_path, gateset, entry_point, result_stream)
