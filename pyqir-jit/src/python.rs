@@ -2,11 +2,11 @@
 // Licensed under the MIT License.
 
 use crate::{interop::Instruction, jit::run_module_file};
-use bitvec::prelude::BitVec;
 use pyo3::{
     exceptions::PyOSError,
     prelude::*,
     types::{PyDict, PyList},
+    PyAny,
 };
 
 #[pymodule]
@@ -94,19 +94,10 @@ impl PyNonadaptiveJit {
             Ok(())
         }
 
-        let result_vec = if let Some(results) = result_stream {
-            let mut bitvec: BitVec = BitVec::new();
-            for result in results.iter() {
-                let value = result
-                    .extract::<bool>()
-                    .expect("Could not read bool value from result stream");
-                bitvec.push(value);
-            }
+        let result_vec = result_stream
+            .map(|rs| rs.iter().map(PyAny::extract::<bool>).collect())
+            .transpose()?;
 
-            Some(bitvec)
-        } else {
-            None
-        };
         let gen_model =
             run_module_file(file, entry_point, result_vec).map_err(PyOSError::new_err)?;
 

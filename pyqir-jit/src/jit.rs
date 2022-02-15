@@ -7,7 +7,6 @@ use crate::{
     runtime::Simulator,
 };
 use bitvec::prelude::BitVec;
-use bitvec::prelude::*;
 use inkwell::{
     attributes::AttributeLoc,
     context::Context,
@@ -55,7 +54,7 @@ fn run_module(
 
     reset_max_qubit_id();
 
-    set_measure_stream(&(result_stream.map_or_else(|| bitvec![], |v| v)));
+    set_measure_stream(&result_stream.unwrap_or_default());
 
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::None)

@@ -1,9 +1,9 @@
 # Copyright(c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from typing import Optional
+from typing import List, Optional
 from pyqir.jit.gateset import GateSet
-from pyqir.jit._native import PyNonadaptiveJit as PyNonadaptiveJit
+from pyqir.jit._native import PyNonadaptiveJit
 
 
 class NonadaptiveJit(object):
@@ -20,7 +20,7 @@ class NonadaptiveJit(object):
              file_path: str,
              gateset: GateSet,
              entry_point: Optional[str] = None,
-             result_stream: Optional[list] = None):
+             result_stream: Optional[List[bool]] = None):
         """
         JIT compiles the circuit delegating quantum operations to the supplied
         GateSet

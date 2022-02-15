@@ -1,7 +1,7 @@
-from typing import Optional
+from typing import List, Optional
 from pyqir.generator.module import SimpleModule
 from pyqir.generator.qis import BasicQisBuilder
-from pyqir.generator.value import Qubit
+from pyqir.generator.value import Qubit, Ref
 from pyqir.jit.nonadaptivejit import NonadaptiveJit
 from pyqir.jit.gatelogger import GateLogger
 from pyqir.jit.gateset import GateSet
@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 
-def teleport(qis: BasicQisBuilder, qubits: list, results: list) -> None:
+def teleport(qis: BasicQisBuilder, qubits: List[Qubit], results: List[Ref]) -> None:
     msg = qubits[0]
     target = qubits[1]
     register = qubits[2]
@@ -132,7 +132,7 @@ class TeleportTestCase(unittest.TestCase):
 
 def _eval(module: SimpleModule,
           gates: GateSet,
-          result_stream: Optional[list] = None) -> None:
+          result_stream: Optional[List[bool]] = None) -> None:
     with tempfile.NamedTemporaryFile(suffix=".ll") as f:
         f.write(module.ir().encode("utf-8"))
         f.flush()
