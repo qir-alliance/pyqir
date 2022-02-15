@@ -8,7 +8,16 @@ use crate::{
         SemanticModel, Single,
     },
 };
-use pyo3::{exceptions::PyOSError, prelude::*};
+use pyo3::{
+    basic::CompareOp,
+    exceptions::{PyOSError, PyTypeError},
+    prelude::*,
+    PyObjectProtocol,
+};
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
 
 #[pymodule]
 fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -94,6 +103,7 @@ impl SimpleModule {
     }
 }
 
+#[derive(Clone, Eq, Hash, PartialEq)]
 #[pyclass]
 struct Qubit {
     index: u64,
@@ -105,8 +115,41 @@ impl Qubit {
     }
 }
 
+#[pyproto]
+impl PyObjectProtocol for Qubit {
+    fn __hash__(&self) -> PyResult<u64> {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        Ok(hasher.finish())
+    }
+
+    fn __richcmp__(&self, other: Qubit, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Eq => Ok(self == &other),
+            _ => Err(PyErr::new::<PyTypeError, _>("Only equality is supported.")),
+        }
+    }
+}
+
+#[derive(Clone, Eq, Hash, PartialEq)]
 #[pyclass]
 struct Ref(RefKind);
+
+#[pyproto]
+impl PyObjectProtocol for Ref {
+    fn __hash__(&self) -> PyResult<u64> {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        Ok(hasher.finish())
+    }
+
+    fn __richcmp__(&self, other: Ref, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Eq => Ok(self == &other),
+            _ => Err(PyErr::new::<PyTypeError, _>("Only equality is supported.")),
+        }
+    }
+}
 
 impl Ref {
     fn id(&self) -> String {
@@ -115,6 +158,7 @@ impl Ref {
     }
 }
 
+#[derive(Clone, Eq, Hash, PartialEq)]
 enum RefKind {
     Result { index: u64 },
 }
