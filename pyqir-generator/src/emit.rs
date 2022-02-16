@@ -161,6 +161,7 @@ mod tests {
             ClassicalRegister, If, Instruction, Measured, QuantumRegister, SemanticModel, Single,
         },
     };
+    use normalize_line_endings::normalized;
     use std::{env, fs, path::PathBuf};
 
     const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
@@ -392,7 +393,7 @@ mod tests {
         path.push(&model.name);
         path.set_extension("ll");
 
-        let actual_ir = emit::ir(model)?;
+        let actual_ir: String = normalized(emit::ir(model)?.chars()).collect();
 
         if env::var(PYQIR_TEST_SAVE_REFERENCES).is_ok() {
             fs::create_dir_all(path.parent().unwrap()).map_err(|e| e.to_string())?;
@@ -403,7 +404,8 @@ mod tests {
                 PYQIR_TEST_SAVE_REFERENCES
             ))
         } else {
-            let expected_ir = fs::read_to_string(path).map_err(|e| e.to_string())?;
+            let contents = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+            let expected_ir: String = normalized(contents.chars()).collect();
             assert_eq!(expected_ir, actual_ir);
             Ok(())
         }
