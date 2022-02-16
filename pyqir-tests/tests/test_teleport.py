@@ -22,19 +22,12 @@ def teleport(qis: BasicQisBuilder, qubits: List[Qubit], results: List[Ref]) -> N
     qis.cx(msg, register)
     qis.h(msg)
 
-    # Measure the qubits to extract the classical data we need to
-    # decode the message by applying the corrections on
-    # the target qubit accordingly.
-    # We use MResetZ from the Microsoft.Quantum.Measurement namespace
-    # to reset our qubits as we go.
+    # Measure the qubits to extract the classical data we need to decode the
+    # message by applying the corrections on the target qubit accordingly.
     qis.m(msg, results[0])
     qis.reset(msg)
     qis.if_result(results[0], one=lambda: qis.z(target))
 
-    # We can also use library functions such as IsResultOne to write
-    # out correction steps. This is especially helpful when composing
-    # conditionals with other functions and operations, or with partial
-    # application.
     qis.m(register, results[1])
     qis.reset(register)
     qis.if_result(results[1], one=lambda: qis.x(target))
