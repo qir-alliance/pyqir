@@ -50,24 +50,24 @@ fn build_entry_function(
     generator: &CodeGenerator<'_>,
     model: &SemanticModel,
 ) -> Result<(), String> {
-    let entrypoint = qir::create_entrypoint_function(generator.context, &generator.module)?;
+    let entry_point = qir::create_entry_point(generator.context, &generator.module);
 
     if model.static_alloc {
         let num_qubits = format!("{}", model.qubits.len());
         let required_qubits = generator
             .context
             .create_string_attribute("requiredQubits", &num_qubits);
-        entrypoint.add_attribute(AttributeLoc::Function, required_qubits);
+        entry_point.add_attribute(AttributeLoc::Function, required_qubits);
     }
 
-    let entry = generator.context.append_basic_block(entrypoint, "entry");
+    let entry = generator.context.append_basic_block(entry_point, "entry");
     generator.builder.position_at_end(entry);
 
     let qubits = write_qubits(model, generator);
 
     let mut registers = write_registers(model);
 
-    write_instructions(model, generator, &qubits, &mut registers, entrypoint);
+    write_instructions(model, generator, &qubits, &mut registers, entry_point);
 
     if !model.static_alloc {
         free_qubits(generator, &qubits);

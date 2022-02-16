@@ -4,7 +4,7 @@ source_filename = "test_if_else_continue"
 %Result = type opaque
 %Qubit = type opaque
 
-define void @QuantumApplication__Run() #0 {
+define void @main() #0 {
 entry:
   %r0 = call %Result* @__quantum__qis__m__body(%Qubit* null)
   %one = call %Result* @__quantum__rt__result_get_one()

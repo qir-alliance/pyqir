@@ -4,7 +4,7 @@ source_filename = "test_results_default_to_zero_if_not_measured"
 %Result = type opaque
 %Qubit = type opaque
 
-define void @QuantumApplication__Run() #0 {
+define void @main() #0 {
 entry:
   %zero = call %Result* @__quantum__rt__result_get_zero()
   %one = call %Result* @__quantum__rt__result_get_one()
