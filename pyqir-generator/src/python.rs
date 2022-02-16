@@ -20,7 +20,8 @@ use std::{
 };
 
 #[pymodule]
-fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
+#[pyo3(name = "_native")]
+fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<SimpleModule>()?;
     m.add_class::<Qubit>()?;
     m.add_class::<Ref>()?;

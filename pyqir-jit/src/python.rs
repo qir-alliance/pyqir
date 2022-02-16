@@ -10,10 +10,9 @@ use pyo3::{
 };
 
 #[pymodule]
-fn _native(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyNonadaptiveJit>()?;
-
-    Ok(())
+#[pyo3(name = "_native")]
+fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<PyNonadaptiveJit>()
 }
 
 #[pyclass]
