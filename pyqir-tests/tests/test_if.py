@@ -169,7 +169,7 @@ class IfTestCase(unittest.TestCase):
         self.assertEqual(logger.instructions,
                          ["m qubit[0] => out[0]", "m qubit[0] => out[1]", "x qubit[0]"])
 
-    def test_results_default_to_zero_if_not_read(self) -> None:
+    def test_results_default_to_zero_if_not_measured(self) -> None:
         module = SimpleModule(
             "test_if_not_measured", num_qubits=1, num_results=1
         )

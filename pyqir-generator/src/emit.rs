@@ -145,3 +145,267 @@ fn write_instructions<'ctx>(
         qir::instructions::emit(generator, inst, qubits, registers, entry_point);
     }
 }
+
+/// These tests compare generated IR against reference files in the "resources/tests" folder. If
+/// changes to code generation break the tests:
+///
+/// 1. Run the tests with the `PYQIR_TEST_SAVE_REFERENCES` environment variable set to regenerate
+///    the reference files.
+/// 2. Review the changes and make sure they look reasonable.
+/// 3. Unset the environment variable and run the tests again to confirm that they pass.
+#[cfg(test)]
+mod tests {
+    use crate::{
+        emit,
+        interop::{
+            ClassicalRegister, If, Instruction, Measured, QuantumRegister, SemanticModel, Single,
+        },
+    };
+    use std::{env, fs, path::PathBuf};
+
+    const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
+
+    #[test]
+    fn test_if_then() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test_if_then".to_string(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![
+                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::If(If {
+                    condition: "r0".to_string(),
+                    then_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                    else_insts: vec![],
+                }),
+            ],
+            static_alloc: true,
+        };
+
+        check_or_save_reference_ir(&model)
+    }
+
+    #[test]
+    fn test_if_else() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test_if_else".to_string(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![
+                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::If(If {
+                    condition: "r0".to_string(),
+                    then_insts: vec![],
+                    else_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                }),
+            ],
+            static_alloc: true,
+        };
+
+        check_or_save_reference_ir(&model)
+    }
+
+    #[test]
+    fn test_if_then_continue() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test_if_then_continue".to_string(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![
+                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::If(If {
+                    condition: "r0".to_string(),
+                    then_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                    else_insts: vec![],
+                }),
+                Instruction::H(Single::new("q0".to_string())),
+            ],
+            static_alloc: true,
+        };
+
+        check_or_save_reference_ir(&model)
+    }
+
+    #[test]
+    fn test_if_else_continue() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test_if_else_continue".to_string(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![
+                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::If(If {
+                    condition: "r0".to_string(),
+                    then_insts: vec![],
+                    else_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                }),
+                Instruction::H(Single::new("q0".to_string())),
+            ],
+            static_alloc: true,
+        };
+
+        check_or_save_reference_ir(&model)
+    }
+
+    #[test]
+    fn test_if_then_else_continue() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test_if_then_else_continue".to_string(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![
+                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::If(If {
+                    condition: "r0".to_string(),
+                    then_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                    else_insts: vec![Instruction::Y(Single::new("q0".to_string()))],
+                }),
+                Instruction::H(Single::new("q0".to_string())),
+            ],
+            static_alloc: true,
+        };
+
+        check_or_save_reference_ir(&model)
+    }
+
+    #[test]
+    fn test_if_then_then() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test_if_then_then".to_string(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 2)],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![
+                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::M(Measured::new("q0".to_string(), "r1".to_string())),
+                Instruction::If(If {
+                    condition: "r0".to_string(),
+                    then_insts: vec![Instruction::If(If {
+                        condition: "r1".to_string(),
+                        then_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                        else_insts: vec![],
+                    })],
+                    else_insts: vec![],
+                }),
+            ],
+            static_alloc: true,
+        };
+
+        check_or_save_reference_ir(&model)
+    }
+
+    #[test]
+    fn test_if_else_else() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test_if_else_else".to_string(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 2)],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![
+                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::M(Measured::new("q0".to_string(), "r1".to_string())),
+                Instruction::If(If {
+                    condition: "r0".to_string(),
+                    then_insts: vec![],
+                    else_insts: vec![Instruction::If(If {
+                        condition: "r1".to_string(),
+                        then_insts: vec![],
+                        else_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                    })],
+                }),
+            ],
+            static_alloc: true,
+        };
+
+        check_or_save_reference_ir(&model)
+    }
+
+    #[test]
+    fn test_if_then_else() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test_if_then_else".to_string(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 2)],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![
+                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::M(Measured::new("q0".to_string(), "r1".to_string())),
+                Instruction::If(If {
+                    condition: "r0".to_string(),
+                    then_insts: vec![Instruction::If(If {
+                        condition: "r1".to_string(),
+                        then_insts: vec![],
+                        else_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                    })],
+                    else_insts: vec![],
+                }),
+            ],
+            static_alloc: true,
+        };
+
+        check_or_save_reference_ir(&model)
+    }
+
+    #[test]
+    fn test_if_else_then() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test_if_else_then".to_string(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 2)],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![
+                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::M(Measured::new("q0".to_string(), "r1".to_string())),
+                Instruction::If(If {
+                    condition: "r0".to_string(),
+                    then_insts: vec![],
+                    else_insts: vec![Instruction::If(If {
+                        condition: "r1".to_string(),
+                        then_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                        else_insts: vec![],
+                    })],
+                }),
+            ],
+            static_alloc: true,
+        };
+
+        check_or_save_reference_ir(&model)
+    }
+
+    #[test]
+    fn test_results_default_to_zero_if_not_measured() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test_results_default_to_zero_if_not_measured".to_string(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![Instruction::If(If {
+                condition: "r0".to_string(),
+                then_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                else_insts: vec![Instruction::H(Single::new("q0".to_string()))],
+            })],
+            static_alloc: true,
+        };
+
+        check_or_save_reference_ir(&model)
+    }
+
+    fn check_or_save_reference_ir(model: &SemanticModel) -> Result<(), String> {
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("resources");
+        path.push("tests");
+        path.push(&model.name);
+        path.set_extension("ll");
+
+        let actual_ir = emit::ir(model)?;
+
+        if env::var(PYQIR_TEST_SAVE_REFERENCES).is_ok() {
+            fs::create_dir_all(path.parent().unwrap()).map_err(|e| e.to_string())?;
+            fs::write(&path, actual_ir).map_err(|e| e.to_string())?;
+
+            Err(format!(
+                "Saved reference IR. Run again without the {} environment variable.",
+                PYQIR_TEST_SAVE_REFERENCES
+            ))
+        } else {
+            let expected_ir = fs::read_to_string(path).map_err(|e| e.to_string())?;
+            assert_eq!(expected_ir, actual_ir);
+            Ok(())
+        }
+    }
+}
