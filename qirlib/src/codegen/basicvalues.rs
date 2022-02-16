@@ -61,3 +61,29 @@ pub(crate) fn u64_to_i64(
         .as_basic_value_enum()
         .into()
 }
+
+#[must_use]
+pub(crate) fn i64_to_i64(
+    context: &inkwell::context::Context,
+    value: i64,
+) -> BasicMetadataValueEnum {
+    #[allow(clippy::cast_sign_loss)]
+    let target: u64 = value as u64;
+
+    int64(context)
+        .const_int(target, false)
+        .as_basic_value_enum()
+        .into()
+}
+
+#[must_use]
+pub(crate) fn bool_to_i1(
+    context: &inkwell::context::Context,
+    value: bool,
+) -> BasicMetadataValueEnum {
+    context
+        .bool_type()
+        .const_int(value as u64, false)
+        .as_basic_value_enum()
+        .into()
+}

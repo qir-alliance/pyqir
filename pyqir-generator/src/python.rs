@@ -4,19 +4,21 @@
 use crate::{
     emit,
     interop::{
-        ClassicalRegister, Controlled, If, Instruction, Measured, QuantumRegister, Rotated,
-        SemanticModel, Single,
+        Arg, Call, ClassicalRegister, Controlled, If, Instruction, Measured, QuantumRegister,
+        Rotated, SemanticModel, Single,
     },
 };
 use pyo3::{
     basic::CompareOp,
     exceptions::{PyOSError, PyTypeError},
     prelude::*,
+    types::PyTuple,
     PyObjectProtocol,
 };
 use std::{
     collections::hash_map::DefaultHasher,
     hash::{Hash, Hasher},
+    vec,
 };
 
 #[pymodule]
@@ -199,6 +201,32 @@ impl BasicQisBuilder {
     #[new]
     fn new(builder: Py<Builder>) -> Self {
         BasicQisBuilder { builder }
+    }
+
+    #[args(args = "*")]
+    fn call(&self, py: Python, name: String, args: &PyTuple) {
+        let mut extracted_args = vec![];
+        for arg in args.iter() {
+            let extracted_arg = if let Ok(qubit) = arg.extract::<Qubit>() {
+                Arg::new("Qubit".to_owned(), qubit.id())
+            } else if let Ok(result) = arg.extract::<Ref>() {
+                Arg::new("Result".to_owned(), result.id())
+            } else if let Ok(b) = arg.extract::<bool>() {
+                Arg::new("i8".to_owned(), b.to_string())
+            } else if let Ok(i) = arg.extract::<i64>() {
+                Arg::new("i64".to_owned(), i.to_string())
+            } else if let Ok(f) = arg.extract::<f64>() {
+                Arg::new("f64".to_owned(), f.to_string())
+            } else {
+                panic!("unexpected argument type for {:?}", arg)
+            };
+
+            extracted_args.push(extracted_arg);
+        }
+
+        let external_call = Call::new(name, extracted_args);
+        let inst = Instruction::Call(external_call);
+        self.push_inst(py, inst);
     }
 
     fn cx(&self, py: Python, control: &Qubit, target: &Qubit) {

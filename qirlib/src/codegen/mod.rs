@@ -10,7 +10,9 @@ use inkwell::{
 use std::path::Path;
 
 use self::{
-    basicvalues::{f64_to_f64, i64_to_i32, i8_null_ptr, u64_to_i32, u64_to_i64},
+    basicvalues::{
+        bool_to_i1, f64_to_f64, i64_to_i32, i64_to_i64, i8_null_ptr, u64_to_i32, u64_to_i64,
+    },
     calls::{emit_call_with_return, emit_void_call},
     qis::{
         cnot_body, cz_body, h_body, m_body, reset_body, rx_body, ry_body, rz_body, s_adj, s_body,
@@ -106,6 +108,14 @@ impl<'ctx> CodeGenerator<'ctx> {
 
     pub fn i64_to_i32(&self, value: i64) -> BasicMetadataValueEnum<'ctx> {
         i64_to_i32(self.context, value)
+    }
+
+    pub fn i64_to_i64(&self, value: i64) -> BasicMetadataValueEnum<'ctx> {
+        i64_to_i64(self.context, value)
+    }
+
+    pub fn bool_to_i1(&self, value: bool) -> BasicMetadataValueEnum<'ctx> {
+        bool_to_i1(self.context, value)
     }
 
     pub fn u64_to_i64(&self, value: u64) -> BasicMetadataValueEnum<'ctx> {

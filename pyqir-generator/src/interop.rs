@@ -120,6 +120,33 @@ pub enum Instruction {
     Reset(Single),
     M(Measured),
     If(If),
+    Call(Call),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Call {
+    pub name: String,
+    pub args: Vec<Arg>,
+}
+
+impl Call {
+    #[must_use]
+    pub fn new(name: String, args: Vec<Arg>) -> Self {
+        Call { name, args }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Arg {
+    pub type_name: String,
+    pub value: String,
+}
+
+impl Arg {
+    #[must_use]
+    pub fn new(type_name: String, value: String) -> Self {
+        Arg { type_name, value }
+    }
 }
 
 #[derive(Clone, Default)]
