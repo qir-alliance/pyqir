@@ -120,10 +120,14 @@ impl Qubit {
 
 #[pyproto]
 impl PyObjectProtocol for Qubit {
-    fn __hash__(&self) -> PyResult<u64> {
+    fn __hash__(&self) -> u64 {
         let mut hasher = DefaultHasher::new();
         self.hash(&mut hasher);
-        Ok(hasher.finish())
+        hasher.finish()
+    }
+
+    fn __repr__(&self) -> String {
+        format!("<Qubit {}>", self.index)
     }
 
     fn __richcmp__(&self, other: Qubit, op: CompareOp) -> PyResult<bool> {
@@ -138,12 +142,24 @@ impl PyObjectProtocol for Qubit {
 #[pyclass]
 struct Ref(RefKind);
 
+impl Ref {
+    fn id(&self) -> String {
+        let Ref(RefKind::Result { index }) = self;
+        format!("{}{}", RESULT_NAME, index)
+    }
+}
+
 #[pyproto]
 impl PyObjectProtocol for Ref {
-    fn __hash__(&self) -> PyResult<u64> {
+    fn __hash__(&self) -> u64 {
         let mut hasher = DefaultHasher::new();
         self.hash(&mut hasher);
-        Ok(hasher.finish())
+        hasher.finish()
+    }
+
+    fn __repr__(&self) -> String {
+        let Ref(RefKind::Result { index }) = self;
+        format!("<Ref to Result {}>", index)
     }
 
     fn __richcmp__(&self, other: Ref, op: CompareOp) -> PyResult<bool> {
@@ -151,13 +167,6 @@ impl PyObjectProtocol for Ref {
             CompareOp::Eq => Ok(self == &other),
             _ => Err(PyErr::new::<PyTypeError, _>("Only equality is supported.")),
         }
-    }
-}
-
-impl Ref {
-    fn id(&self) -> String {
-        let Ref(RefKind::Result { index }) = self;
-        format!("{}{}", RESULT_NAME, index)
     }
 }
 
