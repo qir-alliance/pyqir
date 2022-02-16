@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 class Qubit:
-    """A qubit."""
+    """A qubit identifier."""
     ...
 
 
