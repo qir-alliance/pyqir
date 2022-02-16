@@ -81,23 +81,26 @@ impl SimpleModule {
         self.builder.clone()
     }
 
-    fn ir(&mut self, py: Python) -> PyResult<String> {
-        self.update_instructions(py);
-        emit::ir(&self.model).map_err(PyOSError::new_err)
+    fn ir(&self, py: Python) -> PyResult<String> {
+        let model = self.model_with_builder_instructions(py);
+        emit::ir(&model).map_err(PyOSError::new_err)
     }
 
-    fn bitcode(&mut self, py: Python) -> PyResult<Vec<u8>> {
-        self.update_instructions(py);
-        emit::bitcode(&self.model).map_err(PyOSError::new_err)
+    fn bitcode(&self, py: Python) -> PyResult<Vec<u8>> {
+        let model = self.model_with_builder_instructions(py);
+        emit::bitcode(&model).map_err(PyOSError::new_err)
     }
 }
 
 impl SimpleModule {
-    fn update_instructions(&mut self, py: Python) {
+    fn model_with_builder_instructions(&self, py: Python) -> SemanticModel {
         let builder = self.builder.as_ref(py).borrow();
 
         match builder.frames[..] {
-            [ref instructions] => self.model.instructions = instructions.clone(),
+            [ref instructions] => SemanticModel {
+                instructions: instructions.clone(),
+                ..self.model.clone()
+            },
             _ => panic!("Builder does not contain exactly one stack frame."),
         }
     }
