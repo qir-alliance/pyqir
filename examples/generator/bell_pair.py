@@ -1,41 +1,20 @@
 #!/usr/bin/env python3
 
-# Copyright(c) Microsoft Corporation.
+# Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir_generator import QirBuilder
+from pyqir.generator.module import SimpleModule
+from pyqir.generator.qis import BasicQisBuilder
 
+# This module creates a Bell pair and returns the result of measuring each
+# qubit.
+bell = SimpleModule("bell", num_qubits=2, num_results=2)
+qis = BasicQisBuilder(bell.builder)
 
-class BellPair:
-    """
-    This operation creates a Bell pair and returns the result
-    of measuring each qubit.
-    """
-
-    def __init__(self):
-        self.builder = QirBuilder("Bell")
-        self.apply()
-
-    def apply(self):
-        self.builder.add_quantum_register("qubit", 2)
-        self.builder.add_classical_register("output", 2)
-
-        self.builder.h("qubit0")
-        self.builder.cx("qubit0", "qubit1")
-
-        self.builder.m("qubit0", "output0")
-        self.builder.m("qubit1", "output1")
-
-    def write_ir_file(self, file_path: str):
-        self.builder.write(file_path)
-
-    def get_ir_string(self) -> str:
-        return self.builder.get_ir_string()
-
-    def generate_ir_file(file_path: str):
-        instance = BellPair()
-        instance.write(file_path)
-
+qis.h(bell.qubits[0])
+qis.cx(bell.qubits[0], bell.qubits[1])
+qis.m(bell.qubits[0], bell.results[0])
+qis.m(bell.qubits[1], bell.results[1])
 
 if __name__ == "__main__":
-    print(BellPair().get_ir_string())
+    print(bell.ir())

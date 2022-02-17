@@ -1,7 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{interop::SemanticModel, intrinsics::reset_max_qubit_id, runtime::Simulator};
+use crate::{
+    interop::SemanticModel,
+    intrinsics::{reset_max_qubit_id, set_measure_stream},
+    runtime::Simulator,
+};
+use bitvec::prelude::BitVec;
 use inkwell::{
     attributes::AttributeLoc,
     context::Context,
@@ -17,13 +22,18 @@ use std::path::Path;
 pub(crate) fn run_module_file(
     path: impl AsRef<Path>,
     entry_point: Option<&str>,
+    result_stream: Option<BitVec>,
 ) -> Result<SemanticModel, String> {
     let context = Context::create();
     let module = module::load_file(path, &context)?;
-    run_module(&module, entry_point)
+    run_module(&module, entry_point, result_stream)
 }
 
-fn run_module(module: &Module, entry_point: Option<&str>) -> Result<SemanticModel, String> {
+fn run_module(
+    module: &Module,
+    entry_point: Option<&str>,
+    result_stream: Option<BitVec>,
+) -> Result<SemanticModel, String> {
     Target::initialize_native(&InitializationConfig::default())?;
 
     let default_triple = TargetMachine::get_default_triple();
@@ -43,6 +53,8 @@ fn run_module(module: &Module, entry_point: Option<&str>) -> Result<SemanticMode
     inkwell::support::load_library_permanently("");
 
     reset_max_qubit_id();
+
+    set_measure_stream(&result_stream.unwrap_or_default());
 
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::None)
@@ -126,7 +138,7 @@ mod tests {
     #[test]
     fn runs_bell_qir_measure() -> Result<(), String> {
         let model = run_test_module(BELL_QIR_MEASURE, None)?;
-        assert_eq!(model.instructions.len(), 2);
+        assert_eq!(model.instructions.len(), 4);
         Ok(())
     }
 
@@ -232,6 +244,6 @@ mod tests {
     fn run_test_module(bytes: &[u8], entry_point: Option<&str>) -> Result<SemanticModel, String> {
         let context = Context::create();
         let module = module::load_memory(bytes, "test", &context)?;
-        run_module(&module, entry_point)
+        run_module(&module, entry_point, None)
     }
 }

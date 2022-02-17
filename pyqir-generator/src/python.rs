@@ -1,174 +1,321 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-use crate::emit::{get_bitcode_base64_string, get_ir_string, write_model_to_file};
-use crate::interop::{
-    ClassicalRegister, Controlled, Instruction, Measured, QuantumRegister, Rotated, SemanticModel,
-    Single,
+
+use crate::{
+    emit,
+    interop::{
+        ClassicalRegister, Controlled, If, Instruction, Measured, QuantumRegister, Rotated,
+        SemanticModel, Single,
+    },
 };
-use log;
-use pyo3::exceptions::PyOSError;
-use pyo3::prelude::*;
+use pyo3::{
+    basic::CompareOp,
+    exceptions::{PyOSError, PyTypeError},
+    prelude::*,
+    PyObjectProtocol,
+};
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
 
 #[pymodule]
-fn pyqir_generator(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyQIR>()?;
-    Ok(())
+#[pyo3(name = "_native")]
+fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<SimpleModule>()?;
+    m.add_class::<Qubit>()?;
+    m.add_class::<Ref>()?;
+    m.add_class::<Builder>()?;
+    m.add_class::<BasicQisBuilder>()
 }
 
+const RESULT_NAME: &str = "result";
+const QUBIT_NAME: &str = "qubit";
+
 #[pyclass]
-pub struct PyQIR {
-    pub(super) model: SemanticModel,
+struct SimpleModule {
+    model: SemanticModel,
+    builder: Py<Builder>,
 }
 
 #[pymethods]
-impl PyQIR {
+impl SimpleModule {
     #[new]
-    fn new(name: String) -> Self {
-        PyQIR {
-            model: SemanticModel::new(name),
+    fn new(py: Python, name: String, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
+        let registers = vec![ClassicalRegister::new(RESULT_NAME.to_string(), num_results)];
+
+        let qubits = (0..num_qubits)
+            .map(|i| QuantumRegister::new(QUBIT_NAME.to_string(), i))
+            .collect();
+
+        let model = SemanticModel {
+            name,
+            registers,
+            qubits,
+            instructions: Vec::new(),
+            static_alloc: true,
+        };
+
+        let builder = Py::new(py, Builder::new())?;
+        Ok(SimpleModule { model, builder })
+    }
+
+    #[getter]
+    fn qubits(&self) -> Vec<Qubit> {
+        self.model
+            .qubits
+            .iter()
+            .map(|q| Qubit { index: q.index })
+            .collect()
+    }
+
+    #[getter]
+    fn results(&self) -> Vec<Ref> {
+        let size = self.model.registers.first().unwrap().size;
+        (0..size)
+            .map(|index| Ref(RefKind::Result { index }))
+            .collect()
+    }
+
+    #[getter]
+    fn builder(&self) -> Py<Builder> {
+        self.builder.clone()
+    }
+
+    fn ir(&self, py: Python) -> PyResult<String> {
+        let model = self.model_with_builder_instructions(py);
+        emit::ir(&model).map_err(PyOSError::new_err)
+    }
+
+    fn bitcode(&self, py: Python) -> PyResult<Vec<u8>> {
+        let model = self.model_with_builder_instructions(py);
+        emit::bitcode(&model).map_err(PyOSError::new_err)
+    }
+}
+
+impl SimpleModule {
+    fn model_with_builder_instructions(&self, py: Python) -> SemanticModel {
+        let builder = self.builder.as_ref(py).borrow();
+
+        match builder.frames[..] {
+            [ref instructions] => SemanticModel {
+                instructions: instructions.clone(),
+                ..self.model.clone()
+            },
+            _ => panic!("Builder does not contain exactly one stack frame."),
         }
     }
+}
 
-    fn cx(&mut self, control: String, target: String) {
-        log::info!("cx {} => {}", control, target);
-        let controlled = Controlled::new(control, target);
-        let inst = Instruction::Cx(controlled);
-        self.model.add_inst(inst);
+#[derive(Clone, Eq, Hash, PartialEq)]
+#[pyclass]
+struct Qubit {
+    index: u64,
+}
+
+impl Qubit {
+    fn id(&self) -> String {
+        format!("{}{}", QUBIT_NAME, self.index)
+    }
+}
+
+#[pyproto]
+impl PyObjectProtocol for Qubit {
+    fn __hash__(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
     }
 
-    fn cz(&mut self, control: String, target: String) {
-        log::info!("cz {} => {}", control, target);
-        let controlled = Controlled::new(control, target);
-        let inst = Instruction::Cz(controlled);
-        self.model.add_inst(inst);
+    fn __repr__(&self) -> String {
+        format!("<Qubit {}>", self.index)
     }
 
-    fn h(&mut self, qubit: String) {
-        log::info!("h => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::H(single);
-        self.model.add_inst(inst);
-    }
-
-    fn m(&mut self, qubit: String, target: String) {
-        log::info!("m {}[{}]", qubit, target);
-        let inst = Measured::new(qubit, target);
-        let inst = Instruction::M(inst);
-        self.model.add_inst(inst);
-    }
-
-    fn reset(&mut self, qubit: String) {
-        log::info!("reset => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::Reset(single);
-        self.model.add_inst(inst);
-    }
-
-    fn rx(&mut self, theta: f64, qubit: String) {
-        log::info!("rx {} => {}", qubit, theta);
-        let rotated = Rotated::new(theta, qubit);
-        let inst = Instruction::Rx(rotated);
-        self.model.add_inst(inst);
-    }
-
-    fn ry(&mut self, theta: f64, qubit: String) {
-        log::info!("ry {} => {}", qubit, theta);
-        let rotated = Rotated::new(theta, qubit);
-        let inst = Instruction::Ry(rotated);
-        self.model.add_inst(inst);
-    }
-
-    fn rz(&mut self, theta: f64, qubit: String) {
-        log::info!("rz {} => {}", qubit, theta);
-        let rotated = Rotated::new(theta, qubit);
-        let inst = Instruction::Rz(rotated);
-        self.model.add_inst(inst);
-    }
-
-    fn s(&mut self, qubit: String) {
-        log::info!("s => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::S(single);
-        self.model.add_inst(inst);
-    }
-
-    fn s_adj(&mut self, qubit: String) {
-        log::info!("s_adj => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::SAdj(single);
-        self.model.add_inst(inst);
-    }
-
-    fn t(&mut self, qubit: String) {
-        log::info!("t => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::T(single);
-        self.model.add_inst(inst);
-    }
-
-    fn t_adj(&mut self, qubit: String) {
-        log::info!("t_adj => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::TAdj(single);
-        self.model.add_inst(inst);
-    }
-
-    fn x(&mut self, qubit: String) {
-        log::info!("x => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::X(single);
-        self.model.add_inst(inst);
-    }
-
-    fn y(&mut self, qubit: String) {
-        log::info!("y => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::Y(single);
-        self.model.add_inst(inst);
-    }
-
-    fn z(&mut self, qubit: String) {
-        log::info!("z => {}", qubit);
-        let single = Single::new(qubit);
-        let inst = Instruction::Z(single);
-        self.model.add_inst(inst);
-    }
-
-    #[allow(clippy::needless_pass_by_value)]
-    fn add_quantum_register(&mut self, name: String, size: u64) {
-        let ns = name.as_str();
-        for index in 0..size {
-            let register_name = format!("{}[{}]", ns, index);
-            log::info!("Adding {}", register_name);
-            let reg = QuantumRegister {
-                name: String::from(ns),
-                index,
-            };
-            self.model.add_reg(&reg.as_register());
+    fn __richcmp__(&self, other: Qubit, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Eq => Ok(self == &other),
+            _ => Err(PyErr::new::<PyTypeError, _>("Only equality is supported.")),
         }
     }
+}
 
-    fn add_classical_register(&mut self, name: String, size: u64) {
-        let ns = name.clone();
-        let reg = ClassicalRegister { name, size };
-        log::info!("Adding {}({})", ns, size);
-        self.model.add_reg(&reg.as_register());
+#[derive(Clone, Eq, Hash, PartialEq)]
+#[pyclass]
+struct Ref(RefKind);
+
+impl Ref {
+    fn id(&self) -> String {
+        let Ref(RefKind::Result { index }) = self;
+        format!("{}{}", RESULT_NAME, index)
+    }
+}
+
+#[pyproto]
+impl PyObjectProtocol for Ref {
+    fn __hash__(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
     }
 
-    fn write(&self, file_name: &str) -> PyResult<()> {
-        write_model_to_file(&self.model, file_name).map_err(PyOSError::new_err::<String>)
+    fn __repr__(&self) -> String {
+        let Ref(RefKind::Result { index }) = self;
+        format!("<Ref to Result {}>", index)
     }
 
-    fn get_ir_string(&self) -> PyResult<String> {
-        get_ir_string(&self.model).map_err(PyOSError::new_err::<String>)
+    fn __richcmp__(&self, other: Ref, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Eq => Ok(self == &other),
+            _ => Err(PyErr::new::<PyTypeError, _>("Only equality is supported.")),
+        }
+    }
+}
+
+#[derive(Clone, Eq, Hash, PartialEq)]
+enum RefKind {
+    Result { index: u64 },
+}
+
+#[pyclass]
+struct Builder {
+    frames: Vec<Vec<Instruction>>,
+}
+
+impl Builder {
+    fn new() -> Builder {
+        Builder {
+            frames: vec![vec![]],
+        }
+    }
+}
+
+#[pyclass]
+struct BasicQisBuilder {
+    builder: Py<Builder>,
+}
+
+#[pymethods]
+impl BasicQisBuilder {
+    #[new]
+    fn new(builder: Py<Builder>) -> Self {
+        BasicQisBuilder { builder }
     }
 
-    fn get_bitcode_base64_string(&self) -> PyResult<String> {
-        get_bitcode_base64_string(&self.model).map_err(PyOSError::new_err::<String>)
+    fn cx(&self, py: Python, control: &Qubit, target: &Qubit) {
+        let controlled = Controlled::new(control.id(), target.id());
+        self.push_inst(py, Instruction::Cx(controlled));
     }
 
-    #[allow(clippy::unused_self)]
-    fn enable_logging(&self) -> PyResult<()> {
-        env_logger::try_init().map_err(|e| PyOSError::new_err::<String>(e.to_string()))
+    fn cz(&self, py: Python, control: &Qubit, target: &Qubit) {
+        let controlled = Controlled::new(control.id(), target.id());
+        self.push_inst(py, Instruction::Cz(controlled));
+    }
+
+    fn h(&self, py: Python, qubit: &Qubit) {
+        let single = Single::new(qubit.id());
+        self.push_inst(py, Instruction::H(single));
+    }
+
+    fn m(&self, py: Python, qubit: &Qubit, result: &Ref) {
+        let measured = Measured::new(qubit.id(), result.id());
+        self.push_inst(py, Instruction::M(measured));
+    }
+
+    fn reset(&self, py: Python, qubit: &Qubit) {
+        let single = Single::new(qubit.id());
+        self.push_inst(py, Instruction::Reset(single));
+    }
+
+    fn rx(&self, py: Python, theta: f64, qubit: &Qubit) {
+        let rotated = Rotated::new(theta, qubit.id());
+        self.push_inst(py, Instruction::Rx(rotated));
+    }
+
+    fn ry(&self, py: Python, theta: f64, qubit: &Qubit) {
+        let rotated = Rotated::new(theta, qubit.id());
+        self.push_inst(py, Instruction::Ry(rotated));
+    }
+
+    fn rz(&self, py: Python, theta: f64, qubit: &Qubit) {
+        let rotated = Rotated::new(theta, qubit.id());
+        self.push_inst(py, Instruction::Rz(rotated));
+    }
+
+    fn s(&self, py: Python, qubit: &Qubit) {
+        let single = Single::new(qubit.id());
+        self.push_inst(py, Instruction::S(single));
+    }
+
+    fn s_adj(&self, py: Python, qubit: &Qubit) {
+        let single = Single::new(qubit.id());
+        self.push_inst(py, Instruction::SAdj(single));
+    }
+
+    fn t(&self, py: Python, qubit: &Qubit) {
+        let single = Single::new(qubit.id());
+        self.push_inst(py, Instruction::T(single));
+    }
+
+    fn t_adj(&self, py: Python, qubit: &Qubit) {
+        let single = Single::new(qubit.id());
+        self.push_inst(py, Instruction::TAdj(single));
+    }
+
+    fn x(&self, py: Python, qubit: &Qubit) {
+        let single = Single::new(qubit.id());
+        self.push_inst(py, Instruction::X(single));
+    }
+
+    fn y(&self, py: Python, qubit: &Qubit) {
+        let single = Single::new(qubit.id());
+        self.push_inst(py, Instruction::Y(single));
+    }
+
+    fn z(&self, py: Python, qubit: &Qubit) {
+        let single = Single::new(qubit.id());
+        self.push_inst(py, Instruction::Z(single));
+    }
+
+    fn if_result(
+        &self,
+        py: Python,
+        result: &Ref,
+        one: Option<&PyAny>,
+        zero: Option<&PyAny>,
+    ) -> PyResult<()> {
+        let build_frame = |callback: Option<&PyAny>| -> PyResult<_> {
+            self.push_frame(py);
+            if let Some(callback) = callback {
+                callback.call0()?;
+            }
+
+            Ok(self.pop_frame(py).unwrap())
+        };
+
+        let if_inst = If {
+            condition: result.id(),
+            then_insts: build_frame(one)?,
+            else_insts: build_frame(zero)?,
+        };
+
+        self.push_inst(py, Instruction::If(if_inst));
+        Ok(())
+    }
+}
+
+impl BasicQisBuilder {
+    fn push_inst(&self, py: Python, inst: Instruction) {
+        let mut builder = self.builder.as_ref(py).borrow_mut();
+        builder.frames.last_mut().unwrap().push(inst);
+    }
+
+    fn push_frame(&self, py: Python) {
+        let mut builder = self.builder.as_ref(py).borrow_mut();
+        builder.frames.push(vec![]);
+    }
+
+    fn pop_frame(&self, py: Python) -> Option<Vec<Instruction>> {
+        let mut builder = self.builder.as_ref(py).borrow_mut();
+        builder.frames.pop()
     }
 }

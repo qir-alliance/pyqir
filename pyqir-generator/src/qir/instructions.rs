@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::interop::Instruction;
-
+use super::result;
+use crate::interop::{If, Instruction};
 use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue};
 use qirlib::codegen::CodeGenerator;
 use std::collections::HashMap;
@@ -47,12 +47,12 @@ fn controlled<'ctx>(
     generator.emit_void_call(intrinsic, &[control.into(), qubit.into()]);
 }
 
-#[allow(clippy::too_many_lines)]
 pub(crate) fn emit<'ctx>(
     generator: &CodeGenerator<'ctx>,
     inst: &Instruction,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    entry_point: FunctionValue,
 ) {
     let find_qubit = |name| get_qubit(name, qubits);
     match inst {
@@ -126,5 +126,45 @@ pub(crate) fn emit<'ctx>(
         Instruction::Z(inst) => {
             generator.emit_void_call(generator.qis_z_body(), &[find_qubit(&inst.qubit).into()]);
         }
+        Instruction::If(if_inst) => emit_if(generator, registers, qubits, entry_point, if_inst),
     }
+}
+
+fn emit_if<'ctx>(
+    generator: &CodeGenerator<'ctx>,
+    registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
+    entry_point: FunctionValue,
+    if_inst: &If,
+) {
+    // Panic if an undeclared result name is referenced, and default to zero if the result has been
+    // declared but not yet measured.
+    let result = registers
+        .get(&if_inst.condition)
+        .unwrap_or_else(|| panic!("Result {} not found.", &if_inst.condition))
+        .unwrap_or_else(|| result::get_zero(generator));
+
+    let condition = result::equal(generator, result, result::get_one(generator));
+    let then_block = generator.context.append_basic_block(entry_point, "then");
+    let else_block = generator.context.append_basic_block(entry_point, "else");
+    generator
+        .builder
+        .build_conditional_branch(condition, then_block, else_block);
+
+    let continue_block = generator
+        .context
+        .append_basic_block(entry_point, "continue");
+
+    let mut emit_block = |block, insts| {
+        generator.builder.position_at_end(block);
+        for inst in insts {
+            emit(generator, inst, qubits, registers, entry_point);
+        }
+
+        generator.builder.build_unconditional_branch(continue_block);
+    };
+
+    emit_block(then_block, &if_inst.then_insts);
+    emit_block(else_block, &if_inst.else_insts);
+    generator.builder.position_at_end(continue_block);
 }

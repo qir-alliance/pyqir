@@ -13,14 +13,13 @@ use super::parse::{
     BasicBlockExt, CallExt, ConstantExt, FunctionExt, IntructionExt, ModuleExt, NameExt, PhiExt,
     TypeExt,
 };
-use llvm_ir;
-use llvm_ir::types::Typed;
-use pyo3::exceptions::PyRuntimeError;
-use pyo3::prelude::*;
-use std::convert::TryFrom;
+use llvm_ir::{self, types::Typed};
+use pyo3::{exceptions::PyRuntimeError, prelude::*};
+use std::{convert::TryFrom, path::PathBuf};
 
 #[pymodule]
-fn pyqir_parser(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+#[pyo3(name = "_native")]
+fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyQirModule>()?;
     m.add_class::<PyQirFunction>()?;
     m.add_class::<PyQirParameter>()?;
@@ -32,13 +31,10 @@ fn pyqir_parser(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyQirType>()?;
 
     #[pyfn(m)]
-    #[pyo3(name = "module_from_bitcode")]
-    #[allow(clippy::needless_pass_by_value)]
-    fn module_from_bitcode_py(_py: Python, bc_path: String) -> PyResult<PyQirModule> {
-        match llvm_ir::Module::from_bc_path(bc_path.as_str()) {
-            Ok(m) => Ok(PyQirModule { module: m }),
-            Err(s) => Err(PyRuntimeError::new_err(s)),
-        }
+    fn module_from_bitcode(bc_path: PathBuf) -> PyResult<PyQirModule> {
+        llvm_ir::Module::from_bc_path(bc_path)
+            .map(|module| PyQirModule { module })
+            .map_err(PyRuntimeError::new_err)
     }
 
     Ok(())

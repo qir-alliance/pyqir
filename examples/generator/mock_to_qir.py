@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 
-# Copyright(c) Microsoft Corporation.
+# Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from antlr4 import *
-from argparse import *
+from antlr4 import CommonTokenStream, FileStream, ParseTreeWalker
+from argparse import ArgumentParser
 from mock_language.MockLanguageLexer import MockLanguageLexer
 from mock_language.MockLanguageParser import MockLanguageParser
 from mock_language.MockLanguageListener import MockLanguageListener
 from pathlib import Path
-from pyqir_generator import QirBuilder
+from pyqir.generator.module import SimpleModule
+from pyqir.generator.qis import BasicQisBuilder
+from pyqir.generator.value import Qubit, Ref
 
 
 class QirGenerator(MockLanguageListener):
@@ -18,58 +20,62 @@ class QirGenerator(MockLanguageListener):
     of a Mock language program.
     """
 
-    def __init__(self, nr_qubits: int, module_id: str):
+    def __init__(self, module_id: str, num_qubits: int) -> None:
         """
-        :param nr_qubits: The total number of qubits used in the compilation.
+        :param num_qubits: The total number of qubits used in the compilation.
         :param module_id: An identifier for the created QIR module.
         """
-        self.builder = QirBuilder(module_id)
-        self.builder.add_quantum_register("q", nr_qubits)
-        self.builder.add_classical_register("m", nr_qubits)
-        self.nr_qubits = nr_qubits
+        self.module = SimpleModule(
+            module_id, num_qubits=num_qubits, num_results=num_qubits
+        )
+        self.qis = BasicQisBuilder(self.module.builder)
 
-    @property
-    def ir_string(self) -> str:
-        return self.builder.get_ir_string()
+    def ir(self) -> str:
+        return self.module.ir()
 
-    def write_to_file(self, file_path: str) -> str:
-        """
-        :param file_path: Path of the file to write the IR to.
-        """
-        with open(file_path, 'w') as file:
-            file.write(self.ir_string)
+    def parse_qubit(self, id: str) -> Qubit:
+        try:
+            return self.module.qubits[int(id)]
+        except IndexError as e:
+            raise ValueError(
+                "Parsed progam uses more qubits than allocated"
+            ) from e
 
-    def enterXGate(self, ctx: MockLanguageParser.XGateContext):
-        self.verify_qubit_in_range(ctx.target.text)
-        self.builder.x("q" + ctx.target.text)
+    def parse_result(self, id: str) -> Ref:
+        try:
+            return self.module.results[int(id)]
+        except IndexError as e:
+            raise ValueError(
+                "Parsed progam uses more results than allocated"
+            ) from e
 
-    def enterHGate(self, ctx: MockLanguageParser.HGateContext):
-        self.verify_qubit_in_range(ctx.target.text)
-        self.builder.h("q" + ctx.target.text)
+    def enterXGate(self, ctx: MockLanguageParser.XGateContext) -> None:
+        qubit = self.parse_qubit(ctx.target.text)
+        self.qis.x(qubit)
 
-    def enterCNOTGate(self, ctx: MockLanguageParser.CNOTGateContext):
-        self.verify_qubit_in_range(ctx.control.text)
-        self.verify_qubit_in_range(ctx.target.text)
+    def enterHGate(self, ctx: MockLanguageParser.HGateContext) -> None:
+        qubit = self.parse_qubit(ctx.target.text)
+        self.qis.h(qubit)
 
-        self.builder.cx("q" + ctx.control.text, "q" + ctx.target.text)
+    def enterCNOTGate(self, ctx: MockLanguageParser.CNOTGateContext) -> None:
+        control = self.parse_qubit(ctx.control.text)
+        target = self.parse_qubit(ctx.target.text)
+        self.qis.cx(control, target)
 
-    def enterMzGate(self, ctx: MockLanguageParser.MzGateContext):
-        self.verify_qubit_in_range(ctx.target.text)
-        self.builder.m("q" + ctx.target.text, "m" + ctx.target.text)
-
-    def verify_qubit_in_range(self, text):
-        if int(text) >= self.nr_qubits:
-            raise ValueError("Parsed progam uses more qubits than allocated")
+    def enterMzGate(self, ctx: MockLanguageParser.MzGateContext) -> None:
+        qubit = self.parse_qubit(ctx.target.text)
+        result = self.parse_result(ctx.target.text)
+        self.qis.m(qubit, result)
 
 
-def mock_program_to_qir(nr_qubits: int, input_file: str) -> str:
+def mock_program_to_qir(num_qubits: int, input_file: str) -> str:
     """
     Parses a Mock program and generates QIR based on the syntax tree.
     Usually the language-specific compiler would fully validate and 
     potentially optimize the program before QIR is generated, but for 
     illustration purposes we omit that from this example.
 
-    :param nr_qubits: The total number of qubits used in the program.
+    :param num_qubits: The total number of qubits used in the program.
     :param input_file: Path of the file containing the Mock program.
     """
 
@@ -78,27 +84,29 @@ def mock_program_to_qir(nr_qubits: int, input_file: str) -> str:
     parser = MockLanguageParser(stream)
     tree = parser.document()
 
-    generator = QirGenerator(nr_qubits, Path(input_file).stem)
+    generator = QirGenerator(Path(input_file).stem, num_qubits)
     walker = ParseTreeWalker()
     walker.walk(generator, tree)
-    return generator.ir_string
+    return generator.ir()
 
 
 if __name__ == '__main__':
-
     command_line = ArgumentParser()
     command_line.add_argument(
         'input_file', type=str,
-        help='Path of the file containing the Mock program.')
+        help='Path of the file containing the Mock program.'
+    )
     command_line.add_argument(
-        'nr_qubits', type=int,
-        help='The total number of qubits used in the program.')
+        'num_qubits', type=int,
+        help='The total number of qubits used in the program.'
+    )
     command_line.add_argument(
         '-o', '--output_file', type=str,
-        help='Path of the file to write the IR to.')
+        help='Path of the file to write the IR to.'
+    )
     args = command_line.parse_args()
 
-    generated_qir = mock_program_to_qir(args.nr_qubits, args.input_file)
+    generated_qir = mock_program_to_qir(args.num_qubits, args.input_file)
 
     if args.output_file is not None:
         with open(args.output_file, 'w') as file:

@@ -2,13 +2,17 @@
 // Licensed under the MIT License.
 
 use crate::{interop::Instruction, jit::run_module_file};
-use pyo3::{exceptions::PyOSError, prelude::*, types::PyDict};
+use pyo3::{
+    exceptions::PyOSError,
+    prelude::*,
+    types::{PyDict, PyList},
+    PyAny,
+};
 
 #[pymodule]
-fn pyqir_jit(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyNonadaptiveJit>()?;
-
-    Ok(())
+#[pyo3(name = "_native")]
+fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<PyNonadaptiveJit>()
 }
 
 #[pyclass]
@@ -22,7 +26,13 @@ impl PyNonadaptiveJit {
     }
 
     #[allow(clippy::unused_self)]
-    fn eval(&self, file: &str, pyobj: &PyAny, entry_point: Option<&str>) -> PyResult<()> {
+    fn eval(
+        &self,
+        file: &str,
+        pyobj: &PyAny,
+        entry_point: Option<&str>,
+        result_stream: Option<&PyList>,
+    ) -> PyResult<()> {
         fn controlled(pyobj: &PyAny, gate: &str, control: String, target: String) -> PyResult<()> {
             let has_gate = pyobj.hasattr(gate)?;
             if has_gate {
@@ -53,6 +63,16 @@ impl PyNonadaptiveJit {
             Ok(())
         }
 
+        fn reset(pyobj: &PyAny, qubit: String) -> PyResult<()> {
+            let has_gate = pyobj.hasattr("reset")?;
+            if has_gate {
+                let func = pyobj.getattr("reset")?;
+                let args = (qubit,);
+                func.call1(args)?;
+            }
+            Ok(())
+        }
+
         fn rotated(pyobj: &PyAny, gate: &str, theta: f64, qubit: String) -> PyResult<()> {
             let has_gate = pyobj.hasattr(gate)?;
             if has_gate {
@@ -73,22 +93,25 @@ impl PyNonadaptiveJit {
             Ok(())
         }
 
-        let gen_model = run_module_file(file, entry_point).map_err(PyOSError::new_err)?;
+        let result_vec = result_stream
+            .map(|rs| rs.iter().map(PyAny::extract::<bool>).collect())
+            .transpose()?;
+
+        let gen_model =
+            run_module_file(file, entry_point, result_vec).map_err(PyOSError::new_err)?;
 
         Python::with_gil(|py| -> PyResult<()> {
+            let mut current_register = 0;
             for instruction in gen_model.instructions {
                 match instruction {
-                    Instruction::Cx(ins) => {
-                        controlled(pyobj, "cx", ins.control, ins.target)?;
-                    }
-                    Instruction::Cz(ins) => {
-                        controlled(pyobj, "cz", ins.control, ins.target)?;
-                    }
+                    Instruction::Cx(ins) => controlled(pyobj, "cx", ins.control, ins.target)?,
+                    Instruction::Cz(ins) => controlled(pyobj, "cz", ins.control, ins.target)?,
                     Instruction::H(ins) => single(pyobj, "h", ins.qubit)?,
-                    Instruction::M(ins) => measured(pyobj, "m", ins.qubit, ins.target)?,
-                    Instruction::Reset(_ins) => {
-                        todo!("Not Implemented")
+                    Instruction::M(ins) => {
+                        measured(pyobj, "m", ins.qubit, current_register.to_string())?;
+                        current_register += 1;
                     }
+                    Instruction::Reset(ins) => reset(pyobj, ins.qubit)?,
                     Instruction::Rx(ins) => rotated(pyobj, "rx", ins.theta, ins.qubit)?,
                     Instruction::Ry(ins) => rotated(pyobj, "ry", ins.theta, ins.qubit)?,
                     Instruction::Rz(ins) => rotated(pyobj, "rz", ins.theta, ins.qubit)?,

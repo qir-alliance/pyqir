@@ -94,6 +94,13 @@ impl Single {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct If {
+    pub condition: String,
+    pub then_insts: Vec<Instruction>,
+    pub else_insts: Vec<Instruction>,
+}
+
 // https://github.com/microsoft/qsharp-language/blob/ageller/profile/Specifications/QIR/Base-Profile.md
 #[derive(Clone, Debug, PartialEq)]
 pub enum Instruction {
@@ -112,6 +119,7 @@ pub enum Instruction {
     Rz(Rotated),
     Reset(Single),
     M(Measured),
+    If(If),
 }
 
 #[derive(Clone, Default)]

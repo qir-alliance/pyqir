@@ -1,4 +1,4 @@
-from pyqir_parser import *
+from pyqir.parser import *
 import pytest
 
 def test_parser_pythonic():

@@ -1,134 +1,101 @@
-# Copyright(c) Microsoft Corporation.
+# Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir_generator import QirBuilder
+"""
+Smoke tests to check that basic Python API functionality works and generates an
+IR string without errors. These tests are not meant to make detailed assertions
+about the generated IR.
+"""
+
+from pyqir.generator.module import SimpleModule
+from pyqir.generator.qis import BasicQisBuilder
 
 
-def test_bell(tmpdir):
-    builder = QirBuilder("Bell circuit")
-    builder.add_quantum_register("qr", 2)
-    builder.add_classical_register("qc", 2)
-    builder.h("qr0")
-    builder.cx("qr0", "qr1")
-    builder.m("qr0", "qc0")
-    builder.m("qr1", "qc1")
+def test_bell() -> None:
+    module = SimpleModule("Bell circuit", num_qubits=2, num_results=2)
+    qis = BasicQisBuilder(module.builder)
+    qis.h(module.qubits[0])
+    qis.cx(module.qubits[0], module.qubits[1])
+    qis.m(module.qubits[0], module.results[0])
+    qis.m(module.qubits[1], module.results[1])
 
-    file = tmpdir.mkdir("sub").join("bell_measure.ll")
-    print(f'Writing {file}')
-    builder.build(str(file))
+    ir = module.ir()
+    assert ir.startswith("; ModuleID = 'Bell circuit'")
 
 
-def test_bell_no_measure(tmpdir):
-    builder = QirBuilder("Bell circuit")
-    builder.add_quantum_register("qr", 2)
-    builder.h("qr0")
-    builder.cx("qr0", "qr1")
+def test_bell_no_measure() -> None:
+    module = SimpleModule("Bell circuit", num_qubits=2, num_results=0)
+    qis = BasicQisBuilder(module.builder)
+    qis.h(module.qubits[0])
+    qis.cx(module.qubits[0], module.qubits[1])
 
-    file = tmpdir.mkdir("sub").join("bell_no_measure.ll")
-    print(f'Writing {file}')
-    builder.build(str(file))
-
-
-def test_bernstein_vazirani(tmpdir):
-    builder = QirBuilder("Bernstein-Vazirani")
-    builder.add_quantum_register("input", 5)
-    builder.add_quantum_register("target", 1)
-    builder.add_classical_register("output", 5)
-
-    builder.x("target0")
-
-    builder.h("input0")
-    builder.h("input1")
-    builder.h("input2")
-    builder.h("input3")
-    builder.h("input4")
-
-    builder.h("target0")
-
-    builder.cx("input1", "target0")
-    builder.cx("input3", "target0")
-    builder.cx("input4", "target0")
-
-    builder.h("input0")
-    builder.h("input1")
-    builder.h("input2")
-    builder.h("input3")
-    builder.h("input4")
-
-    builder.m("input0", "output0")
-    builder.m("input1", "output1")
-    builder.m("input2", "output2")
-    builder.m("input3", "output3")
-    builder.m("input4", "output4")
-
-    file = tmpdir.mkdir("sub").join("bernstein_vazirani.ll")
-    print(f'Writing {file}')
-    builder.build(str(file))
+    ir = module.ir()
+    assert ir.startswith("; ModuleID = 'Bell circuit'")
 
 
-def test_all_gates(tmpdir):
-    builder = QirBuilder("All Gates")
-    builder.add_quantum_register("q", 4)
-    builder.add_quantum_register("control", 1)
-    builder.add_classical_register("c", 4)
-    builder.add_classical_register("i", 3)
-    builder.add_classical_register("j", 2)
-    builder.cx("q0", "control0")
-    builder.cz("q1", "control0")
-    builder.h("q0")
-    builder.reset("q0")
-    builder.rx(15.0, "q1")
-    builder.ry(16.0, "q2")
-    builder.rz(17.0, "q3")
-    builder.s("q0")
-    builder.s_adj("q1")
-    builder.t("q2")
-    builder.t_adj("q3")
-    builder.x("q0")
-    builder.y("q1")
-    builder.z("q2")
+def test_bernstein_vazirani() -> None:
+    module = SimpleModule("Bernstein-Vazirani", num_qubits=6, num_results=5)
+    qis = BasicQisBuilder(module.builder)
+    inputs = module.qubits[:5]
+    target = module.qubits[5]
+    outputs = module.results
 
-    builder.m("q0", "c0")
-    builder.m("q1", "c1")
-    builder.m("q2", "c2")
-    builder.m("q3", "c3")
+    qis.x(target)
 
-    file = tmpdir.mkdir("sub").join("all_gates.ll")
-    print(f'Writing {file}')
-    builder.build(str(file))
+    qis.h(inputs[0])
+    qis.h(inputs[1])
+    qis.h(inputs[2])
+    qis.h(inputs[3])
+    qis.h(inputs[4])
 
+    qis.h(target)
 
-def test_bernstein_vazirani_ir_string():
-    builder = QirBuilder("Bernstein-Vazirani")
-    builder.add_quantum_register("input", 5)
-    builder.add_quantum_register("target", 1)
-    builder.add_classical_register("output", 5)
+    qis.cx(inputs[1], target)
+    qis.cx(inputs[3], target)
+    qis.cx(inputs[4], target)
 
-    builder.x("target0")
+    qis.h(inputs[0])
+    qis.h(inputs[1])
+    qis.h(inputs[2])
+    qis.h(inputs[3])
+    qis.h(inputs[4])
 
-    builder.h("input0")
-    builder.h("input1")
-    builder.h("input2")
-    builder.h("input3")
-    builder.h("input4")
+    qis.m(inputs[0], outputs[0])
+    qis.m(inputs[1], outputs[1])
+    qis.m(inputs[2], outputs[2])
+    qis.m(inputs[3], outputs[3])
+    qis.m(inputs[4], outputs[4])
 
-    builder.h("target0")
-
-    builder.cx("input1", "target0")
-    builder.cx("input3", "target0")
-    builder.cx("input4", "target0")
-
-    builder.h("input0")
-    builder.h("input1")
-    builder.h("input2")
-    builder.h("input3")
-    builder.h("input4")
-
-    builder.m("input0", "output0")
-    builder.m("input1", "output1")
-    builder.m("input2", "output2")
-    builder.m("input3", "output3")
-    builder.m("input4", "output4")
-
-    ir = builder.get_ir_string()
+    ir = module.ir()
     assert ir.startswith("; ModuleID = 'Bernstein-Vazirani'")
+
+
+def test_all_gates() -> None:
+    module = SimpleModule("All Gates", num_qubits=5, num_results=5)
+    qis = BasicQisBuilder(module.builder)
+    q = module.qubits[:4]
+    control = module.qubits[4]
+    c = module.results
+
+    qis.cx(q[0], control)
+    qis.cz(q[1], control)
+    qis.h(q[0])
+    qis.reset(q[0])
+    qis.rx(15.0, q[1])
+    qis.ry(16.0, q[2])
+    qis.rz(17.0, q[3])
+    qis.s(q[0])
+    qis.s_adj(q[1])
+    qis.t(q[2])
+    qis.t_adj(q[3])
+    qis.x(q[0])
+    qis.y(q[1])
+    qis.z(q[2])
+
+    qis.m(q[0], c[0])
+    qis.m(q[1], c[1])
+    qis.m(q[2], c[2])
+    qis.m(q[3], c[3])
+
+    ir = module.ir()
+    assert ir.startswith("; ModuleID = 'All Gates'")
