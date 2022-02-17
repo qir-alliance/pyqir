@@ -1,6 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+"""
+Smoke tests to check that basic Python API functionality works and generates an
+IR string without errors. These tests are not meant to make detailed assertions
+about the generated IR.
+"""
+
 from pyqir.generator.module import SimpleModule
 from pyqir.generator.qis import BasicQisBuilder
 
