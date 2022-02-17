@@ -33,7 +33,7 @@
 
           <div class="body" role="main">
             
-  <section class="tex2jax_ignore mathjax_ignore" id="building-pyqir-from-source">
+  <section id="building-pyqir-from-source">
 <h1>Building PyQIR from Source<a class="headerlink" href="#building-pyqir-from-source" title="Permalink to this headline">¶</a></h1>
 <section id="local-environment">
 <h2>Local Environment<a class="headerlink" href="#local-environment" title="Permalink to this headline">¶</a></h2>
@@ -44,8 +44,8 @@
 <li><p><a class="reference external" href="https://www.python.org">Python 3.6+</a></p></li>
 <li><p><a class="reference external" href="https://github.com/powershell/powershell#get-powershell">PowerShell 7+
 (Core)</a></p></li>
-<li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 11.1.0</a> - See <a class="reference external" href="#installing-llvm">Installing
-LLVM</a></p></li>
+<li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 11.1.0</a> - See <span class="xref myst">Installing
+LLVM</span></p></li>
 <li><p><a class="reference external" href="https://github.com/Kitware/CMake/releases/tag/v3.20.5">CMake 3.20+</a></p></li>
 <li><p><a class="reference external" href="https://ninja-build.org/">Ninja 1.10.0+</a></p></li>
 </ul>
@@ -120,7 +120,7 @@ contains Clang and LLVM.</p></li>
 <section id="installing-llvm">
 <h3>Installing LLVM<a class="headerlink" href="#installing-llvm" title="Permalink to this headline">¶</a></h3>
 <p>The build scripts will automatically download an LLVM toolchain which is
-detailed in the <a class="reference external" href="#development">Development</a> section. The build installs the
+detailed in the <span class="xref myst">Development</span> section. The build installs the
 toolchain to <code class="docutils literal notranslate"><span class="pre">$HOME/.pyqir</span></code> (Windows: <code class="docutils literal notranslate"><span class="pre">$HOME\.pyqir</span></code>) and configures Rust to use
 this installation by setting the <code class="docutils literal notranslate"><span class="pre">LLVM_SYS_110_PREFIX</span></code> environment variable in
 the root <code class="docutils literal notranslate"><span class="pre">.cargo/config.toml</span></code></p>
