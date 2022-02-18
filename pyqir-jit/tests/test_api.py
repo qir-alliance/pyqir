@@ -1,8 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.jit.nonadaptivejit import NonadaptiveJit
-from pyqir.jit.gatelogger import GateLogger
+from pyqir.jit import GateLogger, NonadaptiveJit
 
 
 def test_bell_qir():

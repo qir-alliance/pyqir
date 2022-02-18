@@ -1,8 +1,79 @@
-# Copyright(c) Microsoft Corporation.
+# Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.parser._native import *
+from pyqir.parser._native import (
+    PyQirModule,
+    PyQirFunction,
+    PyQirParameter,
+    PyQirBasicBlock,
+    PyQirInstruction,
+    PyQirTerminator,
+    PyQirOperand,
+    PyQirType,
+    module_from_bitcode
+)
 from typing import List, Optional, Tuple
+
+__all__ = [
+    "QirType",
+    "QirVoidType",
+    "QirIntegerType",
+    "QirPointerType",
+    "QirDoubleType",
+    "QirArrayType",
+    "QirStructType",
+    "QirNamedStructType",
+    "QirQubitType",
+    "QirResultType",
+    "QirOperand",
+    "QirLocalOperand",
+    "QirConstant",
+    "QirIntConstant",
+    "QirDoubleConstant",
+    "QirNullConstant",
+    "QirQubitConstant",
+    "QirResultConstant",
+    "QirTerminator",
+    "QirRetTerminator",
+    "QirBrTerminator",
+    "QirCondBrTerminator",
+    "QirSwitchTerminator",
+    "QirUnreachableTerminator",
+    "QirInstr",
+    "QirOpInstr",
+    "QirAddInstr",
+    "QirSubInstr",
+    "QirMulInstr",
+    "QirUDivInstr",
+    "QirSDivInstr",
+    "QirURemInstr",
+    "QirSRemInstr",
+    "QirAddInstr",
+    "QirOrInstr",
+    "QirXorInstr",
+    "QirShlInstr",
+    "QirLShrInstr",
+    "QirAShrInstr",
+    "QirFAddInstr",
+    "QirFSubInstr",
+    "QirFMulInstr",
+    "QirFDivInstr",
+    "QirFRemInstr",
+    "QirFNegInstr",
+    "QirICmpInstr",
+    "QirFCmpInstr",
+    "QirPhiInstr",
+    "QirCallInstr",
+    "QirQisCallInstr",
+    "QirRtCallInstr",
+    "QirQirCallInstr",
+    "QirBlock",
+    "QirParameter",
+    "QirParameter",
+    "QirFunction",
+    "QirModule",
+    "module_from_bitcode",
+]
 
 
 class QirType:
@@ -35,11 +106,13 @@ class QirType:
     def __init__(self, ty: PyQirType):
         self.ty = ty
 
+
 class QirVoidType(QirType):
     """
     Instances of QirVoidType represent a void type in QIR.
     """
     pass
+
 
 class QirIntegerType(QirType):
     """
@@ -53,6 +126,7 @@ class QirIntegerType(QirType):
         Gets the bit width of this integer type.
         """
         return self.ty.integer_width
+
 
 class QirPointerType(QirType):
     """
@@ -75,11 +149,13 @@ class QirPointerType(QirType):
         """
         return self.ty.pointer_addrspace
 
+
 class QirDoubleType(QirType):
     """
     Instances of QirDoubleType represent the double-sized floating point type in a QIR program.
     """
     pass
+
 
 class QirArrayType(QirType):
     """
@@ -92,7 +168,8 @@ class QirArrayType(QirType):
         Gets the ordered list of QirTypes representing the underlying array types.
         """
         if not hasattr(self, "_element_types"):
-            self._element_types = [QirType(i) for i in self.ty.array_element_type]
+            self._element_types = [QirType(i)
+                                   for i in self.ty.array_element_type]
         return self._element_types
 
     @property
@@ -101,6 +178,7 @@ class QirArrayType(QirType):
         Gets the count of elements in the array.
         """
         return self.ty.array_num_elements
+
 
 class QirStructType(QirType):
     """
@@ -113,8 +191,11 @@ class QirStructType(QirType):
         Gets the ordered list of QirTypes representing the underlying struct types.
         """
         if not hasattr(self, "_struct_element_types"):
-            self._struct_element_types = [QirType(i) for i in self.ty.struct_element_types]
+            self._struct_element_types = [
+                QirType(i) for i in self.ty.struct_element_types
+            ]
         return self._struct_element_types
+
 
 class QirNamedStructType(QirType):
     """
@@ -129,6 +210,7 @@ class QirNamedStructType(QirType):
         """
         return self.ty.named_struct_name
 
+
 class QirQubitType(QirNamedStructType):
     """
     Instances of QirQubitType are specific QIR opaque pointer corresponding to the Qubit special
@@ -136,12 +218,14 @@ class QirQubitType(QirNamedStructType):
     """
     pass
 
+
 class QirResultType(QirNamedStructType):
     """
     Instances of QirResultType are specific QIR opaque pointer corresponding to the Result special
     type.
     """
     pass
+
 
 class QirOperand:
     """
@@ -171,6 +255,7 @@ class QirOperand:
         self.op = op
         self.const = op.constant
 
+
 class QirLocalOperand(QirOperand):
     """
     Instances of QirLocalOperand represent a typed local variable in a QIR program.
@@ -193,6 +278,7 @@ class QirLocalOperand(QirOperand):
             self._type = QirType(self.op.local_type)
         return self._type
 
+
 class QirConstant(QirOperand):
     """
     Instances of QirConstant represent a constant value in a QIR program.
@@ -207,6 +293,7 @@ class QirConstant(QirOperand):
             self._type = QirType(self.const.type)
         return self._type
 
+
 class QirIntConstant(QirConstant):
     """
     Instances of QirIntConstant represent a constant integer value in a QIR program.
@@ -218,13 +305,14 @@ class QirIntConstant(QirConstant):
         Gets the integer value for this constant.
         """
         return self.const.int_value
-    
+
     @property
     def width(self) -> int:
         """
         Gets the bit width for this integer constant.
         """
         return self.const.int_width
+
 
 class QirDoubleConstant(QirConstant):
     """
@@ -238,6 +326,7 @@ class QirDoubleConstant(QirConstant):
         """
         return self.const.float_double_value
 
+
 class QirNullConstant(QirConstant):
     """
     Instances of QirNullConstant represent a constant null pointer in a QIR program. Use the type
@@ -250,6 +339,7 @@ class QirNullConstant(QirConstant):
         The value of QirNullConstant instances is always None.
         """
         return None
+
 
 class QirQubitConstant(QirConstant):
     """
@@ -270,6 +360,7 @@ class QirQubitConstant(QirConstant):
         """
         return self.value
 
+
 class QirResultConstant(QirConstant):
     """
     Instances of QirResultConstant represent a statically allocated result id in a QIR program.
@@ -289,12 +380,13 @@ class QirResultConstant(QirConstant):
         """
         return self.value
 
+
 class QirTerminator:
     """
     Instances of QirTerminator represent the special final instruction at the end of a block that
     indicates how control flow should transfer.
     """
-    
+
     def __new__(cls, term: PyQirTerminator):
         if term.is_ret:
             return super().__new__(QirRetTerminator)
@@ -312,6 +404,7 @@ class QirTerminator:
     def __init__(self, term: PyQirTerminator) -> None:
         self.term = term
 
+
 class QirRetTerminator(QirTerminator):
     """
     Instances of QirRetTerminator represent the ret instruction in a QIR program.
@@ -326,6 +419,7 @@ class QirRetTerminator(QirTerminator):
             self._operand = QirOperand(self.term.ret_operand)
         return self._operand
 
+
 class QirBrTerminator(QirTerminator):
     """
     Instances of QirBrTerminator represent a branch terminator instruction that unconditionally
@@ -338,6 +432,7 @@ class QirBrTerminator(QirTerminator):
         Gets the name of the block this branch jumps to.
         """
         return self.term.br_dest
+
 
 class QirCondBrTerminator(QirTerminator):
     """
@@ -368,13 +463,14 @@ class QirCondBrTerminator(QirTerminator):
         """
         return self.term.condbr_false_dest
 
+
 class QirSwitchTerminator(QirTerminator):
     """
     Instances of QirSwitchTerminator represent a switch terminator instruction that can jump
     to one or more blocks based on matching values of a given operand, or jump to a fallback block
     in the case that no matches are found.
     """
-    
+
     @property
     def operand(self) -> QirLocalOperand:
         """
@@ -391,7 +487,8 @@ class QirSwitchTerminator(QirTerminator):
         matching block name to jump to if the comparison succeeds.
         """
         if not hasattr(self, "_dest_pairs"):
-            self._dest_pairs = [(QirConstant(p[0]), p[1]) for p in self.term.switch_dests]
+            self._dest_pairs = [(QirConstant(p[0]), p[1])
+                                for p in self.term.switch_dests]
         return self._dest_pairs
 
     @property
@@ -402,6 +499,7 @@ class QirSwitchTerminator(QirTerminator):
         """
         return self.term.switch_default_dest
 
+
 class QirUnreachableTerminator(QirTerminator):
     """
     Instances of QirUnreachableTerminator represent an unreachable terminator instruction. As the name
@@ -409,6 +507,7 @@ class QirUnreachableTerminator(QirTerminator):
     before this terminator should halt program execution.
     """
     pass
+
 
 class QirInstr:
     """
@@ -494,6 +593,7 @@ class QirInstr:
             self._type = QirType(self.instr.type)
         return self._type
 
+
 class QirOpInstr(QirInstr):
     """
     Instances of QirOpInstr represent the class of instructions that have one or more operands that
@@ -506,8 +606,10 @@ class QirOpInstr(QirInstr):
         Gets the list of operands that this instruction operates on.
         """
         if not hasattr(self, "_target_operads"):
-            self._target_operads = [QirOperand(i) for i in self.instr.target_operands]
+            self._target_operads = [QirOperand(i)
+                                    for i in self.instr.target_operands]
         return self._target_operads
+
 
 class QirAddInstr(QirOpInstr):
     """
@@ -515,11 +617,13 @@ class QirAddInstr(QirOpInstr):
     """
     pass
 
+
 class QirSubInstr(QirOpInstr):
     """
     Instances of QirSubIntr represent an integer subtraction instruction that takes two operands.
     """
     pass
+
 
 class QirMulInstr(QirOpInstr):
     """
@@ -527,11 +631,13 @@ class QirMulInstr(QirOpInstr):
     """
     pass
 
+
 class QirUDivInstr(QirOpInstr):
     """
     Instances of QirUDivIntr represent an unsigned integer division instruction that takes two operands.
     """
     pass
+
 
 class QirSDivInstr(QirOpInstr):
     """
@@ -539,11 +645,13 @@ class QirSDivInstr(QirOpInstr):
     """
     pass
 
+
 class QirURemInstr(QirOpInstr):
     """
     Instances of QirURemIntr represent an unsigned integer remainder instruction that takes two operands.
     """
     pass
+
 
 class QirSRemInstr(QirOpInstr):
     """
@@ -551,11 +659,13 @@ class QirSRemInstr(QirOpInstr):
     """
     pass
 
+
 class QirAndInstr(QirOpInstr):
     """
     Instances of QirAndIntr represent a boolean and instruction that takes two operands.
     """
     pass
+
 
 class QirOrInstr(QirOpInstr):
     """
@@ -563,11 +673,13 @@ class QirOrInstr(QirOpInstr):
     """
     pass
 
+
 class QirXorInstr(QirOpInstr):
     """
     Instances of QirXorIntr represent a boolean xor instruction that takes two operands.
     """
     pass
+
 
 class QirShlInstr(QirOpInstr):
     """
@@ -575,11 +687,13 @@ class QirShlInstr(QirOpInstr):
     """
     pass
 
+
 class QirLShrInstr(QirOpInstr):
     """
     Instances of QirLShrIntr represent a logical bitwise shift right instruction that takes two operands.
     """
     pass
+
 
 class QirAShrInstr(QirOpInstr):
     """
@@ -587,11 +701,13 @@ class QirAShrInstr(QirOpInstr):
     """
     pass
 
+
 class QirFAddInstr(QirOpInstr):
     """
     Instances of QirFAddIntr represent a floating-point addition instruction that takes two operands.
     """
     pass
+
 
 class QirFSubInstr(QirOpInstr):
     """
@@ -599,11 +715,13 @@ class QirFSubInstr(QirOpInstr):
     """
     pass
 
+
 class QirFMulInstr(QirOpInstr):
     """
     Instances of QirFMulIntr represent a floating-point multiplication instruction that takes two operands.
     """
     pass
+
 
 class QirFDivInstr(QirOpInstr):
     """
@@ -611,17 +729,20 @@ class QirFDivInstr(QirOpInstr):
     """
     pass
 
+
 class QirFRemInstr(QirOpInstr):
     """
     Instances of QirFRemIntr represent a floating-point remainder instruction that takes two operands.
     """
     pass
 
+
 class QirFNegInstr(QirOpInstr):
     """
     Instances of QirFNegIntr represent a floating-point negation instruction that takes one operand.
     """
     pass
+
 
 class QirICmpInstr(QirOpInstr):
     """
@@ -636,6 +757,7 @@ class QirICmpInstr(QirOpInstr):
         "eq", "ne", "ugt", "uge", "ult", "ule", "sgt", "sge", "slt", and "sle".
         """
         return self.instr.icmp_predicate
+
 
 class QirFCmpInstr(QirOpInstr):
     """
@@ -652,6 +774,7 @@ class QirFCmpInstr(QirOpInstr):
         """
         return self.instr.fcmp_predicate
 
+
 class QirPhiInstr(QirInstr):
     """
     Instances of QirPhiInstr represent a phi instruction that selects a value for an operand based
@@ -665,7 +788,8 @@ class QirPhiInstr(QirInstr):
         for the value to use and the string name of the originating block.
         """
         if not hasattr(self, "_incoming_values"):
-            self._incoming_values = [(QirOperand(p[0]), p[1]) for p in self.instr.phi_incoming_values]
+            self._incoming_values = [(QirOperand(p[0]), p[1])
+                                     for p in self.instr.phi_incoming_values]
         return self._incoming_values
 
     def get_incoming_value_for_name(self, name: str) -> Optional[QirOperand]:
@@ -679,6 +803,7 @@ class QirPhiInstr(QirInstr):
             return QirOperand(op)
         else:
             return None
+
 
 class QirCallInstr(QirInstr):
     """
@@ -698,8 +823,10 @@ class QirCallInstr(QirInstr):
         Gets the list of QirOperand instances that are passed as arguments to the function call.
         """
         if not hasattr(self, "_func_args"):
-            self._func_args = [QirOperand(i) for i in self.instr.call_func_params]
+            self._func_args = [QirOperand(i)
+                               for i in self.instr.call_func_params]
         return self._func_args
+
 
 class QirQisCallInstr(QirCallInstr):
     """
@@ -708,6 +835,7 @@ class QirQisCallInstr(QirCallInstr):
     """
     pass
 
+
 class QirRtCallInstr(QirCallInstr):
     """
     Instances of QirRtCallInstr represent a call instruction where the function name begins with
@@ -715,12 +843,14 @@ class QirRtCallInstr(QirCallInstr):
     """
     pass
 
+
 class QirQirCallInstr(QirCallInstr):
     """
     Instances of QirQirCallInstr represent a call instruction where the function name begins with
     "__quantum__qir__" indicating that it is a function from the QIR base profile.
     """
     pass
+
 
 class QirBlock:
     """
@@ -784,6 +914,7 @@ class QirBlock:
         """
         return [(p[0], QirOperand(p[1])) for p in self.block.get_phi_pairs_by_source_name(name)]
 
+
 class QirParameter:
     """
     Instances of the QirParameter type describe a parameter in a function definition or declaration. They
@@ -810,6 +941,7 @@ class QirParameter:
         if self._type == None:
             self._type = QirType(self.param.type)
         return self._type
+
 
 class QirFunction:
     """
@@ -905,6 +1037,7 @@ class QirFunction:
             return QirInstr(instr)
         return None
 
+
 class QirModule:
     """
     Instances of QirModule parse a QIR program from bitcode into an in-memory
@@ -918,7 +1051,8 @@ class QirModule:
         elif isinstance(args[0], str):
             self.module = module_from_bitcode(args[0])
         else:
-            raise TypeError("Unrecognized argument type. Input must be string path to bitcode or PyQirModule object.")
+            raise TypeError(
+                "Unrecognized argument type. Input must be string path to bitcode or PyQirModule object.")
         self._functions = None
         self._interop_funcs = None
         self._entrypoint_funcs = None
@@ -931,7 +1065,6 @@ class QirModule:
         if self._functions == None:
             self._functions = [QirFunction(i) for i in self.module.functions]
         return self._functions
-
 
     def get_func_by_name(self, name: str) -> Optional[QirFunction]:
         """
@@ -957,7 +1090,9 @@ class QirModule:
         Gets any functions with the "EntryPoint" attribute.
         """
         if self._entrypoint_funcs == None:
-            self._entrypoint_funcs = [QirFunction(i) for i in self.module.get_entrypoint_funcs()]
+            self._entrypoint_funcs = [
+                QirFunction(i) for i in self.module.get_entrypoint_funcs()
+            ]
         return self._entrypoint_funcs
 
     @property
@@ -966,5 +1101,7 @@ class QirModule:
         Gets any functions with the "InteropFriendly" attribute.
         """
         if self._interop_funcs == None:
-            self._interop_funcs = [QirFunction(i) for i in self.module.get_interop_funcs()]
+            self._interop_funcs = [
+                QirFunction(i) for i in self.module.get_interop_funcs()
+            ]
         return self._interop_funcs
