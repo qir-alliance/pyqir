@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 from pyqir.generator import BasicQisBuilder, SimpleModule
 from pyqir.jit import GateLogger, GateSet, NonadaptiveJit
 import tempfile
