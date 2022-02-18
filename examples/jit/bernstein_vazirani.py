@@ -3,11 +3,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.jit.nonadaptivejit import NonadaptiveJit
-from pyqir.jit.gatelogger import GateLogger
-
-from pathlib import Path
 import os
+from pathlib import Path
+from pyqir.jit import GateLogger, NonadaptiveJit
 
 path = Path(__file__).parent
 file = os.path.join(path, "bernstein_vazirani.bc")

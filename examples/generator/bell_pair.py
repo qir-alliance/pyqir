@@ -3,8 +3,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator.module import SimpleModule
-from pyqir.generator.qis import BasicQisBuilder
+from pyqir.generator import BasicQisBuilder, SimpleModule
 
 # This module creates a Bell pair and returns the result of measuring each
 # qubit.
