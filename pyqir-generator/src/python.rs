@@ -183,11 +183,61 @@ struct Builder {
     frames: Vec<Vec<Instruction>>,
 }
 
+#[pymethods]
 impl Builder {
+    #[new]
     fn new() -> Builder {
         Builder {
             frames: vec![vec![]],
         }
+    }
+
+    #[args(args = "*")]
+    fn call(&mut self, name: String, args: &PyTuple) -> PyResult<()> {
+        let mut extracted_args = vec![];
+        for arg in args.iter() {
+            let extracted_arg = if let Ok(qubit) = arg.extract::<Qubit>() {
+                Arg {
+                    type_name: "Qubit".to_owned(),
+                    value: qubit.id(),
+                }
+            } else if let Ok(result) = arg.extract::<Ref>() {
+                Arg {
+                    type_name: "Result".to_owned(),
+                    value: result.id(),
+                }
+            } else if let Ok(b) = arg.extract::<bool>() {
+                Arg {
+                    type_name: "i8".to_owned(),
+                    value: b.to_string(),
+                }
+            } else if let Ok(i) = arg.extract::<i64>() {
+                Arg {
+                    type_name: "i64".to_owned(),
+                    value: i.to_string(),
+                }
+            } else if let Ok(f) = arg.extract::<f64>() {
+                Arg {
+                    type_name: "f64".to_owned(),
+                    value: f.to_string(),
+                }
+            } else {
+                return Err(PyErr::new::<PyTypeError, _>(format!(
+                    "unexpected argument type for {:?}",
+                    arg
+                )));
+            };
+
+            extracted_args.push(extracted_arg);
+        }
+
+        let external_call = Call {
+            name,
+            args: extracted_args,
+        };
+        let inst = Instruction::Call(external_call);
+        self.frames.last_mut().unwrap().push(inst);
+        Ok(())
     }
 }
 
@@ -201,32 +251,6 @@ impl BasicQisBuilder {
     #[new]
     fn new(builder: Py<Builder>) -> Self {
         BasicQisBuilder { builder }
-    }
-
-    #[args(args = "*")]
-    fn call(&self, py: Python, name: String, args: &PyTuple) {
-        let mut extracted_args = vec![];
-        for arg in args.iter() {
-            let extracted_arg = if let Ok(qubit) = arg.extract::<Qubit>() {
-                Arg::new("Qubit".to_owned(), qubit.id())
-            } else if let Ok(result) = arg.extract::<Ref>() {
-                Arg::new("Result".to_owned(), result.id())
-            } else if let Ok(b) = arg.extract::<bool>() {
-                Arg::new("i8".to_owned(), b.to_string())
-            } else if let Ok(i) = arg.extract::<i64>() {
-                Arg::new("i64".to_owned(), i.to_string())
-            } else if let Ok(f) = arg.extract::<f64>() {
-                Arg::new("f64".to_owned(), f.to_string())
-            } else {
-                panic!("unexpected argument type for {:?}", arg)
-            };
-
-            extracted_args.push(extracted_arg);
-        }
-
-        let external_call = Call::new(name, extracted_args);
-        let inst = Instruction::Call(external_call);
-        self.push_inst(py, inst);
     }
 
     fn cx(&self, py: Python, control: &Qubit, target: &Qubit) {

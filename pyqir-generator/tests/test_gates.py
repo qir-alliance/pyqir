@@ -7,31 +7,31 @@ from pyqir.generator.qis import BasicQisBuilder
 
 def controlled(gate: str) -> str:
     root = f'call void @__quantum__qis__{gate}__body'
-    controlled = f'{root}(%Qubit* %qubit0, %Qubit* %qubit1)'
+    controlled = f'{root}(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*))'
     return controlled
 
 
 def single(gate: str) -> str:
     root = f'call void @__quantum__qis__{gate}__body'
-    single = f'{root}(%Qubit* %qubit0)'
+    single = f'{root}(%Qubit* null)'
     return single
 
 
 def adjoint(gate: str) -> str:
     root = f'call void @__quantum__qis__{gate}__adj'
-    single = f'{root}(%Qubit* %qubit0)'
+    single = f'{root}(%Qubit* null)'
     return single
 
 
 def rotated(gate: str) -> str:
     root = f'call void @__quantum__qis__{gate}__body'
-    single = f'{root}(double 0.000000e+00, %Qubit* %qubit0)'
+    single = f'{root}(double 0.000000e+00, %Qubit* null)'
     return single
 
 
 def measured(gate: str) -> str:
     root = f'call %Result* @__quantum__qis__{gate}__body'
-    single = f'{root}(%Qubit* %qubit0)'
+    single = f'{root}(%Qubit* null)'
     return single
 
 

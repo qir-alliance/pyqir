@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use super::result;
-use crate::interop::{If, Instruction};
+use crate::interop::{Call, If, Instruction};
 use inkwell::{
     module::{Linkage, Module},
     types::BasicMetadataTypeEnum,
@@ -132,39 +132,48 @@ pub(crate) fn emit<'ctx>(
             generator.emit_void_call(generator.qis_z_body(), &[find_qubit(&inst.qubit).into()]);
         }
         Instruction::If(if_inst) => emit_if(generator, registers, qubits, entry_point, if_inst),
-        Instruction::Call(call) => {
-            let types: Vec<BasicMetadataTypeEnum<'ctx>> = call
-                .args
-                .iter()
-                .map(|args| type_name_to_basicmetadatatypeenum(generator, args.type_name.as_str()))
-                .collect();
-            let args: Vec<BasicMetadataValueEnum<'ctx>> = call
-                .args
-                .iter()
-                .map(|args| match args.type_name.as_str() {
-                    "Qubit" => find_qubit(&args.value).into(),
-                    "Result" => {
-                        if let Some(register) = registers[&args.value] {
-                            register.into()
-                        } else {
-                            panic!("Register {} must be measured prior to use.", args.value);
-                        }
-                    }
-                    "f64" => generator.f64_to_f64(args.value.parse::<f64>().unwrap()),
-                    "i64" => generator.i64_to_i64(args.value.parse::<i64>().unwrap()),
-                    "i8" => generator.bool_to_i1(args.value.parse::<bool>().unwrap()),
-                    unknown => panic!("Unknown parameter type for extern declaration {}", unknown),
-                })
-                .collect();
-            let function = get_extern_function_declaration(
-                generator.context,
-                &generator.module,
-                &call.name,
-                &types[..],
-            );
-            generator.emit_void_call(function, &args[..]);
-        }
+        Instruction::Call(call_inst) => emit_call(generator, registers, qubits, call_inst),
     }
+}
+
+fn emit_call<'ctx>(
+    generator: &CodeGenerator<'ctx>,
+    registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
+    call_inst: &Call,
+) {
+    let find_qubit = |name| get_qubit(name, qubits);
+
+    let types: Vec<BasicMetadataTypeEnum<'ctx>> = call_inst
+        .args
+        .iter()
+        .map(|args| type_name_to_basicmetadatatypeenum(generator, args.type_name.as_str()))
+        .collect();
+    let args: Vec<BasicMetadataValueEnum<'ctx>> = call_inst
+        .args
+        .iter()
+        .map(|args| match args.type_name.as_str() {
+            "Qubit" => find_qubit(&args.value).into(),
+            "Result" => {
+                if let Some(register) = registers[&args.value] {
+                    register.into()
+                } else {
+                    panic!("Register {} must be measured prior to use.", args.value);
+                }
+            }
+            "f64" => generator.f64_to_f64(args.value.parse::<f64>().unwrap()),
+            "i64" => generator.i64_to_i64(args.value.parse::<i64>().unwrap()),
+            "i8" => generator.bool_to_i1(args.value.parse::<bool>().unwrap()),
+            unknown => panic!("Unknown parameter type for extern declaration {}", unknown),
+        })
+        .collect();
+    let function = get_extern_function_declaration(
+        generator.context,
+        &generator.module,
+        &call_inst.name,
+        &types[..],
+    );
+    generator.emit_void_call(function, &args[..]);
 }
 
 fn emit_if<'ctx>(
