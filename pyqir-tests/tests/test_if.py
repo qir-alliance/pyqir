@@ -1,10 +1,10 @@
-from typing import List, Optional
-from pyqir.generator.module import SimpleModule
-from pyqir.generator.qis import BasicQisBuilder
-from pyqir.jit.nonadaptivejit import NonadaptiveJit
-from pyqir.jit.gatelogger import GateLogger
-from pyqir.jit.gateset import GateSet
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+from pyqir.generator import BasicQisBuilder, SimpleModule
+from pyqir.jit import GateLogger, GateSet, NonadaptiveJit
 import tempfile
+from typing import List, Optional
 import unittest
 
 
