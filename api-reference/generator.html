@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>pyqir_generator &#8212; PyQIR  documentation</title>
+    <title>pyqir.generator &#8212; PyQIR  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
@@ -15,8 +15,8 @@
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="pyqir_jit" href="jit.html" />
-    <link rel="prev" title="pyqir_parser" href="parser.html" />
+    <link rel="next" title="pyqir.jit" href="jit.html" />
+    <link rel="prev" title="pyqir.parser" href="parser.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -34,9 +34,150 @@
           <div class="body" role="main">
             
   <section id="pyqir-generator">
-<h1>pyqir_generator<a class="headerlink" href="#pyqir-generator" title="Permalink to this headline">¶</a></h1>
-<section id="qirbuilder-class">
-<h2><code class="docutils literal notranslate"><span class="pre">QirBuilder</span></code> class<a class="headerlink" href="#qirbuilder-class" title="Permalink to this headline">¶</a></h2>
+<h1>pyqir.generator<a class="headerlink" href="#pyqir-generator" title="Permalink to this headline">¶</a></h1>
+<section id="modules">
+<h2>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.generator.SimpleModule">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">SimpleModule</span></span><a class="headerlink" href="#pyqir.generator.SimpleModule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.SimpleModule.bitcode">
+<span class="sig-name descname"><span class="pre">bitcode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.SimpleModule.bitcode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.SimpleModule.builder">
+<span class="sig-name descname"><span class="pre">builder</span></span><a class="headerlink" href="#pyqir.generator.SimpleModule.builder" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.SimpleModule.ir">
+<span class="sig-name descname"><span class="pre">ir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.SimpleModule.ir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.SimpleModule.qubits">
+<span class="sig-name descname"><span class="pre">qubits</span></span><a class="headerlink" href="#pyqir.generator.SimpleModule.qubits" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.SimpleModule.results">
+<span class="sig-name descname"><span class="pre">results</span></span><a class="headerlink" href="#pyqir.generator.SimpleModule.results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="builders">
+<h2>Builders<a class="headerlink" href="#builders" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.generator.Builder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">Builder</span></span><a class="headerlink" href="#pyqir.generator.Builder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">BasicQisBuilder</span></span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.cx">
+<span class="sig-name descname"><span class="pre">cx</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.cx" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.cz">
+<span class="sig-name descname"><span class="pre">cz</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.cz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.h">
+<span class="sig-name descname"><span class="pre">h</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.h" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.if_result">
+<span class="sig-name descname"><span class="pre">if_result</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.if_result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.m">
+<span class="sig-name descname"><span class="pre">m</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.m" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.reset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.rx">
+<span class="sig-name descname"><span class="pre">rx</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.rx" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.ry">
+<span class="sig-name descname"><span class="pre">ry</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.ry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.rz">
+<span class="sig-name descname"><span class="pre">rz</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.rz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.s">
+<span class="sig-name descname"><span class="pre">s</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.s" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.s_adj">
+<span class="sig-name descname"><span class="pre">s_adj</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.s_adj" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.t">
+<span class="sig-name descname"><span class="pre">t</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.t" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.t_adj">
+<span class="sig-name descname"><span class="pre">t_adj</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.t_adj" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.x">
+<span class="sig-name descname"><span class="pre">x</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.x" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.y">
+<span class="sig-name descname"><span class="pre">y</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.y" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.z">
+<span class="sig-name descname"><span class="pre">z</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.z" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="values">
+<h2>Values<a class="headerlink" href="#values" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.generator.Qubit">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">Qubit</span></span><a class="headerlink" href="#pyqir.generator.Qubit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.generator.Ref">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">Ref</span></span><a class="headerlink" href="#pyqir.generator.Ref" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
 </section>
 </section>
 
@@ -60,9 +201,9 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="parser.html">pyqir_parser</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">pyqir_generator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="jit.html">pyqir_jit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parser.html">pyqir.parser</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pyqir.generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jit.html">pyqir.jit</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../development-guide/index.html">Development Guide</a></li>
@@ -73,8 +214,8 @@
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="index.html">API Reference</a><ul>
-      <li>Previous: <a href="parser.html" title="previous chapter">pyqir_parser</a></li>
-      <li>Next: <a href="jit.html" title="next chapter">pyqir_jit</a></li>
+      <li>Previous: <a href="parser.html" title="previous chapter">pyqir.parser</a></li>
+      <li>Next: <a href="jit.html" title="next chapter">pyqir.jit</a></li>
   </ul></li>
   </ul></li>
 </ul>
