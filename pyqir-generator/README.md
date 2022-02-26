@@ -20,78 +20,47 @@ pair before measuring each qubit and returning the result. The unoptimized QIR
 is displayed in the terminal when executed:
 
 ```python
-from pyqir_generator import QirBuilder
+from pyqir.generator import BasicQisBuilder, SimpleModule
 
-builder = QirBuilder("Bell")
-builder.add_quantum_register("qubit", 2)
-builder.add_classical_register("output", 2)
+module = SimpleModule("Bell", num_qubits=2, num_results=2)
+qis = BasicQisBuilder(module.builder)
 
-builder.h("qubit0")
-builder.cx("qubit0", "qubit1")
+qis.h(module.qubits[0])
+qis.cx(module.qubits[0], module.qubits[1])
 
-builder.m("qubit0", "output0")
-builder.m("qubit1", "output1")
+qis.m(module.qubits[0], module.results[0])
+qis.m(module.qubits[1], module.results[1])
 
-print(builder.get_ir_string())
+print(module.ir())
 ```
 
-The corresponding piece in the QIR output will contain the generated function:
+The QIR output will look like:
 
 ```llvm
-define internal %Array* @QuantumApplication__Run__body() {
+; ModuleID = 'Bell'
+source_filename = "Bell"
+
+%Qubit = type opaque
+%Result = type opaque
+
+define void @main() #0 {
 entry:
-  %qubit0 = call %Qubit* @__quantum__rt__qubit_allocate()
-  %qubit1 = call %Qubit* @__quantum__rt__qubit_allocate()
-  %results = call %Array* @__quantum__rt__array_create_1d(i32 8, i64 1)
-  %output = call %Array* @__quantum__rt__array_create_1d(i32 8, i64 2)
-  %output_0_raw = call i8* @__quantum__rt__array_get_element_ptr_1d(%Array* %output, i64 0)
-  %output_result_0 = bitcast i8* %output_0_raw to %Result**
-  %zero_0 = call %Result* @__quantum__rt__result_get_zero()
-  call void @__quantum__rt__result_update_reference_count(%Result* %zero_0, i32 1)
-  store %Result* %zero_0, %Result** %output_result_0, align 8
-  %output_1_raw = call i8* @__quantum__rt__array_get_element_ptr_1d(%Array* %output, i64 1)
-  %output_result_1 = bitcast i8* %output_1_raw to %Result**
-  %zero_1 = call %Result* @__quantum__rt__result_get_zero()
-  call void @__quantum__rt__result_update_reference_count(%Result* %zero_1, i32 1)
-  store %Result* %zero_1, %Result** %output_result_1, align 8
-  %results_result_tmp_0_raw = call i8* @__quantum__rt__array_get_element_ptr_1d(%Array* %results, i64 0)
-  %results_result_tmp_result_0 = bitcast i8* %results_result_tmp_0_raw to %Array**
-  store %Array* %output, %Array** %results_result_tmp_result_0, align 8
-  call void @Microsoft__Quantum__Intrinsic__H__body(%Qubit* %qubit0)
-  %__controlQubits__ = call %Array* @__quantum__rt__array_create_1d(i32 8, i64 1)
-  %__controlQubits__0_result_tmp_0_raw = call i8* @__quantum__rt__array_get_element_ptr_1d(%Array* %__controlQubits__, i64 0)
-  %__controlQubits__0_result_tmp_result_0 = bitcast i8* %__controlQubits__0_result_tmp_0_raw to %Qubit**
-  store %Qubit* %qubit0, %Qubit** %__controlQubits__0_result_tmp_result_0, align 8
-  call void @Microsoft__Quantum__Intrinsic__X__ctl(%Array* %__controlQubits__, %Qubit* %qubit1)
-  call void @__quantum__rt__array_update_reference_count(%Array* %__controlQubits__, i32 -1)
-  %measurement = call %Result* @Microsoft__Quantum__Intrinsic__M__body(%Qubit* %qubit0)
-  %output0_0_raw = call i8* @__quantum__rt__array_get_element_ptr_1d(%Array* %output, i64 0)
-  %output0_result_0 = bitcast i8* %output0_0_raw to %Result**
-  %existing_value = load %Result*, %Result** %output0_result_0, align 8
-  call void @__quantum__rt__result_update_reference_count(%Result* %existing_value, i32 -1)
-  call void @__quantum__rt__result_update_reference_count(%Result* %measurement, i32 1)
-  store %Result* %measurement, %Result** %output0_result_0, align 8
-  %measurement1 = call %Result* @Microsoft__Quantum__Intrinsic__M__body(%Qubit* %qubit1)
-  %output1_1_raw = call i8* @__quantum__rt__array_get_element_ptr_1d(%Array* %output, i64 1)
-  %output1_result_1 = bitcast i8* %output1_1_raw to %Result**
-  %existing_value2 = load %Result*, %Result** %output1_result_1, align 8
-  call void @__quantum__rt__result_update_reference_count(%Result* %existing_value2, i32 -1)
-  call void @__quantum__rt__result_update_reference_count(%Result* %measurement1, i32 1)
-  store %Result* %measurement1, %Result** %output1_result_1, align 8
-  call void @__quantum__rt__qubit_release(%Qubit* %qubit1)
-  call void @__quantum__rt__qubit_release(%Qubit* %qubit0)
-  ret %Array* %results
+  call void @__quantum__qis__h__body(%Qubit* null)
+  call void @__quantum__qis__cnot__body(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*))
+  %result0 = call %Result* @__quantum__qis__m__body(%Qubit* null)
+  %result1 = call %Result* @__quantum__qis__m__body(%Qubit* inttoptr (i64 1 to %Qubit*))
+  ret void
 }
+
+declare void @__quantum__qis__h__body(%Qubit*)
+
+declare void @__quantum__qis__cnot__body(%Qubit*, %Qubit*)
+
+declare %Result* @__quantum__qis__m__body(%Qubit*)
+
+attributes #0 = { "EntryPoint" "requiredQubits"="2" }
 ```
 
 ## Building and Testing
 
 See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html)
-
-## Current Limitations
-
-- Support for emitting classical computations and control flow constructs is not
-  yet implemented, see also [this
-  issue](https://github.com/qir-alliance/pyqir/issues/2)
-- Using qubit/register names in gate calls that haven't been defined will cause
-  an error during generation.
