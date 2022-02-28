@@ -64,3 +64,9 @@ attributes #0 = { "EntryPoint" "requiredQubits"="2" }
 ## Building and Testing
 
 See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html)
+
+## Current Limitations
+
+Classical computation and control flow is not yet fully supported.
+Only branching based on measurement results is currently possible.
+See [issue #2: Support control flow and classical computation in PyQIR Generator](https://github.com/qir-alliance/pyqir/issues/2).
