@@ -4,5 +4,6 @@
 #![warn(clippy::all, clippy::pedantic)]
 
 pub mod codegen;
+pub mod generation;
 pub mod module;
 pub mod passes;

@@ -18,6 +18,7 @@ mut_static = "5.0.0"
 [dev-dependencies]
 serial_test = "0.5.1"
 tempfile = "3.2.0"
+normalize-line-endings = "0.3.0"
 
 [lib]
 name = "qirlib"

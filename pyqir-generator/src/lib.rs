@@ -10,7 +10,4 @@
 //     we can directly control in our code.
 #![allow(clippy::needless_option_as_deref)]
 
-pub mod emit;
-pub mod interop;
 pub mod python;
-pub mod qir;

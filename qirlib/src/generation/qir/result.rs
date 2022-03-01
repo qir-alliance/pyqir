@@ -1,5 +1,5 @@
+use crate::codegen::CodeGenerator;
 use inkwell::values::{BasicMetadataValueEnum, IntValue, PointerValue};
-use qirlib::codegen::CodeGenerator;
 
 pub(crate) fn get_zero<'a>(generator: &CodeGenerator<'a>) -> PointerValue<'a> {
     generator
