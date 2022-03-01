@@ -36,7 +36,7 @@ pub fn set_measure_stream(bits: &BitVec) {
 }
 
 fn get_current_gate_processor() -> ForceSomeRwLockWriteGuard<'static, BaseProfile> {
-    let v = crate::gates::CURRENT_GATES.write().unwrap();
+    let v = crate::evaluation::gates::CURRENT_GATES.write().unwrap();
     v
 }
 

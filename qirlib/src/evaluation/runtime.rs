@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::gates::CURRENT_GATES;
-use crate::interop::SemanticModel;
+use crate::evaluation::gates::CURRENT_GATES;
+use crate::evaluation::interop::SemanticModel;
 use inkwell::execution_engine::ExecutionEngine;
 use inkwell::module::Module;
 
@@ -19,7 +19,7 @@ pub(crate) struct Simulator {
 impl<'ctx> Simulator {
     pub fn new(module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) -> Self {
         let simulator = Simulator {
-            _scope: crate::gates::GateScope::new(),
+            _scope: crate::evaluation::gates::GateScope::new(),
         };
 
         Simulator::bind(module, ee);
