@@ -1,7 +1,7 @@
-# Copyright(c) Microsoft Corporation.
+# Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.jit.gateset import GateSet
+from pyqir.jit._gateset import GateSet
 
 
 class GateLogger(GateSet):

@@ -9,9 +9,7 @@ from mock_language.MockLanguageLexer import MockLanguageLexer
 from mock_language.MockLanguageParser import MockLanguageParser
 from mock_language.MockLanguageListener import MockLanguageListener
 from pathlib import Path
-from pyqir.generator.module import SimpleModule
-from pyqir.generator.qis import BasicQisBuilder
-from pyqir.generator.value import Qubit, Ref
+from pyqir.generator import BasicQisBuilder, Qubit, Ref, SimpleModule
 
 
 class QirGenerator(MockLanguageListener):

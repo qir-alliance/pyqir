@@ -2,9 +2,12 @@
 
 ## [Unreleased]
 
+## [0.2.0a1] - 2022-02-25
+
 - Cache parser values for better hashing in Python [#41](https://github.com/qir-alliance/pyqir/pull/41)
 - Moving to minimal API and eliminating bitcode template [#46](https://github.com/qir-alliance/pyqir/pull/46)
 - PyQIR generator API redesign with classical if statement on Result values [#43](https://github.com/qir-alliance/pyqir/pull/43)
+- QIR generation now uses static qubit allocation by default [#43](https://github.com/qir-alliance/pyqir/pull/43)
 
 ## [0.1.1a1] - 2022-01-31
 
@@ -37,5 +40,6 @@
 
 - Initial Release
 
-[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.1.1a1...HEAD
+[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.2.0a1...HEAD
+[0.2.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.1.0a1...v0.2.0a1
 [0.1.1a1]: https://github.com/qir-alliance/pyqir/compare/v0.1.0a1...v0.1.1a1

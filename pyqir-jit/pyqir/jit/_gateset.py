@@ -1,7 +1,7 @@
-# Copyright(c) Microsoft Corporation.
+# Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-class GateSet(object):
+class GateSet:
     """
     Defines the quantum circuit operations which may be registered for
     callbacks during JIT execution of QIR

@@ -23,24 +23,24 @@ conda install -c conda-forge gh
 ### Download the Release
 
 From within the repository root folder, run the following command to download
-the desired version for your platform, e.g. for `v0.1.1a1`:
+the desired version for your platform, e.g. for `v0.2.0a1`:
 
 - on Linux:
 
   ```bash
-  gh release download v0.1.1a1 -D wheelhouse -R qir-alliance/pyqir --pattern "*-manylinux*_x86_64.whl"
+  gh release download v0.2.0a1 -D wheelhouse -R qir-alliance/pyqir --pattern "*-manylinux*_x86_64.whl"
   ```
 
 - on Mac OS:
 
   ```bash
-  gh release download v0.1.1a1 -D wheelhouse -R qir-alliance/pyqir --pattern "*-macosx_*_x86_64.whl"
+  gh release download v0.2.0a1 -D wheelhouse -R qir-alliance/pyqir --pattern "*-macosx_*_x86_64.whl"
   ```
 
 - on Windows:
 
   ```bash
-  gh release download v0.1.1a1 -D wheelhouse -R qir-alliance/pyqir --pattern "*-win_amd64.whl"
+  gh release download v0.2.0a1 -D wheelhouse -R qir-alliance/pyqir --pattern "*-win_amd64.whl"
   ```
 
 ### Install the Packages
@@ -65,15 +65,15 @@ PyQIR from source can be found at {doc}`/development-guide/building`.
 To uninstall the PyQIR packages, run
 
 ```bash
-python -m pip uninstall -y pyqir_generator pyqir_parser pyqir_jit`
+python -m pip uninstall -y pyqir_generator pyqir_parser pyqir_jit
 ```
 
 ## Troubleshooting
 
 ### Error when running the examples
 
-- `ModuleNotFoundError: No module named 'pyqir_(generator|parser|jit)'`: Install
-  the library by running one of the `install.(sh|ps1|cmd)` scripts.
+- `ModuleNotFoundError: No module named '(pyqir|pyqir.generator|pyqir.parser|pyqir.jit)'`:
+  Install the library by running one of the `install.(sh|ps1|cmd)` scripts.
 
 ### Other errors
 

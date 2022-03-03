@@ -1,65 +1,65 @@
-# pyqir_parser
+# pyqir.parser
 
 ## Classes representing QIR types
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirType
+.. autoclass:: pyqir.parser.QirType
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirVoidType
+.. autoclass:: pyqir.parser.QirVoidType
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirIntegerType
+.. autoclass:: pyqir.parser.QirIntegerType
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirPointerType
+.. autoclass:: pyqir.parser.QirPointerType
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirDoubleType
+.. autoclass:: pyqir.parser.QirDoubleType
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirArrayType
+.. autoclass:: pyqir.parser.QirArrayType
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirStructType
+.. autoclass:: pyqir.parser.QirStructType
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirNamedStructType
+.. autoclass:: pyqir.parser.QirNamedStructType
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirResultType
+.. autoclass:: pyqir.parser.QirResultType
     :show-inheritance:
     :members:
     :undoc-members:
@@ -68,49 +68,49 @@
 ## Classes representing QIR operands
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirOperand
+.. autoclass:: pyqir.parser.QirOperand
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirLocalOperand
+.. autoclass:: pyqir.parser.QirLocalOperand
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirIntConstant
+.. autoclass:: pyqir.parser.QirIntConstant
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirDoubleConstant
+.. autoclass:: pyqir.parser.QirDoubleConstant
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirNullConstant
+.. autoclass:: pyqir.parser.QirNullConstant
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirQubitConstant
+.. autoclass:: pyqir.parser.QirQubitConstant
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirResultConstant
+.. autoclass:: pyqir.parser.QirResultConstant
     :show-inheritance:
     :members:
     :undoc-members:
@@ -119,42 +119,42 @@
 ## Classes representing basic block terminators
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirTerminator
+.. autoclass:: pyqir.parser.QirTerminator
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirRetTerminator
+.. autoclass:: pyqir.parser.QirRetTerminator
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirBrTerminator
+.. autoclass:: pyqir.parser.QirBrTerminator
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirCondBrTerminator
+.. autoclass:: pyqir.parser.QirCondBrTerminator
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirSwitchTerminator
+.. autoclass:: pyqir.parser.QirSwitchTerminator
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirUnreachableTerminator
+.. autoclass:: pyqir.parser.QirUnreachableTerminator
     :show-inheritance:
     :members:
     :undoc-members:
@@ -163,189 +163,189 @@
 ## Classes representing QIR instructions
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirInstr
+.. autoclass:: pyqir.parser.QirInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirQisCallInstr
+.. autoclass:: pyqir.parser.QirQisCallInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirRtCallInstr
+.. autoclass:: pyqir.parser.QirRtCallInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirQirCallInstr
+.. autoclass:: pyqir.parser.QirQirCallInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirCallInstr
+.. autoclass:: pyqir.parser.QirCallInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirAddInstr
+.. autoclass:: pyqir.parser.QirAddInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirSubInstr
+.. autoclass:: pyqir.parser.QirSubInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirMulInstr
+.. autoclass:: pyqir.parser.QirMulInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirUDivInstr
+.. autoclass:: pyqir.parser.QirUDivInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirSDivInstr
+.. autoclass:: pyqir.parser.QirSDivInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirURemInstr
+.. autoclass:: pyqir.parser.QirURemInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirSRemInstr
+.. autoclass:: pyqir.parser.QirSRemInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirAndInstr
+.. autoclass:: pyqir.parser.QirAndInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirOrInstr
+.. autoclass:: pyqir.parser.QirOrInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirXorInstr
+.. autoclass:: pyqir.parser.QirXorInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirShlInstr
+.. autoclass:: pyqir.parser.QirShlInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirLShrInstr
+.. autoclass:: pyqir.parser.QirLShrInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirAShrInstr
+.. autoclass:: pyqir.parser.QirAShrInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirFAddInstr
+.. autoclass:: pyqir.parser.QirFAddInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirFSubInstr
+.. autoclass:: pyqir.parser.QirFSubInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirFMulInstr
+.. autoclass:: pyqir.parser.QirFMulInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirFDivInstr
+.. autoclass:: pyqir.parser.QirFDivInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirFRemInstr
+.. autoclass:: pyqir.parser.QirFRemInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirFNegInstr
+.. autoclass:: pyqir.parser.QirFNegInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirICmpInstr
+.. autoclass:: pyqir.parser.QirICmpInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirFCmpInstr
+.. autoclass:: pyqir.parser.QirFCmpInstr
     :show-inheritance:
     :members:
     :undoc-members:
 ```
 
 ```{eval-rst}
-.. autoclass:: pyqir_parser.QirPhiInstr
+.. autoclass:: pyqir.parser.QirPhiInstr
     :show-inheritance:
     :members:
     :undoc-members:
