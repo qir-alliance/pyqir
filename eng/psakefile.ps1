@@ -242,10 +242,9 @@ function Build-ContainerImage([string]$srcPath) {
 function Build-PyQIR([string]$project) {
     $srcPath = $repo.root
     $installationDirectory = Resolve-InstallationDirectory
-    Build-ContainerImage $srcPath
 
     if (Test-RunInContainer) {
-
+        Build-ContainerImage $srcPath
         function Invoke-ContainerImage {
             Write-BuildLog "Running container image:"
             $ioVolume = "$($srcPath):/io"
