@@ -6,7 +6,7 @@ use lazy_static::lazy_static;
 type QUBIT = u64;
 use mut_static::MutStatic;
 
-use crate::interop::{
+use crate::evaluation::interop::{
     ClassicalRegister, Controlled, Instruction, Measured, QuantumRegister, Rotated, SemanticModel,
     Single,
 };

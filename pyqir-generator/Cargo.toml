@@ -16,9 +16,6 @@ log = "0.4.14"
 pyo3 = "0.15.1"
 qirlib = { path = "../qirlib" }
 
-[dev-dependencies]
-normalize-line-endings = "0.3.0"
-
 [features]
 extension-module = ["pyo3/abi3-py36", "pyo3/extension-module"]
 default = ["extension-module"]

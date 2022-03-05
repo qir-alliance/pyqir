@@ -10,9 +10,4 @@
 //     we can directly control in our code.
 #![allow(clippy::needless_option_as_deref)]
 
-pub mod gates;
-pub mod interop;
-pub mod intrinsics;
-pub mod jit;
 pub mod python;
-pub mod runtime;

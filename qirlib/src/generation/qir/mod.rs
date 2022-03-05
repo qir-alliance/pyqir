@@ -21,8 +21,8 @@ pub(crate) fn create_entry_point<'ctx>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::codegen::CodeGenerator;
     use inkwell::context::Context;
-    use qirlib::codegen::CodeGenerator;
 
     #[test]
     fn entry_point_function_has_correct_signature_and_default_attribute() {
