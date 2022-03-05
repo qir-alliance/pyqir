@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use std::collections::HashMap;
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct QuantumRegister {
     pub name: String,
@@ -126,18 +128,37 @@ pub enum Instruction {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Call {
     pub name: String,
-    pub args: Vec<Arg>,
+    pub args: Vec<Value>,
+}
+
+#[derive(Clone)]
+pub enum Type {
+    Unit,
+    Bool,
+    Int,
+    Double,
+    Qubit,
+}
+
+#[derive(Clone)]
+pub struct CallableType {
+    pub param_types: Vec<Type>,
+    pub return_type: Box<Type>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Arg {
-    pub type_name: String,
-    pub value: String,
+pub enum Value {
+    Unit,
+    Bool(bool),
+    Int(i64),
+    Double(f64),
+    Qubit(String),
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct SemanticModel {
     pub name: String,
+    pub external_functions: HashMap<String, CallableType>,
     pub registers: Vec<ClassicalRegister>,
     pub qubits: Vec<QuantumRegister>,
     pub instructions: Vec<Instruction>,
@@ -149,6 +170,7 @@ impl SemanticModel {
     pub fn new(name: String) -> Self {
         SemanticModel {
             name,
+            external_functions: HashMap::new(),
             registers: vec![],
             qubits: vec![],
             instructions: vec![],

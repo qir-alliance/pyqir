@@ -1,15 +1,23 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{interop::SemanticModel, qir};
+use crate::{
+    interop::{SemanticModel, Type},
+    qir,
+};
 use inkwell::{
     attributes::AttributeLoc,
     context::Context,
+    module::Linkage,
+    types::{AnyTypeEnum, BasicMetadataTypeEnum, BasicType, BasicTypeEnum},
     values::{BasicValueEnum, FunctionValue, PointerValue},
     AddressSpace,
 };
 use qirlib::{codegen::CodeGenerator, passes::run_basic_passes_on};
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    convert::{Into, TryFrom, TryInto},
+};
 
 /// # Errors
 ///
@@ -63,6 +71,30 @@ fn build_entry_function(
     let entry = generator.context.append_basic_block(entry_point, "entry");
     generator.builder.position_at_end(entry);
 
+    for (name, callable_type) in &model.external_functions {
+        let return_type = qir_type_to_any_type(generator, &callable_type.return_type);
+
+        let param_types: Vec<BasicTypeEnum> = callable_type
+            .param_types
+            .iter()
+            .map(|t| qir_type_to_any_type(generator, t).try_into().unwrap())
+            .collect();
+
+        let param_types: Vec<BasicMetadataTypeEnum> =
+            param_types.into_iter().map(Into::into).collect();
+
+        let fn_type = match return_type {
+            AnyTypeEnum::VoidType(void_type) => void_type.fn_type(param_types.as_slice(), false),
+            _ => BasicTypeEnum::try_from(return_type)
+                .unwrap()
+                .fn_type(param_types.as_slice(), false),
+        };
+
+        generator
+            .module
+            .add_function(name, fn_type, Some(Linkage::External));
+    }
+
     let qubits = write_qubits(model, generator);
 
     let mut registers = write_registers(model);
@@ -76,6 +108,18 @@ fn build_entry_function(
     generator.builder.build_return(None);
 
     generator.module.verify().map_err(|e| e.to_string())
+}
+
+fn qir_type_to_any_type<'ctx>(generator: &CodeGenerator<'ctx>, type_: &Type) -> AnyTypeEnum<'ctx> {
+    match type_ {
+        Type::Unit => AnyTypeEnum::VoidType(generator.context.void_type()),
+        Type::Bool => AnyTypeEnum::IntType(generator.bool_type()),
+        Type::Int => AnyTypeEnum::IntType(generator.int64_type()),
+        Type::Double => AnyTypeEnum::FloatType(generator.double_type()),
+        Type::Qubit => {
+            AnyTypeEnum::PointerType(generator.qubit_type().ptr_type(AddressSpace::Generic))
+        }
+    }
 }
 
 fn free_qubits<'ctx>(
@@ -162,7 +206,7 @@ mod tests {
         },
     };
     use normalize_line_endings::normalized;
-    use std::{env, fs, path::PathBuf};
+    use std::{collections::HashMap, env, fs, path::PathBuf};
 
     const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
 
@@ -170,6 +214,7 @@ mod tests {
     fn test_if_then() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then".to_string(),
+            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -190,6 +235,7 @@ mod tests {
     fn test_if_else() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else".to_string(),
+            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -210,6 +256,7 @@ mod tests {
     fn test_if_then_continue() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_continue".to_string(),
+            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -231,6 +278,7 @@ mod tests {
     fn test_if_else_continue() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else_continue".to_string(),
+            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -252,6 +300,7 @@ mod tests {
     fn test_if_then_else_continue() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_else_continue".to_string(),
+            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -273,6 +322,7 @@ mod tests {
     fn test_if_then_then() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_then".to_string(),
+            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 2)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -298,6 +348,7 @@ mod tests {
     fn test_if_else_else() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else_else".to_string(),
+            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 2)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -323,6 +374,7 @@ mod tests {
     fn test_if_then_else() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_else".to_string(),
+            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 2)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -348,6 +400,7 @@ mod tests {
     fn test_if_else_then() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else_then".to_string(),
+            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 2)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -373,6 +426,7 @@ mod tests {
     fn test_results_default_to_zero_if_not_measured() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_results_default_to_zero_if_not_measured".to_string(),
+            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![Instruction::If(If {

@@ -4,8 +4,8 @@
 use crate::{
     emit,
     interop::{
-        Arg, Call, ClassicalRegister, Controlled, If, Instruction, Measured, QuantumRegister,
-        Rotated, SemanticModel, Single,
+        self, Call, ClassicalRegister, Controlled, If, Instruction, Measured, QuantumRegister,
+        Rotated, SemanticModel, Single, Value,
     },
 };
 use pyo3::{
@@ -16,7 +16,7 @@ use pyo3::{
     PyObjectProtocol,
 };
 use std::{
-    collections::hash_map::DefaultHasher,
+    collections::{hash_map::DefaultHasher, HashMap},
     hash::{Hash, Hasher},
     vec,
 };
@@ -24,9 +24,11 @@ use std::{
 #[pymodule]
 #[pyo3(name = "_native")]
 fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<SimpleModule>()?;
+    m.add_class::<Type>()?;
+    m.add_class::<CallableType>()?;
     m.add_class::<Qubit>()?;
     m.add_class::<Ref>()?;
+    m.add_class::<SimpleModule>()?;
     m.add_class::<Builder>()?;
     m.add_class::<BasicQisBuilder>()
 }
@@ -34,78 +36,40 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
 const RESULT_NAME: &str = "result";
 const QUBIT_NAME: &str = "qubit";
 
+#[derive(Clone)]
 #[pyclass]
-struct SimpleModule {
-    model: SemanticModel,
-    builder: Py<Builder>,
-}
+struct Type(interop::Type);
 
 #[pymethods]
-impl SimpleModule {
-    #[new]
-    fn new(py: Python, name: String, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
-        let registers = vec![ClassicalRegister::new(RESULT_NAME.to_string(), num_results)];
+impl Type {
+    #[classattr]
+    const UNIT: Type = Type(interop::Type::Unit);
 
-        let qubits = (0..num_qubits)
-            .map(|i| QuantumRegister::new(QUBIT_NAME.to_string(), i))
-            .collect();
+    #[classattr]
+    const BOOL: Type = Type(interop::Type::Bool);
 
-        let model = SemanticModel {
-            name,
-            registers,
-            qubits,
-            instructions: Vec::new(),
-            static_alloc: true,
-        };
+    #[classattr]
+    const INT: Type = Type(interop::Type::Int);
 
-        let builder = Py::new(py, Builder::new())?;
-        Ok(SimpleModule { model, builder })
-    }
+    #[classattr]
+    const DOUBLE: Type = Type(interop::Type::Double);
 
-    #[getter]
-    fn qubits(&self) -> Vec<Qubit> {
-        self.model
-            .qubits
-            .iter()
-            .map(|q| Qubit { index: q.index })
-            .collect()
-    }
-
-    #[getter]
-    fn results(&self) -> Vec<Ref> {
-        let size = self.model.registers.first().unwrap().size;
-        (0..size)
-            .map(|index| Ref(RefKind::Result { index }))
-            .collect()
-    }
-
-    #[getter]
-    fn builder(&self) -> Py<Builder> {
-        self.builder.clone()
-    }
-
-    fn ir(&self, py: Python) -> PyResult<String> {
-        let model = self.model_with_builder_instructions(py);
-        emit::ir(&model).map_err(PyOSError::new_err)
-    }
-
-    fn bitcode(&self, py: Python) -> PyResult<Vec<u8>> {
-        let model = self.model_with_builder_instructions(py);
-        emit::bitcode(&model).map_err(PyOSError::new_err)
-    }
+    #[classattr]
+    const QUBIT: Type = Type(interop::Type::Qubit);
 }
 
-impl SimpleModule {
-    fn model_with_builder_instructions(&self, py: Python) -> SemanticModel {
-        let builder = self.builder.as_ref(py).borrow();
+#[derive(Clone)]
+#[pyclass]
+struct CallableType(interop::CallableType);
 
-        match builder.frames[..] {
-            [ref instructions] => SemanticModel {
-                instructions: instructions.clone(),
-                ..self.model.clone()
-            },
-            _ => panic!("Builder does not contain exactly one stack frame."),
-        }
+#[pymethods]
+impl CallableType {
+    #[new]
+    fn new(param_types: Vec<Type>, return_type: Type) -> CallableType {
+        CallableType(interop::CallableType {
+            param_types: param_types.into_iter().map(|t| t.0).collect(),
+            return_type: Box::new(return_type.0),
+        })
     }
 }
 
@@ -179,8 +143,94 @@ enum RefKind {
 }
 
 #[pyclass]
+struct SimpleModule {
+    model: SemanticModel,
+    builder: Py<Builder>,
+}
+
+#[pymethods]
+impl SimpleModule {
+    #[new]
+    fn new(py: Python, name: String, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
+        let registers = vec![ClassicalRegister::new(RESULT_NAME.to_string(), num_results)];
+
+        let qubits = (0..num_qubits)
+            .map(|i| QuantumRegister::new(QUBIT_NAME.to_string(), i))
+            .collect();
+
+        let model = SemanticModel {
+            name,
+            external_functions: HashMap::new(),
+            registers,
+            qubits,
+            instructions: Vec::new(),
+            static_alloc: true,
+        };
+
+        let builder = Py::new(py, Builder::new())?;
+        Ok(SimpleModule { model, builder })
+    }
+
+    #[getter]
+    fn qubits(&self) -> Vec<Qubit> {
+        self.model
+            .qubits
+            .iter()
+            .map(|q| Qubit { index: q.index })
+            .collect()
+    }
+
+    #[getter]
+    fn results(&self) -> Vec<Ref> {
+        let size = self.model.registers.first().unwrap().size;
+        (0..size)
+            .map(|index| Ref(RefKind::Result { index }))
+            .collect()
+    }
+
+    #[getter]
+    fn builder(&self) -> Py<Builder> {
+        self.builder.clone()
+    }
+
+    fn ir(&self, py: Python) -> PyResult<String> {
+        let model = self.model_with_builder_instructions(py);
+        emit::ir(&model).map_err(PyOSError::new_err)
+    }
+
+    fn bitcode(&self, py: Python) -> PyResult<Vec<u8>> {
+        let model = self.model_with_builder_instructions(py);
+        emit::bitcode(&model).map_err(PyOSError::new_err)
+    }
+
+    fn add_external_function(&mut self, py: Python, name: String, type_: CallableType) {
+        self.model
+            .external_functions
+            .insert(name.clone(), type_.0.clone());
+
+        let mut builder = self.builder.as_ref(py).borrow_mut();
+        builder.external_functions.insert(name, type_.0);
+    }
+}
+
+impl SimpleModule {
+    fn model_with_builder_instructions(&self, py: Python) -> SemanticModel {
+        let builder = self.builder.as_ref(py).borrow();
+
+        match builder.frames[..] {
+            [ref instructions] => SemanticModel {
+                instructions: instructions.clone(),
+                ..self.model.clone()
+            },
+            _ => panic!("Builder does not contain exactly one stack frame."),
+        }
+    }
+}
+
+#[pyclass]
 struct Builder {
     frames: Vec<Vec<Instruction>>,
+    external_functions: HashMap<String, interop::CallableType>,
 }
 
 #[pymethods]
@@ -189,54 +239,31 @@ impl Builder {
     fn new() -> Builder {
         Builder {
             frames: vec![vec![]],
+            external_functions: HashMap::new(),
         }
     }
 
     #[args(args = "*")]
     fn call(&mut self, name: String, args: &PyTuple) -> PyResult<()> {
-        let mut extracted_args = vec![];
-        for arg in args.iter() {
-            let extracted_arg = if let Ok(qubit) = arg.extract::<Qubit>() {
-                Arg {
-                    type_name: "Qubit".to_owned(),
-                    value: qubit.id(),
-                }
-            } else if let Ok(result) = arg.extract::<Ref>() {
-                Arg {
-                    type_name: "Result".to_owned(),
-                    value: result.id(),
-                }
-            } else if let Ok(b) = arg.extract::<bool>() {
-                Arg {
-                    type_name: "i8".to_owned(),
-                    value: b.to_string(),
-                }
-            } else if let Ok(i) = arg.extract::<i64>() {
-                Arg {
-                    type_name: "i64".to_owned(),
-                    value: i.to_string(),
-                }
-            } else if let Ok(f) = arg.extract::<f64>() {
-                Arg {
-                    type_name: "f64".to_owned(),
-                    value: f.to_string(),
-                }
-            } else {
-                return Err(PyErr::new::<PyTypeError, _>(format!(
-                    "unexpected argument type for {:?}",
-                    arg
-                )));
-            };
+        let callable_type = self.external_functions.get(&name).unwrap();
 
-            extracted_args.push(extracted_arg);
-        }
+        let args = args
+            .iter()
+            .zip(callable_type.param_types.iter())
+            .map(|(arg, type_)| match type_ {
+                interop::Type::Unit => Ok(Value::Unit),
+                interop::Type::Bool => Ok(Value::Bool(arg.extract()?)),
+                interop::Type::Int => Ok(Value::Int(arg.extract()?)),
+                interop::Type::Double => Ok(Value::Double(arg.extract()?)),
+                interop::Type::Qubit => Ok(Value::Qubit(arg.extract::<Qubit>()?.id())),
+            })
+            .collect::<PyResult<_>>()?;
 
-        let external_call = Call {
-            name,
-            args: extracted_args,
-        };
-        let inst = Instruction::Call(external_call);
-        self.frames.last_mut().unwrap().push(inst);
+        self.frames
+            .last_mut()
+            .unwrap()
+            .push(Instruction::Call(Call { name, args }));
+
         Ok(())
     }
 }
