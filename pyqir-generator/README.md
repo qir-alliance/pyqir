@@ -1,6 +1,6 @@
-# pyqir_generator
+# pyqir-generator
 
-The `pyqir_generator` package provides the ability to generate
+The `pyqir-generator` package provides the ability to generate
 [QIR](https://github.com/qir-alliance/qir-spec) using a Python API.
 
 It is intended to be used by code automating translation processes enabling the
