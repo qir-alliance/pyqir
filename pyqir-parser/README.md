@@ -1,10 +1,13 @@
-# pyqir_parser
+Under active development and will be updated soon.
 
-Under active development and will be updated.
+# pyqir-parser
+
+This package provides a Python API for loading QIR for basic analysis and
+transformation.
 
 ## Building and Testing
 
-See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html)
+See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html).
 
 ## Limitations
 
