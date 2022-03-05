@@ -1,19 +1,19 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{
-    emit,
-    interop::{
-        self, Call, ClassicalRegister, Controlled, If, Instruction, Measured, QuantumRegister,
-        Rotated, SemanticModel, Single, Value,
-    },
-};
 use pyo3::{
     basic::CompareOp,
     exceptions::{PyOSError, PyTypeError},
     prelude::*,
     types::PyTuple,
     PyObjectProtocol,
+};
+use qirlib::generation::{
+    emit,
+    interop::{
+        self, Call, ClassicalRegister, Controlled, If, Instruction, Measured, QuantumRegister,
+        Rotated, SemanticModel, Single, Value,
+    },
 };
 use std::{
     collections::{hash_map::DefaultHasher, HashMap},

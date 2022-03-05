@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{
+use crate::generation::{
     interop::{SemanticModel, Type},
     qir,
 };
+use crate::{codegen::CodeGenerator, passes::run_basic_passes_on};
 use inkwell::{
     attributes::AttributeLoc,
     context::Context,
@@ -13,16 +14,13 @@ use inkwell::{
     values::{BasicValueEnum, FunctionValue, PointerValue},
     AddressSpace,
 };
-use qirlib::{codegen::CodeGenerator, passes::run_basic_passes_on};
-use std::{
-    collections::HashMap,
-    convert::{Into, TryFrom, TryInto},
-};
+use std::collections::HashMap;
+use std::convert::{Into, TryFrom, TryInto};
 
 /// # Errors
 ///
 /// Will return `Err` if module fails verification that the current `Module` is valid.
-pub(crate) fn ir(model: &SemanticModel) -> Result<String, String> {
+pub fn ir(model: &SemanticModel) -> Result<String, String> {
     let ctx = Context::create();
     let generator = populate_context(&ctx, model)?;
     run_basic_passes_on(&generator.module);
@@ -32,7 +30,7 @@ pub(crate) fn ir(model: &SemanticModel) -> Result<String, String> {
 /// # Errors
 ///
 /// Will return `Err` if module fails verification that the current `Module` is valid.
-pub(crate) fn bitcode(model: &SemanticModel) -> Result<Vec<u8>, String> {
+pub fn bitcode(model: &SemanticModel) -> Result<Vec<u8>, String> {
     let ctx = Context::create();
     let generator = populate_context(&ctx, model)?;
     run_basic_passes_on(&generator.module);
@@ -199,7 +197,7 @@ fn write_instructions<'ctx>(
 /// 3. Unset the environment variable and run the tests again to confirm that they pass.
 #[cfg(test)]
 mod tests {
-    use crate::{
+    use crate::generation::{
         emit,
         interop::{
             ClassicalRegister, If, Instruction, Measured, QuantumRegister, SemanticModel, Single,

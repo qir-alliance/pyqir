@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{interop::Instruction, jit::run_module_file};
 use pyo3::{
     exceptions::PyOSError,
     prelude::*,
     types::{PyDict, PyList},
     PyAny,
 };
+use qirlib::evaluation::{interop::Instruction, jit::run_module_file};
 
 #[pymodule]
 #[pyo3(name = "_native")]

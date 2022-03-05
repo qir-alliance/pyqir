@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 use super::result;
-use crate::interop::{Call, If, Instruction, Value};
+use crate::codegen::CodeGenerator;
+use crate::generation::interop::{Call, If, Instruction, Value};
 use inkwell::values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, PointerValue};
-use qirlib::codegen::CodeGenerator;
 use std::collections::HashMap;
 
 /// # Panics

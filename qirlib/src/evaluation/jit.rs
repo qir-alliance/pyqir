@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{
+use crate::evaluation::{
     interop::SemanticModel,
     intrinsics::{reset_max_qubit_id, set_measure_stream},
     runtime::Simulator,
 };
+use crate::{module, passes::run_basic_passes_on};
 use bitvec::prelude::BitVec;
 use inkwell::{
     attributes::AttributeLoc,
@@ -16,10 +17,15 @@ use inkwell::{
     values::FunctionValue,
     OptimizationLevel,
 };
-use qirlib::{module, passes::run_basic_passes_on};
 use std::path::Path;
 
-pub(crate) fn run_module_file(
+/// # Errors
+///
+/// - Path has an unsupported extension.
+/// - Module fails to load.
+/// - LLVM fails to initialize local JIT Engine and components
+/// - Entrypoint cannot be resolved
+pub fn run_module_file(
     path: impl AsRef<Path>,
     entry_point: Option<&str>,
     result_stream: Option<BitVec>,
@@ -29,7 +35,11 @@ pub(crate) fn run_module_file(
     run_module(&module, entry_point, result_stream)
 }
 
-fn run_module(
+/// # Errors
+///
+/// - LLVM fails to initialize local JIT Engine and components
+/// - Entrypoint cannot be resolved
+pub fn run_module(
     module: &Module,
     entry_point: Option<&str>,
     result_stream: Option<BitVec>,
@@ -124,15 +134,17 @@ fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = Functio
 #[cfg(test)]
 mod tests {
     use super::run_module;
-    use crate::interop::{Instruction, SemanticModel, Single};
+    use crate::evaluation::interop::{Instruction, SemanticModel, Single};
+    use crate::module;
     use inkwell::context::Context;
-    use qirlib::module;
     use serial_test::serial;
 
-    const BELL_QIR_MEASURE: &[u8] = include_bytes!("../tests/bell_qir_measure.bc");
-    const CUSTOM_ENTRY_POINT_NAME: &[u8] = include_bytes!("../tests/custom_entry_point_name.bc");
-    const MULTIPLE_ENTRY_POINTS: &[u8] = include_bytes!("../tests/multiple_entry_points.bc");
-    const ENTRY_POINT_TYPES: &[u8] = include_bytes!("../tests/entry_point_types.bc");
+    const BELL_QIR_MEASURE: &[u8] = include_bytes!("../../resources/tests/bell_qir_measure.bc");
+    const CUSTOM_ENTRY_POINT_NAME: &[u8] =
+        include_bytes!("../../resources/tests/custom_entry_point_name.bc");
+    const MULTIPLE_ENTRY_POINTS: &[u8] =
+        include_bytes!("../../resources/tests/multiple_entry_points.bc");
+    const ENTRY_POINT_TYPES: &[u8] = include_bytes!("../../resources/tests/entry_point_types.bc");
 
     #[serial]
     #[test]
