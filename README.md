@@ -4,7 +4,7 @@ PyQIR is a set of APIs for generating, parsing, and evaluating [Quantum
 Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec). It
 consists of the following components:
 
-- [**pyqir_generator**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-generator)
+- [**pyqir-generator**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-generator)
   [[examples](https://github.com/qir-alliance/pyqir/tree/main/examples/generator)]:
   <br/>
   This package provides a Python API for generating QIR
@@ -57,9 +57,8 @@ Contributing a pull request to this repo requires to agree to a [Contributor
 License Agreement
 (CLA)](https://en.wikipedia.org/wiki/Contributor_License_Agreement) declaring
 that you have the right to, and actually do, grant us the rights to use your
-contribution. We are still working on setting up a suitable CLA-bot to automate
-this process. A CLA-bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately. Once it is set up, simply follow the
+contribution. A CLA-bot will automatically determine whether you need to provide
+a CLA and decorate the PR appropriately. Simply follow the
 instructions provided by the bot. You will only need to do this once.
 
 ## Code of Conduct
@@ -67,4 +66,4 @@ instructions provided by the bot. You will only need to do this once.
 This project has adopted the community covenant [Code of
 Conduct](https://github.com/qir-alliance/.github/blob/main/Code_of_Conduct.md#contributor-covenant-code-of-conduct).
 Please contact [qiralliance@mail.com](mailto:qiralliance@mail.com) for Code of
-Conduct issues or inquires.
+Conduct issues or inquiries.
