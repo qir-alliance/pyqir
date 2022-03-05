@@ -1,7 +1,7 @@
-# pyqir_jit
+# pyqir-jit
 
-The `pyqir_jit` package provides an easy way to execute generated QIR for the
-purpose of
+The `pyqir-jit` package provides an easy way to execute generated QIR for the
+purpose of:
 
 1. easily testing and experimenting with QIR code
 2. connecting it to low-level Python-based lab software such as e.g.
@@ -9,7 +9,7 @@ purpose of
 
 It contains the necessary [just-in-time
 compilation](https://en.wikipedia.org/wiki/Just-in-time_compilation)
-infrastructure as well an extensibility mechanism to define what actions to
+infrastructure as well as an extensibility mechanism to define what actions to
 perform when a gate is applied in Python.
 
 ## Examples
@@ -18,13 +18,12 @@ There are [JIT
 examples](https://github.com/qir-alliance/pyqir/tree/main/examples/jit) in the
 repository.
 
-Let's look at how to log the gate sequence for the following example:
+Let's look at how to log the gate sequence for the [Bernstein-Vazirani](https://github.com/qir-alliance/pyqir/tree/main/examples/jit/bernstein_vazirani.py) example.
 
-- [Bernstein-Vazirani](https://github.com/qir-alliance/pyqir/tree/main/examples/jit/bernstein_vazirani.py)
-  We can evaluate the [generated
-  bitcode](https://github.com/qir-alliance/pyqir/tree/main/examples/jit/bernstein_vazirani.bc)
-  with the `NonadaptiveJit`, and `GateLogger` to print out a simple log of the
-  quantum application.
+We can evaluate the [generated
+bitcode](https://github.com/qir-alliance/pyqir/tree/main/examples/jit/bernstein_vazirani.bc)
+with the `NonadaptiveJit`, and `GateLogger` to print out a simple log of the
+quantum application:
 
 ```python
 from pyqir_jit import NonadaptiveJit, GateLogger
@@ -45,7 +44,7 @@ print("# output from GateLogger")
 logger.print()
 ```
 
-Would generate the output:
+This would generate the following output:
 
 ```text
 # output from NonadaptiveJit returning the uninitialized output
@@ -86,4 +85,4 @@ measure qubits[8] -> out[8]
 
 ## Building and Testing
 
-See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html)
+See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html).
