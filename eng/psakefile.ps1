@@ -113,7 +113,8 @@ function Test-AllowedToDownloadLlvm {
 }
 
 task install-llvm-from-archive {
-    $cache = Get-DefaultInstallDirectory
+    $cache = Resolve-InstallationDirectory
+    Use-LlvmInstallation $cache
     $clear_cache_var = $false
     if (!(Test-Path env:\PYQIR_CACHE_DIR)) {
         $clear_cache_var = $true
@@ -132,11 +133,12 @@ task install-llvm-from-archive {
 }
 
 task install-llvm-from-source {
+    $cache = Resolve-InstallationDirectory
+    Use-LlvmInstallation $cache
     if ($IsLinux) {
         Build-ContainerImage $repo.root
         $srcPath = $repo.root
         $ioVolume = "$($srcPath):/io"
-        $cache = Get-DefaultInstallDirectory
         $install_volume = "$($cache):$($cache)"
         Invoke-LoggedCommand {
             docker run --rm $userSpec -v $ioVolume -v $install_volume -w /io/qirlib -e PYQIR_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --features build-llvm -vv
@@ -146,7 +148,6 @@ task install-llvm-from-source {
         if ($IsWindows) {
             Include vcvars.ps1
         }
-        $cache = Get-DefaultInstallDirectory
         $clear_cache_var = $false
         if (!(Test-Path env:\PYQIR_CACHE_DIR)) {
             $clear_cache_var = $true
@@ -174,7 +175,7 @@ task Initialize-Environment {
         Use-ExternalLlvmInstallation
     }
     else {
-        $packagePath = Get-DefaultInstallDirectory
+        $packagePath = Resolve-InstallationDirectory
         if (Test-Path $packagePath) {
             Write-BuildLog "LLVM target is already installed."
             # LLVM is already downloaded
