@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 from pyqir.generator import BasicQisBuilder, CallableType, SimpleModule, Type
+import pytest
 
 
 def create_context(num_qubits=0, num_results=0):
@@ -94,6 +95,7 @@ def test_call_bool_false() -> None:
     assert 'call void @__test_call(i1 false)' in ir
 
 
+@pytest.mark.skip(reason="Result type not supported.")
 def test_call_single_result() -> None:
     qis, module, qubits, results = create_context(1, 1)
     qis.m(qubits[0], results[0])
@@ -107,6 +109,7 @@ def test_call_single_result() -> None:
     assert 'call void @__test_call(%Result* %result0)' in ir
 
 
+@pytest.mark.skip(reason="Result type not supported.")
 def test_call_two_results() -> None:
     qis, module, qubits, results = create_context(1, 2)
     qis.m(qubits[0], results[0])
