@@ -5,7 +5,7 @@ use pyo3::{
     basic::CompareOp,
     exceptions::{PyOSError, PyTypeError},
     prelude::*,
-    types::PyTuple,
+    types::PySequence,
     PyObjectProtocol,
 };
 use qirlib::generation::{
@@ -253,20 +253,19 @@ impl Builder {
         }
     }
 
-    #[args(args = "*")]
-    fn call(&mut self, callable: CallableValue, args: &PyTuple) -> PyResult<()> {
+    fn call(&mut self, callable: CallableValue, args: &PySequence) -> PyResult<()> {
         let name = callable.name;
         let callable_type = self.external_functions.get(&name).unwrap();
 
         let args = args
-            .iter()
+            .iter()?
             .zip(callable_type.param_types.iter())
             .map(|(arg, type_)| match type_ {
                 interop::Type::Unit => Ok(Value::Unit),
-                interop::Type::Bool => Ok(Value::Bool(arg.extract()?)),
-                interop::Type::Int => Ok(Value::Int(arg.extract()?)),
-                interop::Type::Double => Ok(Value::Double(arg.extract()?)),
-                interop::Type::Qubit => Ok(Value::Qubit(arg.extract::<Qubit>()?.id())),
+                interop::Type::Bool => Ok(Value::Bool(arg?.extract()?)),
+                interop::Type::Int => Ok(Value::Int(arg?.extract()?)),
+                interop::Type::Double => Ok(Value::Double(arg?.extract()?)),
+                interop::Type::Qubit => Ok(Value::Qubit(arg?.extract::<Qubit>()?.id())),
             })
             .collect::<PyResult<_>>()?;
 
