@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::values::{BasicMetadataValueEnum, BasicValue};
-
 use super::types::{double, int32, int64, int8};
+use inkwell::values::{BasicMetadataValueEnum, BasicValue};
 
 #[must_use]
 pub(crate) fn i8_null_ptr(context: &'_ inkwell::context::Context) -> BasicMetadataValueEnum<'_> {
@@ -83,7 +82,7 @@ pub(crate) fn bool_to_i1(
 ) -> BasicMetadataValueEnum {
     context
         .bool_type()
-        .const_int(value as u64, false)
+        .const_int(u64::from(value), false)
         .as_basic_value_enum()
         .into()
 }

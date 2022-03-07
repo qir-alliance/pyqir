@@ -1,21 +1,26 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::generation::{
-    interop::{SemanticModel, Type},
-    qir,
+use crate::{
+    codegen::CodeGenerator,
+    generation::{
+        interop::{CallableType, SemanticModel, Type},
+        qir,
+    },
+    passes::run_basic_passes_on,
 };
-use crate::{codegen::CodeGenerator, passes::run_basic_passes_on};
 use inkwell::{
     attributes::AttributeLoc,
     context::Context,
     module::Linkage,
-    types::{AnyTypeEnum, BasicMetadataTypeEnum, BasicType, BasicTypeEnum},
+    types::{AnyTypeEnum, BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType},
     values::{BasicValueEnum, FunctionValue, PointerValue},
     AddressSpace,
 };
-use std::collections::HashMap;
-use std::convert::{Into, TryFrom, TryInto};
+use std::{
+    collections::HashMap,
+    convert::{Into, TryFrom, TryInto},
+};
 
 /// # Errors
 ///
@@ -52,10 +57,8 @@ pub fn populate_context<'a>(
     Ok(generator)
 }
 
-fn build_entry_function(
-    generator: &CodeGenerator<'_>,
-    model: &SemanticModel,
-) -> Result<(), String> {
+fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Result<(), String> {
+    add_external_functions(generator, model.external_functions.iter());
     let entry_point = qir::create_entry_point(generator.context, &generator.module);
 
     if model.static_alloc {
@@ -69,34 +72,8 @@ fn build_entry_function(
     let entry = generator.context.append_basic_block(entry_point, "entry");
     generator.builder.position_at_end(entry);
 
-    for (name, callable_type) in &model.external_functions {
-        let return_type = qir_type_to_any_type(generator, &callable_type.return_type);
-
-        let param_types: Vec<BasicTypeEnum> = callable_type
-            .param_types
-            .iter()
-            .map(|t| qir_type_to_any_type(generator, t).try_into().unwrap())
-            .collect();
-
-        let param_types: Vec<BasicMetadataTypeEnum> =
-            param_types.into_iter().map(Into::into).collect();
-
-        let fn_type = match return_type {
-            AnyTypeEnum::VoidType(void_type) => void_type.fn_type(param_types.as_slice(), false),
-            _ => BasicTypeEnum::try_from(return_type)
-                .unwrap()
-                .fn_type(param_types.as_slice(), false),
-        };
-
-        generator
-            .module
-            .add_function(name, fn_type, Some(Linkage::External));
-    }
-
     let qubits = write_qubits(model, generator);
-
     let mut registers = write_registers(model);
-
     write_instructions(model, generator, &qubits, &mut registers, entry_point);
 
     if !model.static_alloc {
@@ -104,11 +81,46 @@ fn build_entry_function(
     }
 
     generator.builder.build_return(None);
-
     generator.module.verify().map_err(|e| e.to_string())
 }
 
-fn qir_type_to_any_type<'ctx>(generator: &CodeGenerator<'ctx>, type_: &Type) -> AnyTypeEnum<'ctx> {
+fn add_external_functions<'a>(
+    generator: &CodeGenerator,
+    functions: impl Iterator<Item = (&'a String, &'a CallableType)>,
+) {
+    for (name, callable_type) in functions {
+        let function_type = function_type(generator, callable_type);
+        generator
+            .module
+            .add_function(name, function_type, Some(Linkage::External));
+    }
+}
+
+fn function_type<'ctx>(
+    generator: &CodeGenerator<'ctx>,
+    callable_type: &CallableType,
+) -> FunctionType<'ctx> {
+    let basic_metadata_type = |type_| -> BasicMetadataTypeEnum {
+        let type_ = llvm_type(generator, type_);
+        BasicTypeEnum::try_from(type_).unwrap().into()
+    };
+
+    let param_types: Vec<_> = callable_type
+        .param_types
+        .iter()
+        .map(basic_metadata_type)
+        .collect();
+
+    match llvm_type(generator, &callable_type.return_type) {
+        AnyTypeEnum::VoidType(void_type) => void_type.fn_type(param_types.as_slice(), false),
+        return_type => {
+            let return_type: BasicTypeEnum = return_type.try_into().unwrap();
+            return_type.fn_type(param_types.as_slice(), false)
+        }
+    }
+}
+
+fn llvm_type<'ctx>(generator: &CodeGenerator<'ctx>, type_: &Type) -> AnyTypeEnum<'ctx> {
     match type_ {
         Type::Unit => AnyTypeEnum::VoidType(generator.context.void_type()),
         Type::Bool => AnyTypeEnum::IntType(generator.bool_type()),
