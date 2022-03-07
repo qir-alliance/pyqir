@@ -201,12 +201,12 @@ impl SimpleModule {
     }
 
     fn ir(&self, py: Python) -> PyResult<String> {
-        let model = self.model_with_builder_instructions(py);
+        let model = self.model_from_builder(py);
         emit::ir(&model).map_err(PyOSError::new_err)
     }
 
     fn bitcode(&self, py: Python) -> PyResult<Vec<u8>> {
-        let model = self.model_with_builder_instructions(py);
+        let model = self.model_from_builder(py);
         emit::bitcode(&model).map_err(PyOSError::new_err)
     }
 
@@ -216,10 +216,6 @@ impl SimpleModule {
         name: String,
         type_: CallableType,
     ) -> CallableValue {
-        self.model
-            .external_functions
-            .insert(name.clone(), type_.0.clone());
-
         let mut builder = self.builder.as_ref(py).borrow_mut();
         builder.external_functions.insert(name.clone(), type_.0);
         CallableValue { name }
@@ -227,12 +223,13 @@ impl SimpleModule {
 }
 
 impl SimpleModule {
-    fn model_with_builder_instructions(&self, py: Python) -> SemanticModel {
+    fn model_from_builder(&self, py: Python) -> SemanticModel {
         let builder = self.builder.as_ref(py).borrow();
 
         match builder.frames[..] {
             [ref instructions] => SemanticModel {
                 instructions: instructions.clone(),
+                external_functions: builder.external_functions.clone(),
                 ..self.model.clone()
             },
             _ => panic!("Builder does not contain exactly one stack frame."),
@@ -273,12 +270,22 @@ impl Builder {
             })
             .collect::<PyResult<_>>()?;
 
-        self.frames
-            .last_mut()
-            .unwrap()
-            .push(Instruction::Call(Call { name, args }));
-
+        self.push_inst(Instruction::Call(Call { name, args }));
         Ok(())
+    }
+}
+
+impl Builder {
+    fn push_inst(&mut self, inst: Instruction) {
+        self.frames.last_mut().unwrap().push(inst);
+    }
+
+    fn push_frame(&mut self) {
+        self.frames.push(vec![]);
+    }
+
+    fn pop_frame(&mut self) -> Option<Vec<Instruction>> {
+        self.frames.pop()
     }
 }
 
@@ -399,16 +406,16 @@ impl BasicQisBuilder {
 impl BasicQisBuilder {
     fn push_inst(&self, py: Python, inst: Instruction) {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.frames.last_mut().unwrap().push(inst);
+        builder.push_inst(inst);
     }
 
     fn push_frame(&self, py: Python) {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.frames.push(vec![]);
+        builder.push_frame();
     }
 
     fn pop_frame(&self, py: Python) -> Option<Vec<Instruction>> {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.frames.pop()
+        builder.pop_frame()
     }
 }
