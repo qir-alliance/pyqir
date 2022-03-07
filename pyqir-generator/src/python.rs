@@ -68,7 +68,7 @@ impl CallableType {
     fn new(param_types: Vec<Type>, return_type: Type) -> CallableType {
         CallableType(interop::CallableType {
             param_types: param_types.into_iter().map(|t| t.0).collect(),
-            return_type: Box::new(return_type.0),
+            return_type: return_type.0,
         })
     }
 }

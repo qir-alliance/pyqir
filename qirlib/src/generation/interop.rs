@@ -121,8 +121,8 @@ pub enum Instruction {
     Rz(Rotated),
     Reset(Single),
     M(Measured),
-    If(If),
     Call(Call),
+    If(If),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -143,7 +143,7 @@ pub enum Type {
 #[derive(Clone)]
 pub struct CallableType {
     pub param_types: Vec<Type>,
-    pub return_type: Box<Type>,
+    pub return_type: Type,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -158,11 +158,11 @@ pub enum Value {
 #[derive(Clone)]
 pub struct SemanticModel {
     pub name: String,
-    pub external_functions: HashMap<String, CallableType>,
     pub registers: Vec<ClassicalRegister>,
     pub qubits: Vec<QuantumRegister>,
     pub instructions: Vec<Instruction>,
     pub static_alloc: bool,
+    pub external_functions: HashMap<String, CallableType>,
 }
 
 impl SemanticModel {
@@ -170,11 +170,11 @@ impl SemanticModel {
     pub fn new(name: String) -> Self {
         SemanticModel {
             name,
-            external_functions: HashMap::new(),
             registers: vec![],
             qubits: vec![],
             instructions: vec![],
             static_alloc: false,
+            external_functions: HashMap::new(),
         }
     }
 

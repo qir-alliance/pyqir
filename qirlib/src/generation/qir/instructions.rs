@@ -1,10 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use super::result;
-use crate::codegen::CodeGenerator;
-use crate::generation::interop::{Call, If, Instruction, Value};
-use inkwell::values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, PointerValue};
+use crate::{
+    codegen::CodeGenerator,
+    generation::{
+        interop::{Call, If, Instruction, Value},
+        qir::result,
+    },
+};
+use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue};
 use std::collections::HashMap;
 
 /// # Panics
@@ -126,37 +130,30 @@ pub(crate) fn emit<'ctx>(
         Instruction::Z(inst) => {
             generator.emit_void_call(generator.qis_z_body(), &[find_qubit(&inst.qubit).into()]);
         }
-        Instruction::If(if_inst) => emit_if(generator, registers, qubits, entry_point, if_inst),
-        Instruction::Call(call_inst) => emit_call(generator, registers, qubits, call_inst),
+        Instruction::Call(call) => emit_call(generator, qubits, call),
+        Instruction::If(if_) => emit_if(generator, registers, qubits, entry_point, if_),
     }
 }
 
 fn emit_call<'ctx>(
     generator: &CodeGenerator<'ctx>,
-    registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    call_inst: &Call,
+    call: &Call,
 ) {
-    let args: Vec<_> = call_inst
+    let args: Vec<_> = call
         .args
         .iter()
         .map(|value| match value {
-            Value::Unit => unimplemented!(),
-            Value::Bool(b) => BasicMetadataValueEnum::IntValue(
-                generator.bool_type().const_int(u64::from(*b), false),
-            ),
-            Value::Int(i) => {
-                BasicMetadataValueEnum::IntValue(generator.int64_type().const_int(*i as u64, false))
-            }
-            Value::Double(d) => {
-                BasicMetadataValueEnum::FloatValue(generator.double_type().const_float(*d))
-            }
-            Value::Qubit(q) => get_qubit(q, qubits).into(),
+            Value::Unit => unimplemented!("Unit value is not supported."), // Need QIR tuples.
+            Value::Bool(value) => generator.bool_to_i1(*value),
+            Value::Int(value) => generator.i64_to_i64(*value),
+            Value::Double(value) => generator.f64_to_f64(*value),
+            Value::Qubit(name) => get_qubit(name, qubits).into(),
         })
         .collect();
 
-    let function = generator.module.get_function(&call_inst.name).unwrap();
-    generator.emit_void_call(function, &args[..]);
+    let function = generator.module.get_function(&call.name).unwrap();
+    generator.emit_void_call(function, args.as_slice());
 }
 
 fn emit_if<'ctx>(
@@ -164,13 +161,13 @@ fn emit_if<'ctx>(
     registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     entry_point: FunctionValue,
-    if_inst: &If,
+    if_: &If,
 ) {
     // Panic if an undeclared result name is referenced, and default to zero if the result has been
     // declared but not yet measured.
     let result = registers
-        .get(&if_inst.condition)
-        .unwrap_or_else(|| panic!("Result {} not found.", &if_inst.condition))
+        .get(&if_.condition)
+        .unwrap_or_else(|| panic!("Result {} not found.", &if_.condition))
         .unwrap_or_else(|| result::get_zero(generator));
 
     let condition = result::equal(generator, result, result::get_one(generator));
@@ -193,7 +190,7 @@ fn emit_if<'ctx>(
         generator.builder.build_unconditional_branch(continue_block);
     };
 
-    emit_block(then_block, &if_inst.then_insts);
-    emit_block(else_block, &if_inst.else_insts);
+    emit_block(then_block, &if_.then_insts);
+    emit_block(else_block, &if_.else_insts);
     generator.builder.position_at_end(continue_block);
 }

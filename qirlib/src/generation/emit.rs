@@ -212,7 +212,6 @@ mod tests {
     fn test_if_then() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then".to_string(),
-            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -224,6 +223,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -233,7 +233,6 @@ mod tests {
     fn test_if_else() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else".to_string(),
-            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -245,6 +244,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -254,7 +254,6 @@ mod tests {
     fn test_if_then_continue() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_continue".to_string(),
-            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -267,6 +266,7 @@ mod tests {
                 Instruction::H(Single::new("q0".to_string())),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -276,7 +276,6 @@ mod tests {
     fn test_if_else_continue() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else_continue".to_string(),
-            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -289,6 +288,7 @@ mod tests {
                 Instruction::H(Single::new("q0".to_string())),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -298,7 +298,6 @@ mod tests {
     fn test_if_then_else_continue() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_else_continue".to_string(),
-            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -311,6 +310,7 @@ mod tests {
                 Instruction::H(Single::new("q0".to_string())),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -320,7 +320,6 @@ mod tests {
     fn test_if_then_then() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_then".to_string(),
-            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 2)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -337,6 +336,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -346,7 +346,6 @@ mod tests {
     fn test_if_else_else() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else_else".to_string(),
-            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 2)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -363,6 +362,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -372,7 +372,6 @@ mod tests {
     fn test_if_then_else() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_else".to_string(),
-            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 2)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -389,6 +388,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -398,7 +398,6 @@ mod tests {
     fn test_if_else_then() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else_then".to_string(),
-            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 2)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
@@ -415,6 +414,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -424,7 +424,6 @@ mod tests {
     fn test_results_default_to_zero_if_not_measured() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_results_default_to_zero_if_not_measured".to_string(),
-            external_functions: HashMap::new(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![Instruction::If(If {
@@ -433,6 +432,7 @@ mod tests {
                 else_insts: vec![Instruction::H(Single::new("q0".to_string()))],
             })],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
