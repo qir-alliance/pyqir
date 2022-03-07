@@ -26,6 +26,7 @@ use std::{
 fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Type>()?;
     m.add_class::<CallableType>()?;
+    m.add_class::<CallableValue>()?;
     m.add_class::<Qubit>()?;
     m.add_class::<Ref>()?;
     m.add_class::<SimpleModule>()?;
@@ -71,6 +72,12 @@ impl CallableType {
             return_type: return_type.0,
         })
     }
+}
+
+#[derive(Clone)]
+#[pyclass]
+struct CallableValue {
+    name: String,
 }
 
 #[derive(Clone, Eq, Hash, PartialEq)]
@@ -203,13 +210,19 @@ impl SimpleModule {
         emit::bitcode(&model).map_err(PyOSError::new_err)
     }
 
-    fn add_external_function(&mut self, py: Python, name: String, type_: CallableType) {
+    fn add_external_function(
+        &mut self,
+        py: Python,
+        name: String,
+        type_: CallableType,
+    ) -> CallableValue {
         self.model
             .external_functions
             .insert(name.clone(), type_.0.clone());
 
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.external_functions.insert(name, type_.0);
+        builder.external_functions.insert(name.clone(), type_.0);
+        CallableValue { name }
     }
 }
 
@@ -244,7 +257,8 @@ impl Builder {
     }
 
     #[args(args = "*")]
-    fn call(&mut self, name: String, args: &PyTuple) -> PyResult<()> {
+    fn call(&mut self, callable: CallableValue, args: &PyTuple) -> PyResult<()> {
+        let name = callable.name;
         let callable_type = self.external_functions.get(&name).unwrap();
 
         let args = args

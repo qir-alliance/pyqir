@@ -1,7 +1,30 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from typing import Callable, Tuple
+from typing import Any, Callable, Sequence, Tuple
+
+
+class Type:
+    """TODO"""
+
+    UNIT: Type
+    BOOl: Type
+    INT: Type
+    DOUBLE: Type
+    QUBIT: Type
+
+
+class CallableType:
+    """TODO"""
+
+    def __init__(self, param_types: Sequence[Type], return_type: Type) -> None:
+        """TODO"""
+        ...
+
+
+class CallableValue:
+    """TODO"""
+    ...
 
 
 class Qubit:
@@ -17,8 +40,8 @@ class Ref:
 class Builder:
     """An instruction builder."""
 
-    def call(self, name: str, *args) -> None:
-        """Emits a external QIR call."""
+    def call(self, callable: CallableValue, *args: Any) -> None:
+        """Builds a call instruction."""
         ...
 
 
@@ -70,6 +93,10 @@ class SimpleModule:
 
     def bitcode(self) -> bytes:
         """Emits the LLVM bitcode for the module as a sequence of bytes."""
+        ...
+
+    def add_external_function(self, name: str, type: CallableType) -> CallableValue:
+        """TODO"""
         ...
 
 
