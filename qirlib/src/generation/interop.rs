@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use inkwell::values::{BasicValueEnum, PointerValue};
+use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct QuantumRegister {
@@ -128,22 +128,28 @@ pub enum Instruction {
 
 #[derive(Clone, Default)]
 pub struct SemanticModel {
-    name: String,
-    registers: Vec<ClassicalRegister>,
-    qubits: Vec<QuantumRegister>,
-    instructions: Vec<Instruction>,
-    static_alloc: bool,
+    pub name: String,
+    pub registers: Vec<ClassicalRegister>,
+    pub qubits: Vec<QuantumRegister>,
+    pub instructions: Vec<Instruction>,
+    pub static_alloc: bool,
 }
 
 impl SemanticModel {
     #[must_use]
-    pub fn new(name: String) -> Self {
-        SemanticModel {
+    pub fn new(
+        name: String,
+        registers: Vec<ClassicalRegister>,
+        qubits: Vec<QuantumRegister>,
+        instructions: Vec<Instruction>,
+        static_alloc: bool,
+    ) -> Self {
+        Self {
             name,
-            registers: vec![],
-            qubits: vec![],
-            instructions: vec![],
-            static_alloc: false,
+            registers,
+            qubits,
+            instructions,
+            static_alloc,
         }
     }
 
@@ -174,9 +180,10 @@ pub trait CodeGenModel {
 
     fn write_instructions<'ctx>(
         &self,
-        generator: &qirlib::codegen::CodeGenerator<'ctx>,
+        generator: &crate::codegen::CodeGenerator<'ctx>,
         qubits: &HashMap<String, BasicValueEnum<'ctx>>,
         registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+        entry_point: FunctionValue,
     );
 }
 
@@ -207,12 +214,19 @@ impl CodeGenModel for SemanticModel {
 
     fn write_instructions<'ctx>(
         &self,
-        generator: &qirlib::codegen::CodeGenerator<'ctx>,
+        generator: &crate::codegen::CodeGenerator<'ctx>,
         qubits: &HashMap<String, BasicValueEnum<'ctx>>,
         registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+        entry_point: FunctionValue,
     ) {
         for inst in &self.instructions {
-            crate::qir::instructions::emit(generator, inst, qubits, registers);
+            crate::generation::qir::instructions::emit(
+                generator,
+                inst,
+                qubits,
+                registers,
+                entry_point,
+            );
         }
     }
 }

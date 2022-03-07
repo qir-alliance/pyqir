@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::generation::{interop::SemanticModel, qir};
+use crate::generation::{interop::CodeGenModel, qir};
 use crate::{codegen::CodeGenerator, passes::run_basic_passes_on};
 use inkwell::{
     attributes::AttributeLoc,
@@ -14,7 +14,7 @@ use std::collections::HashMap;
 /// # Errors
 ///
 /// Will return `Err` if module fails verification that the current `Module` is valid.
-pub fn ir(model: &SemanticModel) -> Result<String, String> {
+pub fn ir<T: CodeGenModel>(model: &T) -> Result<String, String> {
     let ctx = Context::create();
     let generator = populate_context(&ctx, model)?;
     run_basic_passes_on(&generator.module);
@@ -24,7 +24,7 @@ pub fn ir(model: &SemanticModel) -> Result<String, String> {
 /// # Errors
 ///
 /// Will return `Err` if module fails verification that the current `Module` is valid.
-pub fn bitcode(model: &SemanticModel) -> Result<Vec<u8>, String> {
+pub fn bitcode<T: CodeGenModel>(model: &T) -> Result<Vec<u8>, String> {
     let ctx = Context::create();
     let generator = populate_context(&ctx, model)?;
     run_basic_passes_on(&generator.module);
@@ -36,24 +36,24 @@ pub fn bitcode(model: &SemanticModel) -> Result<Vec<u8>, String> {
 /// Will return `Err` if
 ///  - module cannot be loaded.
 ///  - module fails verification that the current `Module` is valid.
-pub fn populate_context<'a>(
+pub fn populate_context<'a, T: CodeGenModel>(
     ctx: &'a Context,
-    model: &'a SemanticModel,
+    model: &'a T,
 ) -> Result<CodeGenerator<'a>, String> {
-    let module = ctx.create_module(&model.name);
+    let module = ctx.create_module(&model.name());
     let generator = CodeGenerator::new(ctx, module)?;
     build_entry_function(&generator, model)?;
     Ok(generator)
 }
 
-fn build_entry_function(
+fn build_entry_function<T: CodeGenModel>(
     generator: &CodeGenerator<'_>,
-    model: &SemanticModel,
+    model: &T,
 ) -> Result<(), String> {
     let entry_point = qir::create_entry_point(generator.context, &generator.module);
 
-    if model.static_alloc {
-        let num_qubits = format!("{}", model.qubits.len());
+    if model.static_alloc() {
+        let num_qubits = format!("{}", model.qubits().len());
         let required_qubits = generator
             .context
             .create_string_attribute("requiredQubits", &num_qubits);
@@ -67,9 +67,9 @@ fn build_entry_function(
 
     let mut registers = write_registers(model);
 
-    write_instructions(model, generator, &qubits, &mut registers, entry_point);
+    model.write_instructions(generator, &qubits, &mut registers, entry_point);
 
-    if !model.static_alloc {
+    if !model.static_alloc() {
         free_qubits(generator, &qubits);
     }
 
@@ -87,13 +87,13 @@ fn free_qubits<'ctx>(
     }
 }
 
-fn write_qubits<'ctx>(
-    model: &SemanticModel,
+fn write_qubits<'ctx, T: CodeGenModel>(
+    model: &T,
     generator: &CodeGenerator<'ctx>,
 ) -> HashMap<String, BasicValueEnum<'ctx>> {
-    if model.static_alloc {
+    if model.static_alloc() {
         let mut qubits: HashMap<String, BasicValueEnum<'ctx>> = HashMap::new();
-        for (id, qubit) in model.qubits.iter().enumerate() {
+        for (id, qubit) in model.qubits().iter().enumerate() {
             let indexed_name = format!("{}{}", &qubit.name[..], qubit.index);
             let int_value = generator.usize_to_i64(id).into_int_value();
             let qubit_ptr_type = generator.qubit_type().ptr_type(AddressSpace::Generic);
@@ -107,7 +107,7 @@ fn write_qubits<'ctx>(
         qubits
     } else {
         let qubits = model
-            .qubits
+            .qubits()
             .iter()
             .map(|reg| {
                 let indexed_name = format!("{}{}", &reg.name[..], reg.index);
@@ -120,11 +120,13 @@ fn write_qubits<'ctx>(
     }
 }
 
-fn write_registers<'ctx>(model: &SemanticModel) -> HashMap<String, Option<PointerValue<'ctx>>> {
+fn write_registers<'ctx, T: CodeGenModel>(
+    model: &T,
+) -> HashMap<String, Option<PointerValue<'ctx>>> {
     let mut registers = HashMap::new();
-    let number_of_registers = model.registers.len() as u64;
+    let number_of_registers = model.registers().len() as u64;
     if number_of_registers > 0 {
-        for register in &model.registers {
+        for register in &model.registers() {
             for index in 0..register.size {
                 let name = format!("{}{}", register.name, index);
                 registers.insert(name, None);
@@ -134,17 +136,17 @@ fn write_registers<'ctx>(model: &SemanticModel) -> HashMap<String, Option<Pointe
     registers
 }
 
-fn write_instructions<'ctx>(
-    model: &SemanticModel,
-    generator: &CodeGenerator<'ctx>,
-    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
-    entry_point: FunctionValue,
-) {
-    for inst in &model.instructions {
-        qir::instructions::emit(generator, inst, qubits, registers, entry_point);
-    }
-}
+// fn write_instructions<'ctx, T: CodeGenModel>(
+//     model: &T,
+//     generator: &CodeGenerator<'ctx>,
+//     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
+//     registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+//     entry_point: FunctionValue,
+// ) {
+//     for inst in &model.instructions {
+//         qir::instructions::emit(generator, inst, qubits, registers, entry_point);
+//     }
+// }
 
 /// These tests compare generated IR against reference files in the "resources/tests" folder. If
 /// changes to code generation break the tests:
@@ -158,7 +160,8 @@ mod tests {
     use crate::generation::{
         emit,
         interop::{
-            ClassicalRegister, If, Instruction, Measured, QuantumRegister, SemanticModel, Single,
+            ClassicalRegister, CodeGenModel, If, Instruction, Measured, QuantumRegister,
+            SemanticModel, Single,
         },
     };
     use normalize_line_endings::normalized;
@@ -386,11 +389,11 @@ mod tests {
         check_or_save_reference_ir(&model)
     }
 
-    fn check_or_save_reference_ir(model: &SemanticModel) -> Result<(), String> {
+    fn check_or_save_reference_ir<T: CodeGenModel>(model: &T) -> Result<(), String> {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("resources");
         path.push("tests");
-        path.push(&model.name);
+        path.push(&model.name());
         path.set_extension("ll");
 
         let actual_ir: String = normalized(emit::ir(model)?.chars()).collect();
