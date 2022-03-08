@@ -8,7 +8,7 @@ class Type:
     """TODO"""
 
     UNIT: Type
-    BOOl: Type
+    BOOL: Type
     INT: Type
     DOUBLE: Type
     QUBIT: Type
@@ -40,7 +40,7 @@ class Ref:
 class Builder:
     """An instruction builder."""
 
-    def call(self, callable: CallableValue, *args: Any) -> None:
+    def call(self, callable: CallableValue, args: Sequence[Any]) -> None:
         """Builds a call instruction."""
         ...
 

@@ -17,7 +17,7 @@ def test_call_no_params() -> None:
     callable = module.add_external_function(
         "__test_call", CallableType([], Type.UNIT)
     )
-    module.builder.call(callable, [None])
+    module.builder.call(callable, [])
 
     ir = module.ir()
     assert 'call void @__test_call()' in ir
