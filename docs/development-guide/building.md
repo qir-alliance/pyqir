@@ -134,7 +134,8 @@ Two targets are available for tox:
 
 ### Environment Variables
 
-Building `qirlib` can be done with feature flags which will either
+Building `qirlib` can be done with feature flags which will either:
+
 - Download (and install) a preexisting LLVM build configured via environment variables
 - Build LLVM from source and install it
 - Build LLVM from source and package it
