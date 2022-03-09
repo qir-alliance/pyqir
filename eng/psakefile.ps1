@@ -122,7 +122,7 @@ task install-llvm-from-archive {
     }
     try {
         Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-            cargo build --release --features install-llvm -vv
+            cargo build --release --no-default-features --features install-llvm -vv
         }
     }
     finally {
@@ -141,7 +141,7 @@ task install-llvm-from-source {
         $ioVolume = "$($srcPath):/io"
         $install_volume = "$($cache):$($cache)"
         Invoke-LoggedCommand {
-            docker run --rm $userSpec -v $ioVolume -v $install_volume -w /io/qirlib -e QIRLIB_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --features build-llvm -vv
+            docker run --rm $userSpec -v $ioVolume -v $install_volume -w /io/qirlib -e QIRLIB_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --no-default-features --features build-llvm -vv
         }
     }
     else {
@@ -155,7 +155,7 @@ task install-llvm-from-source {
         }
         try {
             Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-                cargo build --release --features build-llvm -vv
+                cargo build --release --no-default-features --features build-llvm -vv
             }
         }
         finally {
@@ -205,15 +205,15 @@ task package-llvm {
         $srcPath = $repo.root
         $ioVolume = "$($srcPath):/io"
         Invoke-LoggedCommand {
-            docker run --rm $userSpec -v $ioVolume -w /io/qirlib -e QIRLIB_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --features package-llvm -vv
+            docker run --rm $userSpec -v $ioVolume -w /io/qirlib -e QIRLIB_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --no-default-features --features package-llvm -vv
         }
     }
     else {
         if ($IsWindows) {
             Include vcvars.ps1
         }
-        Invoke-LoggedCommand {
-            & cargo build --release --features package-llvm -vv
+        Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
+            & cargo build --release --no-default-features --features package-llvm -vv
         }
     }
 }
