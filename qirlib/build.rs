@@ -78,9 +78,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn download_llvm() -> Result<(), Box<dyn Error>> {
     let url = env::var("QIRLIB_LLVM_BUILDS_URL")
-        .unwrap_or("https://msquantumpublic.blob.core.windows.net/llvm-builds".to_owned());
+        .unwrap_or_else(|_| "https://msquantumpublic.blob.core.windows.net/llvm-builds".to_owned());
 
-    let enable_download = env::var("QIRLIB_DOWNLOAD_LLVM").unwrap_or("true".to_owned());
+    let enable_download = env::var("QIRLIB_DOWNLOAD_LLVM").unwrap_or_else(|_| "true".to_owned());
 
     let build_dir = get_build_dir()?;
 
@@ -204,7 +204,7 @@ fn get_llvm_tag() -> String {
     if let Ok(tag) = env::var("QIRLIB_LLVM_TAG") {
         tag
     } else {
-        "1fdec59bf".to_owned()
+        "llvmorg-11.1.0".to_owned() // 1fdec59bf
     }
 }
 
@@ -214,8 +214,7 @@ fn get_package_name() -> Result<String, Box<dyn Error>> {
     } else {
         let tag = get_llvm_tag();
         let triple = get_target_triple()?;
-        // TODO: replace aq with qirlib/pyqir
-        let package_name = format!("aq-llvm-{}-{}", triple, tag);
+        let package_name = format!("qirlib-llvm-{}-{}", triple, tag);
         Ok(package_name)
     }
 }
