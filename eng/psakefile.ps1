@@ -41,21 +41,19 @@ Task default -Depends checks, pyqir-tests, parser, generator, evaluator, run-exa
 
 Task checks -Depends cargo-fmt, cargo-clippy
 
+Task rebuild -Depends generator, evaluator, parser
+
 Task cargo-fmt {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please run 'cargo fmt --all' before pushing" {
         cargo fmt --all -- --check
     }
 }
 
-Task cargo-clippy {
+Task cargo-clippy -Depends init {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
-        #extraArgs = (Test-CI) ? @("--", "-D", "warnings") : @()
-        #cargo clippy --workspace @extraArgs
+        $extraArgs = (Test-CI) ? @("--", "-D", "warnings") : @()
+        cargo clippy --workspace --all-targets @extraArgs
     }
-    # Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
-    #     $extraArgs = (Test-CI) ? @("--", "-D", "warnings") : @()
-    #     cargo clippy --workspace --all-targets --all-features @extraArgs
-    # }
 }
 
 Task generator -Depends init {
@@ -77,7 +75,6 @@ Task pyqir-tests -Depends init {
     }
 }
 
-Task rebuild -Depends generator, evaluator, parser
 Task wheelhouse `
     -Precondition { -not (Test-Path $wheelhouse -ErrorAction SilentlyContinue) } `
 { Invoke-Task rebuild }
@@ -110,6 +107,36 @@ function Test-AllowedToDownloadLlvm {
     # If QIRLIB_DOWNLOAD_LLVM isn't set, we allow for download
     # If it is set, then we use its value
     !((Test-Path env:\QIRLIB_DOWNLOAD_LLVM) -and ($env:QIRLIB_DOWNLOAD_LLVM -eq $false))
+}
+
+task init {
+    # if an external LLVM is specified, make sure it exist and
+    # skip further bootstapping
+    if (Test-Path env:\QIRLIB_LLVM_EXTERNAL_DIR) {
+        Use-ExternalLlvmInstallation
+    }
+    else {
+        $packagePath = Resolve-InstallationDirectory
+        if (Test-Path $packagePath) {
+            Write-BuildLog "LLVM target is already installed."
+            # LLVM is already downloaded
+            Use-LlvmInstallation $packagePath
+        }
+        else {
+            Write-BuildLog "LLVM target is not installed."
+            if (Test-AllowedToDownloadLlvm) {
+                Write-BuildLog "Downloading LLVM target"
+                Invoke-Task "install-llvm-from-archive"
+            }
+            else {
+                Write-BuildLog "Downloading LLVM Disabled, building from source."
+                # We don't have an external LLVM installation specified
+                # We are not downloading LLVM
+                # So we need to build it.
+                Invoke-Task "install-llvm-from-source"
+            }
+        }
+    }
 }
 
 task install-llvm-from-archive {
@@ -165,39 +192,6 @@ task install-llvm-from-source {
         }
     }
 }
-
-task init -Depends Initialize-Environment {}
-
-task Initialize-Environment {
-    # if an external LLVM is specified, make sure it exist and
-    # skip further bootstapping
-    if (Test-Path env:\QIRLIB_LLVM_EXTERNAL_DIR) {
-        Use-ExternalLlvmInstallation
-    }
-    else {
-        $packagePath = Resolve-InstallationDirectory
-        if (Test-Path $packagePath) {
-            Write-BuildLog "LLVM target is already installed."
-            # LLVM is already downloaded
-            Use-LlvmInstallation $packagePath
-        }
-        else {
-            Write-BuildLog "LLVM target is not installed."
-            if (Test-AllowedToDownloadLlvm) {
-                Write-BuildLog "Downloading LLVM target"
-                Invoke-Task "install-llvm-from-archive"
-            }
-            else {
-                Write-BuildLog "Downloading LLVM Disabled, building from source."
-                # We don't have an external LLVM installation specified
-                # We are not downloading LLVM
-                # So we need to build it.
-                Invoke-Task "install-llvm-from-source"
-            }
-        }
-    }
-}
-
 
 task package-llvm {
     if (Test-RunInContainer) {
@@ -304,7 +298,7 @@ function Build-PyQIR([string]$project) {
     }
 }
 
-task run-examples-in-containers -precondition { $IsLinux -and (Test-CI) } {
+task run-examples-in-containers -precondition { Test-RunInContainer } {
     $userName = [Environment]::UserName
     $userId = $(id -u)
     $groupId = $(id -g)
