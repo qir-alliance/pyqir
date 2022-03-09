@@ -141,7 +141,7 @@ task install-llvm-from-source {
         $ioVolume = "$($srcPath):/io"
         $install_volume = "$($cache):$($cache)"
         Invoke-LoggedCommand {
-            docker run --rm $userSpec -v $ioVolume -v $install_volume -w /io/qirlib -e QIRLIB_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --no-default-features --features build-llvm -vv
+            docker run --rm $userSpec -v $ioVolume -v $install_volume -w /io/qirlib manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --no-default-features --features build-llvm -vv
         }
     }
     else {
@@ -212,8 +212,20 @@ task package-llvm {
         if ($IsWindows) {
             Include vcvars.ps1
         }
-        Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-            & cargo build --release --no-default-features --features package-llvm -vv
+        $clear_pkg_dest_var = $false
+        if (!(Test-Path env:\QIRLIB_PKG_DEST)) {
+            $clear_pkg_dest_var = $true
+            $env:QIRLIB_PKG_DEST = Join-Path $repo.root "target"
+        }
+        try {
+            Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
+                cargo build --release --no-default-features --features package-llvm -vv
+            }
+        }
+        finally {
+            if ($clear_pkg_dest_var) {
+                Remove-Item -Path Env:QIRLIB_PKG_DEST
+            }
         }
     }
 }

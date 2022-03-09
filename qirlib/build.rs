@@ -142,6 +142,8 @@ fn package_llvm() -> Result<(), Box<dyn Error>> {
             dest.as_path().display()
         );
         fs::rename(output, dest)?;
+    } else {
+        println!("Not moving package output. QIRLIB_PKG_DEST not set.");
     }
 
     Ok(())
