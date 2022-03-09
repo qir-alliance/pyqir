@@ -16,6 +16,22 @@ extern crate lazy_static;
 extern crate regex;
 extern crate semver;
 
+#[cfg(any(
+    all(
+        feature = "internal-llvm-linking",
+        any(feature = "external-llvm-linking", feature = "no-llvm-linking")
+    ),
+    all(
+        feature = "external-llvm-linking",
+        any(feature = "internal-llvm-linking", feature = "no-llvm-linking")
+    ),
+    all(
+        feature = "no-llvm-linking",
+        any(feature = "internal-llvm-linking", feature = "external-llvm-linking")
+    ),
+))]
+compile_error!("Features `qirlib/internal-llvm-linking`, `qirlib/external-llvm-linking`, and `qirlib/no-llvm-linking` are mutually exclusive.");
+
 fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=config.cmake");
@@ -46,13 +62,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("Building llvm");
         compile_llvm()?;
     }
-    if cfg!(feature = "download-llvm") || cfg!(feature = "build-llvm") {
+    if cfg!(feature = "internal-llvm-linking") {
         println!("Linking llvm");
         link_llvm();
         let build_dir = get_build_dir()?;
         compile_target_wrappers(&build_dir);
+    } else if cfg!(feature = "external-llvm-linking") {
+        println!("LLVM_SYS_{{}}_PREFIX will provide the LLVM linking");
     } else {
-        println!("LLVM_SYS_{{}}_PREFIX will provide the LLVM linkage");
+        println!("No LLVM linking");
     }
 
     Ok(())

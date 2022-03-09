@@ -38,8 +38,11 @@ name = "qirlib"
 # download does install + link those libs and compile qirlib
 # package clones the LLVM source, and builds it, and creates an archive
 # build clones the LLVM source, and builds it, then link those libs and compile qirlib
-default = []
-install-llvm = []
-download-llvm = ["llvm-sys/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
-package-llvm = []
-build-llvm = ["llvm-sys/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
+default = ["external-llvm-linking"]
+install-llvm = ["no-llvm-linking"]
+download-llvm = ["internal-llvm-linking"]
+package-llvm = ["no-llvm-linking"]
+build-llvm = ["internal-llvm-linking"]
+internal-llvm-linking = ["llvm-sys/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
+external-llvm-linking = []
+no-llvm-linking = ["llvm-sys/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
