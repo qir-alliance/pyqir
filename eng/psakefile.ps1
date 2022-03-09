@@ -101,24 +101,24 @@ Task docs -Depends wheelhouse {
 }
 
 function Use-ExternalLlvmInstallation {
-    Write-BuildLog "Using LLVM installation specified by PYQIR_LLVM_EXTERNAL_DIR"
-    Assert (Test-Path $env:PYQIR_LLVM_EXTERNAL_DIR) "PYQIR_LLVM_EXTERNAL_DIR folder does not exist"
-    Use-LlvmInstallation $env:PYQIR_LLVM_EXTERNAL_DIR
+    Write-BuildLog "Using LLVM installation specified by QIRLIB_LLVM_EXTERNAL_DIR"
+    Assert (Test-Path $env:QIRLIB_LLVM_EXTERNAL_DIR) "QIRLIB_LLVM_EXTERNAL_DIR folder does not exist"
+    Use-LlvmInstallation $env:QIRLIB_LLVM_EXTERNAL_DIR
 }
 
 function Test-AllowedToDownloadLlvm {
-    # If PYQIR_DOWNLOAD_LLVM isn't set, we allow for download
+    # If QIRLIB_DOWNLOAD_LLVM isn't set, we allow for download
     # If it is set, then we use its value
-    !((Test-Path env:\PYQIR_DOWNLOAD_LLVM) -and ($env:PYQIR_DOWNLOAD_LLVM -eq $false))
+    !((Test-Path env:\QIRLIB_DOWNLOAD_LLVM) -and ($env:QIRLIB_DOWNLOAD_LLVM -eq $false))
 }
 
 task install-llvm-from-archive {
     $cache = Resolve-InstallationDirectory
     Use-LlvmInstallation $cache
     $clear_cache_var = $false
-    if (!(Test-Path env:\PYQIR_CACHE_DIR)) {
+    if (!(Test-Path env:\QIRLIB_CACHE_DIR)) {
         $clear_cache_var = $true
-        $env:PYQIR_CACHE_DIR = $cache
+        $env:QIRLIB_CACHE_DIR = $cache
     }
     try {
         Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
@@ -127,7 +127,7 @@ task install-llvm-from-archive {
     }
     finally {
         if ($clear_cache_var) {
-            Remove-Item -Path Env:PYQIR_CACHE_DIR
+            Remove-Item -Path Env:QIRLIB_CACHE_DIR
         }
     }
 }
@@ -141,7 +141,7 @@ task install-llvm-from-source {
         $ioVolume = "$($srcPath):/io"
         $install_volume = "$($cache):$($cache)"
         Invoke-LoggedCommand {
-            docker run --rm $userSpec -v $ioVolume -v $install_volume -w /io/qirlib -e PYQIR_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --features build-llvm -vv
+            docker run --rm $userSpec -v $ioVolume -v $install_volume -w /io/qirlib -e QIRLIB_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --features build-llvm -vv
         }
     }
     else {
@@ -149,9 +149,9 @@ task install-llvm-from-source {
             Include vcvars.ps1
         }
         $clear_cache_var = $false
-        if (!(Test-Path env:\PYQIR_CACHE_DIR)) {
+        if (!(Test-Path env:\QIRLIB_CACHE_DIR)) {
             $clear_cache_var = $true
-            $env:PYQIR_CACHE_DIR = $cache
+            $env:QIRLIB_CACHE_DIR = $cache
         }
         try {
             Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
@@ -160,7 +160,7 @@ task install-llvm-from-source {
         }
         finally {
             if ($clear_cache_var) {
-                Remove-Item -Path Env:PYQIR_CACHE_DIR
+                Remove-Item -Path Env:QIRLIB_CACHE_DIR
             }
         }
     }
@@ -171,7 +171,7 @@ task init -Depends Initialize-Environment {}
 task Initialize-Environment {
     # if an external LLVM is specified, make sure it exist and
     # skip further bootstapping
-    if (Test-Path env:\PYQIR_LLVM_EXTERNAL_DIR) {
+    if (Test-Path env:\QIRLIB_LLVM_EXTERNAL_DIR) {
         Use-ExternalLlvmInstallation
     }
     else {
@@ -200,12 +200,12 @@ task Initialize-Environment {
 
 
 task package-llvm {
-    if ($IsLinux) {
+    if (Test-RunInContainer) {
         Build-ContainerImage $repo.root
         $srcPath = $repo.root
         $ioVolume = "$($srcPath):/io"
         Invoke-LoggedCommand {
-            docker run --rm $userSpec -v $ioVolume -w /io/qirlib -e PYQIR_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --features package-llvm -vv
+            docker run --rm $userSpec -v $ioVolume -w /io/qirlib -e QIRLIB_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --features package-llvm -vv
         }
     }
     else {

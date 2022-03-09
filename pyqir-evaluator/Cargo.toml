@@ -11,7 +11,6 @@ readme = "README.md"
 
 [dependencies]
 qirlib = { path = "../qirlib" }
-inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["llvm11-0", "target-x86"] }
 
 [dependencies.pyo3]
 version = "0.15.1"

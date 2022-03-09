@@ -7,20 +7,25 @@ project(qirlib_external)
 include(ExternalProject)
 
 # Environment variables
-# PYQIR_DOWNLOAD_LLVM => If set, download pre-built LLVM binaries.
-# PYQIR_LLVM_BUILDS_URL => URL root where downloads are hosted.
-# PYQIR_LLVM_PKG_NAME => name of package to be downloaded/created
-# PYQIR_PKG_DEST
+# Download vars
+# - QIRLIB_DOWNLOAD_LLVM => If set, download pre-built LLVM binaries.
+# - QIRLIB_LLVM_BUILDS_URL => URL root where downloads are hosted.
+# - QIRLIB_LLVM_PKG_NAME => name of package to be downloaded/created
+# - CPACK_PACKAGE_FILE_NAME
+# Build vars
+# - QIRLIB_LLVM_TAG
+# Both
+# - CMAKE_INSTALL_PREFIX
 
-if ($ENV{PYQIR_DOWNLOAD_LLVM})
+if (NOT $ENV{QIRLIB_DOWNLOAD_LLVM} MATCHES "false")
   message (STATUS "Install LLVM to ${CMAKE_INSTALL_PREFIX}")
 
-  set(SHA256_NAME $ENV{PYQIR_LLVM_PKG_NAME}.sha256)
-  message (STATUS "Download file: $ENV{PYQIR_LLVM_BUILDS_URL}/$ENV{PYQIR_LLVM_PKG_NAME}")
-  message (STATUS "Download sha:$ENV{PYQIR_LLVM_BUILDS_URL}/${SHA256_NAME}")
+  set(SHA256_NAME ${QIRLIB_LLVM_PKG_NAME}.sha256)
+  message (STATUS "Download file: ${QIRLIB_LLVM_BUILDS_URL}/${QIRLIB_LLVM_PKG_NAME}")
+  message (STATUS "Download sha:$ENV{QIRLIB_LLVM_BUILDS_URL}/${SHA256_NAME}")
 
   # download the expected archive hash
-  file(DOWNLOAD "$ENV{PYQIR_LLVM_BUILDS_URL}/${SHA256_NAME}" ${CMAKE_BINARY_DIR}/${SHA256_NAME} STATUS SHA256_DOWNLOAD_STATUS)
+  file(DOWNLOAD "$ENV{QIRLIB_LLVM_BUILDS_URL}/${SHA256_NAME}" ${CMAKE_BINARY_DIR}/${SHA256_NAME} STATUS SHA256_DOWNLOAD_STATUS)
   list(GET SHA256_DOWNLOAD_STATUS 0 SHA256_DOWNLOAD_STATUS)
   if (NOT (${SHA256_DOWNLOAD_STATUS} EQUAL 0))
     list(GET SHA256_DOWNLOAD_STATUS 1 ERROR_MESSAGE)
@@ -32,7 +37,7 @@ if ($ENV{PYQIR_DOWNLOAD_LLVM})
   string(STRIP ${LLVM_SHA256_SUM} LLVM_SHA256_SUM)
 
   ExternalProject_Add(llvm
-    URL $ENV{PYQIR_LLVM_BUILDS_URL}/$ENV{PYQIR_LLVM_PKG_NAME}
+    URL $ENV{QIRLIB_LLVM_BUILDS_URL}/$ENV{QIRLIB_LLVM_PKG_NAME}
     URL_HASH SHA256=${LLVM_SHA256_SUM}
     CONFIGURE_COMMAND ""
     SOURCE_DIR ${CMAKE_INSTALL_PREFIX}
@@ -43,18 +48,21 @@ if ($ENV{PYQIR_DOWNLOAD_LLVM})
   )
 else()
   # The outer cmake call from rust will configure CMAKE_INSTALL_PREFIX
-  # and CPACK_PACKAGE_FILE_NAME. These are the only variables we care about
-  # when passing to the LLVM build. Unless the user overrides the install path
-  # rust will configure it to be the crate OUT_DIR
+  # Unless the user overrides the install path rust will configure it to 
+  # be the crate OUT_DIR.
+  # The build will define QIRLIB_LLVM_TAG and CPACK_PACKAGE_FILE_NAME. 
+  # These are the only custom build variables we care about when passing
+  # to the LLVM build.
   set (EXTERNAL_EXTRA_CMAKE_ARGS)
   list (APPEND EXTERNAL_EXTRA_CMAKE_ARGS 
+    -DQIRLIB_LLVM_TAG=${QIRLIB_LLVM_TAG}
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
     -DCPACK_PACKAGE_FILE_NAME=${CPACK_PACKAGE_FILE_NAME}
   )
 
   ExternalProject_Add(llvm
     GIT_REPOSITORY    https://github.com/llvm/llvm-project.git
-    GIT_TAG           llvmorg-11.1.0
+    GIT_TAG           ${QIRLIB_LLVM_TAG}
     GIT_SHALLOW       TRUE
     GIT_PROGRESS      TRUE
     SOURCE_SUBDIR     llvm

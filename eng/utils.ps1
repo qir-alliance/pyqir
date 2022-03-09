@@ -66,8 +66,8 @@ function Use-LlvmInstallation {
 }
 
 function Resolve-InstallationDirectory {
-    if (Test-Path env:\PYQIR_LLVM_EXTERNAL_DIR) {
-        return $env:PYQIR_LLVM_EXTERNAL_DIR
+    if (Test-Path env:\QIRLIB_LLVM_EXTERNAL_DIR) {
+        return $env:QIRLIB_LLVM_EXTERNAL_DIR
     }
     else {
         $packagePath = Get-DefaultInstallDirectory
@@ -76,8 +76,8 @@ function Resolve-InstallationDirectory {
 }
 
 function Get-DefaultInstallDirectory {
-    if (Test-Path env:\PYQIR_CACHE_DIR) {
-        $env:PYQIR_CACHE_DIR
+    if (Test-Path env:\QIRLIB_CACHE_DIR) {
+        $env:QIRLIB_CACHE_DIR
     }
     else {
         Join-Path "$HOME" ".pyqir"
