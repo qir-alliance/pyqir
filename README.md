@@ -12,8 +12,8 @@ consists of the following components:
   [IR](https://llvm.org/docs/LangRef.html)). It is intended to easily integrate
   the QIR toolchain into existing Python-based frontends.
 
-- [**pyqir-jit**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-jit)
-  [[examples](https://github.com/qir-alliance/pyqir/tree/main/examples/jit)]:
+- [**pyqir-evaluator**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-evaluator)
+  [[examples](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator)]:
   <br/>
   This package provides an easy way to execute generated QIR. It contains the
   necessary [just-in-time

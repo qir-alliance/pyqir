@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from pyqir.generator import BasicQisBuilder, SimpleModule
-from pyqir.jit import GateLogger, GateSet, NonadaptiveJit
+from pyqir.evaluator import GateLogger, GateSet, NonadaptiveJit
 import tempfile
 from typing import List, Optional
 import unittest

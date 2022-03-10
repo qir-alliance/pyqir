@@ -1,10 +1,10 @@
 [package]
 authors = ["Microsoft"]
-name = "pyqir-jit"
+name = "pyqir-evaluator"
 version = "0.2.0-alpha"
 edition = "2018"
 license = "MIT"
-description = "Python based QIR JIT library."
+description = "Python based QIR Evaluation (JIT) library."
 readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -24,11 +24,11 @@ default = ["extension-module"]
 serial_test = "0.5.1"
 
 [lib]
-name = "pyqir_jit"
+name = "pyqir_evaluator"
 crate-type = ["cdylib"]
 
 [package.metadata.maturin]
-name = "pyqir.jit._native"
+name = "pyqir.evaluator._native"
 classifier=[
     "License :: OSI Approved :: MIT License",
     "Development Status :: 3 - Alpha",

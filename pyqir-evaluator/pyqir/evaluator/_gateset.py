@@ -4,7 +4,7 @@
 class GateSet:
     """
     Defines the quantum circuit operations which may be registered for
-    callbacks during JIT execution of QIR
+    callbacks during evaluation of QIR
     """
 
     def cx(self, control: str, target: str):
@@ -54,6 +54,6 @@ class GateSet:
 
     def finish(self, metadata: dict):
         """
-        Called at the end of JIT execution supplying run metadata.
+        Called at the end of QIR evaluation supplying run metadata.
         """
         pass

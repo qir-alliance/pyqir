@@ -1,6 +1,6 @@
-# pyqir-jit
+# pyqir-evaluator
 
-The `pyqir-jit` package provides an easy way to execute generated QIR for the
+The `pyqir-evaluator` package provides an easy way to execute generated QIR for the
 purpose of
 
 1. easily testing and experimenting with QIR code
@@ -14,20 +14,20 @@ perform when a gate is applied in Python.
 
 ## Examples
 
-There are [JIT
-examples](https://github.com/qir-alliance/pyqir/tree/main/examples/jit) in the
+There are [evaluator
+examples](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator) in the
 repository.
 
 Let's look at how to log the gate sequence for the following example:
 
-- [Bernstein-Vazirani](https://github.com/qir-alliance/pyqir/tree/main/examples/jit/bernstein_vazirani.py)
+- [Bernstein-Vazirani](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator/bernstein_vazirani.py)
   We can evaluate the [generated
-  bitcode](https://github.com/qir-alliance/pyqir/tree/main/examples/jit/bernstein_vazirani.bc)
+  bitcode](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator/bernstein_vazirani.bc)
   with the `NonadaptiveJit`, and `GateLogger` to print out a simple log of the
   quantum application.
 
 ```python
-from pyqir.jit import NonadaptiveJit, GateLogger
+from pyqir.evaluator import NonadaptiveJit, GateLogger
 
 from pathlib import Path
 import os

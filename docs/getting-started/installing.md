@@ -65,14 +65,14 @@ PyQIR from source can be found at {doc}`/development-guide/building`.
 To uninstall the PyQIR packages, run
 
 ```bash
-python -m pip uninstall -y pyqir-generator pyqir-parser pyqir-jit
+python -m pip uninstall -y pyqir-generator pyqir-parser pyqir-evaluator
 ```
 
 ## Troubleshooting
 
 ### Error when running the examples
 
-- `ModuleNotFoundError: No module named '(pyqir|pyqir.generator|pyqir.parser|pyqir.jit)'`:
+- `ModuleNotFoundError: No module named '(pyqir|pyqir.generator|pyqir.parser|pyqir.evaluator)'`:
   Install the library by running one of the `install.(sh|ps1|cmd)` scripts.
 
 ### Other errors

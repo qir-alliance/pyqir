@@ -5,7 +5,7 @@
 
 import os
 from pathlib import Path
-from pyqir.jit import GateLogger, NonadaptiveJit
+from pyqir.evaluator import GateLogger, NonadaptiveJit
 
 path = Path(__file__).parent
 file = os.path.join(path, "bernstein_vazirani.bc")
