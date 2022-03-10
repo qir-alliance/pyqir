@@ -1,6 +1,6 @@
-# Examples: pyqir_jit
+# Examples: pyqir-jit
 
-The `pyqir_jit` package provides an easy way to execute generated QIR for the
+The `pyqir-jit` package provides an easy way to execute generated QIR for the
 purpose of
 
 1. easily testing and experimenting with QIR code
@@ -12,7 +12,7 @@ compilation](https://en.wikipedia.org/wiki/Just-in-time_compilation)
 infrastructure as well an extensibility mechanism to define what actions to
 perform when a gate is applied in Python.
 
-This folder contains the following examples for how to use the `pyqir_jit`
+This folder contains the following examples for how to use the `pyqir-jit`
 package:
 
 - **Bernstein-Vazirani example**: <br/>

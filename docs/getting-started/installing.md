@@ -65,7 +65,7 @@ PyQIR from source can be found at {doc}`/development-guide/building`.
 To uninstall the PyQIR packages, run
 
 ```bash
-python -m pip uninstall -y pyqir-generator pyqir-parser pyqir_jit
+python -m pip uninstall -y pyqir-generator pyqir-parser pyqir-jit
 ```
 
 ## Troubleshooting

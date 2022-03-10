@@ -1,6 +1,6 @@
-# pyqir_jit
+# pyqir-jit
 
-The `pyqir_jit` package provides an easy way to execute generated QIR for the
+The `pyqir-jit` package provides an easy way to execute generated QIR for the
 purpose of
 
 1. easily testing and experimenting with QIR code
@@ -27,7 +27,7 @@ Let's look at how to log the gate sequence for the following example:
   quantum application.
 
 ```python
-from pyqir_jit import NonadaptiveJit, GateLogger
+from pyqir.jit import NonadaptiveJit, GateLogger
 
 from pathlib import Path
 import os
