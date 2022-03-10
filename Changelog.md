@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0a1] - 2022-03-10
+
 ## [0.2.0a1] - 2022-02-25
 
 - Cache parser values for better hashing in Python [#41](https://github.com/qir-alliance/pyqir/pull/41)
@@ -40,6 +42,7 @@
 
 - Initial Release
 
-[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.2.0a1...HEAD
+[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.3.0a1...HEAD
+[0.3.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.2.0a1...v0.3.0a1
 [0.2.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.1.0a1...v0.2.0a1
 [0.1.1a1]: https://github.com/qir-alliance/pyqir/compare/v0.1.0a1...v0.1.1a1
