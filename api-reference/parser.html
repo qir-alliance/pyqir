@@ -37,15 +37,587 @@
 <h1>pyqir.parser<a class="headerlink" href="#pyqir-parser" title="Permalink to this headline">¶</a></h1>
 <section id="classes-representing-qir-types">
 <h2>Classes representing QIR types<a class="headerlink" href="#classes-representing-qir-types" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Instances of QirType represent a type description in QIR. Specific subclasses may contain
+additional properties of that type.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirVoidType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirVoidType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirVoidType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirType</span></code></a></p>
+<p>Instances of QirVoidType represent a void type in QIR.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirIntegerType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirIntegerType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirIntegerType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirType</span></code></a></p>
+<p>Instances of QirIntegerType represent a signed integer in QIR. Note that there is no unsigned
+integer type, just unsigned arithmetic instructions.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirIntegerType.width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">width</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pyqir.parser.QirIntegerType.width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the bit width of this integer type.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirPointerType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirPointerType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirPointerType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirType</span></code></a></p>
+<p>Instances of QirPointerType represent a pointer to some other type in QIR.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirPointerType.addrspace">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">addrspace</span></span><a class="headerlink" href="#pyqir.parser.QirPointerType.addrspace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the address space to which this pointer points.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirPointerType.type">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><span class="pre">pyqir.parser._parser.QirType</span></a></em><a class="headerlink" href="#pyqir.parser.QirPointerType.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the QirType this to which this pointer points.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirDoubleType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirDoubleType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirDoubleType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirType</span></code></a></p>
+<p>Instances of QirDoubleType represent the double-sized floating point type in a QIR program.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirArrayType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirArrayType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirArrayType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirType</span></code></a></p>
+<p>Instances of the QirArrayType represent the native LLVM fixed-length array type in a QIR program.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirArrayType.element_count">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">element_count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pyqir.parser.QirArrayType.element_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the count of elements in the array.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirArrayType.element_types">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">element_types</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><span class="pre">pyqir.parser._parser.QirType</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyqir.parser.QirArrayType.element_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the ordered list of QirTypes representing the underlying array types.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirStructType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirStructType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirStructType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirType</span></code></a></p>
+<p>Instances of QirStructType represent an anonymous struct with inline defined types in QIR.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirStructType.struct_element_types">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">struct_element_types</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><span class="pre">pyqir.parser._parser.QirType</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyqir.parser.QirStructType.struct_element_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the ordered list of QirTypes representing the underlying struct types.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirNamedStructType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirNamedStructType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirNamedStructType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirType</span></code></a></p>
+<p>Instances of QirNamedStruct represent a globally defined struct, often used to represent opaque
+poitners.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirNamedStructType.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pyqir.parser.QirNamedStructType.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the name of this struct.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirResultType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirResultType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirResultType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirNamedStructType" title="pyqir.parser._parser.QirNamedStructType"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirNamedStructType</span></code></a></p>
+<p>Instances of QirResultType are specific QIR opaque pointer corresponding to the Result special
+type.</p>
+</dd></dl>
+
 </section>
 <section id="classes-representing-qir-operands">
 <h2>Classes representing QIR operands<a class="headerlink" href="#classes-representing-qir-operands" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirOperand">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirOperand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirOperand</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirOperand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Instances of QirOperand represent an instance in a QIR program, either a local operand (variable)
+or constant.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirLocalOperand">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirLocalOperand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirOperand</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirLocalOperand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirOperand" title="pyqir.parser._parser.QirOperand"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOperand</span></code></a></p>
+<p>Instances of QirLocalOperand represent a typed local variable in a QIR program.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirLocalOperand.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pyqir.parser.QirLocalOperand.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the name identifier for this operand. This could be an identifier from the original
+source language, a generated name based on an identifier, or a generated integer name.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirLocalOperand.type">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><span class="pre">pyqir.parser._parser.QirType</span></a></em><a class="headerlink" href="#pyqir.parser.QirLocalOperand.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the QirType instance representing the type for this operand.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirIntConstant">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirIntConstant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirOperand</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirIntConstant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirConstant</span></code></p>
+<p>Instances of QirIntConstant represent a constant integer value in a QIR program.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirIntConstant.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pyqir.parser.QirIntConstant.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the integer value for this constant.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirIntConstant.width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">width</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pyqir.parser.QirIntConstant.width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the bit width for this integer constant.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirDoubleConstant">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirDoubleConstant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirOperand</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirDoubleConstant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirConstant</span></code></p>
+<p>Instances of QirDoubleConstant represent a constant double-sized float value in a QIR program.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirDoubleConstant.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#pyqir.parser.QirDoubleConstant.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the double-sized float value for this constant.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirNullConstant">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirNullConstant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirOperand</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirNullConstant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirConstant</span></code></p>
+<p>Instances of QirNullConstant represent a constant null pointer in a QIR program. Use the type
+property to inspect which pointer type this null represents.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirNullConstant.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#pyqir.parser.QirNullConstant.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>The value of QirNullConstant instances is always None.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirQubitConstant">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirQubitConstant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirOperand</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirQubitConstant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirConstant</span></code></p>
+<p>Instances of QirQubitConstant represent a statically allocated qubit id in a QIR program.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirQubitConstant.id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pyqir.parser.QirQubitConstant.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the integer identifier for this qubit constant.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirQubitConstant.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pyqir.parser.QirQubitConstant.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the integer identifier for this qubit constant.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirResultConstant">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirResultConstant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirOperand</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirResultConstant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirConstant</span></code></p>
+<p>Instances of QirResultConstant represent a statically allocated result id in a QIR program.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirResultConstant.id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pyqir.parser.QirResultConstant.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>gets the integer identifier for this result constant.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirResultConstant.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pyqir.parser.QirResultConstant.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the integer identifier for the is result constant.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 <section id="classes-representing-basic-block-terminators">
 <h2>Classes representing basic block terminators<a class="headerlink" href="#classes-representing-basic-block-terminators" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirTerminator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirTerminator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirTerminator</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirTerminator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Instances of QirTerminator represent the special final instruction at the end of a block that
+indicates how control flow should transfer.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirRetTerminator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirRetTerminator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirTerminator</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirRetTerminator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirTerminator" title="pyqir.parser._parser.QirTerminator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirTerminator</span></code></a></p>
+<p>Instances of QirRetTerminator represent the ret instruction in a QIR program.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirRetTerminator.operand">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">operand</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.parser.QirOperand" title="pyqir.parser._parser.QirOperand"><span class="pre">pyqir.parser._parser.QirOperand</span></a></em><a class="headerlink" href="#pyqir.parser.QirRetTerminator.operand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the operand that will be returned by the ret instruction.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirBrTerminator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirBrTerminator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirTerminator</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirBrTerminator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirTerminator" title="pyqir.parser._parser.QirTerminator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirTerminator</span></code></a></p>
+<p>Instances of QirBrTerminator represent a branch terminator instruction that unconditionally
+jumps execution to the named destination block.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirBrTerminator.dest">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dest</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pyqir.parser.QirBrTerminator.dest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the name of the block this branch jumps to.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirCondBrTerminator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirCondBrTerminator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirTerminator</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirCondBrTerminator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirTerminator" title="pyqir.parser._parser.QirTerminator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirTerminator</span></code></a></p>
+<p>Instances of QirCondBrTerminator represent a conditional branch terminator instruction that
+decides which named block to jump to based on an given operand.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirCondBrTerminator.condition">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">condition</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.parser.QirOperand" title="pyqir.parser._parser.QirOperand"><span class="pre">pyqir.parser._parser.QirOperand</span></a></em><a class="headerlink" href="#pyqir.parser.QirCondBrTerminator.condition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the QirOperand representing the condition used to determine the block to jump to.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirCondBrTerminator.false_dest">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">false_dest</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pyqir.parser.QirCondBrTerminator.false_dest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the name of the block that will be jumped to if the condition evaluates to false.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirCondBrTerminator.true_dest">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">true_dest</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pyqir.parser.QirCondBrTerminator.true_dest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the name of the block that will be jumped to if the condition evaluates to true.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirSwitchTerminator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirSwitchTerminator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirTerminator</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirSwitchTerminator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirTerminator" title="pyqir.parser._parser.QirTerminator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirTerminator</span></code></a></p>
+<p>Instances of QirSwitchTerminator represent a switch terminator instruction that can jump
+to one or more blocks based on matching values of a given operand, or jump to a fallback block
+in the case that no matches are found.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirSwitchTerminator.default_dest">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">default_dest</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pyqir.parser.QirSwitchTerminator.default_dest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the name of the default block that the switch will jump to if no values match the given
+operand.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirSwitchTerminator.dest_pairs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dest_pairs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">pyqir.parser._parser.QirConstant</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyqir.parser.QirSwitchTerminator.dest_pairs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a list of pairs representing the constant values to compare the operand against and the
+matching block name to jump to if the comparison succeeds.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirSwitchTerminator.operand">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">operand</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.parser.QirLocalOperand" title="pyqir.parser._parser.QirLocalOperand"><span class="pre">pyqir.parser._parser.QirLocalOperand</span></a></em><a class="headerlink" href="#pyqir.parser.QirSwitchTerminator.operand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the operand variable of the switch statement.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirUnreachableTerminator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirUnreachableTerminator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirTerminator</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirUnreachableTerminator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirTerminator" title="pyqir.parser._parser.QirTerminator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirTerminator</span></code></a></p>
+<p>Instances of QirUnreachableTerminator represent an unreachable terminator instruction. As the name
+implies, this terminator is not expected to be reached such that some instruction in the block
+before this terminator should halt program execution.</p>
+</dd></dl>
+
 </section>
 <section id="classes-representing-qir-instructions">
 <h2>Classes representing QIR instructions<a class="headerlink" href="#classes-representing-qir-instructions" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Instances of QirInstr represent an instruction within a block of a QIR program. See the subclasses
+of this type for specifically supported instructions.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirInstr.output_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">output_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyqir.parser.QirInstr.output_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the name of the local operand that receives the output of this instruction, or
+None if the instruction does not return a value.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirInstr.type">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><span class="pre">pyqir.parser._parser.QirType</span></a></em><a class="headerlink" href="#pyqir.parser.QirInstr.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the QirType instance representing the output of this instruction. If the instruction
+has no output, the type will be an instance of QirVoidType.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirQisCallInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirQisCallInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirQisCallInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirCallInstr" title="pyqir.parser._parser.QirCallInstr"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirCallInstr</span></code></a></p>
+<p>Instances of QirQisCallInstr represent a call instruction where the function name begins with
+“__quantum__qis__” indicating that it is a function from the QIR quantum intrinsic set.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirRtCallInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirRtCallInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirRtCallInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirCallInstr" title="pyqir.parser._parser.QirCallInstr"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirCallInstr</span></code></a></p>
+<p>Instances of QirRtCallInstr represent a call instruction where the function name begins with
+“__quantum__rt__” indicating that it is a function from the QIR runtime.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirQirCallInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirQirCallInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirQirCallInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirCallInstr" title="pyqir.parser._parser.QirCallInstr"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirCallInstr</span></code></a></p>
+<p>Instances of QirQirCallInstr represent a call instruction where the function name begins with
+“__quantum__qir__” indicating that it is a function from the QIR base profile.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirCallInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirCallInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirCallInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirInstr" title="pyqir.parser._parser.QirInstr"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirInstr</span></code></a></p>
+<p>Instances of QirCallInstr represent a call instruction in a QIR program.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirCallInstr.func_args">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">func_args</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#pyqir.parser.QirOperand" title="pyqir.parser._parser.QirOperand"><span class="pre">pyqir.parser._parser.QirOperand</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyqir.parser.QirCallInstr.func_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the list of QirOperand instances that are passed as arguments to the function call.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirCallInstr.func_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">func_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pyqir.parser.QirCallInstr.func_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the name of the function called by this instruction.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirAddInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirAddInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirAddInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirAddInstr represent an integer addition instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirSubInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirSubInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirSubInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirSubInstr represent an integer subtraction instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirMulInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirMulInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirMulInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirMulInstr represent an integer multiplication instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirUDivInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirUDivInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirUDivInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirUDivInstr represent an unsigned integer division instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirSDivInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirSDivInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirSDivInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirSDivInstr represent a signed integer division instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirURemInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirURemInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirURemInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirURemInstr represent an unsigned integer remainder instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirSRemInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirSRemInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirSRemInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirSRemInstr represent a signed integer remainder instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirAndInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirAndInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirAndInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirAndInstr represent a boolean and instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirOrInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirOrInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirOrInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirOrInstr represent a boolean or instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirXorInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirXorInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirXorInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirXorInstr represent a boolean xor instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirShlInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirShlInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirShlInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirShlInstr represent a bitwise shift left instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirLShrInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirLShrInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirLShrInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirLShrInstr represent a logical bitwise shift right instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirAShrInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirAShrInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirAShrInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirAShrInstr represent an arithmetic bitwise shift right instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirFAddInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirFAddInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirFAddInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirFAddInstr represent a floating-point addition instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirFSubInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirFSubInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirFSubInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirFSubInstr represent a floating-point subtraction instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirFMulInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirFMulInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirFMulInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirFMulInstr represent a floating-point multiplication instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirFDivInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirFDivInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirFDivInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirFDivInstr represent a floating-point division instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirFRemInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirFRemInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirFRemInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirFRemInstr represent a floating-point remainder instruction that takes two operands.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirFNegInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirFNegInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirFNegInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirFNegInstr represent a floating-point negation instruction that takes one operand.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirICmpInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirICmpInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirICmpInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirICmpInstr represent an integer comparison instruction that takes two operands,
+and uses a specific predicate to output the boolean result of the comparison.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirICmpInstr.predicate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">predicate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pyqir.parser.QirICmpInstr.predicate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a string representing the predicate operation to perform. Possible values are
+“eq”, “ne”, “ugt”, “uge”, “ult”, “ule”, “sgt”, “sge”, “slt”, and “sle”.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirFCmpInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirFCmpInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirFCmpInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirOpInstr</span></code></p>
+<p>Instances of QirFCmpInstr represent a floating-point comparison instruction that takes two operands,
+and uses a specific predicate to output the boolean result of the comparison.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirFCmpInstr.predicate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">predicate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pyqir.parser.QirFCmpInstr.predicate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a string representing the predicate operation to perform. Possible values are
+“false”, “oeq”, “ogt”, “oge”, “olt”, “ole”, “one”, “ord”, “uno”, “ueq”, “ugt”, “uge”, “ult”,
+“ule”, “une”, and “true”</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.parser.QirPhiInstr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.parser.</span></span><span class="sig-name descname"><span class="pre">QirPhiInstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyQirInstruction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.parser.QirPhiInstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.parser.QirInstr" title="pyqir.parser._parser.QirInstr"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.parser._parser.QirInstr</span></code></a></p>
+<p>Instances of QirPhiInstr represent a phi instruction that selects a value for an operand based
+on the name of the block that transferred execution to the current block.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.parser.QirPhiInstr.get_incoming_value_for_name">
+<span class="sig-name descname"><span class="pre">get_incoming_value_for_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#pyqir.parser.QirOperand" title="pyqir.parser._parser.QirOperand"><span class="pre">pyqir.parser._parser.QirOperand</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pyqir.parser.QirPhiInstr.get_incoming_value_for_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the QirOperand representing the value for a given originating block, or None if that
+name is not found.
+:param name: the block name to search for.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.parser.QirPhiInstr.incoming_values">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">incoming_values</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#pyqir.parser.QirOperand" title="pyqir.parser._parser.QirOperand"><span class="pre">pyqir.parser._parser.QirOperand</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyqir.parser.QirPhiInstr.incoming_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a list of all the incoming value pairs for this phi node, where each pair is the QirOperand
+for the value to use and the string name of the originating block.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 </section>
 

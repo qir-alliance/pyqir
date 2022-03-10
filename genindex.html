@@ -34,8 +34,10 @@
 <h1 id="index">Index</h1>
 
 <div class="genindex-jumpbox">
- <a href="#B"><strong>B</strong></a>
+ <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
  | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
@@ -43,16 +45,27 @@
  | <a href="#I"><strong>I</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#Q"><strong>Q</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
+ | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
  | <a href="#X"><strong>X</strong></a>
  | <a href="#Y"><strong>Y</strong></a>
  | <a href="#Z"><strong>Z</strong></a>
  
 </div>
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirPointerType.addrspace">addrspace (pyqir.parser.QirPointerType property)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -72,6 +85,8 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirCondBrTerminator.condition">condition (pyqir.parser.QirCondBrTerminator property)</a>
+</li>
       <li><a href="api-reference/generator.html#pyqir.generator.BasicQisBuilder.cx">cx() (pyqir.generator.BasicQisBuilder method)</a>
 
       <ul>
@@ -93,9 +108,29 @@
   </ul></td>
 </tr></table>
 
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirSwitchTerminator.default_dest">default_dest (pyqir.parser.QirSwitchTerminator property)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirBrTerminator.dest">dest (pyqir.parser.QirBrTerminator property)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirSwitchTerminator.dest_pairs">dest_pairs (pyqir.parser.QirSwitchTerminator property)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirArrayType.element_count">element_count (pyqir.parser.QirArrayType property)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirArrayType.element_types">element_types (pyqir.parser.QirArrayType property)</a>
+</li>
       <li><a href="api-reference/jit.html#pyqir.jit.NonadaptiveJit.eval">eval() (pyqir.jit.NonadaptiveJit method)</a>
 </li>
   </ul></td>
@@ -104,12 +139,20 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirCondBrTerminator.false_dest">false_dest (pyqir.parser.QirCondBrTerminator property)</a>
+</li>
       <li><a href="api-reference/jit.html#pyqir.jit.GateLogger.finish">finish() (pyqir.jit.GateLogger method)</a>
 
       <ul>
         <li><a href="api-reference/jit.html#pyqir.jit.GateSet.finish">(pyqir.jit.GateSet method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirCallInstr.func_args">func_args (pyqir.parser.QirCallInstr property)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirCallInstr.func_name">func_name (pyqir.parser.QirCallInstr property)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -121,6 +164,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/jit.html#pyqir.jit.GateSet">GateSet (class in pyqir.jit)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirPhiInstr.get_incoming_value_for_name">get_incoming_value_for_name() (pyqir.parser.QirPhiInstr method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -142,10 +187,18 @@
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api-reference/generator.html#pyqir.generator.BasicQisBuilder.if_result">if_result() (pyqir.generator.BasicQisBuilder method)</a>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirQubitConstant.id">id (pyqir.parser.QirQubitConstant property)</a>
+
+      <ul>
+        <li><a href="api-reference/parser.html#pyqir.parser.QirResultConstant.id">(pyqir.parser.QirResultConstant property)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/generator.html#pyqir.generator.BasicQisBuilder.if_result">if_result() (pyqir.generator.BasicQisBuilder method)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirPhiInstr.incoming_values">incoming_values (pyqir.parser.QirPhiInstr property)</a>
+</li>
       <li><a href="api-reference/generator.html#pyqir.generator.SimpleModule.ir">ir() (pyqir.generator.SimpleModule method)</a>
 </li>
   </ul></td>
@@ -168,13 +221,45 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirLocalOperand.name">name (pyqir.parser.QirLocalOperand property)</a>
+
+      <ul>
+        <li><a href="api-reference/parser.html#pyqir.parser.QirNamedStructType.name">(pyqir.parser.QirNamedStructType property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/jit.html#pyqir.jit.NonadaptiveJit">NonadaptiveJit (class in pyqir.jit)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirRetTerminator.operand">operand (pyqir.parser.QirRetTerminator property)</a>
+
+      <ul>
+        <li><a href="api-reference/parser.html#pyqir.parser.QirSwitchTerminator.operand">(pyqir.parser.QirSwitchTerminator property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirInstr.output_name">output_name (pyqir.parser.QirInstr property)</a>
 </li>
   </ul></td>
 </tr></table>
 
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirFCmpInstr.predicate">predicate (pyqir.parser.QirFCmpInstr property)</a>
+
+      <ul>
+        <li><a href="api-reference/parser.html#pyqir.parser.QirICmpInstr.predicate">(pyqir.parser.QirICmpInstr property)</a>
+</li>
+      </ul></li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/jit.html#pyqir.jit.GateLogger.print">print() (pyqir.jit.GateLogger method)</a>
 </li>
@@ -184,10 +269,108 @@
 <h2 id="Q">Q</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api-reference/generator.html#pyqir.generator.Qubit">Qubit (class in pyqir.generator)</a>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirAddInstr">QirAddInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirAndInstr">QirAndInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirArrayType">QirArrayType (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirAShrInstr">QirAShrInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirBrTerminator">QirBrTerminator (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirCallInstr">QirCallInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirCondBrTerminator">QirCondBrTerminator (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirDoubleConstant">QirDoubleConstant (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirDoubleType">QirDoubleType (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirFAddInstr">QirFAddInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirFCmpInstr">QirFCmpInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirFDivInstr">QirFDivInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirFMulInstr">QirFMulInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirFNegInstr">QirFNegInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirFRemInstr">QirFRemInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirFSubInstr">QirFSubInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirICmpInstr">QirICmpInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirInstr">QirInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirIntConstant">QirIntConstant (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirIntegerType">QirIntegerType (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirLocalOperand">QirLocalOperand (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirLShrInstr">QirLShrInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirMulInstr">QirMulInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirNamedStructType">QirNamedStructType (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirNullConstant">QirNullConstant (class in pyqir.parser)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirOperand">QirOperand (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirOrInstr">QirOrInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirPhiInstr">QirPhiInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirPointerType">QirPointerType (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirQirCallInstr">QirQirCallInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirQisCallInstr">QirQisCallInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirQubitConstant">QirQubitConstant (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirResultConstant">QirResultConstant (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirResultType">QirResultType (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirRetTerminator">QirRetTerminator (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirRtCallInstr">QirRtCallInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirSDivInstr">QirSDivInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirShlInstr">QirShlInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirSRemInstr">QirSRemInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirStructType">QirStructType (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirSubInstr">QirSubInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirSwitchTerminator">QirSwitchTerminator (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirTerminator">QirTerminator (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirType">QirType (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirUDivInstr">QirUDivInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirUnreachableTerminator">QirUnreachableTerminator (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirURemInstr">QirURemInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirVoidType">QirVoidType (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirXorInstr">QirXorInstr (class in pyqir.parser)</a>
+</li>
+      <li><a href="api-reference/generator.html#pyqir.generator.Qubit">Qubit (class in pyqir.generator)</a>
+</li>
       <li><a href="api-reference/generator.html#pyqir.generator.SimpleModule.qubits">qubits (pyqir.generator.SimpleModule attribute)</a>
 </li>
   </ul></td>
@@ -248,8 +431,6 @@
         <li><a href="api-reference/jit.html#pyqir.jit.GateSet.s">(pyqir.jit.GateSet method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/generator.html#pyqir.generator.BasicQisBuilder.s_adj">s_adj() (pyqir.generator.BasicQisBuilder method)</a>
 
       <ul>
@@ -258,7 +439,11 @@
         <li><a href="api-reference/jit.html#pyqir.jit.GateSet.s_adj">(pyqir.jit.GateSet method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/generator.html#pyqir.generator.SimpleModule">SimpleModule (class in pyqir.generator)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirStructType.struct_element_types">struct_element_types (pyqir.parser.QirStructType property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -274,14 +459,54 @@
         <li><a href="api-reference/jit.html#pyqir.jit.GateSet.t">(pyqir.jit.GateSet method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/generator.html#pyqir.generator.BasicQisBuilder.t_adj">t_adj() (pyqir.generator.BasicQisBuilder method)</a>
 
       <ul>
         <li><a href="api-reference/jit.html#pyqir.jit.GateLogger.t_adj">(pyqir.jit.GateLogger method)</a>
 </li>
         <li><a href="api-reference/jit.html#pyqir.jit.GateSet.t_adj">(pyqir.jit.GateSet method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirCondBrTerminator.true_dest">true_dest (pyqir.parser.QirCondBrTerminator property)</a>
+</li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirInstr.type">type (pyqir.parser.QirInstr property)</a>
+
+      <ul>
+        <li><a href="api-reference/parser.html#pyqir.parser.QirLocalOperand.type">(pyqir.parser.QirLocalOperand property)</a>
+</li>
+        <li><a href="api-reference/parser.html#pyqir.parser.QirPointerType.type">(pyqir.parser.QirPointerType property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirDoubleConstant.value">value (pyqir.parser.QirDoubleConstant property)</a>
+
+      <ul>
+        <li><a href="api-reference/parser.html#pyqir.parser.QirIntConstant.value">(pyqir.parser.QirIntConstant property)</a>
+</li>
+        <li><a href="api-reference/parser.html#pyqir.parser.QirNullConstant.value">(pyqir.parser.QirNullConstant property)</a>
+</li>
+        <li><a href="api-reference/parser.html#pyqir.parser.QirQubitConstant.value">(pyqir.parser.QirQubitConstant property)</a>
+</li>
+        <li><a href="api-reference/parser.html#pyqir.parser.QirResultConstant.value">(pyqir.parser.QirResultConstant property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirIntConstant.width">width (pyqir.parser.QirIntConstant property)</a>
+
+      <ul>
+        <li><a href="api-reference/parser.html#pyqir.parser.QirIntegerType.width">(pyqir.parser.QirIntegerType property)</a>
 </li>
       </ul></li>
   </ul></td>
