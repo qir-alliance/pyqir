@@ -1,5 +1,5 @@
 [project]
-name = "pyqir_generator"
+name = "pyqir-generator"
 version = "0.2.0a1"
 requires-python = ">=3.6"
 

@@ -7,7 +7,7 @@ Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec).
   QIR**](https://github.com/qir-alliance/pyqir/tree/main/examples/generator):
   <br/>
   The
-  [`pyqir_generator`](https://github.com/qir-alliance/pyqir/tree/main/pyqir-generator)
+  [`pyqir-generator`](https://github.com/qir-alliance/pyqir/tree/main/pyqir-generator)
   package provides a Python API for generating QIR. It is intended to easily
   integrate the QIR toolchain into existing Python-based frontends.
 

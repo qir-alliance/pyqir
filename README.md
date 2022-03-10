@@ -4,7 +4,7 @@ PyQIR is a set of APIs for generating, parsing, and evaluating [Quantum
 Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec). It
 consists of the following components:
 
-- [**pyqir_generator**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-generator)
+- [**pyqir-generator**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-generator)
   [[examples](https://github.com/qir-alliance/pyqir/tree/main/examples/generator)]:
   <br/>
   This package provides a Python API for generating QIR
