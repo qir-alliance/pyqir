@@ -23,11 +23,11 @@ Let's look at how to log the gate sequence for the following example:
 - [Bernstein-Vazirani](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator/bernstein_vazirani.py)
   We can evaluate the [generated
   bitcode](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator/bernstein_vazirani.bc)
-  with the `NonadaptiveJit`, and `GateLogger` to print out a simple log of the
+  with the `NonadaptiveEvaluator`, and `GateLogger` to print out a simple log of the
   quantum application.
 
 ```python
-from pyqir.evaluator import NonadaptiveJit, GateLogger
+from pyqir.evaluator import NonadaptiveEvaluator, GateLogger
 
 from pathlib import Path
 import os
@@ -35,11 +35,11 @@ import os
 path = Path(__file__).parent
 file = os.path.join(path, "bernstein_vazirani.bc")
 
-jit = NonadaptiveJit()
+evaluator = NonadaptiveEvaluator()
 logger = GateLogger()
 
-print("# output from NonadaptiveJit returning the uninitialized output")
-jit.eval(file, logger)
+print("# output from NonadaptiveEvaluator returning the uninitialized output")
+evaluator.eval(file, logger)
 
 print("# output from GateLogger")
 logger.print()
@@ -48,7 +48,7 @@ logger.print()
 Would generate the output:
 
 ```text
-# output from NonadaptiveJit returning the uninitialized output
+# output from NonadaptiveEvaluator returning the uninitialized output
 [[Zero, Zero, Zero, Zero, Zero, Zero, Zero, Zero]]
 # output from GateLogger
 qubits[9]

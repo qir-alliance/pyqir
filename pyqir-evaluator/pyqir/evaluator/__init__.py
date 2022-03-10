@@ -3,4 +3,4 @@
 
 from pyqir.evaluator._gatelogger import GateLogger as GateLogger
 from pyqir.evaluator._gateset import GateSet as GateSet
-from pyqir.evaluator._nonadaptivejit import NonadaptiveJit as NonadaptiveJit
+from pyqir.evaluator._nonadaptiveevaluator import NonadaptiveEvaluator as NonadaptiveEvaluator

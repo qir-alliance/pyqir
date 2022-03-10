@@ -1,9 +1,9 @@
 # pyqir.evaluator
 
-## `NonadaptiveJit` class
+## `NonadaptiveEvaluator` class
 
 ```{eval-rst}
-.. autoclass:: pyqir.evaluator.NonadaptiveJit
+.. autoclass:: pyqir.evaluator.NonadaptiveEvaluator
     :show-inheritance:
     :members:
     :undoc-members:

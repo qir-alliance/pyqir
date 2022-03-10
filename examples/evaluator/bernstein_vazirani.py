@@ -5,15 +5,15 @@
 
 import os
 from pathlib import Path
-from pyqir.evaluator import GateLogger, NonadaptiveJit
+from pyqir.evaluator import GateLogger, NonadaptiveEvaluator
 
 path = Path(__file__).parent
 file = os.path.join(path, "bernstein_vazirani.bc")
 
-jit = NonadaptiveJit()
+evaluator = NonadaptiveEvaluator()
 logger = GateLogger()
 
-jit.eval(file, logger)
+evaluator.eval(file, logger)
 
 print("# output from GateLogger", flush=True)
 logger.print()

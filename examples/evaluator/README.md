@@ -22,7 +22,7 @@ It consists of a [Python
 program](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator/bernstein_vazirani.py)
   that loads the [compiled
   bitcode](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator/bernstein_vazirani.bc)
-  and then uses the `NonadaptiveJit`, and a custom `GateLogger` to print out a
+  and then uses the `NonadaptiveEvaluator`, and a custom `GateLogger` to print out a
   simple log of the quantum gates applied during execution.
 
   The example can be run using python:
