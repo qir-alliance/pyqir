@@ -10,7 +10,7 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-qirlib = { path = "../qirlib" }
+qirlib = { path = "../qirlib", features = ["external-llvm-linking"] }
 
 [dependencies.pyo3]
 version = "0.15.1"

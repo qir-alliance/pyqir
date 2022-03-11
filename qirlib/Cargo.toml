@@ -33,12 +33,12 @@ semver = "1.0.6"
 name = "qirlib"
 
 [features]
-# default assumes LLVM is installed and linked though llvm-sys and inkwell
+# default assumes nothing.
 # install download an archive and extract it
 # download does install + link those libs and compile qirlib
 # package clones the LLVM source, and builds it, and creates an archive
 # build clones the LLVM source, and builds it, then link those libs and compile qirlib
-default = ["external-llvm-linking"]
+default = []
 install-llvm = ["no-llvm-linking"]
 download-llvm = ["internal-llvm-linking"]
 package-llvm = ["no-llvm-linking"]
