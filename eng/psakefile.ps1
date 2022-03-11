@@ -16,10 +16,10 @@ properties {
     $pyqir.generator.dir = Join-Path $repo.root "pyqir-generator"
     $pyqir.generator.examples_dir = Join-Path $repo.root "examples" "generator"
 
-    $pyqir.jit = @{}
-    $pyqir.jit.name = "pyqir-jit"
-    $pyqir.jit.dir = Join-Path $repo.root "pyqir-jit"
-    $pyqir.jit.examples_dir = Join-Path $repo.root "examples" "jit"
+    $pyqir.evaluator = @{}
+    $pyqir.evaluator.name = "pyqir-evaluator"
+    $pyqir.evaluator.dir = Join-Path $repo.root "pyqir-evaluator"
+    $pyqir.evaluator.examples_dir = Join-Path $repo.root "examples" "evaluator"
 
     $docs = @{}
     $docs.root = Join-Path $repo.root "docs"
@@ -33,7 +33,7 @@ properties {
 Include settings.ps1
 Include utils.ps1
 
-Task default -Depends checks, pyqir-tests, parser, generator, jit, run-examples, run-examples-in-containers
+Task default -Depends checks, pyqir-tests, parser, generator, evaluator, run-examples, run-examples-in-containers
 
 Task checks -Depends cargo-fmt, cargo-clippy
 
@@ -60,8 +60,8 @@ Task generator -Depends init {
     Build-PyQIR($pyqir.generator.name)
 }
 
-Task jit -Depends init {
-    Build-PyQIR($pyqir.jit.name)
+Task evaluator -Depends init {
+    Build-PyQIR($pyqir.evaluator.name)
 }
 
 Task parser -Depends init {
@@ -75,7 +75,7 @@ Task pyqir-tests -Depends init {
     }
 }
 
-Task rebuild -Depends generator, jit, parser
+Task rebuild -Depends generator, evaluator, parser
 Task wheelhouse `
     -Precondition { -not (Test-Path $wheelhouse -ErrorAction SilentlyContinue) } `
 { Invoke-Task rebuild }
@@ -364,7 +364,7 @@ task run-examples {
         Assert ($bz_first_line -eq $bz_expected) "Expected $bz_expected found $bz_first_line"
     }
 
-    exec -workingDirectory $pyqir.jit.examples_dir {
+    exec -workingDirectory $pyqir.evaluator.examples_dir {
         & $python "bernstein_vazirani.py" | Tee-Object -Variable bz_output
         $bz_first_lines = @($bz_output | Select-Object -first 5)
         $bz_expected = @(

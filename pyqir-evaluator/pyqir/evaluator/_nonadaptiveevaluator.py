@@ -1,12 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.jit._gateset import GateSet
-from pyqir.jit._native import PyNonadaptiveJit
+from pyqir.evaluator._gateset import GateSet
+from pyqir.evaluator._native import PyNonadaptiveJit
 from typing import List, Optional
 
 
-class NonadaptiveJit:
+class NonadaptiveEvaluator:
     """
     The non-adaptive JIT evaluates QIR programs without simulating the quantum
     state. Measurement results are pre-determined before the program starts.
