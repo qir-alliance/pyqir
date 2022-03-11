@@ -114,8 +114,9 @@ function Get-LlvmDownloadBaseUrl {
     if (Test-Path env:\PYQIR_LLVM_BUILDS_URL) {
         $env:PYQIR_LLVM_BUILDS_URL
     }
-    else
-    { "https://msquantumpublic.blob.core.windows.net/llvm-builds" }
+    else {
+        "https://github.com/qir-alliance/pyqir/releases/download/qirlib-llvmorg-11.1.0"
+    }
 }
 
 function Get-PackageExt {
@@ -128,12 +129,14 @@ function Get-PackageExt {
 
 function Get-LlvmArchiveUrl {
     $extension = Get-PackageExt
+    $packageName = Get-PackageName
     $baseUrl = Get-LlvmDownloadBaseUrl
     "$baseUrl/$($packageName)$extension"
 }
 
 function Get-LlvmArchiveShaUrl {
     $extension = Get-PackageExt
+    $packageName = Get-PackageName
     $baseUrl = Get-LlvmDownloadBaseUrl
     "$baseUrl/$($packageName)$extension.sha256"
 }
@@ -228,18 +231,18 @@ function Initialize-Environment {
         Use-ExternalLlvmInstallation
     }
     else {
-        $llvmSha = Get-LlvmSha
-        Write-BuildLog "llvm-project sha: $llvmSha"
+        $llvmTag = Get-LlvmTag
+        Write-BuildLog "llvm-project tag: $llvmTag"
         $packageName = Get-PackageName
 
         $packagePath = Get-InstallationDirectory $packageName
         if (Test-Path $packagePath) {
-            Write-BuildLog "LLVM target $($llvmSha) is already installed."
+            Write-BuildLog "LLVM target $($llvmTag) is already installed."
             # LLVM is already downloaded
             Use-LlvmInstallation $packagePath
         }
         else {
-            Write-BuildLog "LLVM target $($llvmSha) is not installed."
+            Write-BuildLog "LLVM target $($llvmTag) is not installed."
             if (Test-AllowedToDownloadLlvm) {
                 Write-BuildLog "Downloading LLVM target $packageName "
                 Install-LlvmFromBuildArtifacts $packagePath
