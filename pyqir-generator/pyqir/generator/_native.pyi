@@ -9,15 +9,8 @@ class Qubit:
     ...
 
 
-class Ref:
-    """
-    A reference cell is a storage location with reference semantics that can
-    hold a mutable classical value.
-
-    Reference cells are an abstraction provided by PyQIR to emulate mutable
-    variables, but they are erased from the generated IR and are instead
-    represented by series of static single assignment variables.
-    """
+class ResultRef:
+    """A mutable reference cell that holds a measurement result."""
     ...
 
 
@@ -59,8 +52,8 @@ class SimpleModule:
         ...
 
     @property
-    def results(self) -> Tuple[Ref, ...]:
-        """A sequence of result reference cells representing the global classical register."""
+    def results(self) -> Tuple[ResultRef, ...]:
+        """A sequence of result references representing the global classical register."""
         ...
 
     @property
@@ -116,7 +109,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def m(self, qubit: Qubit, result: Ref) -> None:
+    def m(self, qubit: Qubit, result: ResultRef) -> None:
         """
         Builds a measurement operation.
 
@@ -219,7 +212,7 @@ class BasicQisBuilder:
 
     def if_result(
         self,
-        result: Ref,
+        result: ResultRef,
         one: Callable[[], None] = ...,
         zero: Callable[[], None] = ...,
     ) -> None:

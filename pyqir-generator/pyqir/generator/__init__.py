@@ -5,6 +5,6 @@ from pyqir.generator._native import (
     BasicQisBuilder as BasicQisBuilder,
     Builder as Builder,
     Qubit as Qubit,
-    Ref as Ref,
+    ResultRef as ResultRef,
     SimpleModule as SimpleModule,
 )
