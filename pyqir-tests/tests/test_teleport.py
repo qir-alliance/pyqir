@@ -1,14 +1,14 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, Qubit, Ref, SimpleModule
+from pyqir.generator import BasicQisBuilder, Qubit, ResultRef, SimpleModule
 from pyqir.jit import GateLogger, GateSet, NonadaptiveJit
 import tempfile
 from typing import List, Optional
 import unittest
 
 
-def teleport(qis: BasicQisBuilder, qubits: List[Qubit], results: List[Ref]) -> None:
+def teleport(qis: BasicQisBuilder, qubits: List[Qubit], results: List[ResultRef]) -> None:
     msg = qubits[0]
     target = qubits[1]
     register = qubits[2]
