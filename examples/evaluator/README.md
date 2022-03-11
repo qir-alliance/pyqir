@@ -1,6 +1,6 @@
-# Examples: pyqir_jit
+# Examples: pyqir-evaluator
 
-The `pyqir_jit` package provides an easy way to execute generated QIR for the
+The `pyqir-evaluator` package provides an easy way to execute generated QIR for the
 purpose of
 
 1. easily testing and experimenting with QIR code
@@ -12,17 +12,17 @@ compilation](https://en.wikipedia.org/wiki/Just-in-time_compilation)
 infrastructure as well an extensibility mechanism to define what actions to
 perform when a gate is applied in Python.
 
-This folder contains the following examples for how to use the `pyqir_jit`
+This folder contains the following examples for how to use the `pyqir-evaluator`
 package:
 
 - **Bernstein-Vazirani example**: <br/>
 This example shows how to log the executed gate sequence
 for a quantum program compiled to [LLVM bitcode](https://www.llvm.org/docs/BitCodeFormat.html).
 It consists of a [Python
-program](https://github.com/qir-alliance/pyqir/tree/main/examples/jit/bernstein_vazirani.py)
+program](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator/bernstein_vazirani.py)
   that loads the [compiled
-  bitcode](https://github.com/qir-alliance/pyqir/tree/main/examples/jit/bernstein_vazirani.bc)
-  and then uses the `NonadaptiveJit`, and a custom `GateLogger` to print out a
+  bitcode](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator/bernstein_vazirani.bc)
+  and then uses the `NonadaptiveEvaluator`, and a custom `GateLogger` to print out a
   simple log of the quantum gates applied during execution.
 
   The example can be run using python:

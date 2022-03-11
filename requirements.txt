@@ -1,3 +1,3 @@
-pyqir_generator
-pyqir_parser
-pyqir_jit
+pyqir-generator
+pyqir-parser
+pyqir-evaluator

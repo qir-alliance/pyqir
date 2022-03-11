@@ -1,6 +1,6 @@
-# Examples: pyqir_generator
+# Examples: pyqir-generator
 
-The `pyqir_generator` package provides the ability to generate
+The `pyqir-generator` package provides the ability to generate
 [QIR](https://github.com/qir-alliance/qir-spec) using a Python API.
 
 It is intended to be used by code automating translation processes enabling the
@@ -9,11 +9,11 @@ intended to be used as a bridge to existing Python frameworks enabling the
 generation of QIR rather than directly consumed by an end-user. It is **not**
 intended to be used as a framework for algorithm and application development.
 
-This folder contains the following examples for how to use the `pyqir_generator`
+This folder contains the following examples for how to use the `pyqir-generator`
 package:
 
 - **Bernstein-Vazirani example**: <br/>
-  This example matches most closely how the `pyqir_generator` package is
+  This example matches most closely how the `pyqir-generator` package is
   intended to be used. It consists of a [Python
   program](https://github.com/qir-alliance/pyqir/tree/main/examples/generator/mock_to_qir.py)
   that uses a "mini-compiler" for a made up [Mock
@@ -39,7 +39,7 @@ package:
 - **Bell pair example**: <br/>
   This examples consists of a [single
   file](https://github.com/qir-alliance/pyqir/tree/main/examples/generator/bell_pair.py),
-  and does not require any additional installation besides the `pyqir_generator`
+  and does not require any additional installation besides the `pyqir-generator`
   package itself. Please be aware that the PyQIR API is not intended to directly
   express quantum applications; its purpose is to be easily usable for *compiler
   and frontend developers* rather than *application developers* - as evidenced,
