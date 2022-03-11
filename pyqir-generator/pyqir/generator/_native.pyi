@@ -219,10 +219,10 @@ class BasicQisBuilder:
         """
         Builds a conditional branch on the result of a measurement.
 
-        Dereferences the result reference cell, then evaluates the instructions
-        built by ``one`` if the result is one, or the instructions built
-        by ``zero`` if the result is zero. The one and zero callables should use
-        this builder to build instructions.
+        Dereferences the result reference, then evaluates the instructions built
+        by ``one`` if the result is one, or the instructions built by ``zero``
+        if the result is zero. The one and zero callables should use this
+        builder to build instructions.
 
         :param result: The result to branch on.
         :param one: A callable that builds instructions for the branch where the
