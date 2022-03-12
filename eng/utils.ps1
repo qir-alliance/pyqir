@@ -156,16 +156,15 @@ function Use-LlvmInstallation {
     $env:LLVM_SYS_110_PREFIX = $path
 }
 
-# Gets the LLVM version git hash
-function Get-LlvmSha {
-    $sha = exec { Get-LlvmSubmoduleSha }
-    $sha
+# Gets the LLVM version git hash or tag name
+function Get-LlvmTag {
+    "llvmorg-11.1.0"
 }
 
 function Get-PackageName {
-    $sha = Get-LlvmSha
+    $tag = Get-LlvmTag
     $TARGET_TRIPLE = Get-TargetTriple
-    $packageName = "aq-llvm-$($TARGET_TRIPLE)-$($sha)"
+    $packageName = "qirlib-llvm-$($TARGET_TRIPLE)-$($tag)"
     $packageName
 }
 
