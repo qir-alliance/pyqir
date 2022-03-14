@@ -38,7 +38,6 @@ file = os.path.join(path, "bernstein_vazirani.bc")
 evaluator = NonadaptiveEvaluator()
 logger = GateLogger()
 
-print("# output from NonadaptiveEvaluator returning the uninitialized output")
 evaluator.eval(file, logger)
 
 print("# output from GateLogger")
@@ -48,8 +47,6 @@ logger.print()
 Would generate the output:
 
 ```text
-# output from NonadaptiveEvaluator returning the uninitialized output
-[[Zero, Zero, Zero, Zero, Zero, Zero, Zero, Zero]]
 # output from GateLogger
 qubits[9]
 out[9]
