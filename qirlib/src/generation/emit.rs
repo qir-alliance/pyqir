@@ -13,14 +13,11 @@ use inkwell::{
     attributes::AttributeLoc,
     context::Context,
     module::Linkage,
-    types::{AnyTypeEnum, BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType},
+    types::{BasicType, BasicTypeEnum, FunctionType},
     values::{BasicValueEnum, FunctionValue, PointerValue},
     AddressSpace,
 };
-use std::{
-    collections::HashMap,
-    convert::{Into, TryFrom, TryInto},
-};
+use std::{collections::HashMap, convert::Into};
 
 /// # Errors
 ///
@@ -100,34 +97,30 @@ fn get_function_type<'ctx>(
     generator: &CodeGenerator<'ctx>,
     ty: &interop::FunctionType,
 ) -> FunctionType<'ctx> {
-    let basic_metadata_type = |ty: &_| -> BasicMetadataTypeEnum {
-        // TODO: Refactor the type wrapping/unwrapping.
-        let ty = get_type(generator, &Type::Value(*ty));
-        BasicTypeEnum::try_from(ty).unwrap().into()
-    };
+    let param_types: Vec<_> = ty
+        .param_types
+        .iter()
+        .map(|ty| get_basic_type(generator, ty).into())
+        .collect();
 
-    let param_types: Vec<_> = ty.param_types.iter().map(basic_metadata_type).collect();
-    match get_type(generator, &ty.return_type) {
-        AnyTypeEnum::VoidType(void_type) => void_type.fn_type(param_types.as_slice(), false),
-        return_type => {
-            let return_type: BasicTypeEnum = return_type.try_into().unwrap();
-            return_type.fn_type(param_types.as_slice(), false)
-        }
+    let param_types = param_types.as_slice();
+    match ty.return_type {
+        Type::Void => generator.context.void_type().fn_type(param_types, false),
+        Type::Value(ty) => get_basic_type(generator, &ty).fn_type(param_types, false),
     }
 }
 
-fn get_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &Type) -> AnyTypeEnum<'ctx> {
+fn get_basic_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &ValueType) -> BasicTypeEnum<'ctx> {
     match ty {
-        Type::Void => AnyTypeEnum::VoidType(generator.context.void_type()),
-        Type::Value(ValueType::Integer { width }) => {
-            AnyTypeEnum::IntType(generator.context.custom_width_int_type(*width))
+        ValueType::Integer { width } => {
+            BasicTypeEnum::IntType(generator.context.custom_width_int_type(*width))
         }
-        Type::Value(ValueType::Double) => AnyTypeEnum::FloatType(generator.context.f64_type()),
-        Type::Value(ValueType::Qubit) => {
-            AnyTypeEnum::PointerType(generator.qubit_type().ptr_type(AddressSpace::Generic))
+        ValueType::Double => BasicTypeEnum::FloatType(generator.context.f64_type()),
+        ValueType::Qubit => {
+            BasicTypeEnum::PointerType(generator.qubit_type().ptr_type(AddressSpace::Generic))
         }
-        Type::Value(ValueType::Result) => {
-            AnyTypeEnum::PointerType(generator.result_type().ptr_type(AddressSpace::Generic))
+        ValueType::Result => {
+            BasicTypeEnum::PointerType(generator.result_type().ptr_type(AddressSpace::Generic))
         }
     }
 }
