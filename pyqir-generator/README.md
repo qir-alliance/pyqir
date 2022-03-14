@@ -1,6 +1,6 @@
-# pyqir_generator
+# pyqir-generator
 
-The `pyqir_generator` package provides the ability to generate
+The `pyqir-generator` package provides the ability to generate
 [QIR](https://github.com/qir-alliance/qir-spec) using a Python API.
 
 It is intended to be used by code automating translation processes enabling the
@@ -67,6 +67,6 @@ See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.h
 
 ## Current Limitations
 
-Classical computation and control flow is not yet fully supported.
-Only branching based on measurement results is currently possible.
-See [issue #2: Support control flow and classical computation in PyQIR Generator](https://github.com/qir-alliance/pyqir/issues/2).
+- Classical computation and control flow is not yet fully supported.
+- Only branching based on measurement results is currently possible.
+- See [issue #2: Support control flow and classical computation in PyQIR Generator](https://github.com/qir-alliance/pyqir/issues/2).

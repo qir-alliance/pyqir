@@ -7,7 +7,7 @@ from pyqir.generator._native import (
     CallableType as CallableType,
     CallableValue as CallableValue,
     Qubit as Qubit,
-    Ref as Ref,
+    ResultRef as ResultRef,
     SimpleModule as SimpleModule,
     Type as Type,
 )

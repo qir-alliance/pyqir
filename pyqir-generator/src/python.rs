@@ -28,7 +28,7 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<CallableType>()?;
     m.add_class::<CallableValue>()?;
     m.add_class::<Qubit>()?;
-    m.add_class::<Ref>()?;
+    m.add_class::<ResultRef>()?;
     m.add_class::<SimpleModule>()?;
     m.add_class::<Builder>()?;
     m.add_class::<BasicQisBuilder>()
@@ -114,17 +114,18 @@ impl PyObjectProtocol for Qubit {
 
 #[derive(Clone, Eq, Hash, PartialEq)]
 #[pyclass]
-struct Ref(RefKind);
+struct ResultRef {
+    index: u64,
+}
 
-impl Ref {
+impl ResultRef {
     fn id(&self) -> String {
-        let Ref(RefKind::Result { index }) = self;
-        format!("{}{}", RESULT_NAME, index)
+        format!("{}{}", RESULT_NAME, self.index)
     }
 }
 
 #[pyproto]
-impl PyObjectProtocol for Ref {
+impl PyObjectProtocol for ResultRef {
     fn __hash__(&self) -> u64 {
         let mut hasher = DefaultHasher::new();
         self.hash(&mut hasher);
@@ -132,21 +133,15 @@ impl PyObjectProtocol for Ref {
     }
 
     fn __repr__(&self) -> String {
-        let Ref(RefKind::Result { index }) = self;
-        format!("<Ref to Result {}>", index)
+        format!("<ResultRef {}>", self.index)
     }
 
-    fn __richcmp__(&self, other: Ref, op: CompareOp) -> PyResult<bool> {
+    fn __richcmp__(&self, other: ResultRef, op: CompareOp) -> PyResult<bool> {
         match op {
             CompareOp::Eq => Ok(self == &other),
             _ => Err(PyErr::new::<PyTypeError, _>("Only equality is supported.")),
         }
     }
-}
-
-#[derive(Clone, Eq, Hash, PartialEq)]
-enum RefKind {
-    Result { index: u64 },
 }
 
 #[pyclass]
@@ -188,11 +183,9 @@ impl SimpleModule {
     }
 
     #[getter]
-    fn results(&self) -> Vec<Ref> {
+    fn results(&self) -> Vec<ResultRef> {
         let size = self.model.registers.first().unwrap().size;
-        (0..size)
-            .map(|index| Ref(RefKind::Result { index }))
-            .collect()
+        (0..size).map(|index| ResultRef { index }).collect()
     }
 
     #[getter]
@@ -315,7 +308,7 @@ impl BasicQisBuilder {
         self.push_inst(py, Instruction::H(single));
     }
 
-    fn m(&self, py: Python, qubit: &Qubit, result: &Ref) {
+    fn m(&self, py: Python, qubit: &Qubit, result: &ResultRef) {
         let measured = Measured::new(qubit.id(), result.id());
         self.push_inst(py, Instruction::M(measured));
     }
@@ -378,7 +371,7 @@ impl BasicQisBuilder {
     fn if_result(
         &self,
         py: Python,
-        result: &Ref,
+        result: &ResultRef,
         one: Option<&PyAny>,
         zero: Option<&PyAny>,
     ) -> PyResult<()> {

@@ -32,8 +32,8 @@ class Qubit:
     ...
 
 
-class Ref:
-    """A reference to an element in memory."""
+class ResultRef:
+    """A mutable reference cell that holds a measurement result."""
     ...
 
 
@@ -78,8 +78,8 @@ class SimpleModule:
         ...
 
     @property
-    def results(self) -> Tuple[Ref, ...]:
-        """A sequence of references to results representing the global classical register."""
+    def results(self) -> Tuple[ResultRef, ...]:
+        """A sequence of result references representing the global classical register."""
         ...
 
     @property
@@ -139,7 +139,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def m(self, qubit: Qubit, result: Ref) -> None:
+    def m(self, qubit: Qubit, result: ResultRef) -> None:
         """
         Builds a measurement operation.
 
@@ -242,19 +242,19 @@ class BasicQisBuilder:
 
     def if_result(
         self,
-        result: Ref,
+        result: ResultRef,
         one: Callable[[], None] = ...,
         zero: Callable[[], None] = ...,
     ) -> None:
         """
         Builds a conditional branch on the result of a measurement.
 
-        Dereferences the result reference, then evaluates the instructions
-        built by ``one`` if the result is one, or the instructions built
-        by ``zero`` if the result is zero. The one and zero callables should use
-        this builder to build instructions.
+        Dereferences the result reference, then evaluates the instructions built
+        by ``one`` if the result is one, or the instructions built by ``zero``
+        if the result is zero. The one and zero callables should use this
+        builder to build instructions.
 
-        :param result: A reference to the result to branch on.
+        :param result: The result to branch on.
         :param one: A callable that builds instructions for the branch where the
                     result is one.
         :param zero: A callable that builds instructions for the branch where

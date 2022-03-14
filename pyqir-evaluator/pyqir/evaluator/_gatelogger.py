@@ -1,12 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.jit._gateset import GateSet
+from pyqir.evaluator._gateset import GateSet
 
 
 class GateLogger(GateSet):
     """
-    Records the quantum circuit operations executed during JIT execution.
+    Records the quantum circuit operations executed during QIR evaluation.
 
     number_of_qubits: int
     number_of_registers: int

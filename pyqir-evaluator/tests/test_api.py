@@ -1,14 +1,14 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.jit import GateLogger, NonadaptiveJit
+from pyqir.evaluator import GateLogger, NonadaptiveEvaluator
 
 
 def test_bell_qir():
     file = "tests/bell_qir_measure.bc"
-    jit = NonadaptiveJit()
+    evaluator = NonadaptiveEvaluator()
     logger = GateLogger()
-    jit.eval(file, logger)
+    evaluator.eval(file, logger)
 
     logger.print()
 
