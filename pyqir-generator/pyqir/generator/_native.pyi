@@ -7,22 +7,33 @@ from typing import Any, Callable, Sequence, Tuple
 class Type:
     """TODO"""
 
-    UNIT: Type
-    BOOL: Type
-    INT: Type
-    DOUBLE: Type
-    QUBIT: Type
+    VOID: Type
 
-
-class CallableType:
-    """TODO"""
-
-    def __init__(self, param_types: Sequence[Type], return_type: Type) -> None:
+    @staticmethod
+    def value(ty: ValueType) -> Type:
         """TODO"""
         ...
 
 
-class CallableValue:
+class ValueType:
+    """TODO"""
+
+    BOOL: ValueType
+    INT: ValueType
+    DOUBLE: ValueType
+    QUBIT: ValueType
+    RESULT: ValueType
+
+
+class FunctionType:
+    """TODO"""
+
+    def __init__(self, param_types: Sequence[ValueType], return_type: Type) -> None:
+        """TODO"""
+        ...
+
+
+class FunctionValue:
     """TODO"""
     ...
 
@@ -40,7 +51,7 @@ class ResultRef:
 class Builder:
     """An instruction builder."""
 
-    def call(self, callable: CallableValue, args: Sequence[Any]) -> None:
+    def call(self, function: FunctionValue, args: Sequence[Any]) -> None:
         """Builds a call instruction."""
         ...
 
@@ -95,7 +106,7 @@ class SimpleModule:
         """Emits the LLVM bitcode for the module as a sequence of bytes."""
         ...
 
-    def add_external_function(self, name: str, type: CallableType) -> CallableValue:
+    def add_external_function(self, name: str, ty: FunctionType) -> FunctionValue:
         """TODO"""
         ...
 

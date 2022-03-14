@@ -25,8 +25,9 @@ use std::{
 #[pyo3(name = "_native")]
 fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Type>()?;
-    m.add_class::<CallableType>()?;
-    m.add_class::<CallableValue>()?;
+    m.add_class::<ValueType>()?;
+    m.add_class::<FunctionType>()?;
+    m.add_class::<FunctionValue>()?;
     m.add_class::<Qubit>()?;
     m.add_class::<ResultRef>()?;
     m.add_class::<SimpleModule>()?;
@@ -44,30 +45,45 @@ struct Type(interop::Type);
 #[pymethods]
 impl Type {
     #[classattr]
-    const UNIT: Type = Type(interop::Type::Unit);
+    const VOID: Type = Type(interop::Type::Void);
 
-    #[classattr]
-    const BOOL: Type = Type(interop::Type::Bool);
-
-    #[classattr]
-    const INT: Type = Type(interop::Type::Int);
-
-    #[classattr]
-    const DOUBLE: Type = Type(interop::Type::Double);
-
-    #[classattr]
-    const QUBIT: Type = Type(interop::Type::Qubit);
+    #[staticmethod]
+    fn value(ty: &ValueType) -> Type {
+        Type(interop::Type::Value(ty.0))
+    }
 }
 
 #[derive(Clone)]
 #[pyclass]
-struct CallableType(interop::CallableType);
+struct ValueType(interop::ValueType);
 
 #[pymethods]
-impl CallableType {
+impl ValueType {
+    #[classattr]
+    const BOOL: ValueType = ValueType(interop::ValueType::Integer { width: 1 });
+
+    #[classattr]
+    const INT: ValueType = ValueType(interop::ValueType::Integer { width: 64 });
+
+    #[classattr]
+    const DOUBLE: ValueType = ValueType(interop::ValueType::Double);
+
+    #[classattr]
+    const QUBIT: ValueType = ValueType(interop::ValueType::Qubit);
+
+    #[classattr]
+    const RESULT: ValueType = ValueType(interop::ValueType::Result);
+}
+
+#[derive(Clone)]
+#[pyclass]
+struct FunctionType(interop::FunctionType);
+
+#[pymethods]
+impl FunctionType {
     #[new]
-    fn new(param_types: Vec<Type>, return_type: Type) -> CallableType {
-        CallableType(interop::CallableType {
+    fn new(param_types: Vec<ValueType>, return_type: Type) -> FunctionType {
+        FunctionType(interop::FunctionType {
             param_types: param_types.into_iter().map(|t| t.0).collect(),
             return_type: return_type.0,
         })
@@ -76,7 +92,7 @@ impl CallableType {
 
 #[derive(Clone)]
 #[pyclass]
-struct CallableValue {
+struct FunctionValue {
     name: String,
 }
 
@@ -207,11 +223,11 @@ impl SimpleModule {
         &mut self,
         py: Python,
         name: String,
-        type_: CallableType,
-    ) -> CallableValue {
+        ty: FunctionType,
+    ) -> FunctionValue {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.external_functions.insert(name.clone(), type_.0);
-        CallableValue { name }
+        builder.external_functions.insert(name.clone(), ty.0);
+        FunctionValue { name }
     }
 }
 
@@ -233,7 +249,7 @@ impl SimpleModule {
 #[pyclass]
 struct Builder {
     frames: Vec<Vec<Instruction>>,
-    external_functions: HashMap<String, interop::CallableType>,
+    external_functions: HashMap<String, interop::FunctionType>,
 }
 
 #[pymethods]
@@ -246,19 +262,21 @@ impl Builder {
         }
     }
 
-    fn call(&mut self, callable: CallableValue, args: &PySequence) -> PyResult<()> {
-        let name = callable.name;
-        let callable_type = self.external_functions.get(&name).unwrap();
+    fn call(&mut self, function: FunctionValue, args: &PySequence) -> PyResult<()> {
+        let name = function.name;
+        let ty = self.external_functions.get(&name).unwrap();
 
         let args = args
             .iter()?
-            .zip(callable_type.param_types.iter())
-            .map(|(arg, type_)| match type_ {
-                interop::Type::Unit => Ok(Value::Unit),
-                interop::Type::Bool => Ok(Value::Bool(arg?.extract()?)),
-                interop::Type::Int => Ok(Value::Int(arg?.extract()?)),
-                interop::Type::Double => Ok(Value::Double(arg?.extract()?)),
-                interop::Type::Qubit => Ok(Value::Qubit(arg?.extract::<Qubit>()?.id())),
+            .zip(ty.param_types.iter())
+            .map(|(arg, &ty)| match ty {
+                interop::ValueType::Integer { width } => Ok(Value::Integer {
+                    width,
+                    value: arg?.extract()?,
+                }),
+                interop::ValueType::Double => Ok(Value::Double(arg?.extract()?)),
+                interop::ValueType::Qubit => Ok(Value::Qubit(arg?.extract::<Qubit>()?.id())),
+                interop::ValueType::Result => Ok(Value::Result(arg?.extract::<ResultRef>()?.id())),
             })
             .collect::<PyResult<_>>()?;
 

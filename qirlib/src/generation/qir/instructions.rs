@@ -15,12 +15,25 @@ use std::collections::HashMap;
 ///
 /// Panics if the qubit name doesn't exist
 fn get_qubit<'ctx>(
-    name: &str,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
+    name: &str,
 ) -> BasicValueEnum<'ctx> {
     *qubits
         .get(name)
         .unwrap_or_else(|| panic!("Qubit {} not found.", name))
+}
+
+fn get_result<'ctx>(
+    generator: &CodeGenerator<'ctx>,
+    results: &HashMap<String, Option<PointerValue<'ctx>>>,
+    name: &str,
+) -> PointerValue<'ctx> {
+    // Panic if an undeclared result name is referenced, and default to zero if the result has been
+    // declared but not yet measured.
+    results
+        .get(name)
+        .unwrap_or_else(|| panic!("Result {} not found.", name))
+        .unwrap_or_else(|| result::get_zero(generator))
 }
 
 fn measure<'ctx>(
@@ -28,18 +41,16 @@ fn measure<'ctx>(
     qubit: &str,
     target: &str,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
 ) {
-    let find_qubit = |name| get_qubit(name, qubits);
-
     // measure the qubit and save the result to a temporary value
     let new_value = generator.emit_call_with_return(
         generator.qis_m_body(),
-        &[find_qubit(qubit).into()],
+        &[get_qubit(qubits, qubit).into()],
         target,
     );
 
-    registers.insert(target.to_owned(), Some(new_value.into_pointer_value()));
+    results.insert(target.to_owned(), Some(new_value.into_pointer_value()));
 }
 
 fn controlled<'ctx>(
@@ -55,39 +66,37 @@ pub(crate) fn emit<'ctx>(
     generator: &CodeGenerator<'ctx>,
     inst: &Instruction,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
     entry_point: FunctionValue,
 ) {
-    let find_qubit = |name| get_qubit(name, qubits);
+    let get_qubit = |name| get_qubit(qubits, name);
+
     match inst {
         Instruction::Cx(inst) => {
-            let control = find_qubit(&inst.control);
-            let qubit = find_qubit(&inst.target);
+            let control = get_qubit(&inst.control);
+            let qubit = get_qubit(&inst.target);
             controlled(generator, generator.qis_cnot_body(), control, qubit);
         }
         Instruction::Cz(inst) => {
-            let control = find_qubit(&inst.control);
-            let qubit = find_qubit(&inst.target);
+            let control = get_qubit(&inst.control);
+            let qubit = get_qubit(&inst.target);
             controlled(generator, generator.qis_cz_body(), control, qubit);
         }
         Instruction::H(inst) => {
-            generator.emit_void_call(generator.qis_h_body(), &[find_qubit(&inst.qubit).into()]);
+            generator.emit_void_call(generator.qis_h_body(), &[get_qubit(&inst.qubit).into()]);
         }
         Instruction::M(inst) => {
-            measure(generator, &inst.qubit, &inst.target, qubits, registers);
+            measure(generator, &inst.qubit, &inst.target, qubits, results);
         }
         Instruction::Reset(inst) => {
-            generator.emit_void_call(
-                generator.qis_reset_body(),
-                &[find_qubit(&inst.qubit).into()],
-            );
+            generator.emit_void_call(generator.qis_reset_body(), &[get_qubit(&inst.qubit).into()]);
         }
         Instruction::Rx(inst) => {
             generator.emit_void_call(
                 generator.qis_rx_body(),
                 &[
                     generator.f64_to_f64(inst.theta),
-                    find_qubit(&inst.qubit).into(),
+                    get_qubit(&inst.qubit).into(),
                 ],
             );
         }
@@ -96,7 +105,7 @@ pub(crate) fn emit<'ctx>(
                 generator.qis_ry_body(),
                 &[
                     generator.f64_to_f64(inst.theta),
-                    find_qubit(&inst.qubit).into(),
+                    get_qubit(&inst.qubit).into(),
                 ],
             );
         }
@@ -105,50 +114,54 @@ pub(crate) fn emit<'ctx>(
                 generator.qis_rz_body(),
                 &[
                     generator.f64_to_f64(inst.theta),
-                    find_qubit(&inst.qubit).into(),
+                    get_qubit(&inst.qubit).into(),
                 ],
             );
         }
         Instruction::S(inst) => {
-            generator.emit_void_call(generator.qis_s_body(), &[find_qubit(&inst.qubit).into()]);
+            generator.emit_void_call(generator.qis_s_body(), &[get_qubit(&inst.qubit).into()]);
         }
         Instruction::SAdj(inst) => {
-            generator.emit_void_call(generator.qis_s_adj(), &[find_qubit(&inst.qubit).into()]);
+            generator.emit_void_call(generator.qis_s_adj(), &[get_qubit(&inst.qubit).into()]);
         }
         Instruction::T(inst) => {
-            generator.emit_void_call(generator.qis_t_body(), &[find_qubit(&inst.qubit).into()]);
+            generator.emit_void_call(generator.qis_t_body(), &[get_qubit(&inst.qubit).into()]);
         }
         Instruction::TAdj(inst) => {
-            generator.emit_void_call(generator.qis_t_adj(), &[find_qubit(&inst.qubit).into()]);
+            generator.emit_void_call(generator.qis_t_adj(), &[get_qubit(&inst.qubit).into()]);
         }
         Instruction::X(inst) => {
-            generator.emit_void_call(generator.qis_x_body(), &[find_qubit(&inst.qubit).into()]);
+            generator.emit_void_call(generator.qis_x_body(), &[get_qubit(&inst.qubit).into()]);
         }
         Instruction::Y(inst) => {
-            generator.emit_void_call(generator.qis_y_body(), &[find_qubit(&inst.qubit).into()]);
+            generator.emit_void_call(generator.qis_y_body(), &[get_qubit(&inst.qubit).into()]);
         }
         Instruction::Z(inst) => {
-            generator.emit_void_call(generator.qis_z_body(), &[find_qubit(&inst.qubit).into()]);
+            generator.emit_void_call(generator.qis_z_body(), &[get_qubit(&inst.qubit).into()]);
         }
-        Instruction::Call(call) => emit_call(generator, qubits, call),
-        Instruction::If(if_) => emit_if(generator, registers, qubits, entry_point, if_),
+        Instruction::Call(call) => emit_call(generator, qubits, results, call),
+        Instruction::If(if_) => emit_if(generator, qubits, results, entry_point, if_),
     }
 }
 
 fn emit_call<'ctx>(
     generator: &CodeGenerator<'ctx>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
+    results: &HashMap<String, Option<PointerValue<'ctx>>>,
     call: &Call,
 ) {
     let args: Vec<_> = call
         .args
         .iter()
         .map(|value| match value {
-            Value::Unit => unimplemented!("Unit value is not supported."), // Need QIR tuples.
-            Value::Bool(value) => generator.bool_to_i1(*value),
-            Value::Int(value) => generator.i64_to_i64(*value),
+            Value::Integer { width, value } => generator
+                .context
+                .custom_width_int_type(*width)
+                .const_int(*value, false)
+                .into(),
             Value::Double(value) => generator.f64_to_f64(*value),
-            Value::Qubit(name) => get_qubit(name, qubits).into(),
+            Value::Qubit(name) => get_qubit(qubits, name).into(),
+            Value::Result(name) => get_result(generator, results, name).into(),
         })
         .collect();
 
@@ -158,21 +171,16 @@ fn emit_call<'ctx>(
 
 fn emit_if<'ctx>(
     generator: &CodeGenerator<'ctx>,
-    registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
+    results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
     entry_point: FunctionValue,
     if_: &If,
 ) {
-    // Panic if an undeclared result name is referenced, and default to zero if the result has been
-    // declared but not yet measured.
-    let result = registers
-        .get(&if_.condition)
-        .unwrap_or_else(|| panic!("Result {} not found.", &if_.condition))
-        .unwrap_or_else(|| result::get_zero(generator));
-
+    let result = get_result(generator, results, &if_.condition);
     let condition = result::equal(generator, result, result::get_one(generator));
     let then_block = generator.context.append_basic_block(entry_point, "then");
     let else_block = generator.context.append_basic_block(entry_point, "else");
+
     generator
         .builder
         .build_conditional_branch(condition, then_block, else_block);
@@ -183,8 +191,9 @@ fn emit_if<'ctx>(
 
     let mut emit_block = |block, insts| {
         generator.builder.position_at_end(block);
+
         for inst in insts {
-            emit(generator, inst, qubits, registers, entry_point);
+            emit(generator, inst, qubits, results, entry_point);
         }
 
         generator.builder.build_unconditional_branch(continue_block);

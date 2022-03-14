@@ -4,10 +4,11 @@
 from pyqir.generator._native import (
     BasicQisBuilder as BasicQisBuilder,
     Builder as Builder,
-    CallableType as CallableType,
-    CallableValue as CallableValue,
+    FunctionType as FunctionType,
+    FunctionValue as FunctionValue,
     Qubit as Qubit,
     ResultRef as ResultRef,
     SimpleModule as SimpleModule,
     Type as Type,
+    ValueType as ValueType,
 )

@@ -4,7 +4,7 @@
 use crate::{
     codegen::CodeGenerator,
     generation::{
-        interop::{CallableType, SemanticModel, Type},
+        interop::{self, SemanticModel, Type, ValueType},
         qir,
     },
     passes::run_basic_passes_on,
@@ -86,32 +86,28 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
 
 fn add_external_functions<'a>(
     generator: &CodeGenerator,
-    functions: impl Iterator<Item = (&'a String, &'a CallableType)>,
+    functions: impl Iterator<Item = (&'a String, &'a interop::FunctionType)>,
 ) {
-    for (name, callable_type) in functions {
-        let function_type = function_type(generator, callable_type);
+    for (name, ty) in functions {
+        let ty = get_function_type(generator, ty);
         generator
             .module
-            .add_function(name, function_type, Some(Linkage::External));
+            .add_function(name, ty, Some(Linkage::External));
     }
 }
 
-fn function_type<'ctx>(
+fn get_function_type<'ctx>(
     generator: &CodeGenerator<'ctx>,
-    callable_type: &CallableType,
+    ty: &interop::FunctionType,
 ) -> FunctionType<'ctx> {
-    let basic_metadata_type = |type_| -> BasicMetadataTypeEnum {
-        let type_ = llvm_type(generator, type_);
-        BasicTypeEnum::try_from(type_).unwrap().into()
+    let basic_metadata_type = |ty: &_| -> BasicMetadataTypeEnum {
+        // TODO: Refactor the type wrapping/unwrapping.
+        let ty = get_type(generator, &Type::Value(*ty));
+        BasicTypeEnum::try_from(ty).unwrap().into()
     };
 
-    let param_types: Vec<_> = callable_type
-        .param_types
-        .iter()
-        .map(basic_metadata_type)
-        .collect();
-
-    match llvm_type(generator, &callable_type.return_type) {
+    let param_types: Vec<_> = ty.param_types.iter().map(basic_metadata_type).collect();
+    match get_type(generator, &ty.return_type) {
         AnyTypeEnum::VoidType(void_type) => void_type.fn_type(param_types.as_slice(), false),
         return_type => {
             let return_type: BasicTypeEnum = return_type.try_into().unwrap();
@@ -120,14 +116,18 @@ fn function_type<'ctx>(
     }
 }
 
-fn llvm_type<'ctx>(generator: &CodeGenerator<'ctx>, type_: &Type) -> AnyTypeEnum<'ctx> {
-    match type_ {
-        Type::Unit => AnyTypeEnum::VoidType(generator.context.void_type()),
-        Type::Bool => AnyTypeEnum::IntType(generator.bool_type()),
-        Type::Int => AnyTypeEnum::IntType(generator.int64_type()),
-        Type::Double => AnyTypeEnum::FloatType(generator.double_type()),
-        Type::Qubit => {
+fn get_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &Type) -> AnyTypeEnum<'ctx> {
+    match ty {
+        Type::Void => AnyTypeEnum::VoidType(generator.context.void_type()),
+        Type::Value(ValueType::Integer { width }) => {
+            AnyTypeEnum::IntType(generator.context.custom_width_int_type(*width))
+        }
+        Type::Value(ValueType::Double) => AnyTypeEnum::FloatType(generator.context.f64_type()),
+        Type::Value(ValueType::Qubit) => {
             AnyTypeEnum::PointerType(generator.qubit_type().ptr_type(AddressSpace::Generic))
+        }
+        Type::Value(ValueType::Result) => {
+            AnyTypeEnum::PointerType(generator.result_type().ptr_type(AddressSpace::Generic))
         }
     }
 }

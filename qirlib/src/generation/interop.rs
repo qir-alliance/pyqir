@@ -133,26 +133,30 @@ pub struct Call {
 
 #[derive(Clone)]
 pub enum Type {
-    Unit,
-    Bool,
-    Int,
+    Void,
+    Value(ValueType),
+}
+
+#[derive(Clone, Copy)]
+pub enum ValueType {
+    Integer { width: u32 },
     Double,
     Qubit,
+    Result,
 }
 
 #[derive(Clone)]
-pub struct CallableType {
-    pub param_types: Vec<Type>,
+pub struct FunctionType {
+    pub param_types: Vec<ValueType>,
     pub return_type: Type,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
-    Unit,
-    Bool(bool),
-    Int(i64),
+    Integer { width: u32, value: u64 },
     Double(f64),
     Qubit(String),
+    Result(String),
 }
 
 #[derive(Clone)]
@@ -162,7 +166,7 @@ pub struct SemanticModel {
     pub qubits: Vec<QuantumRegister>,
     pub instructions: Vec<Instruction>,
     pub static_alloc: bool,
-    pub external_functions: HashMap<String, CallableType>,
+    pub external_functions: HashMap<String, FunctionType>,
 }
 
 impl SemanticModel {
