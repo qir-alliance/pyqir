@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.3.0a1] - 2022-03-14
+
+- Adding issue template for bugs, feature requests, and GitHub releases by @bettinaheim in https://github.com/qir-alliance/pyqir/pull/66
+- Qirlib code consolidation by @idavis in https://github.com/qir-alliance/pyqir/pull/71
+- Update _parser.py docs by @LaurentAjdnik in https://github.com/qir-alliance/pyqir/pull/72
+- Rename `Ref` to `ResultRef` by @samarsha in https://github.com/qir-alliance/pyqir/pull/78
+- Wheel/Project Renames by @idavis in https://github.com/qir-alliance/pyqir/pull/79
+- Moving LLVM build downloads to GitHub PyQIR releases by @idavis in https://github.com/qir-alliance/pyqir/pull/83
+- Cleaning up docs before publishing by @idavis in https://github.com/qir-alliance/pyqir/pull/84
+
 ## [0.2.0a1] - 2022-02-25
 
 - Cache parser values for better hashing in Python [#41](https://github.com/qir-alliance/pyqir/pull/41)
@@ -40,6 +50,7 @@
 
 - Initial Release
 
-[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.2.0a1...HEAD
+[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.3.0a1...HEAD
+[0.3.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.2.0a1...v0.3.0a1
 [0.2.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.1.0a1...v0.2.0a1
 [0.1.1a1]: https://github.com/qir-alliance/pyqir/compare/v0.1.0a1...v0.1.1a1
