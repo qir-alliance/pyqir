@@ -20,8 +20,8 @@ include(ExternalProject)
 if (NOT $ENV{QIRLIB_DOWNLOAD_LLVM} MATCHES "false")
   message (STATUS "Install LLVM to ${CMAKE_INSTALL_PREFIX}")
 
-  set(SHA256_NAME ${QIRLIB_LLVM_PKG_NAME}.sha256)
-  message (STATUS "Download file: ${QIRLIB_LLVM_BUILDS_URL}/${QIRLIB_LLVM_PKG_NAME}")
+  set(SHA256_NAME $ENV{QIRLIB_LLVM_PKG_NAME}.sha256)
+  message (STATUS "Download file: $ENV{QIRLIB_LLVM_BUILDS_URL}/$ENV{QIRLIB_LLVM_PKG_NAME}")
   message (STATUS "Download sha:$ENV{QIRLIB_LLVM_BUILDS_URL}/${SHA256_NAME}")
 
   # download the expected archive hash
@@ -55,14 +55,14 @@ else()
   # to the LLVM build.
   set (EXTERNAL_EXTRA_CMAKE_ARGS)
   list (APPEND EXTERNAL_EXTRA_CMAKE_ARGS 
-    -DQIRLIB_LLVM_TAG=${QIRLIB_LLVM_TAG}
+    -DLLVM_TAG=$ENV{QIRLIB_LLVM_TAG}
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
     -DCPACK_PACKAGE_FILE_NAME=${CPACK_PACKAGE_FILE_NAME}
   )
 
   ExternalProject_Add(llvm
     GIT_REPOSITORY    https://github.com/llvm/llvm-project.git
-    GIT_TAG           ${QIRLIB_LLVM_TAG}
+    GIT_TAG           ${LLVM_TAG}
     GIT_SHALLOW       TRUE
     GIT_PROGRESS      TRUE
     SOURCE_SUBDIR     llvm

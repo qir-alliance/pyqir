@@ -115,7 +115,7 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
     config
         .generator("Ninja")
         .build_target(get_llvm_compile_target().as_str())
-        .define("QIRLIB_LLVM_TAG", get_llvm_tag())
+        .env("QIRLIB_LLVM_TAG", get_llvm_tag())
         .define("CPACK_PACKAGE_FILE_NAME", get_package_name()?)
         .define("CMAKE_INSTALL_PREFIX", get_llvm_install_dir());
     let _ = config.build();
