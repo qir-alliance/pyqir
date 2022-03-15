@@ -27,7 +27,7 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Type>()?;
     m.add_class::<ValueType>()?;
     m.add_class::<FunctionType>()?;
-    m.add_class::<FunctionValue>()?;
+    m.add_class::<Function>()?;
     m.add_class::<Qubit>()?;
     m.add_class::<ResultRef>()?;
     m.add_class::<SimpleModule>()?;
@@ -92,7 +92,7 @@ impl FunctionType {
 
 #[derive(Clone)]
 #[pyclass]
-struct FunctionValue {
+struct Function {
     name: String,
 }
 
@@ -219,15 +219,10 @@ impl SimpleModule {
         emit::bitcode(&model).map_err(PyOSError::new_err)
     }
 
-    fn add_external_function(
-        &mut self,
-        py: Python,
-        name: String,
-        ty: FunctionType,
-    ) -> FunctionValue {
+    fn add_external_function(&mut self, py: Python, name: String, ty: FunctionType) -> Function {
         let mut builder = self.builder.as_ref(py).borrow_mut();
         builder.external_functions.insert(name.clone(), ty.0);
-        FunctionValue { name }
+        Function { name }
     }
 }
 
@@ -262,7 +257,7 @@ impl Builder {
         }
     }
 
-    fn call(&mut self, function: FunctionValue, args: &PySequence) -> PyResult<()> {
+    fn call(&mut self, function: Function, args: &PySequence) -> PyResult<()> {
         let name = function.name;
         let ty = self.external_functions.get(&name).unwrap();
 

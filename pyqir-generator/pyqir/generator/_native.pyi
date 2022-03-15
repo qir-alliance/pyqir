@@ -33,7 +33,7 @@ class FunctionType:
         ...
 
 
-class FunctionValue:
+class Function:
     """TODO"""
     ...
 
@@ -51,7 +51,7 @@ class ResultRef:
 class Builder:
     """An instruction builder."""
 
-    def call(self, function: FunctionValue, args: Sequence[Any]) -> None:
+    def call(self, function: Function, args: Sequence[Any]) -> None:
         """Builds a call instruction."""
         ...
 
@@ -106,7 +106,7 @@ class SimpleModule:
         """Emits the LLVM bitcode for the module as a sequence of bytes."""
         ...
 
-    def add_external_function(self, name: str, ty: FunctionType) -> FunctionValue:
+    def add_external_function(self, name: str, ty: FunctionType) -> Function:
         """TODO"""
         ...
 
