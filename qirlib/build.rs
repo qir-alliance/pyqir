@@ -77,8 +77,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn download_llvm() -> Result<(), Box<dyn Error>> {
-    let url = env::var("QIRLIB_LLVM_BUILDS_URL")
-        .unwrap_or_else(|_| "https://msquantumpublic.blob.core.windows.net/llvm-builds".to_owned());
+    let url = env::var("QIRLIB_LLVM_BUILDS_URL").unwrap_or_else(|_| {
+        "https://github.com/qir-alliance/pyqir/releases/download/qirlib-llvmorg-11.1.0".to_owned()
+    });
 
     let enable_download = env::var("QIRLIB_DOWNLOAD_LLVM").unwrap_or_else(|_| "true".to_owned());
 
