@@ -16,7 +16,7 @@ class ResultRef:
 
 
 class Function:
-    """TODO"""
+    """A callable value referring to a module function."""
     ...
 
 
@@ -79,7 +79,13 @@ class SimpleModule:
         ...
 
     def add_external_function(self, name: str, ty: types.Function) -> Function:
-        """TODO"""
+        """
+        Adds an externally linked function to the module.
+
+        :param name: The name of the function.
+        :param ty: The type of the function.
+        :return: The function value.
+        """
         ...
 
 
