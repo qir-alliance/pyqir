@@ -2,7 +2,8 @@
 # Licensed under the MIT License.
 
 from pyqir.generator import types
-from typing import Any, Callable, Sequence, Tuple
+from pyqir.generator._values import Value
+from typing import Callable, Sequence, Tuple
 
 
 class Qubit:
@@ -16,15 +17,20 @@ class ResultRef:
 
 
 class Function:
-    """A callable value referring to a module function."""
+    """A callable value for a module function."""
     ...
 
 
 class Builder:
     """An instruction builder."""
 
-    def call(self, function: Function, args: Sequence[Any]) -> None:
-        """Builds a call instruction."""
+    def call(self, function: Function, args: Sequence[Value]) -> None:
+        """
+        Builds a call instruction.
+
+        :param function: The function to call.
+        :param args: The arguments to the function.
+        """
         ...
 
 

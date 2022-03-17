@@ -19,3 +19,5 @@ from pyqir.generator._native import (
     ResultRef as ResultRef,
     SimpleModule as SimpleModule,
 )
+
+from pyqir.generator._values import Value as Value
