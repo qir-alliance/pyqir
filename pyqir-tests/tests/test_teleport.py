@@ -1,9 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, Qubit, ResultRef, SimpleModule
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
-
+from pyqir.generator import BasicQisBuilder, Qubit, ResultRef, SimpleModule
 import tempfile
 from typing import List, Optional
 import unittest
@@ -33,7 +32,7 @@ def teleport(qis: BasicQisBuilder, qubits: List[Qubit], results: List[ResultRef]
     qis.if_result(results[1], one=lambda: qis.x(target))
 
 
-class TeleportTestCase(unittest.TestCase):
+class TeleportTest(unittest.TestCase):
     def test_teleport_measures_zero_zero(self) -> None:
         module = SimpleModule("teleport00", num_qubits=3, num_results=2)
         qis = BasicQisBuilder(module.builder)
@@ -130,7 +129,3 @@ def _eval(module: SimpleModule,
         f.write(module.ir().encode("utf-8"))
         f.flush()
         NonadaptiveEvaluator().eval(f.name, gates, None, result_stream)
-
-
-if __name__ == "__main__":
-    unittest.main()
