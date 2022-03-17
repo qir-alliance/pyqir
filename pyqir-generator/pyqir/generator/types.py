@@ -67,7 +67,7 @@ INT: Integer = Integer(64)
 """The QIR `Int` type, represented by the LLVM type `i64`."""
 
 DOUBLE: Double = Double._DOUBLE
-"""The double type."""
+"""The 64-bit floating-point type."""
 
 QUBIT: Qubit = Qubit._QUBIT
 """The QIR qubit type, represented by the LLVM type `%Qubit*`."""
