@@ -131,12 +131,6 @@ pub struct Call {
     pub args: Vec<Value>,
 }
 
-#[derive(Clone)]
-pub enum Type {
-    Void,
-    Value(ValueType),
-}
-
 #[derive(Clone, Copy)]
 pub enum ValueType {
     Integer { width: u32 },
@@ -146,9 +140,15 @@ pub enum ValueType {
 }
 
 #[derive(Clone)]
+pub enum ReturnType {
+    Void,
+    Value(ValueType),
+}
+
+#[derive(Clone)]
 pub struct FunctionType {
     pub param_types: Vec<ValueType>,
-    pub return_type: Type,
+    pub return_type: ReturnType,
 }
 
 #[derive(Clone, Debug, PartialEq)]

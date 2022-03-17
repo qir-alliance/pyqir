@@ -1,41 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+from pyqir.generator import types
 from typing import Any, Callable, Sequence, Tuple
-
-
-class Type:
-    """TODO"""
-
-    VOID: Type
-
-    @staticmethod
-    def value(ty: ValueType) -> Type:
-        """TODO"""
-        ...
-
-
-class ValueType:
-    """TODO"""
-
-    BOOL: ValueType
-    INT: ValueType
-    DOUBLE: ValueType
-    QUBIT: ValueType
-    RESULT: ValueType
-
-
-class FunctionType:
-    """TODO"""
-
-    def __init__(self, param_types: Sequence[ValueType], return_type: Type) -> None:
-        """TODO"""
-        ...
-
-
-class Function:
-    """TODO"""
-    ...
 
 
 class Qubit:
@@ -45,6 +12,11 @@ class Qubit:
 
 class ResultRef:
     """A mutable reference cell that holds a measurement result."""
+    ...
+
+
+class Function:
+    """TODO"""
     ...
 
 
@@ -106,7 +78,7 @@ class SimpleModule:
         """Emits the LLVM bitcode for the module as a sequence of bytes."""
         ...
 
-    def add_external_function(self, name: str, ty: FunctionType) -> Function:
+    def add_external_function(self, name: str, ty: types.Function) -> Function:
         """TODO"""
         ...
 

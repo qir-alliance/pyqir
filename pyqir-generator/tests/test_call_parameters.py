@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from typing import Tuple
-from pyqir.generator import BasicQisBuilder, FunctionType, Qubit, ResultRef, SimpleModule, Type, ValueType
+from pyqir.generator import BasicQisBuilder, Qubit, ResultRef, SimpleModule, types
 
 Context = Tuple[
     BasicQisBuilder,
@@ -22,7 +22,7 @@ def test_call_no_params() -> None:
     _, module, _, _ = create_context()
 
     callable = module.add_external_function(
-        "__test_call", FunctionType([], Type.VOID)
+        "__test_call", types.Function([], types.VOID)
     )
     module.builder.call(callable, [])
 
@@ -34,7 +34,7 @@ def test_call_single_qubit() -> None:
     _, module, qubits, _ = create_context(1)
 
     callable = module.add_external_function(
-        "__test_call", FunctionType([ValueType.QUBIT], Type.VOID)
+        "__test_call", types.Function([types.QUBIT], types.VOID)
     )
     module.builder.call(callable, [qubits[0]])
 
@@ -47,7 +47,7 @@ def test_call_two_qubits() -> None:
 
     callable = module.add_external_function(
         "__test_call",
-        FunctionType([ValueType.QUBIT, ValueType.QUBIT], Type.VOID)
+        types.Function([types.QUBIT, types.QUBIT], types.VOID)
     )
     module.builder.call(callable, [qubits[0], qubits[1]])
 
@@ -59,7 +59,7 @@ def test_call_float() -> None:
     _, module, _, _ = create_context()
 
     callable = module.add_external_function(
-        "__test_call", FunctionType([ValueType.DOUBLE], Type.VOID)
+        "__test_call", types.Function([types.DOUBLE], types.VOID)
     )
     module.builder.call(callable, [23.25])
 
@@ -71,7 +71,7 @@ def test_call_int() -> None:
     _, module, _, _ = create_context()
 
     callable = module.add_external_function(
-        "__test_call", FunctionType([ValueType.INT], Type.VOID)
+        "__test_call", types.Function([types.INT], types.VOID)
     )
     module.builder.call(callable, [42])
 
@@ -83,7 +83,7 @@ def test_call_bool_true() -> None:
     _, module, _, _ = create_context()
 
     callable = module.add_external_function(
-        "__test_call", FunctionType([ValueType.BOOL], Type.VOID)
+        "__test_call", types.Function([types.BOOL], types.VOID)
     )
     module.builder.call(callable, [True])
 
@@ -95,7 +95,7 @@ def test_call_bool_false() -> None:
     _, module, _, _ = create_context()
 
     callable = module.add_external_function(
-        "__test_call", FunctionType([ValueType.BOOL], Type.VOID)
+        "__test_call", types.Function([types.BOOL], types.VOID)
     )
     module.builder.call(callable, [False])
 
@@ -108,7 +108,7 @@ def test_call_single_result() -> None:
     qis.m(qubits[0], results[0])
 
     callable = module.add_external_function(
-        "__test_call", FunctionType([ValueType.RESULT], Type.VOID)
+        "__test_call", types.Function([types.RESULT], types.VOID)
     )
     module.builder.call(callable, [results[0]])
 
@@ -123,7 +123,7 @@ def test_call_two_results() -> None:
 
     callable = module.add_external_function(
         "__test_call",
-        FunctionType([ValueType.RESULT, ValueType.RESULT], Type.VOID)
+        types.Function([types.RESULT, types.RESULT], types.VOID)
     )
     module.builder.call(callable, [results[0], results[1]])
 
@@ -141,33 +141,33 @@ def test_call_number_extraction() -> None:
     double_rep = "double 4.242000e+01"
     bool_rep = f"i1 {b}".lower()
 
-    idb = module.add_external_function("__callidb", FunctionType(
-        [ValueType.INT, ValueType.DOUBLE, ValueType.BOOL], Type.VOID
+    idb = module.add_external_function("__callidb", types.Function(
+        [types.INT, types.DOUBLE, types.BOOL], types.VOID
     ))
     module.builder.call(idb, [i, d, b])
 
-    ibd = module.add_external_function("__callibd", FunctionType(
-        [ValueType.INT, ValueType.BOOL, ValueType.DOUBLE], Type.VOID
+    ibd = module.add_external_function("__callibd", types.Function(
+        [types.INT, types.BOOL, types.DOUBLE], types.VOID
     ))
     module.builder.call(ibd, [i, b, d])
 
-    dib = module.add_external_function("__calldib", FunctionType(
-        [ValueType.DOUBLE, ValueType.INT, ValueType.BOOL], Type.VOID
+    dib = module.add_external_function("__calldib", types.Function(
+        [types.DOUBLE, types.INT, types.BOOL], types.VOID
     ))
     module.builder.call(dib, [d, i, b])
 
-    dbi = module.add_external_function("__calldbi", FunctionType(
-        [ValueType.DOUBLE, ValueType.BOOL, ValueType.INT], Type.VOID
+    dbi = module.add_external_function("__calldbi", types.Function(
+        [types.DOUBLE, types.BOOL, types.INT], types.VOID
     ))
     module.builder.call(dbi, [d, b, i])
 
-    bid = module.add_external_function("__callbid", FunctionType(
-        [ValueType.BOOL, ValueType.INT, ValueType.DOUBLE], Type.VOID
+    bid = module.add_external_function("__callbid", types.Function(
+        [types.BOOL, types.INT, types.DOUBLE], types.VOID
     ))
     module.builder.call(bid, [b, i, d])
 
-    bdi = module.add_external_function("__callbdi", FunctionType(
-        [ValueType.BOOL, ValueType.DOUBLE, ValueType.INT], Type.VOID
+    bdi = module.add_external_function("__callbdi", types.Function(
+        [types.BOOL, types.DOUBLE, types.INT], types.VOID
     ))
     module.builder.call(bdi, [b, d, i])
 

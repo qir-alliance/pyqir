@@ -4,7 +4,7 @@
 use crate::{
     codegen::CodeGenerator,
     generation::{
-        interop::{self, SemanticModel, Type, ValueType},
+        interop::{self, ReturnType, SemanticModel, ValueType},
         qir,
     },
     passes::run_basic_passes_on,
@@ -105,8 +105,8 @@ fn get_function_type<'ctx>(
 
     let param_types = param_types.as_slice();
     match ty.return_type {
-        Type::Void => generator.context.void_type().fn_type(param_types, false),
-        Type::Value(ty) => get_basic_type(generator, &ty).fn_type(param_types, false),
+        ReturnType::Void => generator.context.void_type().fn_type(param_types, false),
+        ReturnType::Value(ty) => get_basic_type(generator, &ty).fn_type(param_types, false),
     }
 }
 

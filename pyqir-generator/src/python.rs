@@ -11,8 +11,8 @@ use pyo3::{
 use qirlib::generation::{
     emit,
     interop::{
-        self, Call, ClassicalRegister, Controlled, If, Instruction, Measured, QuantumRegister,
-        Rotated, SemanticModel, Single, Value,
+        Call, ClassicalRegister, Controlled, FunctionType, If, Instruction, Measured,
+        QuantumRegister, ReturnType, Rotated, SemanticModel, Single, Value, ValueType,
     },
 };
 use std::{
@@ -24,76 +24,113 @@ use std::{
 #[pymodule]
 #[pyo3(name = "_native")]
 fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<Type>()?;
-    m.add_class::<ValueType>()?;
-    m.add_class::<FunctionType>()?;
-    m.add_class::<Function>()?;
     m.add_class::<Qubit>()?;
     m.add_class::<ResultRef>()?;
+    m.add_class::<Function>()?;
     m.add_class::<SimpleModule>()?;
     m.add_class::<Builder>()?;
     m.add_class::<BasicQisBuilder>()
 }
 
+const TYPES_MODULE_NAME: &str = "pyqir.generator.types";
 const RESULT_NAME: &str = "result";
 const QUBIT_NAME: &str = "qubit";
 
-#[derive(Clone)]
-#[pyclass]
-struct Type(interop::Type);
+struct PyVoidType;
 
-#[pymethods]
-impl Type {
-    #[classattr]
-    const VOID: Type = Type(interop::Type::Void);
-
-    #[staticmethod]
-    fn value(ty: &ValueType) -> Type {
-        Type(interop::Type::Value(ty.0))
+impl<'source> FromPyObject<'source> for PyVoidType {
+    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+        extract_sentinel(TYPES_MODULE_NAME, "Void", ob).map(|()| PyVoidType)
     }
 }
 
-#[derive(Clone)]
-#[pyclass]
-struct ValueType(interop::ValueType);
-
-#[pymethods]
-impl ValueType {
-    #[classattr]
-    const BOOL: ValueType = ValueType(interop::ValueType::Integer { width: 1 });
-
-    #[classattr]
-    const INT: ValueType = ValueType(interop::ValueType::Integer { width: 64 });
-
-    #[classattr]
-    const DOUBLE: ValueType = ValueType(interop::ValueType::Double);
-
-    #[classattr]
-    const QUBIT: ValueType = ValueType(interop::ValueType::Qubit);
-
-    #[classattr]
-    const RESULT: ValueType = ValueType(interop::ValueType::Result);
+#[derive(FromPyObject)]
+struct PyIntegerType {
+    width: u32,
 }
 
-#[derive(Clone)]
-#[pyclass]
-struct FunctionType(interop::FunctionType);
+struct PyDoubleType;
 
-#[pymethods]
-impl FunctionType {
-    #[new]
-    fn new(param_types: Vec<ValueType>, return_type: Type) -> FunctionType {
-        FunctionType(interop::FunctionType {
-            param_types: param_types.into_iter().map(|t| t.0).collect(),
-            return_type: return_type.0,
-        })
+impl<'source> FromPyObject<'source> for PyDoubleType {
+    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+        extract_sentinel(TYPES_MODULE_NAME, "Double", ob).map(|()| PyDoubleType)
     }
 }
 
-#[derive(Clone)]
-#[pyclass]
-struct Function {
-    name: String,
+struct PyQubitType;
+
+impl<'source> FromPyObject<'source> for PyQubitType {
+    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+        extract_sentinel(TYPES_MODULE_NAME, "Qubit", ob).map(|()| PyQubitType)
+    }
+}
+
+struct PyResultType;
+
+impl<'source> FromPyObject<'source> for PyResultType {
+    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+        extract_sentinel(TYPES_MODULE_NAME, "Result", ob).map(|()| PyResultType)
+    }
+}
+
+fn extract_sentinel(module_name: &str, type_name: &str, ob: &PyAny) -> PyResult<()> {
+    let module: &str = ob.get_type().getattr("__module__")?.extract()?;
+
+    if module == module_name && ob.get_type().name()? == type_name {
+        Ok(())
+    } else {
+        let message = format!("Expected {}.{}.", module_name, type_name);
+        Err(PyErr::new::<PyTypeError, _>(message))
+    }
+}
+
+#[derive(FromPyObject)]
+enum PyValueType {
+    Integer(PyIntegerType),
+    Double(PyDoubleType),
+    Qubit(PyQubitType),
+    Result(PyResultType),
+}
+
+impl From<PyValueType> for ValueType {
+    fn from(ty: PyValueType) -> Self {
+        match ty {
+            PyValueType::Integer(PyIntegerType { width }) => ValueType::Integer { width },
+            PyValueType::Double(PyDoubleType) => ValueType::Double,
+            PyValueType::Qubit(PyQubitType) => ValueType::Qubit,
+            PyValueType::Result(PyResultType) => ValueType::Result,
+        }
+    }
+}
+
+#[derive(FromPyObject)]
+enum PyReturnType {
+    Void(PyVoidType),
+    Value(PyValueType),
+}
+
+impl From<PyReturnType> for ReturnType {
+    fn from(ty: PyReturnType) -> Self {
+        match ty {
+            PyReturnType::Void(PyVoidType) => ReturnType::Void,
+            PyReturnType::Value(value_type) => ReturnType::Value(value_type.into()),
+        }
+    }
+}
+
+#[derive(FromPyObject)]
+struct PyFunctionType {
+    param_types: Vec<PyValueType>,
+    return_type: PyReturnType,
+}
+
+impl From<PyFunctionType> for FunctionType {
+    fn from(ty: PyFunctionType) -> Self {
+        FunctionType {
+            param_types: ty.param_types.into_iter().map(Into::into).collect(),
+            return_type: ty.return_type.into(),
+        }
+    }
 }
 
 #[derive(Clone, Eq, Hash, PartialEq)]
@@ -160,6 +197,12 @@ impl PyObjectProtocol for ResultRef {
     }
 }
 
+#[derive(Clone)]
+#[pyclass]
+struct Function {
+    name: String,
+}
+
 #[pyclass]
 struct SimpleModule {
     model: SemanticModel,
@@ -219,9 +262,9 @@ impl SimpleModule {
         emit::bitcode(&model).map_err(PyOSError::new_err)
     }
 
-    fn add_external_function(&mut self, py: Python, name: String, ty: FunctionType) -> Function {
+    fn add_external_function(&mut self, py: Python, name: String, ty: PyFunctionType) -> Function {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.external_functions.insert(name.clone(), ty.0);
+        builder.external_functions.insert(name.clone(), ty.into());
         Function { name }
     }
 }
@@ -244,7 +287,7 @@ impl SimpleModule {
 #[pyclass]
 struct Builder {
     frames: Vec<Vec<Instruction>>,
-    external_functions: HashMap<String, interop::FunctionType>,
+    external_functions: HashMap<String, FunctionType>,
 }
 
 #[pymethods]
@@ -265,13 +308,13 @@ impl Builder {
             .iter()?
             .zip(ty.param_types.iter())
             .map(|(arg, &ty)| match ty {
-                interop::ValueType::Integer { width } => Ok(Value::Integer {
+                ValueType::Integer { width } => Ok(Value::Integer {
                     width,
                     value: arg?.extract()?,
                 }),
-                interop::ValueType::Double => Ok(Value::Double(arg?.extract()?)),
-                interop::ValueType::Qubit => Ok(Value::Qubit(arg?.extract::<Qubit>()?.id())),
-                interop::ValueType::Result => Ok(Value::Result(arg?.extract::<ResultRef>()?.id())),
+                ValueType::Double => Ok(Value::Double(arg?.extract()?)),
+                ValueType::Qubit => Ok(Value::Qubit(arg?.extract::<Qubit>()?.id())),
+                ValueType::Result => Ok(Value::Result(arg?.extract::<ResultRef>()?.id())),
             })
             .collect::<PyResult<_>>()?;
 
