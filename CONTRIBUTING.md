@@ -9,7 +9,7 @@ get involved.
 
 ## Asking and Answering Questions
 
-Have a question? This repository is great places to ask questions about using
+Have a question? This repository is a great place to ask questions about using
 QIR from both Rust and Python. Your question will serve as resource to others
 searching for help. Please file an issue to ask your question
 [here](https://github.com/qir-alliance/pyqir/issues/new).
@@ -53,7 +53,7 @@ template](https://github.com/qir-alliance/pyqir/issues/new?assignees=&labels=fea
 We will respond to feature requests and follow up with a discussion around its
 feasibility, how one might go about implementing it, and whether that is
 something that makes sense to add. There are several reasons why we might not be
-able to eventually merge even a great feature for one reason or another. Perhaps
+able to eventually merge even a great feature. Perhaps
 most commonly, a contribution is a really good one, but this isn't the right
 place to develop it or we simply aren't ready to maintain and develop it
 further. It can be difficult to do everything, so we are careful to prioritize
