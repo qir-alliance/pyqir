@@ -50,19 +50,16 @@ else()
   # The outer cmake call from rust will configure CMAKE_INSTALL_PREFIX
   # Unless the user overrides the install path rust will configure it to 
   # be the crate OUT_DIR.
-  # The build will define QIRLIB_LLVM_TAG and CPACK_PACKAGE_FILE_NAME. 
-  # These are the only custom build variables we care about when passing
-  # to the LLVM build.
+  # The build will define CPACK_PACKAGE_FILE_NAME passing it to the LLVM build.
   set (EXTERNAL_EXTRA_CMAKE_ARGS)
   list (APPEND EXTERNAL_EXTRA_CMAKE_ARGS 
-    -DLLVM_TAG=$ENV{QIRLIB_LLVM_TAG}
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
     -DCPACK_PACKAGE_FILE_NAME=${CPACK_PACKAGE_FILE_NAME}
   )
 
   ExternalProject_Add(llvm
     GIT_REPOSITORY    https://github.com/llvm/llvm-project.git
-    GIT_TAG           ${LLVM_TAG}
+    GIT_TAG           $ENV{QIRLIB_LLVM_TAG}
     GIT_SHALLOW       TRUE
     GIT_PROGRESS      TRUE
     SOURCE_SUBDIR     llvm

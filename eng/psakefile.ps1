@@ -69,9 +69,31 @@ Task parser -Depends init {
 }
 
 Task pyqir-tests -Depends init {
-    Invoke-LoggedCommand -workingDirectory (Join-Path $repo.root pyqir-tests) {
-        & $python -m pip install tox
-        & $python -m tox -e test
+    $srcPath = $repo.root
+    $project = "pyqir-tests"
+    $installationDirectory = Resolve-InstallationDirectory
+
+    if (Test-RunInContainer) {
+        Build-ContainerImage $srcPath
+        Write-BuildLog "Running container image:"
+        $ioVolume = "$($srcPath):/io"
+        $llvmVolume = "$($installationDirectory):/usr/lib/llvm"
+        $userSpec = ""
+
+        Invoke-LoggedCommand {
+            docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output python -m tox -e test
+        }
+    }
+    else {
+        exec -workingDirectory (Join-Path $srcPath $project) {
+            Invoke-LoggedCommand {
+                & $python -m pip install tox
+            }
+
+            Invoke-LoggedCommand {
+                & $python -m tox -e test
+            }
+        }
     }
 }
 
@@ -149,7 +171,7 @@ task install-llvm-from-archive {
     }
     try {
         Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-            cargo build --release --features install-llvm -vv
+            cargo build --release --no-default-features --features "download-llvm,no-llvm-linking" -vv
         }
     }
     finally {
@@ -160,15 +182,16 @@ task install-llvm-from-archive {
 }
 
 task install-llvm-from-source {
-    $cache = Resolve-InstallationDirectory
+    $installationDirectory = Resolve-InstallationDirectory
     Use-LlvmInstallation $cache
-    if ($IsLinux) {
+    if (Test-RunInContainer) {
         Build-ContainerImage $repo.root
         $srcPath = $repo.root
         $ioVolume = "$($srcPath):/io"
-        $install_volume = "$($cache):$($cache)"
+        $llvmVolume = "$($installationDirectory):/usr/lib/llvm"
+        $userSpec = ""
         Invoke-LoggedCommand {
-            docker run --rm $userSpec -v $ioVolume -v $install_volume -w /io/qirlib manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --features build-llvm -vv
+            docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e QIRLIB_CACHE_DIR="/usr/lib/llvm" -w /io/qirlib manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --no-default-features --features "build-llvm,no-llvm-linking" -vv
         }
     }
     else {
@@ -182,7 +205,7 @@ task install-llvm-from-source {
         }
         try {
             Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-                cargo build --release --features build-llvm -vv
+                cargo build --release --no-default-features --features "build-llvm,no-llvm-linking" -vv
             }
         }
         finally {
@@ -199,7 +222,7 @@ task package-llvm {
         $srcPath = $repo.root
         $ioVolume = "$($srcPath):/io"
         Invoke-LoggedCommand {
-            docker run --rm $userSpec -v $ioVolume -w /io/qirlib -e QIRLIB_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --features package-llvm -vv
+            docker run --rm $userSpec -v $ioVolume -w /io/qirlib -e QIRLIB_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release  --no-default-features --features package-llvm -vv
         }
     }
     else {
@@ -213,7 +236,7 @@ task package-llvm {
         }
         try {
             Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-                cargo build --release --features package-llvm -vv
+                cargo build --release  --no-default-features --features package-llvm -vv
             }
         }
         finally {
