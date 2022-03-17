@@ -27,8 +27,8 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Qubit>()?;
     m.add_class::<ResultRef>()?;
     m.add_class::<Function>()?;
-    m.add_class::<SimpleModule>()?;
     m.add_class::<Builder>()?;
+    m.add_class::<SimpleModule>()?;
     m.add_class::<BasicQisBuilder>()
 }
 
@@ -204,6 +204,59 @@ struct Function {
 }
 
 #[pyclass]
+struct Builder {
+    frames: Vec<Vec<Instruction>>,
+    external_functions: HashMap<String, FunctionType>,
+}
+
+#[pymethods]
+impl Builder {
+    #[new]
+    fn new() -> Builder {
+        Builder {
+            frames: vec![vec![]],
+            external_functions: HashMap::new(),
+        }
+    }
+
+    fn call(&mut self, function: Function, args: &PySequence) -> PyResult<()> {
+        let name = function.name;
+        let ty = self.external_functions.get(&name).unwrap();
+
+        let args = args
+            .iter()?
+            .zip(ty.param_types.iter())
+            .map(|(arg, &ty)| match ty {
+                ValueType::Integer { width } => Ok(Value::Integer {
+                    width,
+                    value: arg?.extract()?,
+                }),
+                ValueType::Double => Ok(Value::Double(arg?.extract()?)),
+                ValueType::Qubit => Ok(Value::Qubit(arg?.extract::<Qubit>()?.id())),
+                ValueType::Result => Ok(Value::Result(arg?.extract::<ResultRef>()?.id())),
+            })
+            .collect::<PyResult<_>>()?;
+
+        self.push_inst(Instruction::Call(Call { name, args }));
+        Ok(())
+    }
+}
+
+impl Builder {
+    fn push_inst(&mut self, inst: Instruction) {
+        self.frames.last_mut().unwrap().push(inst);
+    }
+
+    fn push_frame(&mut self) {
+        self.frames.push(vec![]);
+    }
+
+    fn pop_frame(&mut self) -> Option<Vec<Instruction>> {
+        self.frames.pop()
+    }
+}
+
+#[pyclass]
 struct SimpleModule {
     model: SemanticModel,
     builder: Py<Builder>,
@@ -281,59 +334,6 @@ impl SimpleModule {
             },
             _ => panic!("Builder does not contain exactly one stack frame."),
         }
-    }
-}
-
-#[pyclass]
-struct Builder {
-    frames: Vec<Vec<Instruction>>,
-    external_functions: HashMap<String, FunctionType>,
-}
-
-#[pymethods]
-impl Builder {
-    #[new]
-    fn new() -> Builder {
-        Builder {
-            frames: vec![vec![]],
-            external_functions: HashMap::new(),
-        }
-    }
-
-    fn call(&mut self, function: Function, args: &PySequence) -> PyResult<()> {
-        let name = function.name;
-        let ty = self.external_functions.get(&name).unwrap();
-
-        let args = args
-            .iter()?
-            .zip(ty.param_types.iter())
-            .map(|(arg, &ty)| match ty {
-                ValueType::Integer { width } => Ok(Value::Integer {
-                    width,
-                    value: arg?.extract()?,
-                }),
-                ValueType::Double => Ok(Value::Double(arg?.extract()?)),
-                ValueType::Qubit => Ok(Value::Qubit(arg?.extract::<Qubit>()?.id())),
-                ValueType::Result => Ok(Value::Result(arg?.extract::<ResultRef>()?.id())),
-            })
-            .collect::<PyResult<_>>()?;
-
-        self.push_inst(Instruction::Call(Call { name, args }));
-        Ok(())
-    }
-}
-
-impl Builder {
-    fn push_inst(&mut self, inst: Instruction) {
-        self.frames.last_mut().unwrap().push(inst);
-    }
-
-    fn push_frame(&mut self) {
-        self.frames.push(vec![]);
-    }
-
-    fn pop_frame(&mut self) -> Option<Vec<Instruction>> {
-        self.frames.pop()
     }
 }
 
