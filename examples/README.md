@@ -25,7 +25,7 @@ Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec).
   [`pyqir-parser`](https://github.com/qir-alliance/pyqir/tree/main/pyqir-parser)
   package provides a Python API for loading QIR for basic analysis and
   transformation. For more advanced scenarios, we recommend taking a look at the
-  LLVM-based infrastructure provide by the [QAT
+  LLVM-based infrastructure provided by the [QAT
   tool](https://qir-alliance.github.io/qat/).
 
 ## Installation
