@@ -86,7 +86,7 @@ class SimpleModule:
 
     def add_external_function(self, name: str, ty: types.Function) -> Function:
         """
-        Adds an externally linked function to the module.
+        Adds a declaration for an externally linked function to the module.
 
         :param name: The name of the function.
         :param ty: The type of the function.
