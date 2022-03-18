@@ -49,6 +49,17 @@ text file:
 python bell_pair.py >> bell_pair_output.txt
 ```
 
+## Branching on measurement results
+
+PyQIR supports simple branching based on the result of measuring a qubit.
+[if.py](if.py) shows how to use this feature to execute certain gates
+conditionally.
+
+Note that the branch condition must be a single result. Conditions based on
+classically computed booleans are not currently supported. However, conjunctions
+and disjunctions of results can be emulated by chaining multiple branches
+together.
+
 ## External functions
 
 [external_functions.py](external_functions.py) shows how to call external
