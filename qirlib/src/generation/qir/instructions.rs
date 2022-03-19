@@ -18,18 +18,26 @@ fn get_qubit<'ctx>(
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     name: &str,
 ) -> BasicValueEnum<'ctx> {
+    // TODO: Panicking can be unfriendly to Python clients.
+    // See: https://github.com/qir-alliance/pyqir/issues/31
     *qubits
         .get(name)
         .unwrap_or_else(|| panic!("Qubit {} not found.", name))
 }
 
+/// Gets the most recent value of a result name. Defaults to zero if the result has been declared
+/// but not yet measured.
+///
+/// # Panics
+///
+/// Panics if the result name has not been declared.
 fn get_result<'ctx>(
     generator: &CodeGenerator<'ctx>,
     results: &HashMap<String, Option<PointerValue<'ctx>>>,
     name: &str,
 ) -> PointerValue<'ctx> {
-    // Panic if an undeclared result name is referenced, and default to zero if the result has been
-    // declared but not yet measured.
+    // TODO: Panicking can be unfriendly to Python clients.
+    // See: https://github.com/qir-alliance/pyqir/issues/31
     results
         .get(name)
         .unwrap_or_else(|| panic!("Result {} not found.", name))
@@ -165,7 +173,13 @@ fn emit_call<'ctx>(
         })
         .collect();
 
-    let function = generator.module.get_function(&call.name).unwrap();
+    // TODO: Panicking can be unfriendly to Python clients.
+    // See: https://github.com/qir-alliance/pyqir/issues/31
+    let function = generator
+        .module
+        .get_function(&call.name)
+        .unwrap_or_else(|| panic!("Function {} not found.", &call.name));
+
     generator.emit_void_call(function, args.as_slice());
 }
 
