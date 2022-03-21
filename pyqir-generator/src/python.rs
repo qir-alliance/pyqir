@@ -5,102 +5,130 @@ use pyo3::{
     basic::CompareOp,
     exceptions::{PyOSError, PyTypeError},
     prelude::*,
+    types::PySequence,
     PyObjectProtocol,
 };
 use qirlib::generation::{
     emit,
     interop::{
-        ClassicalRegister, Controlled, If, Instruction, Measured, QuantumRegister, Rotated,
-        SemanticModel, Single,
+        Call, ClassicalRegister, Controlled, FunctionType, If, Instruction, Measured,
+        QuantumRegister, ReturnType, Rotated, SemanticModel, Single, Value, ValueType,
     },
 };
 use std::{
-    collections::hash_map::DefaultHasher,
+    collections::{hash_map::DefaultHasher, HashMap},
     hash::{Hash, Hasher},
+    vec,
 };
 
 #[pymodule]
 #[pyo3(name = "_native")]
 fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<SimpleModule>()?;
     m.add_class::<Qubit>()?;
     m.add_class::<ResultRef>()?;
+    m.add_class::<Function>()?;
     m.add_class::<Builder>()?;
+    m.add_class::<SimpleModule>()?;
     m.add_class::<BasicQisBuilder>()
 }
 
+const TYPES_MODULE_NAME: &str = "pyqir.generator.types";
 const RESULT_NAME: &str = "result";
 const QUBIT_NAME: &str = "qubit";
 
-#[pyclass]
-struct SimpleModule {
-    model: SemanticModel,
-    builder: Py<Builder>,
-}
+struct PyVoidType;
 
-#[pymethods]
-impl SimpleModule {
-    #[new]
-    fn new(py: Python, name: String, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
-        let registers = vec![ClassicalRegister::new(RESULT_NAME.to_string(), num_results)];
-
-        let qubits = (0..num_qubits)
-            .map(|i| QuantumRegister::new(QUBIT_NAME.to_string(), i))
-            .collect();
-
-        let model = SemanticModel {
-            name,
-            registers,
-            qubits,
-            instructions: Vec::new(),
-            static_alloc: true,
-        };
-
-        let builder = Py::new(py, Builder::new())?;
-        Ok(SimpleModule { model, builder })
-    }
-
-    #[getter]
-    fn qubits(&self) -> Vec<Qubit> {
-        self.model
-            .qubits
-            .iter()
-            .map(|q| Qubit { index: q.index })
-            .collect()
-    }
-
-    #[getter]
-    fn results(&self) -> Vec<ResultRef> {
-        let size = self.model.registers.first().unwrap().size;
-        (0..size).map(|index| ResultRef { index }).collect()
-    }
-
-    #[getter]
-    fn builder(&self) -> Py<Builder> {
-        self.builder.clone()
-    }
-
-    fn ir(&self, py: Python) -> PyResult<String> {
-        let model = self.model_with_builder_instructions(py);
-        emit::ir(&model).map_err(PyOSError::new_err)
-    }
-
-    fn bitcode(&self, py: Python) -> PyResult<Vec<u8>> {
-        let model = self.model_with_builder_instructions(py);
-        emit::bitcode(&model).map_err(PyOSError::new_err)
+impl<'source> FromPyObject<'source> for PyVoidType {
+    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+        extract_sentinel(TYPES_MODULE_NAME, "Void", ob).map(|()| PyVoidType)
     }
 }
 
-impl SimpleModule {
-    fn model_with_builder_instructions(&self, py: Python) -> SemanticModel {
-        let builder = self.builder.as_ref(py).borrow();
+#[derive(FromPyObject)]
+struct PyIntegerType {
+    width: u32,
+}
 
-        match builder.frames[..] {
-            [ref instructions] => SemanticModel {
-                instructions: instructions.clone(),
-                ..self.model.clone()
-            },
-            _ => panic!("Builder does not contain exactly one stack frame."),
+struct PyDoubleType;
+
+impl<'source> FromPyObject<'source> for PyDoubleType {
+    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+        extract_sentinel(TYPES_MODULE_NAME, "Double", ob).map(|()| PyDoubleType)
+    }
+}
+
+struct PyQubitType;
+
+impl<'source> FromPyObject<'source> for PyQubitType {
+    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+        extract_sentinel(TYPES_MODULE_NAME, "Qubit", ob).map(|()| PyQubitType)
+    }
+}
+
+struct PyResultType;
+
+impl<'source> FromPyObject<'source> for PyResultType {
+    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+        extract_sentinel(TYPES_MODULE_NAME, "Result", ob).map(|()| PyResultType)
+    }
+}
+
+fn extract_sentinel(module_name: &str, type_name: &str, ob: &PyAny) -> PyResult<()> {
+    let module: &str = ob.get_type().getattr("__module__")?.extract()?;
+
+    if module == module_name && ob.get_type().name()? == type_name {
+        Ok(())
+    } else {
+        let message = format!("Expected {}.{}.", module_name, type_name);
+        Err(PyErr::new::<PyTypeError, _>(message))
+    }
+}
+
+#[derive(FromPyObject)]
+enum PyValueType {
+    Integer(PyIntegerType),
+    Double(PyDoubleType),
+    Qubit(PyQubitType),
+    Result(PyResultType),
+}
+
+impl From<PyValueType> for ValueType {
+    fn from(ty: PyValueType) -> Self {
+        match ty {
+            PyValueType::Integer(PyIntegerType { width }) => ValueType::Integer { width },
+            PyValueType::Double(PyDoubleType) => ValueType::Double,
+            PyValueType::Qubit(PyQubitType) => ValueType::Qubit,
+            PyValueType::Result(PyResultType) => ValueType::Result,
+        }
+    }
+}
+
+#[derive(FromPyObject)]
+enum PyReturnType {
+    Void(PyVoidType),
+    Value(PyValueType),
+}
+
+impl From<PyReturnType> for ReturnType {
+    fn from(ty: PyReturnType) -> Self {
+        match ty {
+            PyReturnType::Void(PyVoidType) => ReturnType::Void,
+            PyReturnType::Value(value_type) => ReturnType::Value(value_type.into()),
+        }
+    }
+}
+
+#[derive(FromPyObject)]
+struct PyFunctionType {
+    param_types: Vec<PyValueType>,
+    return_type: PyReturnType,
+}
+
+impl From<PyFunctionType> for FunctionType {
+    fn from(ty: PyFunctionType) -> Self {
+        FunctionType {
+            param_types: ty.param_types.into_iter().map(Into::into).collect(),
+            return_type: ty.return_type.into(),
         }
     }
 }
@@ -169,15 +197,142 @@ impl PyObjectProtocol for ResultRef {
     }
 }
 
+#[derive(Clone)]
+#[pyclass]
+struct Function {
+    name: String,
+}
+
 #[pyclass]
 struct Builder {
     frames: Vec<Vec<Instruction>>,
+    external_functions: HashMap<String, FunctionType>,
 }
 
+#[pymethods]
 impl Builder {
+    #[new]
     fn new() -> Builder {
         Builder {
             frames: vec![vec![]],
+            external_functions: HashMap::new(),
+        }
+    }
+
+    fn call(&mut self, function: Function, args: &PySequence) -> PyResult<()> {
+        let name = function.name;
+        let ty = self.external_functions.get(&name).unwrap();
+
+        let args = args
+            .iter()?
+            .zip(ty.param_types.iter())
+            .map(|(arg, &ty)| match ty {
+                ValueType::Integer { width } => Ok(Value::Integer {
+                    width,
+                    value: arg?.extract()?,
+                }),
+                ValueType::Double => Ok(Value::Double(arg?.extract()?)),
+                ValueType::Qubit => Ok(Value::Qubit(arg?.extract::<Qubit>()?.id())),
+                ValueType::Result => Ok(Value::Result(arg?.extract::<ResultRef>()?.id())),
+            })
+            .collect::<PyResult<_>>()?;
+
+        self.push_inst(Instruction::Call(Call { name, args }));
+        Ok(())
+    }
+}
+
+impl Builder {
+    fn push_inst(&mut self, inst: Instruction) {
+        self.frames.last_mut().unwrap().push(inst);
+    }
+
+    fn push_frame(&mut self) {
+        self.frames.push(vec![]);
+    }
+
+    fn pop_frame(&mut self) -> Option<Vec<Instruction>> {
+        self.frames.pop()
+    }
+}
+
+#[pyclass]
+struct SimpleModule {
+    model: SemanticModel,
+    builder: Py<Builder>,
+}
+
+#[pymethods]
+impl SimpleModule {
+    #[new]
+    fn new(py: Python, name: String, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
+        let registers = vec![ClassicalRegister::new(RESULT_NAME.to_string(), num_results)];
+
+        let qubits = (0..num_qubits)
+            .map(|i| QuantumRegister::new(QUBIT_NAME.to_string(), i))
+            .collect();
+
+        let model = SemanticModel {
+            name,
+            external_functions: HashMap::new(),
+            registers,
+            qubits,
+            instructions: Vec::new(),
+            static_alloc: true,
+        };
+
+        let builder = Py::new(py, Builder::new())?;
+        Ok(SimpleModule { model, builder })
+    }
+
+    #[getter]
+    fn qubits(&self) -> Vec<Qubit> {
+        self.model
+            .qubits
+            .iter()
+            .map(|q| Qubit { index: q.index })
+            .collect()
+    }
+
+    #[getter]
+    fn results(&self) -> Vec<ResultRef> {
+        let size = self.model.registers.first().unwrap().size;
+        (0..size).map(|index| ResultRef { index }).collect()
+    }
+
+    #[getter]
+    fn builder(&self) -> Py<Builder> {
+        self.builder.clone()
+    }
+
+    fn ir(&self, py: Python) -> PyResult<String> {
+        let model = self.model_from_builder(py);
+        emit::ir(&model).map_err(PyOSError::new_err)
+    }
+
+    fn bitcode(&self, py: Python) -> PyResult<Vec<u8>> {
+        let model = self.model_from_builder(py);
+        emit::bitcode(&model).map_err(PyOSError::new_err)
+    }
+
+    fn add_external_function(&mut self, py: Python, name: String, ty: PyFunctionType) -> Function {
+        let mut builder = self.builder.as_ref(py).borrow_mut();
+        builder.external_functions.insert(name.clone(), ty.into());
+        Function { name }
+    }
+}
+
+impl SimpleModule {
+    fn model_from_builder(&self, py: Python) -> SemanticModel {
+        let builder = self.builder.as_ref(py).borrow();
+
+        match builder.frames[..] {
+            [ref instructions] => SemanticModel {
+                instructions: instructions.clone(),
+                external_functions: builder.external_functions.clone(),
+                ..self.model.clone()
+            },
+            _ => panic!("Builder does not contain exactly one stack frame."),
         }
     }
 }
@@ -299,16 +454,16 @@ impl BasicQisBuilder {
 impl BasicQisBuilder {
     fn push_inst(&self, py: Python, inst: Instruction) {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.frames.last_mut().unwrap().push(inst);
+        builder.push_inst(inst);
     }
 
     fn push_frame(&self, py: Python) {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.frames.push(vec![]);
+        builder.push_frame();
     }
 
     fn pop_frame(&self, py: Python) -> Option<Vec<Instruction>> {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.frames.pop()
+        builder.pop_frame()
     }
 }

@@ -1,7 +1,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from typing import Callable, Tuple
+from pyqir.generator import types
+from pyqir.generator._values import Value
+from typing import Callable, Sequence, Tuple
 
 
 class Qubit:
@@ -14,9 +16,22 @@ class ResultRef:
     ...
 
 
+class Function:
+    """A callable value for a module function."""
+    ...
+
+
 class Builder:
     """An instruction builder."""
-    ...
+
+    def call(self, function: Function, args: Sequence[Value]) -> None:
+        """
+        Builds a call instruction.
+
+        :param function: The function to call.
+        :param args: The arguments to the function.
+        """
+        ...
 
 
 class SimpleModule:
@@ -67,6 +82,16 @@ class SimpleModule:
 
     def bitcode(self) -> bytes:
         """Emits the LLVM bitcode for the module as a sequence of bytes."""
+        ...
+
+    def add_external_function(self, name: str, ty: types.Function) -> Function:
+        """
+        Adds a declaration for an externally linked function to the module.
+
+        :param name: The name of the function.
+        :param ty: The type of the function.
+        :return: The function value.
+        """
         ...
 
 

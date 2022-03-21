@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::values::{BasicMetadataValueEnum, BasicValue};
-
 use super::types::{double, int32, int64, int8};
+use inkwell::values::{BasicMetadataValueEnum, BasicValue};
 
 #[must_use]
 pub(crate) fn i8_null_ptr(context: &'_ inkwell::context::Context) -> BasicMetadataValueEnum<'_> {
