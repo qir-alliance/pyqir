@@ -1,7 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, SimpleModule, types
+from pyqir.generator import BasicQisBuilder, SimpleModule, Value, types
+from typing import Callable, List, Tuple
 import unittest
 
 
@@ -114,3 +115,58 @@ class ExternalFunctionsTest(unittest.TestCase):
             f"call void @test_function({bool_rep}, {int_rep}, {double_rep})",
             mod.ir(),
         )
+
+    def test_wrong_type(self) -> None:
+        cases: List[Tuple[List[types.Value], Callable[[SimpleModule], List[Value]]]] = [
+            ([types.INT], lambda _: [1.23]),
+            ([types.BOOL], lambda mod: [mod.results[0]]),
+            ([types.QUBIT], lambda mod: [mod.results[0]]),
+            ([types.RESULT], lambda mod: [mod.qubits[0]]),
+        ]
+
+        for param_types, get_args in cases:
+            mod = SimpleModule("test", 1, 1)
+            args = get_args(mod)
+
+            with self.subTest(repr(args)):
+                f = mod.add_external_function(
+                    "test_function", types.Function(param_types, types.VOID)
+                )
+
+                with self.assertRaises(TypeError):
+                    mod.builder.call(f, args)
+
+    def test_overflow(self) -> None:
+        cases = [
+            [123],
+            [2 ** 64],
+        ]
+
+        for args in cases:
+            with self.subTest(repr(args)):
+                mod = SimpleModule("test", 0, 0)
+                f = mod.add_external_function(
+                    "test_function", types.Function([types.BOOL], types.VOID)
+                )
+
+                with self.assertRaises(OverflowError):
+                    mod.builder.call(f, args)
+
+    def test_wrong_number_of_args(self) -> None:
+        cases: List[List[Value]] = [
+            [],
+            [1.23],
+            [1.23, True, False],
+        ]
+
+        for args in cases:
+            with self.subTest(repr(args)):
+                mod = SimpleModule("test", 0, 0)
+                param_types: List[types.Value] = [types.DOUBLE, types.BOOL]
+                f = mod.add_external_function(
+                    "test_function", types.Function(param_types, types.VOID)
+                )
+
+                message = f"Expected {len(param_types)} arguments, got {len(args)}."
+                with self.assertRaisesRegex(ValueError, message):
+                    mod.builder.call(f, args)
