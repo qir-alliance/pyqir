@@ -5,11 +5,11 @@
 
 from pyqir.generator import BasicQisBuilder, SimpleModule
 
-# This module creates a Bell pair and returns the result of measuring each
-# qubit.
+# Create the module with two qubits and two results.
 bell = SimpleModule("bell", num_qubits=2, num_results=2)
 qis = BasicQisBuilder(bell.builder)
 
+# Add instructions to the module to create a Bell pair and measure both qubits.
 qis.h(bell.qubits[0])
 qis.cx(bell.qubits[0], bell.qubits[1])
 qis.m(bell.qubits[0], bell.results[0])

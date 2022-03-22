@@ -4,7 +4,7 @@ The `pyqir-generator` package provides the ability to generate
 [QIR](https://github.com/qir-alliance/qir-spec) using a Python API.
 
 It is intended to be used by code automating translation processes enabling the
-conversion in some format to QIR via Python; i.e., this is a low level API
+conversion in some format to QIR via Python; i.e., this is a low-level API
 intended to be used as a bridge to existing Python frameworks enabling the
 generation of QIR rather than directly consumed by an end-user. It is **not**
 intended to be used as a framework for algorithm and application development.
@@ -15,7 +15,7 @@ There are [generator
 examples](https://github.com/qir-alliance/pyqir/tree/main/examples/generator) in
 the repository.
 
-Let's look at a short example. The following code creates QIR for an create Bell
+Let's look at a short example. The following code creates QIR for a Bell
 pair before measuring each qubit and returning the result. The unoptimized QIR
 is displayed in the terminal when executed:
 
@@ -63,10 +63,10 @@ attributes #0 = { "EntryPoint" "requiredQubits"="2" }
 
 ## Building and Testing
 
-See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html)
+See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html).
 
 ## Current Limitations
 
-- Classical computation and control flow is not yet fully supported.
+- Classical computation and control flow are not yet fully supported.
 - Only branching based on measurement results is currently possible.
 - See [issue #2: Support control flow and classical computation in PyQIR Generator](https://github.com/qir-alliance/pyqir/issues/2).

@@ -1,15 +1,23 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::generation::{interop::SemanticModel, qir};
-use crate::{codegen::CodeGenerator, passes::run_basic_passes_on};
+use crate::{
+    codegen::CodeGenerator,
+    generation::{
+        interop::{self, ReturnType, SemanticModel, ValueType},
+        qir,
+    },
+    passes::run_basic_passes_on,
+};
 use inkwell::{
     attributes::AttributeLoc,
     context::Context,
+    module::Linkage,
+    types::{BasicType, BasicTypeEnum, FunctionType},
     values::{BasicValueEnum, FunctionValue, PointerValue},
     AddressSpace,
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, convert::Into};
 
 /// # Errors
 ///
@@ -46,10 +54,8 @@ pub fn populate_context<'a>(
     Ok(generator)
 }
 
-fn build_entry_function(
-    generator: &CodeGenerator<'_>,
-    model: &SemanticModel,
-) -> Result<(), String> {
+fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Result<(), String> {
+    add_external_functions(generator, model.external_functions.iter());
     let entry_point = qir::create_entry_point(generator.context, &generator.module);
 
     if model.static_alloc {
@@ -64,9 +70,7 @@ fn build_entry_function(
     generator.builder.position_at_end(entry);
 
     let qubits = write_qubits(model, generator);
-
     let mut registers = write_registers(model);
-
     write_instructions(model, generator, &qubits, &mut registers, entry_point);
 
     if !model.static_alloc {
@@ -74,8 +78,51 @@ fn build_entry_function(
     }
 
     generator.builder.build_return(None);
-
     generator.module.verify().map_err(|e| e.to_string())
+}
+
+fn add_external_functions<'a>(
+    generator: &CodeGenerator,
+    functions: impl Iterator<Item = (&'a String, &'a interop::FunctionType)>,
+) {
+    for (name, ty) in functions {
+        let ty = get_function_type(generator, ty);
+        generator
+            .module
+            .add_function(name, ty, Some(Linkage::External));
+    }
+}
+
+fn get_function_type<'ctx>(
+    generator: &CodeGenerator<'ctx>,
+    ty: &interop::FunctionType,
+) -> FunctionType<'ctx> {
+    let param_types: Vec<_> = ty
+        .param_types
+        .iter()
+        .map(|ty| get_basic_type(generator, ty).into())
+        .collect();
+
+    let param_types = param_types.as_slice();
+    match ty.return_type {
+        ReturnType::Void => generator.context.void_type().fn_type(param_types, false),
+        ReturnType::Value(ty) => get_basic_type(generator, &ty).fn_type(param_types, false),
+    }
+}
+
+fn get_basic_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &ValueType) -> BasicTypeEnum<'ctx> {
+    match ty {
+        ValueType::Integer { width } => {
+            BasicTypeEnum::IntType(generator.context.custom_width_int_type(*width))
+        }
+        ValueType::Double => BasicTypeEnum::FloatType(generator.context.f64_type()),
+        ValueType::Qubit => {
+            BasicTypeEnum::PointerType(generator.qubit_type().ptr_type(AddressSpace::Generic))
+        }
+        ValueType::Result => {
+            BasicTypeEnum::PointerType(generator.result_type().ptr_type(AddressSpace::Generic))
+        }
+    }
 }
 
 fn free_qubits<'ctx>(
@@ -162,7 +209,7 @@ mod tests {
         },
     };
     use normalize_line_endings::normalized;
-    use std::{env, fs, path::PathBuf};
+    use std::{collections::HashMap, env, fs, path::PathBuf};
 
     const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
 
@@ -181,6 +228,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -201,6 +249,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -222,6 +271,7 @@ mod tests {
                 Instruction::H(Single::new("q0".to_string())),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -243,6 +293,7 @@ mod tests {
                 Instruction::H(Single::new("q0".to_string())),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -264,6 +315,7 @@ mod tests {
                 Instruction::H(Single::new("q0".to_string())),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -289,6 +341,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -314,6 +367,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -339,6 +393,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -364,6 +419,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)
@@ -381,6 +437,7 @@ mod tests {
                 else_insts: vec![Instruction::H(Single::new("q0".to_string()))],
             })],
             static_alloc: true,
+            external_functions: HashMap::new(),
         };
 
         check_or_save_reference_ir(&model)

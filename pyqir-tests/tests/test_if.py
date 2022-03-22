@@ -8,7 +8,7 @@ from typing import List, Optional
 import unittest
 
 
-class IfTestCase(unittest.TestCase):
+class IfTest(unittest.TestCase):
     def test_one_block_executes_on_one(self) -> None:
         module = SimpleModule("test_if", num_qubits=1, num_results=1)
         qis = BasicQisBuilder(module.builder)
@@ -193,7 +193,3 @@ def _eval(module: SimpleModule,
         f.write(module.ir().encode("utf-8"))
         f.flush()
         NonadaptiveEvaluator().eval(f.name, gates, None, result_stream)
-
-
-if __name__ == "__main__":
-    unittest.main()
