@@ -12,6 +12,14 @@ compilation](https://en.wikipedia.org/wiki/Just-in-time_compilation)
 infrastructure as well as an extensibility mechanism to define what actions to
 perform when a gate is applied in Python.
 
+## Installation
+
+The package is released on PyPI and can be installed via pip:
+
+```bash
+pip install pyqir-evaluator
+```
+
 ## Examples
 
 There are [evaluator

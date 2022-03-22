@@ -1,51 +1,16 @@
 # Installing PyQIR
 
-Currently, pre-built packages are available in the form of GitHub releases only.
-We are working on making them available via other common distribution channels.
-
-## Prerequisites
-
-- [Python 3.6+](https://www.python.org)
-
-## Installing PyQIR from GitHub Releases
-
-### Install the GitHub CLI
-
-To install the pre-built package from GitHub, please install the [GitHub
-CLI](https://cli.github.com/) either directly from the webpage, or alternatively
-use the following [conda](https://docs.conda.io/en/latest/) command from within
-your conda environment:
+Releases are published to both Python Package Index (PyPI) and GitHub releases. To install via pip:
 
 ```bash
-conda install -c conda-forge gh
+pip install pyqir-generator
+pip install pyqir-evaluator
+pip install pyqir-parser
 ```
-
-### Download the Release
-
-From within the repository root folder, run the following command to download
-the desired version for your platform, e.g. for `v0.3.0a1`:
-
-- on Linux:
-
-  ```bash
-  gh release download v0.3.0a1 -D wheelhouse -R qir-alliance/pyqir --pattern "*-manylinux*_x86_64.whl"
-  ```
-
-- on Mac OS:
-
-  ```bash
-  gh release download v0.3.0a1 -D wheelhouse -R qir-alliance/pyqir --pattern "*-macosx_*_x86_64.whl"
-  ```
-
-- on Windows:
-
-  ```bash
-  gh release download v0.3.0a1 -D wheelhouse -R qir-alliance/pyqir --pattern "*-win_amd64.whl"
-  ```
 
 ### Install the Packages
 
-Then run the installation script:
+Alternatively, you can run the installation script which will install them all for you:
 
 - Windows
   - Command Prompt: `install.cmd`

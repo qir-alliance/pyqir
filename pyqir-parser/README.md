@@ -5,6 +5,14 @@ It includes mechanisms for walking the functions and blocks in a given QIR progr
 QIR-specific conventions like getting static qubit identifiers or measurement result identifiers. It is not designed
 for output of QIR, and does not provide any functionality for modifying or transforming the parsed QIR.
 
+## Installation
+
+The package is released on PyPI and can be installed via pip:
+
+```bash
+pip install pyqir-parser
+```
+
 ## Building and Testing
 
 See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html).

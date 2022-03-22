@@ -9,6 +9,14 @@ intended to be used as a bridge to existing Python frameworks enabling the
 generation of QIR rather than directly consumed by an end-user. It is **not**
 intended to be used as a framework for algorithm and application development.
 
+## Installation
+
+The package is released on PyPI and can be installed via pip:
+
+```bash
+pip install pyqir-generator
+```
+
 ## Examples
 
 There are [generator
