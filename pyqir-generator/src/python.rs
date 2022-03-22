@@ -3,7 +3,7 @@
 
 use pyo3::{
     basic::CompareOp,
-    exceptions::{PyOSError, PyTypeError},
+    exceptions::{PyOSError, PyTypeError, PyValueError},
     prelude::*,
     types::PySequence,
     PyObjectProtocol,
@@ -222,10 +222,17 @@ impl Builder {
     fn call(&mut self, function: Function, args: &PySequence) -> PyResult<()> {
         let name = function.name;
         let ty = self.external_functions.get(&name).unwrap();
+        let num_params = ty.param_types.len();
+        let num_args = args.len()?;
 
-        let args = args
-            .iter()?
-            .zip(ty.param_types.iter())
+        let typed_args = if num_args == num_params {
+            args.iter()?.zip(&ty.param_types)
+        } else {
+            let message = format!("Expected {} arguments, got {}.", num_params, num_args);
+            return Err(PyErr::new::<PyValueError, _>(message));
+        };
+
+        let args = typed_args
             .map(|(arg, &ty)| match ty {
                 ValueType::Integer { width } => Ok(Value::Integer {
                     width,
