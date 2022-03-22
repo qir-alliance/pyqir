@@ -4,8 +4,13 @@
 properties {
     $repo = @{}
     $repo.root = Resolve-Path (Split-Path -parent $PSScriptRoot)
+    $repo.target = Join-Path $repo.root "target"
 
     $pyqir = @{}
+
+    $pyqir.meta = @{}
+    $pyqir.meta.name = "pyqir"
+    $pyqir.meta.dir = Join-Path $repo.root "pyqir"
 
     $pyqir.parser = @{}
     $pyqir.parser.name = "pyqir-parser"
@@ -72,6 +77,15 @@ Task pyqir-tests -Depends init {
     Invoke-LoggedCommand -workingDirectory (Join-Path $repo.root pyqir-tests) {
         & $python -m pip install tox
         & $python -m tox -e test
+    }
+}
+
+Task pyqir-metawheel {
+    if (!(Test-Path $repo.target)) {
+        New-Item -Path $repo.target -ItemType Directory | Out-Null
+    }
+    Invoke-LoggedCommand {
+        & $python -m pip wheel --wheel-dir $repo.target $pyqir.meta.dir
     }
 }
 
