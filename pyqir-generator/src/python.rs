@@ -3,7 +3,7 @@
 
 use pyo3::{
     basic::CompareOp,
-    exceptions::{PyOSError, PyTypeError, PyValueError},
+    exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
     prelude::*,
     types::PySequence,
     PyObjectProtocol,
@@ -11,7 +11,7 @@ use pyo3::{
 use qirlib::generation::{
     emit,
     interop::{
-        Call, ClassicalRegister, Controlled, FunctionType, If, Instruction, Measured,
+        Call, ClassicalRegister, Controlled, FunctionType, If, Instruction, IntegerValue, Measured,
         QuantumRegister, ReturnType, Rotated, SemanticModel, Single, Value, ValueType,
     },
 };
@@ -233,15 +233,7 @@ impl Builder {
         };
 
         let args = typed_args
-            .map(|(arg, &ty)| match ty {
-                ValueType::Integer { width } => Ok(Value::Integer {
-                    width,
-                    value: arg?.extract()?,
-                }),
-                ValueType::Double => Ok(Value::Double(arg?.extract()?)),
-                ValueType::Qubit => Ok(Value::Qubit(arg?.extract::<Qubit>()?.id())),
-                ValueType::Result => Ok(Value::Result(arg?.extract::<ResultRef>()?.id())),
-            })
+            .map(|(arg, &ty)| extract_value(arg?, ty))
             .collect::<PyResult<_>>()?;
 
         self.push_inst(Instruction::Call(Call { name, args }));
@@ -472,5 +464,19 @@ impl BasicQisBuilder {
     fn pop_frame(&self, py: Python) -> Option<Vec<Instruction>> {
         let mut builder = self.builder.as_ref(py).borrow_mut();
         builder.pop_frame()
+    }
+}
+
+fn extract_value(ob: &PyAny, ty: ValueType) -> PyResult<Value> {
+    match ty {
+        ValueType::Integer { width } => IntegerValue::new(width, ob.extract()?)
+            .map(Value::Integer)
+            .ok_or_else(|| {
+                let message = format!("Value too big for {}-bit integer.", width);
+                PyErr::new::<PyOverflowError, _>(message)
+            }),
+        ValueType::Double => Ok(Value::Double(ob.extract()?)),
+        ValueType::Qubit => Ok(Value::Qubit(ob.extract::<Qubit>()?.id())),
+        ValueType::Result => Ok(Value::Result(ob.extract::<ResultRef>()?.id())),
     }
 }
