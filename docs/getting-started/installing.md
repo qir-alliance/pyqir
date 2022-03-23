@@ -8,7 +8,7 @@ pip install pyqir-evaluator
 pip install pyqir-parser
 ```
 
-### Install the Packages
+## Install all the Packages
 
 Alternatively, you can run the installation script which will install them all for you:
 
