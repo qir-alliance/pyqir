@@ -162,10 +162,10 @@ fn emit_call<'ctx>(
         .args
         .iter()
         .map(|value| match value {
-            Value::Integer { width, value } => generator
+            Value::Integer(value) => generator
                 .context
-                .custom_width_int_type(*width)
-                .const_int(*value, false)
+                .custom_width_int_type(value.width())
+                .const_int(value.value(), false)
                 .into(),
             Value::Double(value) => generator.f64_to_f64(*value),
             Value::Qubit(name) => get_qubit(qubits, name).into(),

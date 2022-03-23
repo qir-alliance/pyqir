@@ -153,10 +153,38 @@ pub struct FunctionType {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
-    Integer { width: u32, value: u64 },
+    Integer(IntegerValue),
     Double(f64),
     Qubit(String),
     Result(String),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct IntegerValue {
+    width: u32,
+    value: u64,
+}
+
+impl IntegerValue {
+    /// Creates a new `IntegerValue`, returning `None` if the number of bits required to represent
+    /// `value` is greater than `width`.
+    #[must_use]
+    pub fn new(width: u32, value: u64) -> Option<IntegerValue> {
+        let value_width = u64::BITS - u64::leading_zeros(value);
+        if value_width > width {
+            None
+        } else {
+            Some(IntegerValue { width, value })
+        }
+    }
+
+    pub(crate) fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub(crate) fn value(&self) -> u64 {
+        self.value
+    }
 }
 
 #[derive(Clone)]
