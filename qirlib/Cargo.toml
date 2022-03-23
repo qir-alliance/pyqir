@@ -4,6 +4,10 @@ version = "0.3.0"
 edition = "2018"
 description = "Base Profile QIR library"
 build = "build.rs"
+readme = "README.md"
+homepage = "https://github.com/qir-alliance/pyqir"
+repository = "https://github.com/qir-alliance/pyqir"
+rust-version = "1.57"
 
 [dependencies]
 llvm-sys = "110"
