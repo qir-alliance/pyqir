@@ -10,7 +10,7 @@ consists of the following components:
 
 ## Installation
 
-This meta package depends on all existing PyQIR packages. The package is 
+This meta package depends on all existing PyQIR packages. The package is
 released on PyPI and can be installed via pip:
 
 ```bash
