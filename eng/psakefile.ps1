@@ -38,7 +38,7 @@ properties {
 Include settings.ps1
 Include utils.ps1
 
-Task default -Depends checks, pyqir-tests, parser, generator, evaluator, run-examples, run-examples-in-containers
+Task default -Depends checks, pyqir-tests, parser, generator, evaluator, metawheel, run-examples, run-examples-in-containers
 
 Task checks -Depends cargo-fmt, cargo-clippy
 
@@ -80,12 +80,13 @@ Task pyqir-tests -Depends init {
     }
 }
 
-Task pyqir-metawheel {
-    if (!(Test-Path $repo.target)) {
-        New-Item -Path $repo.target -ItemType Directory | Out-Null
+Task metawheel {
+    $wheelDir = Split-Path -Parent $wheelhouse
+    if (!(Test-Path $wheelDir)) {
+        New-Item -Path $wheelDir -ItemType Directory | Out-Null
     }
     Invoke-LoggedCommand {
-        & $python -m pip wheel --wheel-dir $repo.target $pyqir.meta.dir
+        & $python -m pip wheel --no-deps --wheel-dir $wheelDir $pyqir.meta.dir
     }
 }
 
