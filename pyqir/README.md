@@ -10,13 +10,11 @@ consists of the following components:
 
 ## Installation
 
-The package is released on PyPI and can be installed via pip:
+This meta package depends on all existing PyQIR packages. The package is 
+released on PyPI and can be installed via pip:
 
 ```bash
 pip install pyqir
-pip install pyqir[generator]
-pip install pyqir[evaluator]
-pip install pyqir[parser]
 ```
 
 ## Contributing
