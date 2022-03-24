@@ -177,12 +177,12 @@ task init {
 }
 
 task install-llvm-from-archive {
-    $cache = Resolve-InstallationDirectory
-    Use-LlvmInstallation $cache
+    $installationDirectory = Resolve-InstallationDirectory
+    Use-LlvmInstallation $installationDirectory
     $clear_cache_var = $false
     if (!(Test-Path env:\QIRLIB_CACHE_DIR)) {
         $clear_cache_var = $true
-        $env:QIRLIB_CACHE_DIR = $cache
+        $env:QIRLIB_CACHE_DIR = $installationDirectory
     }
     try {
         Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
@@ -197,9 +197,9 @@ task install-llvm-from-archive {
 }
 
 task install-llvm-from-source {
-    $installationDirectory = Resolve-InstallationDirectory
-    Use-LlvmInstallation $cache
     if (Test-RunInContainer) {
+        $installationDirectory = Resolve-InstallationDirectory
+        Use-LlvmInstallation $installationDirectory
         Build-ContainerImage $repo.root
         $srcPath = $repo.root
         $ioVolume = "$($srcPath):/io"
@@ -213,10 +213,12 @@ task install-llvm-from-source {
         if ($IsWindows) {
             Include vcvars.ps1
         }
+        $installationDirectory = Resolve-InstallationDirectory
+        Use-LlvmInstallation $installationDirectory
         $clear_cache_var = $false
         if (!(Test-Path env:\QIRLIB_CACHE_DIR)) {
             $clear_cache_var = $true
-            $env:QIRLIB_CACHE_DIR = $cache
+            $env:QIRLIB_CACHE_DIR = $installationDirectory
         }
         try {
             Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
