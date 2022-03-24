@@ -29,19 +29,24 @@ specified with an environment variable.
 - Build LLVM from source
 - Download a preexisting LLVM build
 
-Features:
+Supported features are following:
 
-- `default`
-  - includes `external-llvm-linking`
-- `external-llvm-linking` - use llvm-sys/inkwell for llvm linking
-- `no-llvm-linking` - disable all LLVM linking. Used for local installation or packaging of LLVM.
-  - includes `llvm-sys/disable-alltargets-init` and `inkwell/llvm11-0-no-llvm-linking`
-- `qirlib-llvm-linking` - let qirlib do the llvm linking
-  - includes `llvm-sys/disable-alltargets-init` and `inkwell/llvm11-0-no-llvm-linking`
-- `download-llvm` - dowload a precompiled version of LLVM
-- `build-llvm` - build LLVM from source. Installation defaults to `OUT_DIR/llvm` but can be overridden via the `QIRLIB_CACHE_DIR` environment variable.
-- `package-llvm` - dev use only for packaging LLVM builds
-  - includes `build-llvm` and `no-llvm-linking`
+| Feature                 | Link type               | Requirements        | Description                                            |
+|:------------------------|:------------------------|:--------------------|:-------------------------------------------------------|
+| `default`               | external | gcc/clang           | Includes `external-llvm-linking`     |
+| `external-llvm-linking` | external | gcc/clang           | Uses llvm-sys/inkwell for LLVM linking                 |
+| `no-llvm-linking`       |  none    |                     | Disable all LLVM linking. Used for local installation or packaging of LLVM. Includes `llvm-sys/disable-alltargets-init` and `inkwell/llvm11-0-no-llvm-linking` |
+| `qirlib-llvm-linking`  | internal  | `build-llvm` or `download-llvm` |  let qirlib do the LLVM linking. Includes `llvm-sys/disable-alltargets-init` and `inkwell/llvm11-0-no-llvm-linking` |
+| `download-llvm` | internal/none | cmake | dowload a precompiled version of LLVM|
+| `build-llvm`| internal/none | gcc/clang, cmake, ninja, git | Build LLVM from source. Installation defaults to `OUT_DIR/llvm` but can be overridden via the `QIRLIB_CACHE_DIR` environment variable.
+| `package-llvm` | none | cc/clang, cmake, ninja, git | *Dev use only* for packaging LLVM builds. Includes `build-llvm` and `no-llvm-linking`
+
+- Exactly one of the linking features is required:
+  - `qirlib-llvm-linking`
+  - `external-llvm-linking`
+  - `no-llvm-linking`
+- `build-llvm` and `download-llvm` cannot be used with `external-llvm-linking`
+
 
 ### Using existing LLVM installation
 
