@@ -112,8 +112,6 @@ Task metawheel {
     }
 }
 
-Task rebuild -Depends generator, evaluator, parser
-
 Task wheelhouse `
     -Precondition { -not (Test-Path $wheelhouse -ErrorAction SilentlyContinue) } `
 { Invoke-Task rebuild }
