@@ -47,7 +47,6 @@ Supported features are following:
   - `no-llvm-linking`
 - `build-llvm` and `download-llvm` cannot be used with `external-llvm-linking`
 
-
 ### Using existing LLVM installation
 
 Using an existing (external) LLVM installation is the default and effects
