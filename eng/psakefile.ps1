@@ -177,23 +177,7 @@ task init {
 }
 
 task install-llvm-from-archive {
-    $installationDirectory = Resolve-InstallationDirectory
-    Use-LlvmInstallation $installationDirectory
-    $clear_cache_var = $false
-    if (!(Test-Path env:\QIRLIB_CACHE_DIR)) {
-        $clear_cache_var = $true
-        $env:QIRLIB_CACHE_DIR = $installationDirectory
-    }
-    try {
-        Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-            cargo build --release --no-default-features --features "download-llvm,no-llvm-linking" -vv
-        }
-    }
-    finally {
-        if ($clear_cache_var) {
-            Remove-Item -Path Env:QIRLIB_CACHE_DIR
-        }
-    }
+    install-llvm $pyqir.qirlib.dir "download"
 }
 
 task install-llvm-from-source {
@@ -213,23 +197,7 @@ task install-llvm-from-source {
         if ($IsWindows) {
             Include vcvars.ps1
         }
-        $installationDirectory = Resolve-InstallationDirectory
-        Use-LlvmInstallation $installationDirectory
-        $clear_cache_var = $false
-        if (!(Test-Path env:\QIRLIB_CACHE_DIR)) {
-            $clear_cache_var = $true
-            $env:QIRLIB_CACHE_DIR = $installationDirectory
-        }
-        try {
-            Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-                cargo build --release --no-default-features --features "build-llvm,no-llvm-linking" -vv
-            }
-        }
-        finally {
-            if ($clear_cache_var) {
-                Remove-Item -Path Env:QIRLIB_CACHE_DIR
-            }
-        }
+        install-llvm $pyqir.qirlib.dir "build"
     }
 }
 
@@ -427,4 +395,32 @@ function Create-DocsEnv() {
     finally {
         deactivate
     }
+}
+
+function install-llvm {
+    Param(
+        [Parameter(Mandatory)]
+        [string]$qirlibDir,
+        [Parameter(Mandatory)]
+        [ValidateSet("download", "build")]
+        [string]$operation
+    )
+
+    $installationDirectory = Resolve-InstallationDirectory
+    Use-LlvmInstallation $installationDirectory
+    $clear_cache_var = $false
+    if (!(Test-Path env:\QIRLIB_CACHE_DIR)) {
+        $clear_cache_var = $true
+        $env:QIRLIB_CACHE_DIR = $installationDirectory
+    }
+    try {
+        Invoke-LoggedCommand -wd $qirlibDir {
+            cargo build --release --no-default-features --features "$($operation)-llvm,no-llvm-linking" -vv
+        }
+    }
+    finally {
+        if ($clear_cache_var) {
+            Remove-Item -Path Env:QIRLIB_CACHE_DIR
+        }
+    }   
 }
