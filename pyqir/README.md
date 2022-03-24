@@ -1,16 +1,20 @@
-# pyqir-parser
+# PyQIR
 
-The pyqir-parser provides utilities for parsing QIR from bitcode files into convenience objects in Python.
-It includes mechanisms for walking the functions and blocks in a given QIR program, with additional support for
-QIR-specific conventions like getting static qubit identifiers or measurement result identifiers. It is not designed
-for output of QIR, and does not provide any functionality for modifying or transforming the parsed QIR.
+PyQIR is a set of APIs for generating, parsing, and evaluating [Quantum
+Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec). It
+consists of the following components:
+
+- [**pyqir-generator**](https://pypi.org/project/pyqir-generator)
+- [**pyqir-evaluator**](https://pypi.org/project/pyqir-evaluator/)
+- [**pyqir-parser**](https://pypi.org/project/pyqir-parser):
 
 ## Installation
 
-The package is released on PyPI and can be installed via pip:
+This meta package depends on all existing PyQIR packages. The package is
+released on PyPI and can be installed via pip:
 
 ```bash
-pip install pyqir-parser
+pip install pyqir
 ```
 
 ## Contributing
@@ -27,7 +31,3 @@ that you have the right to, and actually do, grant us the rights to use your
 contribution. A CLA-bot will automatically determine whether you need to provide
 a CLA and decorate the PR appropriately. Simply follow the
 instructions provided by the bot. You will only need to do this once.
-
-## Building and Testing
-
-See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html).

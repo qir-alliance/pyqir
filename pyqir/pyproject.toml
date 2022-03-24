@@ -1,0 +1,11 @@
+[project]
+name = "pyqir"
+version = "0.3.0a1"
+requires-python = ">=3.6"
+
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"

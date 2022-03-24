@@ -4,12 +4,17 @@
 properties {
     $repo = @{}
     $repo.root = Resolve-Path (Split-Path -parent $PSScriptRoot)
+    $repo.target = Join-Path $repo.root "target"
 
     $pyqir = @{}
 
     $pyqir.qirlib = @{}
     $pyqir.qirlib.name = "qirlib"
     $pyqir.qirlib.dir = Join-Path $repo.root "qirlib"
+
+    $pyqir.meta = @{}
+    $pyqir.meta.name = "pyqir"
+    $pyqir.meta.dir = Join-Path $repo.root "pyqir"
 
     $pyqir.parser = @{}
     $pyqir.parser.name = "pyqir-parser"
@@ -37,7 +42,7 @@ properties {
 Include settings.ps1
 Include utils.ps1
 
-Task default -Depends checks, pyqir-tests, parser, generator, evaluator, run-examples, run-examples-in-containers
+Task default -Depends checks, pyqir-tests, parser, generator, evaluator, metawheel, run-examples, run-examples-in-containers
 
 Task checks -Depends cargo-fmt, cargo-clippy
 
@@ -96,6 +101,18 @@ Task pyqir-tests -Depends init {
         }
     }
 }
+
+Task metawheel {
+    $wheelDir = Split-Path -Parent $wheelhouse
+    if (!(Test-Path $wheelDir)) {
+        New-Item -Path $wheelDir -ItemType Directory | Out-Null
+    }
+    Invoke-LoggedCommand {
+        & $python -m pip wheel --no-deps --wheel-dir $wheelDir $pyqir.meta.dir
+    }
+}
+
+Task rebuild -Depends generator, evaluator, parser
 
 Task wheelhouse `
     -Precondition { -not (Test-Path $wheelhouse -ErrorAction SilentlyContinue) } `
