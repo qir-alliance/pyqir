@@ -279,7 +279,11 @@ function Test-RunInContainer {
 function Build-ContainerImage([string]$srcPath) {
     Write-BuildLog "Building container image manylinux-llvm-builder"
     Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
-        Get-Content manylinux.Dockerfile | docker build -t manylinux2014_x86_64_maturin -
+        $user = [environment]::UserName
+        $uid = "$(id -u)"
+        $gid = "$(id -g)"
+        $rustv = "1.57.0"
+        Get-Content manylinux.Dockerfile | docker build --build-arg USERNAME=$user --build-arg USER_UID=$uid --build-arg USER_GID=$gid --build-arg RUST_VERSION=$rustv -t manylinux2014_x86_64_maturin -
     }
 }
 
