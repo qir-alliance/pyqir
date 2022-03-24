@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.3.1a1] - 2022-03-24
+
+- Correct a few more typos and update docs by @LaurentAjdnik in https://github.com/qir-alliance/pyqir/pull/86
+- Support external functions in generator by @samarsha in https://github.com/qir-alliance/pyqir/pull/76
+- Improve error handling for invalid external function calls by @samarsha in https://github.com/qir-alliance/pyqir/pull/89
+- Update PyPI package metadata by @idavis in https://github.com/qir-alliance/pyqir/pull/87
+- Create pyqir metapackage for PyPI by @idavis in https://github.com/qir-alliance/pyqir/pull/90
+
 ## [0.3.0a1] - 2022-03-14
 
 - Adding issue template for bugs, feature requests, and GitHub releases by @bettinaheim in https://github.com/qir-alliance/pyqir/pull/66
@@ -50,7 +58,8 @@
 
 - Initial Release
 
-[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.3.0a1...HEAD
+[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.3.1a1...HEAD
+[0.3.1a1]: https://github.com/qir-alliance/pyqir/compare/v0.3.0a1...v0.3.1a1
 [0.3.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.2.0a1...v0.3.0a1
 [0.2.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.1.0a1...v0.2.0a1
 [0.1.1a1]: https://github.com/qir-alliance/pyqir/compare/v0.1.0a1...v0.1.1a1
