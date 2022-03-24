@@ -24,9 +24,24 @@ assumes a valid LLVM installation is available. This default is to align with th
 `qirlib`. This default can be changed and `qirlib` provides features to
 bootstrap itself if desired. Building `qirlib` can be done with feature flags which will either:
 
-- (default) Use a local LLVM installation. This is either detected on the path or specified with an environment variable.
-- Download a preexisting LLVM build
+- (default) Use a local LLVM installation. This is either detected on the path or
+specified with an environment variable.
 - Build LLVM from source
+- Download a preexisting LLVM build
+
+Features:
+
+- `default` 
+  - includes `external-llvm-linking`
+- `external-llvm-linking` - use llvm-sys/inkwell for llvm linking
+- `no-llvm-linking` - disable all LLVM linking. Used for local installation or packaging of LLVM.
+  - includes `llvm-sys/disable-alltargets-init` and `inkwell/llvm11-0-no-llvm-linking`
+- `qirlib-llvm-linking` - let qirlib do the llvm linking
+  - includes `llvm-sys/disable-alltargets-init` and `inkwell/llvm11-0-no-llvm-linking`
+- `download-llvm` - dowload a precompiled version of LLVM
+- `build-llvm` - build LLVM from source. Installation defaults to `OUT_DIR/llvm` but can be overridden via the `QIRLIB_CACHE_DIR` environment variable.
+- `package-llvm` - dev use only for packaging LLVM builds
+ - includes `build-llvm` and `no-llvm-linking`
 
 ### Using existing LLVM installation
 
@@ -42,7 +57,7 @@ external-llvm-linking = []
 
 [`llvm-sys`](https://github.com/tari/llvm-sys.rs) leveraged by `qirlib` and [`Inkwell`](https://github.com/thedan64/inkwell) will look for `llvm-config` on the path in order to determine how to link against LLVM. If this application is not found on the path, then the the `LLVM_SYS_<version>_PREFIX` environment variable is used to locate `llvm-config`. Only LLVM 11.x is supported at this time, so the exact environment variable name is `LLVM_SYS_110_PREFIX`.
 
-
+This environment variable can be set in your `Cargo.toml` in the `[env]` section or in the build environment.
 
 ### Building (and linking) LLVM from source
 
@@ -65,6 +80,41 @@ Do to this, we must disable the default behavior (`external-llvm-linking`)  usin
 ```toml
 [dependencies]
 qirlib = { version = "0.3.0", default-features = false, features = "qirlib-llvm-linking,build-llvm" }
+```
+
+Or via the terminal (adding -vv so we can see build progress of LLVM)
+
+```bash
+qirlib> cargo build --release --no-default-features --features "qirlib-llvm-linking,build-llvm" -vv   
+```
+
+### Downloading (and linking) LLVM from pre-compiled binaries
+
+In order to build and link LLVM from source, we must also tell 
+[`Inkwell`](https://github.com/thedan64/inkwell) and 
+[`llvm-sys`](https://github.com/tari/llvm-sys.rs) to disable 
+their own LLVM linking:
+
+```toml
+[features]
+# let qirlib do the llvm linking
+qirlib-llvm-linking = ["llvm-sys/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
+```
+
+Do to this, we must disable the default behavior (`external-llvm-linking`)  using:
+
+- The `--no-default-features` command-line flag disables the default features of the package.
+- The `default-features = false` option can be specified in a dependency declaration.
+
+```toml
+[dependencies]
+qirlib = { version = "0.3.0", default-features = false, features = "qirlib-llvm-linking,download-llvm" }
+```
+
+Or via the terminal (adding -vv so we can see download progress of LLVM)
+
+```bash
+qirlib> cargo build --release --no-default-features --features "qirlib-llvm-linking,download-llvm" -vv   
 ```
 
 ## Contributing
