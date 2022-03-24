@@ -1,5 +1,5 @@
-REM Copyright (c) Microsoft Corporation.
-REM Licensed under the MIT License.
+@REM Copyright (c) Microsoft Corporation.
+@REM Licensed under the MIT License.
 
 @echo off
 
