@@ -283,7 +283,13 @@ function Build-ContainerImage([string]$srcPath) {
         $uid = "$(id -u)"
         $gid = "$(id -g)"
         $rustv = "1.57.0"
-        Get-Content manylinux.Dockerfile | docker build --build-arg USERNAME=$user --build-arg USER_UID=$uid --build-arg USER_GID=$gid --build-arg RUST_VERSION=$rustv -t manylinux2014_x86_64_maturin -
+        $tag = "manylinux2014_x86_64_maturin"
+        Get-Content manylinux.Dockerfile | docker build `
+            --build-arg USERNAME=$user `
+            --build-arg USER_UID=$uid `
+            --build-arg USER_GID=$gid `
+            --build-arg RUST_VERSION=$rustv `
+            -t $tag -
     }
 }
 
