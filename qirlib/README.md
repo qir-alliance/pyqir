@@ -17,9 +17,9 @@ is also the native implementation behind the PyQIR packages:
 
 ### Summary
 
-`qirlib` requires a working LLVM installation to link against. By default, `qirlib` 
-assumes a valid LLVM installation is available. This default is to align with the 
-[`Inkwell`](https://github.com/thedan64/inkwell) and 
+`qirlib` requires a working LLVM installation to link against. By default, `qirlib`
+assumes a valid LLVM installation is available. This default is to align with the
+[`Inkwell`](https://github.com/thedan64/inkwell) and
 [`llvm-sys`](https://github.com/tari/llvm-sys.rs) defaults which are leveraged by
 `qirlib`. This default can be changed and `qirlib` provides features to
 bootstrap itself if desired. Building `qirlib` can be done with feature flags which will either:
@@ -31,7 +31,7 @@ specified with an environment variable.
 
 Features:
 
-- `default` 
+- `default`
   - includes `external-llvm-linking`
 - `external-llvm-linking` - use llvm-sys/inkwell for llvm linking
 - `no-llvm-linking` - disable all LLVM linking. Used for local installation or packaging of LLVM.
@@ -41,7 +41,7 @@ Features:
 - `download-llvm` - dowload a precompiled version of LLVM
 - `build-llvm` - build LLVM from source. Installation defaults to `OUT_DIR/llvm` but can be overridden via the `QIRLIB_CACHE_DIR` environment variable.
 - `package-llvm` - dev use only for packaging LLVM builds
- - includes `build-llvm` and `no-llvm-linking`
+  - includes `build-llvm` and `no-llvm-linking`
 
 ### Using existing LLVM installation
 
@@ -61,9 +61,9 @@ This environment variable can be set in your `Cargo.toml` in the `[env]` section
 
 ### Building (and linking) LLVM from source
 
-In order to build and link LLVM from source, we must also tell 
-[`Inkwell`](https://github.com/thedan64/inkwell) and 
-[`llvm-sys`](https://github.com/tari/llvm-sys.rs) to disable 
+In order to build and link LLVM from source, we must also tell
+[`Inkwell`](https://github.com/thedan64/inkwell) and
+[`llvm-sys`](https://github.com/tari/llvm-sys.rs) to disable
 their own LLVM linking:
 
 ```toml
@@ -90,9 +90,9 @@ qirlib> cargo build --release --no-default-features --features "qirlib-llvm-link
 
 ### Downloading (and linking) LLVM from pre-compiled binaries
 
-In order to build and link LLVM from source, we must also tell 
-[`Inkwell`](https://github.com/thedan64/inkwell) and 
-[`llvm-sys`](https://github.com/tari/llvm-sys.rs) to disable 
+In order to build and link LLVM from source, we must also tell
+[`Inkwell`](https://github.com/thedan64/inkwell) and
+[`llvm-sys`](https://github.com/tari/llvm-sys.rs) to disable
 their own LLVM linking:
 
 ```toml
