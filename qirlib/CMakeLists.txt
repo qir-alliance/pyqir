@@ -33,7 +33,7 @@ if (NOT $ENV{QIRLIB_DOWNLOAD_LLVM} MATCHES "false")
   endif ()
 
   # load the expected archive hash into a variable for cmake to check
-  file(STRINGS ${CMAKE_BINARY_DIR}/${SHA256_NAME} LLVM_SHA256_SUM REGEX [0-9a-f]+)
+  file(STRINGS ${CMAKE_BINARY_DIR}/${SHA256_NAME} LLVM_SHA256_SUM REGEX [0-9a-fA-F]+)
   string(STRIP ${LLVM_SHA256_SUM} LLVM_SHA256_SUM)
 
   ExternalProject_Add(llvm
