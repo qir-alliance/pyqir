@@ -427,3 +427,25 @@ function Create-DocsEnv() {
         deactivate
     }
 }
+
+task check-licenses {
+    # Uses cargo-deny to verify that the linked components
+    # only use approved licenses
+    # https://github.com/EmbarkStudios/cargo-deny
+    Invoke-LoggedCommand -wd $repo.root {
+        cargo deny check licenses
+    }
+}
+
+task update-noticefile {
+    # use cargo-about to generate a notice file
+    # llvm special license is already in the template
+    # as it is a hidden transitive dependency.
+    # https://github.com/EmbarkStudios/cargo-about
+    $config = Join-Path $repo.root notice.toml
+    $template = Join-Path $repo.root notice.hbs
+    $notice = Join-Path $repo.root NOTICE.txt
+    Invoke-LoggedCommand -wd $repo.root {
+        cargo about generate --config $config --workspace --all-features --output-file $notice $template
+    }
+}
