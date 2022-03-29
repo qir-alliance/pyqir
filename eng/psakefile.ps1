@@ -447,5 +447,7 @@ task update-noticefile {
     $notice = Join-Path $repo.root NOTICE.txt
     Invoke-LoggedCommand -wd $repo.root {
         cargo about generate --config $config --workspace --all-features --output-file $notice $template
+        $contents = Get-Content -Raw $notice
+        [System.Web.HttpUtility]::HtmlDecode($contents) | Out-File $notice
     }
 }
