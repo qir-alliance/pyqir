@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::num::ParseIntError;
 
 use llvm_ir;
@@ -271,6 +271,7 @@ impl TypeExt for llvm_ir::Type {
 pub trait ConstantExt {
     fn qubit_id(&self) -> Option<u64>;
     fn result_id(&self) -> Option<u64>;
+    fn string_val(&self) -> Option<String>;
 }
 
 macro_rules! constant_id {
@@ -299,6 +300,30 @@ macro_rules! constant_id {
 impl ConstantExt for llvm_ir::Constant {
     constant_id!(qubit_id, TypeExt::is_qubit);
     constant_id!(result_id, TypeExt::is_result);
+
+    fn string_val(&self) -> Option<String> {
+        match &self {
+            llvm_ir::Constant::Array {
+                element_type: elem_type,
+                elements: chars,
+            } => match elem_type.as_ref() {
+                llvm_ir::Type::IntegerType { bits: 8 } => chars
+                    .iter()
+                    .rev()
+                    .skip(1)
+                    .rev()
+                    .map(|c| match c.as_ref() {
+                        llvm_ir::Constant::Int { bits: 8, value } => (*value).try_into().unwrap(),
+                        _ => 0_u8,
+                    })
+                    .fold(Some("".to_owned()), |accum, c| {
+                        Some(accum.unwrap() + &(c as char).to_string())
+                    }),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
 }
 
 pub trait NameExt {

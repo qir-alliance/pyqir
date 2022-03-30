@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+from tokenize import String
 from pyqir.parser._native import (
     PyQirModule,
     PyQirFunction,
@@ -33,6 +34,7 @@ __all__ = [
     "QirNullConstant",
     "QirQubitConstant",
     "QirResultConstant",
+    "QirGlobalStringConstant",
     "QirTerminator",
     "QirRetTerminator",
     "QirBrTerminator",
@@ -246,6 +248,8 @@ class QirOperand:
                 return super().__new__(QirDoubleConstant)
             elif op.constant.is_null:
                 return super().__new__(QirNullConstant)
+            elif op.constant.is_global_string:
+                return super().__new__(QirGlobalStringConstant)
             else:
                 return super().__new__(cls)
         else:
@@ -379,6 +383,12 @@ class QirResultConstant(QirConstant):
         gets the integer identifier for this result constant.
         """
         return self.value
+
+class QirGlobalStringConstant(QirConstant):
+    """
+    Instances of QirGlobalStringConstant represent a globally defined string in a QIR program.
+    """
+    pass
 
 
 class QirTerminator:
@@ -1141,3 +1151,10 @@ class QirModule:
                 QirFunction(i) for i in self.module.get_interop_funcs()
             ]
         return self._interop_funcs
+
+    def get_global_string_value(self, global_ref: QirGlobalStringConstant) -> Optional[str]:
+        """
+        Gets any globally defined string values matching the given global string constant.
+        :param global_ref: the global string constant whose value should be retrieved.
+        """
+        return global_ref.const.get_global_string_value(self.module)

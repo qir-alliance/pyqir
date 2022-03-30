@@ -68,6 +68,19 @@ def test_parser_select_support():
     assert isinstance(instr2.false_value, QirLocalOperand)
     assert instr2.false_value.name == "val.i.1"
 
+def test_global_string():
+    mod = QirModule("tests/hello.bc")
+    func_name = "program__main__body"
+    func = mod.get_func_by_name(func_name)
+    assert isinstance(func, QirFunction)
+    assert isinstance(func.blocks[0], QirBlock)
+    assert func.blocks[0].name == "entry"
+    instr = func.blocks[0].instructions[0]
+    assert isinstance(instr, QirRtCallInstr)
+    assert instr.func_name == "__quantum__rt__string_create"
+    assert isinstance(instr.func_args[0], QirGlobalStringConstant)
+    assert mod.get_global_string_value(instr.func_args[0]) == "Hello World!"
+
 def test_parser_internals():
     mod = module_from_bitcode("tests/teleportchain.baseprofile.bc")
     func_name = "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
