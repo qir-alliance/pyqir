@@ -1,0 +1,33 @@
+[bans]
+# Lint level for when multiple versions of the same crate are detected
+multiple-versions = "warn"
+# Lint level for when a crate version requirement is `*`
+wildcards = "warn"
+
+[advisories]
+# The lint level for security vulnerabilities
+vulnerability = "deny"
+# The lint level for unmaintained crates
+unmaintained = "warn"
+
+[licenses]
+unlicensed = "deny"
+copyleft = "deny"
+default = "deny"
+confidence-threshold = 1.0
+
+# List of explicitly allowed licenses
+# See https://spdx.org/licenses/ for list of possible licenses
+# [possible values: any SPDX 3.11 short identifier (+ optional exception)].
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-3-Clause",
+    "MIT",
+]
+
+[sources.allow-org]
+# github.com organizations to allow git sources for
+github = [
+    "TheDan64",
+]

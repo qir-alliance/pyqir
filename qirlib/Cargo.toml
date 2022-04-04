@@ -1,6 +1,7 @@
 [package]
 name = "qirlib"
 version = "0.3.0"
+license = "MIT"
 edition = "2018"
 description = "Base Profile QIR library"
 
@@ -8,7 +9,6 @@ description = "Base Profile QIR library"
 llvm-sys = "110"
 inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["llvm11-0", "target-x86"] }
 log = "0.4.14"
-libloading = "0.7.0"
 cty="0.2.1"
 rand="0.8.4"
 base64 = "0.13.0"

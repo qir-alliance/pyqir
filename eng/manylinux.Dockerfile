@@ -9,17 +9,9 @@ ENV PATH /root/.cargo/bin:$PATH
 RUN curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 WORKDIR /tmp
-RUN curl -SsL https://github.com/PyO3/maturin/archive/refs/tags/v0.11.1.tar.gz -o v0.11.1.tar.gz && \
-    tar -xz -f ./v0.11.1.tar.gz
 
-RUN mv ./maturin-0.11.1 /maturin
-
-# Manually update the timestamps as ADD keeps the local timestamps and cargo would then believe the cache is fresh
-RUN touch /maturin/src/lib.rs /maturin/src/main.rs
-
-RUN cargo rustc --bin maturin --manifest-path /maturin/Cargo.toml --release -- -C link-arg=-s \
-    && mv /maturin/target/release/maturin /usr/bin/maturin \
-    && rm -rf /maturin
+# Temporary workaround installing beta for license/notice support
+RUN cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12-beta.2
 
 FROM quay.io/pypa/manylinux2014_x86_64
 
@@ -33,7 +25,7 @@ RUN curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
     && python3 -m pip install --no-cache-dir cffi \
     && mkdir /io
 
-COPY --from=builder /usr/bin/maturin /usr/bin/maturin
+COPY --from=builder /root/.cargo/bin/maturin /usr/bin/maturin
 
 WORKDIR /io
 
