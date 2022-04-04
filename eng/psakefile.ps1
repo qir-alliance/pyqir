@@ -450,22 +450,12 @@ task update-noticefiles {
     # https://github.com/EmbarkStudios/cargo-about
     $config = Join-Path $repo.root notice.toml
     $template = Join-Path $repo.root notice.hbs
-    Invoke-LoggedCommand -wd $pyqir.parser.dir {
-        $notice = Join-Path $pyqir.parser.dir NOTICE-WHEEL.txt
-        cargo about generate --config $config --all-features --output-file $notice $template
-        $contents = Get-Content -Raw $notice
-        [System.Web.HttpUtility]::HtmlDecode($contents) | Out-File $notice
-    }
-    Invoke-LoggedCommand -wd $pyqir.generator.dir {
-        $notice = Join-Path $pyqir.generator.dir NOTICE-WHEEL.txt
-        cargo about generate --config $config --all-features --output-file $notice $template
-        $contents = Get-Content -Raw $notice
-        [System.Web.HttpUtility]::HtmlDecode($contents) | Out-File $notice
-    }
-    Invoke-LoggedCommand -wd $pyqir.evaluator.dir {
-        $notice = Join-Path $pyqir.evaluator.dir NOTICE-WHEEL.txt
-        cargo about generate --config $config --all-features --output-file $notice $template
-        $contents = Get-Content -Raw $notice
-        [System.Web.HttpUtility]::HtmlDecode($contents) | Out-File $notice
+    foreach ($project in @($pyqir.parser.dir, $pyqir.generator.dir, $pyqir.evaluator.dir)) {
+        Invoke-LoggedCommand -wd $project {
+            $notice = Join-Path $project NOTICE-WHEEL.txt
+            cargo about generate --config $config --all-features --output-file $notice $template
+            $contents = Get-Content -Raw $notice
+            [System.Web.HttpUtility]::HtmlDecode($contents) | Out-File $notice
+        }
     }
 }
