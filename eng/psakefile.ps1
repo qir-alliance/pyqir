@@ -440,16 +440,31 @@ task check-licenses {
     }
 }
 
-task update-noticefile {
-    # use cargo-about to generate a notice file
+task update-noticefiles {
+    # use cargo-about to generate a notice files
+    # notice files are only for wheel distributions
+    # as no bundled sources are in the sdist.
+
     # llvm special license is already in the template
     # as it is a hidden transitive dependency.
     # https://github.com/EmbarkStudios/cargo-about
     $config = Join-Path $repo.root notice.toml
     $template = Join-Path $repo.root notice.hbs
-    $notice = Join-Path $repo.root NOTICE.txt
-    Invoke-LoggedCommand -wd $repo.root {
-        cargo about generate --config $config --workspace --all-features --output-file $notice $template
+    Invoke-LoggedCommand -wd $pyqir.parser.dir {
+        $notice = Join-Path $pyqir.parser.dir NOTICE-WHEEL.txt
+        cargo about generate --config $config --all-features --output-file $notice $template
+        $contents = Get-Content -Raw $notice
+        [System.Web.HttpUtility]::HtmlDecode($contents) | Out-File $notice
+    }
+    Invoke-LoggedCommand -wd $pyqir.generator.dir {
+        $notice = Join-Path $pyqir.generator.dir NOTICE-WHEEL.txt
+        cargo about generate --config $config --all-features --output-file $notice $template
+        $contents = Get-Content -Raw $notice
+        [System.Web.HttpUtility]::HtmlDecode($contents) | Out-File $notice
+    }
+    Invoke-LoggedCommand -wd $pyqir.evaluator.dir {
+        $notice = Join-Path $pyqir.evaluator.dir NOTICE-WHEEL.txt
+        cargo about generate --config $config --all-features --output-file $notice $template
         $contents = Get-Content -Raw $notice
         [System.Web.HttpUtility]::HtmlDecode($contents) | Out-File $notice
     }

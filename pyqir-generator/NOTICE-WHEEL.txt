@@ -3,6 +3,11 @@ Do Not Translate or Localize
 
 This software incorporates material from third parties.
 -------------------------------------------------------------------
+This work contains work released under the following licenses:
+- Apache-2.0 (12)
+- MIT (12)
+- BSD-3-Clause (1)
+- Apache-2.0 WITH LLVM-exception (1)
 
 inkwell 0.1.0 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/TheDan64/inkwell
@@ -5155,7 +5160,7 @@ limitations under the License.
 
 
 
-quote 1.0.16 - SPDX: Apache-2.0 - Apache License 2.0
+quote 1.0.17 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/dtolnay/quote
 
                               Apache License
@@ -6190,7 +6195,7 @@ limitations under the License.
 
 
 
-syn 1.0.89 - SPDX: Apache-2.0 - Apache License 2.0
+syn 1.0.90 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/dtolnay/syn
 
                               Apache License
@@ -7200,7 +7205,7 @@ END OF TERMS AND CONDITIONS
 
 
 
-getrandom 0.2.5 - SPDX: Apache-2.0 - Apache License 2.0
+getrandom 0.2.6 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/rust-random/getrandom
 
                               Apache License
@@ -9828,33 +9833,6 @@ SOFTWARE.
 
 
 
-llvm-ir 0.8.1 - SPDX: MIT - MIT License
-https://github.com/cdisselkoen/llvm-ir
-
-MIT License
-
-Copyright (c) 2019 Craig Disselkoen
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-
-
 radium 0.7.0 - SPDX: MIT - MIT License
 https://github.com/bitvecto-rs/radium
 
@@ -9909,37 +9887,7 @@ SOFTWARE.
 
 
 
-pyqir-evaluator 0.3.1-alpha - SPDX: MIT - MIT License
-https://github.com/qir-alliance/pyqir
-
-MIT License
-
-Copyright (c) <year> <copyright holders>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
-
 pyqir-generator 0.3.1-alpha - SPDX: MIT - MIT License
-https://github.com/qir-alliance/pyqir
-
-MIT License
-
-Copyright (c) <year> <copyright holders>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
-
-pyqir-parser 0.3.1-alpha - SPDX: MIT - MIT License
 https://github.com/qir-alliance/pyqir
 
 MIT License

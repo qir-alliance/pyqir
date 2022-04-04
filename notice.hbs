@@ -3,6 +3,10 @@ Do Not Translate or Localize
 
 This software incorporates material from third parties.
 -------------------------------------------------------------------
+This work contains work released under the following licenses:
+{{#each overview}}- {{id}} ({{count}})
+{{/each}}
+- Apache-2.0 WITH LLVM-exception (1)
 
 {{#each licenses}}{{#each used_by}}{{crate.name}} {{crate.version}} - SPDX: {{../id}} - {{../name}}
 {{#if crate.repository}}{{crate.repository}}{{else}}https://crates.io/crates/{{crate.name}}{{/if}}
