@@ -56,6 +56,9 @@ Task cargo-clippy -Depends init {
 }
 
 Task init {
+    if ((Test-CI) -and !$IsLinux) {
+        cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12-beta.2
+    }
     Restore-ConfigTomlWithLlvmInfo
     Test-Prerequisites
     Initialize-Environment
