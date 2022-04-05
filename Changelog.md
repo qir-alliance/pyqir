@@ -4,9 +4,9 @@
 
 ## [0.3.2a1] - 2022-04-05
 
-* Add licensing checks and notice file by @idavis in https://github.com/qir-alliance/pyqir/pull/94
-* Updating version to 0.3.2a1 by @idavis in https://github.com/qir-alliance/pyqir/pull/95
-* Lock wheel package dependencies by @idavis in https://github.com/qir-alliance/pyqir/pull/96
+- Add licensing checks and notice file by @idavis in https://github.com/qir-alliance/pyqir/pull/94
+- Updating version to 0.3.2a1 by @idavis in https://github.com/qir-alliance/pyqir/pull/95
+- Lock wheel package dependencies by @idavis in https://github.com/qir-alliance/pyqir/pull/96
 
 ## [0.3.1a1] - 2022-03-24
 
