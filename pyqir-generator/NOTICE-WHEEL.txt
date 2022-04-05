@@ -9887,7 +9887,7 @@ SOFTWARE.
 
 
 
-pyqir-generator 0.3.1-alpha - SPDX: MIT - MIT License
+pyqir-generator 0.3.2-alpha - SPDX: MIT - MIT License
 https://github.com/qir-alliance/pyqir
 
 MIT License
