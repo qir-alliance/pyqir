@@ -1433,7 +1433,7 @@ limitations under the License.
 
 
 
-lock_api 0.4.6 - SPDX: Apache-2.0 - Apache License 2.0
+lock_api 0.4.7 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/Amanieu/parking_lot
 
                               Apache License
@@ -5558,7 +5558,7 @@ SOFTWARE.
 
 
 
-redox_syscall 0.2.12 - SPDX: MIT - MIT License
+redox_syscall 0.2.13 - SPDX: MIT - MIT License
 https://gitlab.redox-os.org/redox-os/syscall
 
 Copyright (c) 2017 Redox OS Developers
