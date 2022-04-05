@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.3.2a1] - 2022-04-05
+
+* Add licensing checks and notice file by @idavis in https://github.com/qir-alliance/pyqir/pull/94
+* Updating version to 0.3.2a1 by @idavis in https://github.com/qir-alliance/pyqir/pull/95
+* Lock wheel package dependencies by @idavis in https://github.com/qir-alliance/pyqir/pull/96
+
 ## [0.3.1a1] - 2022-03-24
 
 - Correct a few more typos and update docs by @LaurentAjdnik in https://github.com/qir-alliance/pyqir/pull/86
@@ -58,7 +64,8 @@
 
 - Initial Release
 
-[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.3.1a1...HEAD
+[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.3.2a1...HEAD
+[0.3.2a1]: https://github.com/qir-alliance/pyqir/compare/v0.3.1a1...v0.3.2a1
 [0.3.1a1]: https://github.com/qir-alliance/pyqir/compare/v0.3.0a1...v0.3.1a1
 [0.3.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.2.0a1...v0.3.0a1
 [0.2.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.1.0a1...v0.2.0a1
