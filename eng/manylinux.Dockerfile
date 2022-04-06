@@ -32,6 +32,8 @@ ARG USERNAME=ciuser
 
 WORKDIR /tmp
 
+USER $USERNAME
+
 # Temporary workaround installing beta for license/notice support
 RUN cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12-beta.2
 
@@ -49,7 +51,7 @@ RUN python3.6 -m pip install --no-cache-dir cffi \
     && python3.10 -m pip install --no-cache-dir cffi \
     && mkdir /io
 
-COPY --from=builder /root/.cargo/bin/maturin /usr/bin/maturin
+COPY --from=builder ${CARGO_HOME}/bin/maturin /usr/bin/maturin
 
 WORKDIR /io
 
@@ -66,5 +68,3 @@ RUN conda init && \
     cp /usr/local/miniconda3/bin/clang-11 /usr/local/miniconda3/bin/clang++-11
 
 RUN conda run python -m pip install -U tox
-
-USER $USERNAME
