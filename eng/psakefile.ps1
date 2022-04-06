@@ -147,6 +147,12 @@ function Test-AllowedToDownloadLlvm {
 }
 
 task init {
+    # Temorary, install maturin v0.12.12-beta.2 which has the
+    # PEP 639 license fixes.
+    if ((Test-CI) -and !$IsLinux) {
+        cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12-beta.2
+    }
+    
     # if an external LLVM is specified, make sure it exist and
     # skip further bootstapping
     if (Test-Path env:\QIRLIB_LLVM_EXTERNAL_DIR) {
@@ -423,4 +429,33 @@ function install-llvm {
             Remove-Item -Path Env:QIRLIB_CACHE_DIR
         }
     }   
+}
+
+task check-licenses {
+    # Uses cargo-deny to verify that the linked components
+    # only use approved licenses
+    # https://github.com/EmbarkStudios/cargo-deny
+    Invoke-LoggedCommand -wd $repo.root {
+        cargo deny check licenses
+    }
+}
+
+task update-noticefiles {
+    # use cargo-about to generate a notice files
+    # notice files are only for wheel distributions
+    # as no bundled sources are in the sdist.
+
+    # llvm special license is already in the template
+    # as it is a hidden transitive dependency.
+    # https://github.com/EmbarkStudios/cargo-about
+    $config = Join-Path $repo.root notice.toml
+    $template = Join-Path $repo.root notice.hbs
+    foreach ($project in @($pyqir.parser.dir, $pyqir.generator.dir, $pyqir.evaluator.dir)) {
+        Invoke-LoggedCommand -wd $project {
+            $notice = Join-Path $project NOTICE-WHEEL.txt
+            cargo about generate --config $config --all-features --output-file $notice $template
+            $contents = Get-Content -Raw $notice
+            [System.Web.HttpUtility]::HtmlDecode($contents) | Out-File $notice
+        }
+    }
 }

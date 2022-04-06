@@ -1,2 +1,3 @@
 include pyproject.toml Cargo.toml
 recursive-include src *
+exclude NOTICE-WHEEL.txt

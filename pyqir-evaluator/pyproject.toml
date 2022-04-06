@@ -1,8 +1,8 @@
 [project]
 name = "pyqir-evaluator"
-version = "0.3.1a1"
+version = "0.3.2a1"
 requires-python = ">=3.6"
 
 [build-system]
-requires = ["maturin>=0.12,<0.13"]
+requires = ["maturin>=0.12.12b2,<0.13"]
 build-backend = "maturin"
