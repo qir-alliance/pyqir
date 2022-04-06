@@ -3,7 +3,7 @@
 
 FROM quay.io/pypa/manylinux2014_x86_64 as base-with-rust
 
-ARG USERNAME=ciuser
+ARG USERNAME=runner
 ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
 ARG RUST_VERSION=1.57.0

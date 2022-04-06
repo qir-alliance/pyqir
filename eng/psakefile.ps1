@@ -83,10 +83,10 @@ Task pyqir-tests -Depends init {
         Write-BuildLog "Running container image:"
         $ioVolume = "$($srcPath):/io"
         $llvmVolume = "$($installationDirectory):/usr/lib/llvm"
-        $userSpec = ""
+        $userName = [Environment]::UserName
 
         Invoke-LoggedCommand {
-            docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output python -m tox -e test
+            docker run --rm --user $userName -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output python -m tox -e test
         }
     }
     else {
@@ -153,6 +153,9 @@ task init {
         cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12-beta.2
     }
     
+    # qirlib has this logic built in when compiled on its own
+    # but we must have LLVM installed prior to the wheels being built.
+    
     # if an external LLVM is specified, make sure it exist and
     # skip further bootstapping
     if (Test-Path env:\QIRLIB_LLVM_EXTERNAL_DIR) {
@@ -194,9 +197,10 @@ task install-llvm-from-source {
         $srcPath = $repo.root
         $ioVolume = "$($srcPath):/io"
         $llvmVolume = "$($installationDirectory):/usr/lib/llvm"
-        $userSpec = ""
+        $userName = [Environment]::UserName
+
         Invoke-LoggedCommand {
-            docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e QIRLIB_CACHE_DIR="/usr/lib/llvm" -w /io/qirlib manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --no-default-features --features "build-llvm,no-llvm-linking" -vv
+            docker run --rm --user $userName -v $ioVolume -v $llvmVolume -e QIRLIB_CACHE_DIR="/usr/lib/llvm" -w /io/qirlib manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --no-default-features --features "build-llvm,no-llvm-linking" -vv
         }
     }
     else {
@@ -212,8 +216,10 @@ task package-llvm {
         Build-ContainerImage $repo.root
         $srcPath = $repo.root
         $ioVolume = "$($srcPath):/io"
+        $userName = [Environment]::UserName
+
         Invoke-LoggedCommand {
-            docker run --rm $userSpec -v $ioVolume -w /io/qirlib -e QIRLIB_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release  --no-default-features --features package-llvm -vv
+            docker run --rm --user $userName -v $ioVolume -w /io/qirlib -e QIRLIB_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release  --no-default-features --features package-llvm -vv
         }
     }
     else {
@@ -279,22 +285,22 @@ function Build-PyQIR([string]$project) {
             Write-BuildLog "Running container image:"
             $ioVolume = "$($srcPath):/io"
             $llvmVolume = "$($installationDirectory):/usr/lib/llvm"
-            $userSpec = ""
+            $userName = [Environment]::UserName
 
             Invoke-LoggedCommand {
-                docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output cargo test --release --lib -vv -- --nocapture
+                docker run --rm --user $userName -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output cargo test --release --lib -vv -- --nocapture
             }
 
             Invoke-LoggedCommand {
-                docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output /usr/bin/maturin build --release
+                docker run --rm --user $userName -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output /usr/bin/maturin build --release
             }
 
             Invoke-LoggedCommand {
-                docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output python -m tox -e test
+                docker run --rm --user $userName -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output python -m tox -e test
             }
             
             Invoke-LoggedCommand {
-                docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output cargo test --release -vv -- --nocapture
+                docker run --rm --user $userName -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output cargo test --release -vv -- --nocapture
             }
         }
 
