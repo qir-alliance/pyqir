@@ -1,10 +1,9 @@
 name: LLVM Weekly
+
+# Compile LLVM weekly or on demand
+
 on:
   workflow_dispatch:
-  push:
-    branches:
-    - main
-  pull_request:
   schedule:
     - cron: '0 0 * * 0'
 
