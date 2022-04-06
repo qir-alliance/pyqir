@@ -1,7 +1,6 @@
 [package]
 name = "qirlib"
 version = "0.3.0"
-license = "MIT"
 edition = "2018"
 license = "MIT"
 description = "Base Profile QIR library"
