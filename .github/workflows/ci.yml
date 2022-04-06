@@ -61,6 +61,26 @@ jobs:
       - name: Windows - Install LLVM 11.1.0
         run: choco install llvm --version=11.1.0 --allow-downgrade
         if: ${{ matrix.config.os == 'windows-2019' }}
+      - name: Get Timestamp
+        id: timestamp
+        run: Write-Host "::set-output name=timestamp::$([DateTime]::UtcNow.ToString('o'))"
+        shell: pwsh
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ccache
+          key: ${{ matrix.config.os }}-ccache-${{ steps.timestamp.outputs.timestamp }}
+          restore-keys: |
+              ${{ matrix.config.os }}-ccache-
+        if: ${{ matrix.config.os != 'windows-2019' }}
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/sccache
+          key: ${{ matrix.config.os }}-sccache-${{ steps.timestamp.outputs.timestamp }}
+          restore-keys: |
+              ${{ matrix.config.os }}-sccache-
+        if: ${{ matrix.config.os == 'windows-2019' }}
       - name: "Build all"
         run: ./build.ps1
         shell: pwsh
