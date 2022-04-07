@@ -13,7 +13,7 @@ env:
   CARGO_TERM_COLOR: always
   QIRLIB_DOWNLOAD_LLVM: false
   CCACHE_DIR: ~/.ccache
-  SCCACHE_DIR: ~/.cache/sccache
+  SCCACHE_DIR: ~\.cache\sccache
 
 jobs:
   build:
