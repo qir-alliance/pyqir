@@ -163,7 +163,7 @@ task init {
     }
     else {
         $packagePath = Resolve-InstallationDirectory
-        if (Test-Path $packagePath) {
+        if (Test-Path (Join-Path $packagePath "bin")) {
             Write-BuildLog "LLVM target is already installed."
             # LLVM is already downloaded
             Use-LlvmInstallation $packagePath
@@ -195,12 +195,42 @@ task install-llvm-from-source {
         Use-LlvmInstallation $installationDirectory
         Build-ContainerImage $repo.root
         $srcPath = $repo.root
-        $ioVolume = "$($srcPath):/io"
-        $llvmVolume = "$($installationDirectory):/usr/lib/llvm"
-        $userName = [Environment]::UserName
 
+        # For any of the volumes mapped, if the dir doesn't exist,
+        # docker will create it and it will be owned by root and
+        # the caching/install breaks with permission errors.
+        # New-Item is idempotent so we don't need to check for existence
+
+        $ioVolume = "$($srcPath):/io"
+        $llvmVolume = "$($installationDirectory):/llvm"
+        New-Item -ItemType Directory -Force $installationDirectory | Out-Null
+        
+        $userName = [Environment]::UserName
+        $cacheMount = ""
+        $cacheEnv = ""
+        if (Test-CommandExists("ccache")) {
+            # we need to map the local cache dir into the
+            # container. If the env var isn't set, ask ccache
+            ccache --show-config
+            $cacheDir = ""
+            if (Test-Path env:\CCACHE_DIR) {
+                $cacheDir = $Env:CCACHE_DIR
+            }
+            else {
+                $cacheDir = exec { ccache -k cache_dir }
+            }
+            if (![string]::IsNullOrWhiteSpace($cacheDir)) {
+                New-Item -ItemType Directory -Force $cacheDir | Out-Null
+                
+                $cacheDir = Resolve-Path $cacheDir
+                # mount the cache outside of any runner mappings
+                $cacheMount = @("-v", "$($cacheDir):/ccache")
+                $cacheEnv = @("-e", "CCACHE_DIR=`"/ccache`"")
+            }
+        }
+        
         Invoke-LoggedCommand {
-            docker run --rm --user $userName -v $ioVolume -v $llvmVolume -e QIRLIB_CACHE_DIR="/usr/lib/llvm" -w /io/qirlib manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --no-default-features --features "build-llvm,no-llvm-linking" -vv
+            docker run --rm --user $userName -v $ioVolume -v $llvmVolume @cacheMount @cacheEnv -e QIRLIB_CACHE_DIR="$installationDirectory" -e QIRLIB_CACHE_DIR="/llvm" -w /io/qirlib manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --no-default-features --features "build-llvm,no-llvm-linking" -vv
         }
     }
     else {
