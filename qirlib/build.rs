@@ -61,7 +61,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=config.cmake");
     println!("cargo:rerun-if-changed=CMakeLists.txt");
-    
+
     let install_dir = get_llvm_install_dir();
     println!("cargo:rerun-if-changed={:?}", install_dir);
 
