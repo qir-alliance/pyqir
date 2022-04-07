@@ -12,7 +12,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   QIRLIB_DOWNLOAD_LLVM: false
-  LLVM_CCACHE_DIR: ~/.ccache
+  CCACHE_DIR: ~/.ccache
   SCCACHE_DIR: ~/.cache/sccache
 
 jobs:
@@ -72,7 +72,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ${{ env.LLVM_CCACHE_DIR }}
+            ${{ env.CCACHE_DIR }}
           key: ${{ matrix.config.os }}-ccache-${{ steps.timestamp.outputs.timestamp }}
           restore-keys: |
               ${{ matrix.config.os }}-ccache-
