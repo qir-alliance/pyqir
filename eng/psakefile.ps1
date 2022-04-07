@@ -189,7 +189,27 @@ task install-llvm-from-archive {
     install-llvm $pyqir.qirlib.dir "download"
 }
 
+function Write-CacheStats {
+    if (Test-CommandExists("ccache")) {
+        Write-BuildLog "ccache config:"
+        & { ccache --show-config } -ErrorAction SilentlyContinue
+        Write-BuildLog "ccache stats:"
+        & { ccache --show-stats } -ErrorAction SilentlyContinue
+    }
+    if (Test-CommandExists("sccache")) {
+        Write-BuildLog "sccache config/stats:"
+        & { sccache --show-stats } -ErrorAction SilentlyContinue
+    }
+}
+
 task install-llvm-from-source {
+    Write-CacheStats
+    if (Test-CommandExists("sccache")) {
+        Write-BuildLog "Starting sccache server"
+        & { sccache --start-server } -ErrorAction SilentlyContinue
+        Write-BuildLog "Started sccache server"
+    }
+
     if (Test-RunInContainer) {
         $installationDirectory = Resolve-InstallationDirectory
         Use-LlvmInstallation $installationDirectory
@@ -208,10 +228,12 @@ task install-llvm-from-source {
         $userName = [Environment]::UserName
         $cacheMount = ""
         $cacheEnv = ""
+        # only ccache is supported in the manylinux container for now.
+        # we would need a way to specify which cache is used to
+        # support both.
         if (Test-CommandExists("ccache")) {
             # we need to map the local cache dir into the
             # container. If the env var isn't set, ask ccache
-            ccache --show-config
             $cacheDir = ""
             if (Test-Path env:\CCACHE_DIR) {
                 $cacheDir = $Env:CCACHE_DIR
@@ -237,19 +259,11 @@ task install-llvm-from-source {
         if ($IsWindows) {
             Include vcvars.ps1
         }
-        if (Test-CommandExists("sccache")) {
-            Write-BuildLog "Starting sccache server"
-            & { sccache --start-server } -ErrorAction SilentlyContinue
-            Write-BuildLog "Started sccache server"
-            Write-BuildLog "sccache config:"
-            & { sccache -s } -ErrorAction SilentlyContinue
-        }
-        elseif (Test-CommandExists("ccache")) {
-            Write-BuildLog "ccache config:"
-            & { ccache --show-config } -ErrorAction SilentlyContinue
-        }
+        
         install-llvm $pyqir.qirlib.dir "build"
     }
+
+    Write-CacheStats
 }
 
 task package-llvm {
