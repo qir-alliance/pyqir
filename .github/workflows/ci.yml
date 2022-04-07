@@ -12,8 +12,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
   QIRLIB_DOWNLOAD_LLVM: false
-  LLVM_CCACHE_DIR: ~/.ccache
-  SCCACHE_DIR: ~/.cache/sccache
 
 jobs:
   build:
@@ -26,17 +24,23 @@ jobs:
           - {
               os: "ubuntu-20.04",
               arch: "amd64",
-              env: {},
+              env: {
+                "LLVM_CCACHE_DIR": ${{ github.workspace }}/.ccache
+              },
             }
           - {
               os: "windows-2019",
               arch: "amd64",
-              env: {},
+              env: {
+                "SCCACHE_DIR": ${{ github.workspace }}\.sccache
+              },
             }
           - {
               os: "macOS-10.15",
               arch: "amd64",
-              env: {},
+              env: {
+                "LLVM_CCACHE_DIR": ${{ github.workspace }}/.ccache
+              },
             }
     steps:
       - uses: actions/checkout@v2
@@ -72,7 +76,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/.ccache
+            ${{ env.LLVM_CCACHE_DIR }}
           key: ${{ matrix.config.os }}-ccache-${{ steps.timestamp.outputs.timestamp }}
           restore-keys: |
               ${{ matrix.config.os }}-ccache-
@@ -81,7 +85,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/.cache/sccache
+            ${{ env.SCCACHE_DIR }}
           key: ${{ matrix.config.os }}-sccache-${{ steps.timestamp.outputs.timestamp }}
           restore-keys: |
               ${{ matrix.config.os }}-sccache-
