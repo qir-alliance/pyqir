@@ -237,6 +237,17 @@ task install-llvm-from-source {
         if ($IsWindows) {
             Include vcvars.ps1
         }
+        if (Test-CommandExists("sccache")) {
+            Write-BuildLog "Starting sccache server"
+            & { sccache --start-server } -ErrorAction SilentlyContinue
+            Write-BuildLog "Started sccache server"
+            Write-BuildLog "sccache config:"
+            & { sccache -s } -ErrorAction SilentlyContinue
+        }
+        elseif (Test-CommandExists("ccache")) {
+            Write-BuildLog "ccache config:"
+            & { ccache --show-config } -ErrorAction SilentlyContinue
+        }
         install-llvm $pyqir.qirlib.dir "build"
     }
 }
