@@ -12,6 +12,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   QIRLIB_DOWNLOAD_LLVM: false
+  LLVM_CCACHE_DIR: ~/.ccache
+  SCCACHE_DIR: ~/.cache/sccache
 
 jobs:
   build:
@@ -24,23 +26,17 @@ jobs:
           - {
               os: "ubuntu-20.04",
               arch: "amd64",
-              env: {
-                "LLVM_CCACHE_DIR": ${{ github.workspace }}/.ccache
-              },
+              env: {},
             }
           - {
               os: "windows-2019",
               arch: "amd64",
-              env: {
-                "SCCACHE_DIR": ${{ github.workspace }}\.sccache
-              },
+              env: {},
             }
           - {
               os: "macOS-10.15",
               arch: "amd64",
-              env: {
-                "LLVM_CCACHE_DIR": ${{ github.workspace }}/.ccache
-              },
+              env: {},
             }
     steps:
       - uses: actions/checkout@v2
