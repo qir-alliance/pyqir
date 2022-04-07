@@ -42,16 +42,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
-      - name: Cargo cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ matrix.config.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Linux - Install build dependencies, ccache, and update PATH to use linked versions of gcc, cc, etc
         run: sudo apt-get install -y ccache ninja-build
         if: ${{ matrix.config.os == 'ubuntu-20.04' }}
