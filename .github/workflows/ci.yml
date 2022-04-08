@@ -68,7 +68,7 @@ jobs:
               ${{ matrix.config.os }}-ccache-
         if: ${{ matrix.config.os != 'windows-2019' }}
       - name: SCCACHE cache
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: |
             ${{ env.SCCACHE_DIR }}
