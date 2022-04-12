@@ -8,7 +8,7 @@ build = "build.rs"
 readme = "README.md"
 homepage = "https://github.com/qir-alliance/pyqir"
 repository = "https://github.com/qir-alliance/pyqir"
-rust-version = "1.57"
+rust-version = "1.56"
 
 [dependencies]
 llvm-sys = "110"

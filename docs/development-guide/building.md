@@ -10,12 +10,15 @@
   (Core)](https://github.com/powershell/powershell#get-powershell)
 - [LLVM/Clang 11.1.0](https://llvm.org/) - See [Installing
   LLVM](#installing-llvm)
-- [CMake 3.10+](https://github.com/Kitware/CMake/releases/tag/v3.10.3)
-- [Ninja 1.10.0+](https://ninja-build.org/)
+- If compiling LLVM from source:
+  - [CMake 3.10+](https://github.com/Kitware/CMake/releases/tag/v3.10.3)
+  - [Ninja 1.10.0+](https://ninja-build.org/)
 
 ### Optional
 
-- [sccache](https://github.com/mozilla/sccache)
+- If building LLVM from source, either of these is highly recommended:
+  - [sccache](https://github.com/mozilla/sccache)
+  - [ccache](https://github.com/ccache/ccache)
 
 ### Linux (Ubuntu)
 
@@ -134,37 +137,24 @@ Two targets are available for tox:
 
 ### Environment Variables
 
-Building `qirlib` can be done with feature flags which will either:
+For those directly consuming `qirlib`, refer to the
+[Environment variables](https://github.com/qir-alliance/pyqir/blob/main/qirlib/README.md#environment-variables)
+section of it's README as the following constraints do not apply.
 
-- Download (and install) a preexisting LLVM build configured via environment variables
-- Build LLVM from source and install it
-- Build LLVM from source and package it
+The Python PyQIR projects require LLVM to already be installed prior to build.
+The PowerShell scripts will look at the the `qirlib`
+[Environment variables](https://github.com/qir-alliance/pyqir/blob/main/qirlib/README.md#environment-variables)
+and locate, build, or install LLVM as specified by the environment. The
+default order is:
 
-- `QIRLIB_LLVM_EXTERNAL_DIR`
-  - Path to where LLVM is already installed by user. Useful if you want to use
-  your own LLVM builds for testing.
-- `QIRLIB_DOWNLOAD_LLVM`
-  - Indicator to whether the build should download LLVM cached builds.
-  - Build will download LLVM if needed unless this variable is defined and set to
-    `false`
-- `QIRLIB_LLVM_BUILDS_URL`
-  - Url from where LLVM builds will be downloaded.
-  - Default: `https://msquantumpublic.blob.core.windows.net/llvm-builds`
-- `QIRLIB_CACHE_DIR`
-  - Root installation path for LLVM builds (mapped to `CMAKE_INSTALL_PREFIX`)
-  - Default if not specified:
-  - Linux/Mac: `$HOME/.pyqir`
-  - Windows: `$HOME\.pyqir`
-- `QIRLIB_LLVM_TAG`
-  - LLVM repo tag to fetch when building LLVM from source.
-- `QIRLIB_LLVM_PKG_NAME`
-  - Optional name of package to be downloaded/created.
-- `LLVM_SYS_110_PREFIX`
-  - Required by `llvm-sys` and will be set to the version of LLVM used for
-  configuration.
-  - Version dependent and will change as LLVM is updated. (`LLVM_SYS_120_PREFIX`,
-  `LLVM_SYS_130_PREFIX`, etc)
-  - Not needed if you have a working LLVM installation on the path.
+- Use specific LLVM installation if specified
+- Locate existing LLVM installation on `PATH`
+- Download LLVM if allowed from specified source
+- Build LLVM from source
+
+Afterward, the build configures the `LLVM_SYS_*_PREFIX` environment variable
+according to what the environment has configured. This will allow LLVM to
+be linked into the rest of the build.
 
 ### Packaging
 

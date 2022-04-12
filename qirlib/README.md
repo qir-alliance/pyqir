@@ -6,7 +6,7 @@ is also the native implementation behind the PyQIR packages:
 
 - [**pyqir-generator**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-generator)
 - [**pyqir-evaluator**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-evaluator)
-- [**pyqir-parser**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-parser):
+- [**pyqir-parser**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-parser)
 
 ## Requirements
 
@@ -29,7 +29,7 @@ specified with an environment variable.
 - Build LLVM from source
 - Download a preexisting LLVM build
 
-Supported features are following:
+Supported cargo features are following:
 
 | Feature                 | Link type               | Requirements        | Description                                            |
 |:------------------------|:------------------------|:--------------------|:-------------------------------------------------------|
@@ -46,6 +46,47 @@ Supported features are following:
   - `external-llvm-linking`
   - `no-llvm-linking`
 - `build-llvm` and `download-llvm` cannot be used with `external-llvm-linking`
+
+### Environment variables
+
+Building `qirlib` can be done with crate features which will either:
+
+- Download (and install) a preexisting LLVM build configured via environment variables (the [Cargo.toml [env] section](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env) can also be used)
+- Build LLVM from source and install it
+- Build LLVM from source and package it
+
+- `QIRLIB_LLVM_EXTERNAL_DIR`
+  - Path to where LLVM is already installed by user. Useful if you want to use
+  your own LLVM builds for testing.
+- `QIRLIB_DOWNLOAD_LLVM`
+  - Indicator to whether the build should download LLVM cached builds.
+  - Build will download LLVM if needed unless this variable is defined and set to
+    `false`
+- `QIRLIB_LLVM_BUILDS_URL`
+  - Url from where LLVM builds will be downloaded.
+  - There is no default value provided. You can use the `package-llvm` feature
+    to create an archive and upload it along with SHA256 checksum file. The
+    checksum file must have the same file name with a file of the same name
+    with `.sha256` appended. The build will download both files and verify
+    that the checksum in the the file matches the downloaded archive.
+- `QIRLIB_CACHE_DIR`
+  - Root installation path for LLVM builds (mapped to `CMAKE_INSTALL_PREFIX`)
+  - Default if not specified when building from source:
+    - `qirlib`'s target `OUT_DIR`/llvm
+  - Default if not specified when installing:
+    - Linux/Mac: `$HOME/.pyqir`
+    - Windows: `$HOME\.pyqir`
+- `QIRLIB_LLVM_TAG`
+  - LLVM repo tag to fetch when building LLVM from source.
+  - Default value: `llvmorg-11.1.0`
+- `QIRLIB_LLVM_PKG_NAME`
+  - Optional name of package to be downloaded/created.
+- `LLVM_SYS_110_PREFIX`
+  - Required by `llvm-sys` and will be set to the version of LLVM used for
+  configuration.
+  - Version dependent and will change as LLVM is updated. (`LLVM_SYS_120_PREFIX`,
+  `LLVM_SYS_130_PREFIX`, etc)
+  - Not needed if you have a working LLVM installation on the path.
 
 ### Using existing LLVM installation
 
