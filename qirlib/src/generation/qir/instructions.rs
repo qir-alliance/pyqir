@@ -38,10 +38,17 @@ fn get_result<'ctx>(
 ) -> PointerValue<'ctx> {
     // TODO: Panicking can be unfriendly to Python clients.
     // See: https://github.com/qir-alliance/pyqir/issues/31
-    results
-        .get(name)
-        .unwrap_or_else(|| panic!("Result {} not found.", name))
-        .unwrap_or_else(|| result::get_zero(generator))
+    if generator.use_static_result_alloc {
+        results
+            .get(name)
+            .unwrap_or_else(|| panic!("Result {} not found.", name))
+            .unwrap_or_else(|| get_result(generator, results, "__unused__"))
+    } else {
+        results
+            .get(name)
+            .unwrap_or_else(|| panic!("Result {} not found.", name))
+            .unwrap_or_else(|| result::get_zero(generator))
+    }
 }
 
 fn measure<'ctx>(
@@ -51,14 +58,24 @@ fn measure<'ctx>(
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
 ) {
-    // measure the qubit and save the result to a temporary value
-    let new_value = generator.emit_call_with_return(
-        generator.qis_m_body(),
-        &[get_qubit(qubits, qubit).into()],
-        target,
-    );
-
-    results.insert(target.to_owned(), Some(new_value.into_pointer_value()));
+    if generator.use_static_result_alloc {
+        // measure the qubit and save the result to a temporary value
+        generator.emit_void_call(
+            generator.qis_mz_body(),
+            &[
+                get_qubit(qubits, qubit).into(),
+                get_result(generator, results, target).into(),
+            ],
+        );
+    } else {
+        // measure the qubit and save the result to a temporary value
+        let new_value = generator.emit_call_with_return(
+            generator.qis_m_body(),
+            &[get_qubit(qubits, qubit).into()],
+            target,
+        );
+        results.insert(target.to_owned(), Some(new_value.into_pointer_value()));
+    }
 }
 
 fn controlled<'ctx>(

@@ -49,7 +49,12 @@ pub fn populate_context<'a>(
     model: &'a SemanticModel,
 ) -> Result<CodeGenerator<'a>, String> {
     let module = ctx.create_module(&model.name);
-    let generator = CodeGenerator::new(ctx, module)?;
+    let generator = CodeGenerator::new(
+        ctx,
+        module,
+        model.use_static_qubit_alloc,
+        model.use_static_result_alloc,
+    )?;
     build_entry_function(&generator, model)?;
     Ok(generator)
 }
@@ -58,7 +63,7 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
     add_external_functions(generator, model.external_functions.iter());
     let entry_point = qir::create_entry_point(generator.context, &generator.module);
 
-    if model.static_alloc {
+    if model.use_static_qubit_alloc {
         let num_qubits = format!("{}", model.qubits.len());
         let required_qubits = generator
             .context
@@ -70,10 +75,10 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
     generator.builder.position_at_end(entry);
 
     let qubits = write_qubits(model, generator);
-    let mut registers = write_registers(model);
+    let mut registers = write_registers(model, generator);
     write_instructions(model, generator, &qubits, &mut registers, entry_point);
 
-    if !model.static_alloc {
+    if !model.use_static_qubit_alloc {
         free_qubits(generator, &qubits);
     }
 
@@ -138,7 +143,7 @@ fn write_qubits<'ctx>(
     model: &SemanticModel,
     generator: &CodeGenerator<'ctx>,
 ) -> HashMap<String, BasicValueEnum<'ctx>> {
-    if model.static_alloc {
+    if generator.use_static_qubit_alloc {
         let mut qubits: HashMap<String, BasicValueEnum<'ctx>> = HashMap::new();
         for (id, qubit) in model.qubits.iter().enumerate() {
             let indexed_name = format!("{}{}", &qubit.name[..], qubit.index);
@@ -167,18 +172,55 @@ fn write_qubits<'ctx>(
     }
 }
 
-fn write_registers<'ctx>(model: &SemanticModel) -> HashMap<String, Option<PointerValue<'ctx>>> {
-    let mut registers = HashMap::new();
-    let number_of_registers = model.registers.len() as u64;
-    if number_of_registers > 0 {
-        for register in &model.registers {
-            for index in 0..register.size {
-                let name = format!("{}{}", register.name, index);
-                registers.insert(name, None);
+fn write_registers<'ctx>(
+    model: &SemanticModel,
+    generator: &CodeGenerator<'ctx>,
+) -> HashMap<String, Option<PointerValue<'ctx>>> {
+    if generator.use_static_result_alloc {
+        let mut registers: HashMap<String, Option<PointerValue<'ctx>>> = HashMap::new();
+        let mut id = 0;
+        let number_of_registers = model.registers.len() as u64;
+        if number_of_registers > 0 {
+            for register in &model.registers {
+                for index in 0..register.size {
+                    let indexed_name = format!("{}{}", register.name, index);
+                    let intptr = create_result_static_ptr(&indexed_name, generator, id);
+                    registers.insert(indexed_name, intptr.into());
+                    id = id + 1;
+                }
             }
         }
+        let indexed_name = "__unused__".to_owned();
+        let intptr = create_result_static_ptr(&indexed_name, generator, id);
+        registers.insert(indexed_name, intptr.into());
+
+        registers
+    } else {
+        let mut registers: HashMap<String, Option<PointerValue<'ctx>>> = HashMap::new();
+        let number_of_registers = model.registers.len() as u64;
+        if number_of_registers > 0 {
+            for register in &model.registers {
+                for index in 0..register.size {
+                    let name = format!("{}{}", register.name, index);
+                    registers.insert(name, None);
+                }
+            }
+        }
+        registers
     }
-    registers
+}
+
+fn create_result_static_ptr<'ctx>(
+    indexed_name: &str,
+    generator: &CodeGenerator<'ctx>,
+    id: usize,
+) -> PointerValue<'ctx> {
+    let int_value = generator.usize_to_i64(id).into_int_value();
+    let result_ptr_type = generator.result_type().ptr_type(AddressSpace::Generic);
+    let intptr = generator
+        .builder
+        .build_int_to_ptr(int_value, result_ptr_type, &indexed_name);
+    intptr
 }
 
 fn write_instructions<'ctx>(
@@ -228,6 +270,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            static_result_alloc: false,
             external_functions: HashMap::new(),
         };
 
@@ -249,6 +292,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            static_result_alloc: false,
             external_functions: HashMap::new(),
         };
 
@@ -271,6 +315,7 @@ mod tests {
                 Instruction::H(Single::new("q0".to_string())),
             ],
             static_alloc: true,
+            static_result_alloc: false,
             external_functions: HashMap::new(),
         };
 
@@ -293,6 +338,7 @@ mod tests {
                 Instruction::H(Single::new("q0".to_string())),
             ],
             static_alloc: true,
+            static_result_alloc: false,
             external_functions: HashMap::new(),
         };
 
@@ -315,6 +361,7 @@ mod tests {
                 Instruction::H(Single::new("q0".to_string())),
             ],
             static_alloc: true,
+            static_result_alloc: false,
             external_functions: HashMap::new(),
         };
 
@@ -341,6 +388,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            static_result_alloc: false,
             external_functions: HashMap::new(),
         };
 
@@ -367,6 +415,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            static_result_alloc: false,
             external_functions: HashMap::new(),
         };
 
@@ -393,6 +442,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            static_result_alloc: false,
             external_functions: HashMap::new(),
         };
 
@@ -419,6 +469,7 @@ mod tests {
                 }),
             ],
             static_alloc: true,
+            static_result_alloc: false,
             external_functions: HashMap::new(),
         };
 
@@ -437,6 +488,7 @@ mod tests {
                 else_insts: vec![Instruction::H(Single::new("q0".to_string()))],
             })],
             static_alloc: true,
+            static_result_alloc: false,
             external_functions: HashMap::new(),
         };
 

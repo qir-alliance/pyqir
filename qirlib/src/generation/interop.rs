@@ -193,7 +193,8 @@ pub struct SemanticModel {
     pub registers: Vec<ClassicalRegister>,
     pub qubits: Vec<QuantumRegister>,
     pub instructions: Vec<Instruction>,
-    pub static_alloc: bool,
+    pub use_static_qubit_alloc: bool,
+    pub use_static_result_alloc: bool,
     pub external_functions: HashMap<String, FunctionType>,
 }
 
@@ -205,7 +206,8 @@ impl SemanticModel {
             registers: vec![],
             qubits: vec![],
             instructions: vec![],
-            static_alloc: false,
+            use_static_qubit_alloc: false,
+            use_static_result_alloc: true,
             external_functions: HashMap::new(),
         }
     }

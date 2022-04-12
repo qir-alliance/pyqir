@@ -13,8 +13,8 @@ use self::{
     basicvalues::{f64_to_f64, i64_to_i32, i8_null_ptr, u64_to_i32, u64_to_i64},
     calls::{emit_call_with_return, emit_void_call},
     qis::{
-        cnot_body, cz_body, h_body, m_body, reset_body, rx_body, ry_body, rz_body, s_adj, s_body,
-        t_adj, t_body, x_body, y_body, z_body,
+        cnot_body, cz_body, h_body, m_body, mz_body, reset_body, rx_body, ry_body, rz_body, s_adj,
+        s_body, t_adj, t_body, x_body, y_body, z_body,
     },
     qubits::{emit_allocate_qubit, emit_release_qubit},
     rt::{qubit_allocate, qubit_release, result_equal, result_get_one, result_get_zero},
@@ -32,6 +32,8 @@ pub struct CodeGenerator<'ctx> {
     pub context: &'ctx inkwell::context::Context,
     pub module: inkwell::module::Module<'ctx>,
     pub builder: inkwell::builder::Builder<'ctx>,
+    pub use_static_qubit_alloc: bool,
+    pub use_static_result_alloc: bool,
 }
 
 impl<'ctx> CodeGenerator<'ctx> {
@@ -41,12 +43,16 @@ impl<'ctx> CodeGenerator<'ctx> {
     pub fn new(
         context: &'ctx inkwell::context::Context,
         module: Module<'ctx>,
+        use_static_qubit_alloc: bool,
+        use_static_result_alloc: bool,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
         Ok(CodeGenerator {
             context,
             module,
             builder,
+            use_static_qubit_alloc,
+            use_static_result_alloc,
         })
     }
 }
@@ -177,6 +183,10 @@ impl<'ctx> CodeGenerator<'ctx> {
     pub fn qis_m_body(&self) -> FunctionValue<'ctx> {
         m_body(self.context, &self.module)
     }
+
+    pub fn qis_mz_body(&self) -> FunctionValue<'ctx> {
+        mz_body(self.context, &self.module)
+    }
 }
 
 impl<'ctx> CodeGenerator<'ctx> {
@@ -258,7 +268,7 @@ mod core_tests {
 
         let context = Context::create();
         let module = context.create_module(name);
-        let generator = CodeGenerator::new(&context, module).unwrap();
+        let generator = CodeGenerator::new(&context, module, false, false).unwrap();
         generator.emit_bitcode(file_path_string.as_str());
 
         let mut emitted_bitcode_file =
@@ -287,7 +297,7 @@ mod types_tests {
     fn qubit_can_be_declared() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module).unwrap();
+        let generator = CodeGenerator::new(&context, module, false, false).unwrap();
 
         verify_opaque_struct("Qubit", generator.qubit_type());
     }
@@ -296,7 +306,7 @@ mod types_tests {
     fn result_can_be_declared() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module).unwrap();
+        let generator = CodeGenerator::new(&context, module, false, false).unwrap();
 
         verify_opaque_struct("Result", generator.result_type());
     }

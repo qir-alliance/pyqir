@@ -277,7 +277,8 @@ impl SimpleModule {
             registers,
             qubits,
             instructions: Vec::new(),
-            static_alloc: true,
+            use_static_qubit_alloc: true,
+            use_static_result_alloc: false,
         };
 
         let builder = Py::new(py, Builder::new())?;
@@ -318,6 +319,14 @@ impl SimpleModule {
         let mut builder = self.builder.as_ref(py).borrow_mut();
         builder.external_functions.insert(name.clone(), ty.into());
         Function { name }
+    }
+
+    fn use_static_qubit_alloc(&mut self, value: bool) {
+        self.model.use_static_qubit_alloc = value;
+    }
+
+    fn use_static_result_alloc(&mut self, value: bool) {
+        self.model.use_static_result_alloc = value;
     }
 }
 

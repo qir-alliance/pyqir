@@ -108,6 +108,13 @@ pub(crate) fn reset_body<'ctx>(
     get_intrinsic_function_body(context, module, "reset")
 }
 
+pub(crate) fn mz_body<'ctx>(
+    context: &'ctx inkwell::context::Context,
+    module: &Module<'ctx>,
+) -> FunctionValue<'ctx> {
+    get_intrinsic_mz_function_body(context, module, "mz")
+}
+
 pub(crate) fn m_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
@@ -167,6 +174,26 @@ fn get_intrinsic_function_body_impl<'ctx>(
     } else {
         let void_type = context.void_type();
         let fn_type = void_type.fn_type(param_types, false);
+        let fn_value =
+            module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
+        fn_value
+    }
+}
+
+/// `declare void @__quantum__qis__{}__body(%Qubit*, %Result*)`
+pub(crate) fn get_intrinsic_mz_function_body<'ctx>(
+    context: &'ctx inkwell::context::Context,
+    module: &Module<'ctx>,
+    name: &str,
+) -> FunctionValue<'ctx> {
+    let function_name = format!("__quantum__qis__{}__body", name.to_lowercase());
+    if let Some(function) = get_function(module, function_name.as_str()) {
+        function
+    } else {
+        let result_ptr_type = result(context, module).ptr_type(AddressSpace::Generic);
+        let qubit_ptr_type = qubit(context, module).ptr_type(AddressSpace::Generic);
+        let void_type = context.void_type();
+        let fn_type = void_type.fn_type(&[qubit_ptr_type.into(), result_ptr_type.into()], false);
         let fn_value =
             module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
         fn_value
@@ -409,6 +436,18 @@ mod qis_declaration_tests {
         let str_val = function.print_to_string();
         assert_eq!(
             "declare %Result* @__quantum__qis__m__body(%Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn mz_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = mz_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__mz__body(%Qubit*, %Result*)\n",
             str_val.to_string()
         );
     }
