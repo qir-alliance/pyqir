@@ -46,14 +46,23 @@
 (Core)</a></p></li>
 <li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 11.1.0</a> - See <span class="xref myst">Installing
 LLVM</span></p></li>
-<li><p><a class="reference external" href="https://github.com/Kitware/CMake/releases/tag/v3.20.5">CMake 3.20+</a></p></li>
+<li><p>If compiling LLVM from source:</p>
+<ul>
+<li><p><a class="reference external" href="https://github.com/Kitware/CMake/releases/tag/v3.10.3">CMake 3.10+</a></p></li>
 <li><p><a class="reference external" href="https://ninja-build.org/">Ninja 1.10.0+</a></p></li>
+</ul>
+</li>
 </ul>
 </section>
 <section id="optional">
 <h3>Optional<a class="headerlink" href="#optional" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
+<li><p>If building LLVM from source, either of these is highly recommended:</p>
+<ul>
 <li><p><a class="reference external" href="https://github.com/mozilla/sccache">sccache</a></p></li>
+<li><p><a class="reference external" href="https://github.com/ccache/ccache">ccache</a></p></li>
+</ul>
+</li>
 </ul>
 </section>
 <section id="linux-ubuntu">
@@ -125,20 +134,6 @@ toolchain to <code class="docutils literal notranslate"><span class="pre">$HOME/
 this installation by setting the <code class="docutils literal notranslate"><span class="pre">LLVM_SYS_110_PREFIX</span></code> environment variable in
 the root <code class="docutils literal notranslate"><span class="pre">.cargo/config.toml</span></code></p>
 </section>
-<section id="installing-cmake">
-<h3>Installing CMake<a class="headerlink" href="#installing-cmake" title="Permalink to this headline">¶</a></h3>
-<ul class="simple">
-<li><p>Linux (Ubuntu)</p></li>
-</ul>
-<p>Using <code class="docutils literal notranslate"><span class="pre">apt-get</span></code> will install 3.16, but compiling the QIR runtime requires 3.20. To install the latest version on Ubuntu, install directly from the CMake releases from GitHub:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl -SsL https://github.com/Kitware/CMake/releases/download/v3.20.5/cmake-3.20.5-linux-x86_64.sh -o cmakeinstall.sh
-<span class="nb">echo</span> <span class="s2">&quot;f582e02696ceee81818dc3378531804b2213ed41c2a8bc566253d16d894cefab cmakeinstall.sh&quot;</span> <span class="p">|</span> sha256sum -c --strict -
-chmod +x cmakeinstall.sh
-./cmakeinstall.sh --prefix<span class="o">=</span>/usr/local --exclude-subdir
-rm cmakeinstall.sh
-</pre></div>
-</div>
-</section>
 </section>
 <section id="development">
 <h2>Development<a class="headerlink" href="#development" title="Permalink to this headline">¶</a></h2>
@@ -148,7 +143,7 @@ the solution, run</p>
 </pre></div>
 </div>
 <p>Alternatively, you can use <code class="docutils literal notranslate"><span class="pre">build.sh</span></code> or <code class="docutils literal notranslate"><span class="pre">build.cmd</span></code>.</p>
-<p>The <a class="reference internal" href="#building-environment-variables"><span class="std std-ref">Environment Variables</span></a> section
+<p>The <span class="xref std std-ref">building/environment-variables</span> section
 details ways to change this behavior.</p>
 <p>Within each project folder, the build can be run specifically for that project.</p>
 <p>Build commands:</p>
@@ -177,33 +172,24 @@ build the project and run Rust tests.</p>
 <li><p>Packages all wheels in an isolated environment</p></li>
 </ul>
 <section id="environment-variables">
-<span id="building-environment-variables"></span><h3>Environment Variables<a class="headerlink" href="#environment-variables" title="Permalink to this headline">¶</a></h3>
+<h3>Environment Variables<a class="headerlink" href="#environment-variables" title="Permalink to this headline">¶</a></h3>
+<p>For those directly consuming <code class="docutils literal notranslate"><span class="pre">qirlib</span></code>, refer to the
+<a class="reference external" href="https://github.com/qir-alliance/pyqir/blob/main/qirlib/README.md#environment-variables">Environment variables</a>
+section of it’s README as the following constraints do not apply.</p>
+<p>The Python PyQIR projects require LLVM to already be installed prior to build.
+The PowerShell scripts will look at the the <code class="docutils literal notranslate"><span class="pre">qirlib</span></code>
+<a class="reference external" href="https://github.com/qir-alliance/pyqir/blob/main/qirlib/README.md#environment-variables">Environment variables</a>
+and locate, build, or install LLVM as specified by the environment. The
+default order is:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">PYQIR_LLVM_EXTERNAL_DIR</span></code></p></li>
-<li><p>Path to where LLVM is already installed by user. Useful if you want to use
-your own LLVM builds for testing.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PYQIR_DOWNLOAD_LLVM</span></code></p></li>
-<li><p>Indicator to whether the build should download LLVM cached builds.</p></li>
-<li><p>Build will download LLVM if needed unless this variable is defined and set to
-<code class="docutils literal notranslate"><span class="pre">false</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PYQIR_LLVM_BUILDS_URL</span></code></p></li>
-<li><p>Url from where LLVM builds will be downloaded.</p></li>
-<li><p>Default: <code class="docutils literal notranslate"><span class="pre">https://msquantumpublic.blob.core.windows.net/llvm-builds</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PYQIR_CACHE_DIR</span></code></p></li>
-<li><p>Root insallation path for LLVM builds</p></li>
-<li><p>Default if not specified:</p>
-<ul>
-<li><p>Linux/Mac: <code class="docutils literal notranslate"><span class="pre">$HOME/.pyqir</span></code></p></li>
-<li><p>Windows: <code class="docutils literal notranslate"><span class="pre">$HOME\.pyqir</span></code></p></li>
+<li><p>Use specific LLVM installation if specified</p></li>
+<li><p>Locate existing LLVM installation on <code class="docutils literal notranslate"><span class="pre">PATH</span></code></p></li>
+<li><p>Download LLVM if allowed from specified source</p></li>
+<li><p>Build LLVM from source</p></li>
 </ul>
-</li>
-<li><p><code class="docutils literal notranslate"><span class="pre">LLVM_SYS_110_PREFIX</span></code></p></li>
-<li><p>Required by <code class="docutils literal notranslate"><span class="pre">llvm-sys</span></code> and will be set to the version of LLVM used for
-configuration.</p></li>
-<li><p>Version dependent and will change as LLVM is updated. (<code class="docutils literal notranslate"><span class="pre">LLVM_SYS_120_PREFIX</span></code>,
-<code class="docutils literal notranslate"><span class="pre">LLVM_SYS_130_PREFIX</span></code>, etc)</p></li>
-<li><p>Not needed if you have a working LLVM installation on the path.</p></li>
-</ul>
+<p>Afterward, the build configures the <code class="docutils literal notranslate"><span class="pre">LLVM_SYS_*_PREFIX</span></code> environment variable
+according to what the environment has configured. This will allow LLVM to
+be linked into the rest of the build.</p>
 </section>
 <section id="packaging">
 <h3>Packaging<a class="headerlink" href="#packaging" title="Permalink to this headline">¶</a></h3>
