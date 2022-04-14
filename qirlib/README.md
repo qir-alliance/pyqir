@@ -49,11 +49,12 @@ Supported cargo features are following:
 
 ### Environment variables
 
-Building `qirlib` can be done with crate features which will either:
-
-- Download (and install) a preexisting LLVM build configured via environment variables (the [Cargo.toml [env] section](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env) can also be used)
-- Build LLVM from source and install it
-- Build LLVM from source and package it
+Building `qirlib` can be done with crate features which will either download
+(and install) a preexisting LLVM build configured via environment variables
+(the
+[Cargo.toml [env] section](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
+can also be used), build LLVM from source and install it, or build LLVM from
+source and package it
 
 - `QIRLIB_LLVM_EXTERNAL_DIR`
   - Path to where LLVM is already installed by user. Useful if you want to use
