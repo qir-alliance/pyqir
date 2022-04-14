@@ -8,6 +8,10 @@ properties {
 
     $pyqir = @{}
 
+    $pyqir.qirlib = @{}
+    $pyqir.qirlib.name = "qirlib"
+    $pyqir.qirlib.dir = Join-Path $repo.root "qirlib"
+
     $pyqir.meta = @{}
     $pyqir.meta.name = "pyqir"
     $pyqir.meta.dir = Join-Path $repo.root "pyqir"
@@ -42,6 +46,8 @@ Task default -Depends checks, pyqir-tests, parser, generator, evaluator, metawhe
 
 Task checks -Depends cargo-fmt, cargo-clippy
 
+Task rebuild -Depends generator, evaluator, parser
+
 Task cargo-fmt {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please run 'cargo fmt --all' before pushing" {
         cargo fmt --all -- --check
@@ -51,17 +57,8 @@ Task cargo-fmt {
 Task cargo-clippy -Depends init {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
         $extraArgs = (Test-CI) ? @("--", "-D", "warnings") : @()
-        cargo clippy --workspace --all-targets --all-features @extraArgs
+        cargo clippy --workspace --all-targets @extraArgs
     }
-}
-
-Task init {
-    if ((Test-CI) -and !$IsLinux) {
-        cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12-beta.2
-    }
-    Restore-ConfigTomlWithLlvmInfo
-    Test-Prerequisites
-    Initialize-Environment
 }
 
 Task generator -Depends init {
@@ -77,9 +74,31 @@ Task parser -Depends init {
 }
 
 Task pyqir-tests -Depends init {
-    Invoke-LoggedCommand -workingDirectory (Join-Path $repo.root pyqir-tests) {
-        & $python -m pip install tox
-        & $python -m tox -e test
+    $srcPath = $repo.root
+    $project = "pyqir-tests"
+    $installationDirectory = Resolve-InstallationDirectory
+
+    if (Test-RunInContainer) {
+        Build-ContainerImage $srcPath
+        Write-BuildLog "Running container image:"
+        $ioVolume = "$($srcPath):/io"
+        $llvmVolume = "$($installationDirectory):/usr/lib/llvm"
+        $userName = [Environment]::UserName
+
+        Invoke-LoggedCommand {
+            docker run --rm --user $userName -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output python -m tox -e test
+        }
+    }
+    else {
+        exec -workingDirectory (Join-Path $srcPath $project) {
+            Invoke-LoggedCommand {
+                & $python -m pip install tox
+            }
+
+            Invoke-LoggedCommand {
+                & $python -m tox -e test
+            }
+        }
     }
 }
 
@@ -93,7 +112,6 @@ Task metawheel {
     }
 }
 
-Task rebuild -Depends generator, evaluator, parser
 Task wheelhouse `
     -Precondition { -not (Test-Path $wheelhouse -ErrorAction SilentlyContinue) } `
 { Invoke-Task rebuild }
@@ -117,165 +135,169 @@ Task docs -Depends wheelhouse {
 }
 
 function Use-ExternalLlvmInstallation {
-    Write-BuildLog "Using LLVM installation specified by PYQIR_LLVM_EXTERNAL_DIR"
-    Assert (Test-Path $env:PYQIR_LLVM_EXTERNAL_DIR) "PYQIR_LLVM_EXTERNAL_DIR folder does not exist"
-    Use-LlvmInstallation $env:PYQIR_LLVM_EXTERNAL_DIR
+    Write-BuildLog "Using LLVM installation specified by QIRLIB_LLVM_EXTERNAL_DIR"
+    Assert (Test-Path $env:QIRLIB_LLVM_EXTERNAL_DIR) "QIRLIB_LLVM_EXTERNAL_DIR folder does not exist"
+    Use-LlvmInstallation $env:QIRLIB_LLVM_EXTERNAL_DIR
 }
 
 function Test-AllowedToDownloadLlvm {
-    # If PYQIR_DOWNLOAD_LLVM isn't set, we allow for download
+    # If QIRLIB_DOWNLOAD_LLVM isn't set, we allow for download
     # If it is set, then we use its value
-    !((Test-Path env:\PYQIR_DOWNLOAD_LLVM) -and ($env:PYQIR_DOWNLOAD_LLVM -eq $false))
+    !((Test-Path env:\QIRLIB_DOWNLOAD_LLVM) -and ($env:QIRLIB_DOWNLOAD_LLVM -eq $false))
 }
 
-function Get-LlvmDownloadBaseUrl {
-    if (Test-Path env:\PYQIR_LLVM_BUILDS_URL) {
-        $env:PYQIR_LLVM_BUILDS_URL
+task init {
+    # Temorary, install maturin v0.12.12-beta.2 which has the
+    # PEP 639 license fixes.
+    if ((Test-CI) -and !$IsLinux) {
+        cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12-beta.2
     }
-    else {
-        "https://github.com/qir-alliance/pyqir/releases/download/qirlib-llvmorg-11.1.0"
-    }
-}
-
-function Get-PackageExt {
-    $extension = ".tar.gz"
-    if ($IsWindows) {
-        $extension = ".zip"
-    }
-    $extension
-}
-
-function Get-LlvmArchiveUrl {
-    $extension = Get-PackageExt
-    $packageName = Get-PackageName
-    $baseUrl = Get-LlvmDownloadBaseUrl
-    "$baseUrl/$($packageName)$extension"
-}
-
-function Get-LlvmArchiveShaUrl {
-    $extension = Get-PackageExt
-    $packageName = Get-PackageName
-    $baseUrl = Get-LlvmDownloadBaseUrl
-    "$baseUrl/$($packageName)$extension.sha256"
-}
-
-function Get-LlvmArchiveFileName {
-    $packageName = Get-PackageName
-    $extension = Get-PackageExt
-    "$($packageName)$extension"
-}
-
-function Get-LlvmArchiveShaFileName {
-    $filename = Get-LlvmArchiveFileName
-    "$filename.sha256"
-}
-
-function Install-LlvmFromBuildArtifacts {
-    [CmdletBinding()]
-    param (
-        [Parameter()]
-        [string]
-        $packagePath
-    )
-
-    $outFile = Join-Path $($env:TEMP) (Get-LlvmArchiveFileName)
-    if ((Test-Path $outFile)) {
-        Remove-Item $outFile
-    }
-
-    $archiveUrl = Get-LlvmArchiveUrl
-    Write-BuildLog "Dowloading $archiveUrl to $outFile"
-    Invoke-WebRequest -Uri $archiveUrl -OutFile $outFile
-
-    $shaFile = Join-Path $($env:TEMP) (Get-LlvmArchiveShaFileName)
-    if ((Test-Path $shaFile)) {
-        Remove-Item $shaFile
-    }
-
-    $sha256Url = Get-LlvmArchiveShaUrl
-    Write-BuildLog "Dowloading $sha256Url to $shaFile"
-    Invoke-WebRequest -Uri $sha256Url -OutFile $shaFile
-    Write-BuildLog "Calculating hash for $outFile"
-    $calculatedHash = (Get-FileHash -Path $outFile -Algorithm SHA256).Hash
-
-    Write-BuildLog "Reading hash from $shaFile"
-    $expectedHash = (Get-Content -Path $shaFile)
-
-    Assert ("$calculatedHash" -eq "$expectedHash") "The calculated hash $calculatedHash did not match the expected hash $expectedHash"
-
-    $packagesRoot = Get-AqCacheDirectory
-    if ($IsWindows) {
-        Expand-Archive -Path $outFile -DestinationPath $packagesRoot
-    }
-    else {
-        tar -zxvf $outFile -C $packagesRoot
-    }
-
-    $packageName = Get-PackageName
-    $packagePath = Get-InstallationDirectory $packageName
-    Use-LlvmInstallation $packagePath
-}
-
-function Install-LlvmFromSource {
-    [CmdletBinding()]
-    param (
-        [Parameter()]
-        [string]
-        $packagePath
-    )
-    $Env:PKG_NAME = Get-PackageName
-    $Env:CMAKE_INSTALL_PREFIX = $packagePath
-    $Env:INSTALL_LLVM_PACKAGE = $true
-    Assert $false -failureMessage "TODO: Migration in progress"
-    . (Join-Path (Get-RepoRoot) "build" "llvm.ps1")
-    Use-LlvmInstallation $packagePath
-}
-
-function Test-Prerequisites {
-    if (!(Test-LlvmSubmoduleInitialized)) {
-        Write-BuildLog "llvm-project submodule isn't initialized"
-        Write-BuildLog "Initializing submodules: git submodule init"
-        exec -workingDirectory ($repo.root ) { git submodule init }
-        Write-BuildLog "Updating submodules: git submodule update --depth 1 --recursive"
-        exec -workingDirectory ($repo.root ) { git submodule update --depth 1 --recursive }
-    }
-    Assert (Test-LlvmSubmoduleInitialized) "Failed to read initialized llvm-project submodule"
-}
-
-function Initialize-Environment {
+    
+    # qirlib has this logic built in when compiled on its own
+    # but we must have LLVM installed prior to the wheels being built.
+    
     # if an external LLVM is specified, make sure it exist and
     # skip further bootstapping
-    if (Test-Path env:\PYQIR_LLVM_EXTERNAL_DIR) {
+    if (Test-Path env:\QIRLIB_LLVM_EXTERNAL_DIR) {
         Use-ExternalLlvmInstallation
     }
     else {
-        $llvmTag = Get-LlvmTag
-        Write-BuildLog "llvm-project tag: $llvmTag"
-        $packageName = Get-PackageName
-
-        $packagePath = Get-InstallationDirectory $packageName
-        if (Test-Path $packagePath) {
-            Write-BuildLog "LLVM target $($llvmTag) is already installed."
+        $packagePath = Resolve-InstallationDirectory
+        if (Test-Path (Join-Path $packagePath "bin")) {
+            Write-BuildLog "LLVM target is already installed."
             # LLVM is already downloaded
             Use-LlvmInstallation $packagePath
         }
         else {
-            Write-BuildLog "LLVM target $($llvmTag) is not installed."
+            Write-BuildLog "LLVM target is not installed."
             if (Test-AllowedToDownloadLlvm) {
-                Write-BuildLog "Downloading LLVM target $packageName "
-                Install-LlvmFromBuildArtifacts $packagePath
+                Write-BuildLog "Downloading LLVM target"
+                Invoke-Task "install-llvm-from-archive"
             }
             else {
                 Write-BuildLog "Downloading LLVM Disabled, building from source."
                 # We don't have an external LLVM installation specified
                 # We are not downloading LLVM
                 # So we need to build it.
-                Install-LlvmFromSource $packagePath
+                Invoke-Task "install-llvm-from-source"
             }
         }
     }
 }
 
+task install-llvm-from-archive {
+    install-llvm $pyqir.qirlib.dir "download"
+}
+
+function Write-CacheStats {
+    if (Test-CommandExists("ccache")) {
+        Write-BuildLog "ccache config:"
+        & { ccache --show-config } -ErrorAction SilentlyContinue
+        Write-BuildLog "ccache stats:"
+        & { ccache --show-stats } -ErrorAction SilentlyContinue
+    }
+    if (Test-CommandExists("sccache")) {
+        Write-BuildLog "sccache config/stats:"
+        & { sccache --show-stats } -ErrorAction SilentlyContinue
+    }
+}
+
+task install-llvm-from-source {
+    Write-CacheStats
+    if (Test-CommandExists("sccache")) {
+        Write-BuildLog "Starting sccache server"
+        & { sccache --start-server } -ErrorAction SilentlyContinue
+        Write-BuildLog "Started sccache server"
+    }
+
+    if (Test-RunInContainer) {
+        $installationDirectory = Resolve-InstallationDirectory
+        Use-LlvmInstallation $installationDirectory
+        Build-ContainerImage $repo.root
+        $srcPath = $repo.root
+
+        # For any of the volumes mapped, if the dir doesn't exist,
+        # docker will create it and it will be owned by root and
+        # the caching/install breaks with permission errors.
+        # New-Item is idempotent so we don't need to check for existence
+
+        $ioVolume = "$($srcPath):/io"
+        $llvmVolume = "$($installationDirectory):/llvm"
+        New-Item -ItemType Directory -Force $installationDirectory | Out-Null
+        
+        $userName = [Environment]::UserName
+        $cacheMount = ""
+        $cacheEnv = ""
+        # only ccache is supported in the manylinux container for now.
+        # we would need a way to specify which cache is used to
+        # support both.
+        if (Test-CommandExists("ccache")) {
+            # we need to map the local cache dir into the
+            # container. If the env var isn't set, ask ccache
+            $cacheDir = ""
+            if (Test-Path env:\CCACHE_DIR) {
+                $cacheDir = $Env:CCACHE_DIR
+            }
+            else {
+                $cacheDir = exec { ccache -k cache_dir }
+            }
+            if (![string]::IsNullOrWhiteSpace($cacheDir)) {
+                New-Item -ItemType Directory -Force $cacheDir | Out-Null
+                
+                $cacheDir = Resolve-Path $cacheDir
+                # mount the cache outside of any runner mappings
+                $cacheMount = @("-v", "$($cacheDir):/ccache")
+                $cacheEnv = @("-e", "CCACHE_DIR=`"/ccache`"")
+            }
+        }
+        
+        Invoke-LoggedCommand {
+            docker run --rm --user $userName -v $ioVolume -v $llvmVolume @cacheMount @cacheEnv -e QIRLIB_CACHE_DIR="$installationDirectory" -e QIRLIB_CACHE_DIR="/llvm" -w /io/qirlib manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release --no-default-features --features "build-llvm,no-llvm-linking" -vv
+        }
+    }
+    else {
+        if ($IsWindows) {
+            Include vcvars.ps1
+        }
+        
+        install-llvm $pyqir.qirlib.dir "build"
+    }
+
+    Write-CacheStats
+}
+
+task package-llvm {
+    if (Test-RunInContainer) {
+        Build-ContainerImage $repo.root
+        $srcPath = $repo.root
+        $ioVolume = "$($srcPath):/io"
+        $userName = [Environment]::UserName
+
+        Invoke-LoggedCommand {
+            docker run --rm --user $userName -v $ioVolume -w /io/qirlib -e QIRLIB_PKG_DEST=/io/target manylinux2014_x86_64_maturin conda run --no-capture-output cargo build --release  --no-default-features --features package-llvm -vv
+        }
+    }
+    else {
+        if ($IsWindows) {
+            Include vcvars.ps1
+        }
+        $clear_pkg_dest_var = $false
+        if (!(Test-Path env:\QIRLIB_PKG_DEST)) {
+            $clear_pkg_dest_var = $true
+            $env:QIRLIB_PKG_DEST = Join-Path $repo.root "target"
+        }
+        try {
+            Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
+                cargo build --release  --no-default-features --features package-llvm -vv
+            }
+        }
+        finally {
+            if ($clear_pkg_dest_var) {
+                Remove-Item -Path Env:QIRLIB_PKG_DEST
+            }
+        }
+    }
+}
 
 # Only run the nested ManyLinux container
 # build on Linux while not in a dev container
@@ -291,41 +313,52 @@ function Test-RunInContainer {
     }
 }
 
+function Build-ContainerImage([string]$srcPath) {
+    Write-BuildLog "Building container image manylinux-llvm-builder"
+    Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
+        $user = [environment]::UserName
+        $uid = "$(id -u)"
+        $gid = "$(id -g)"
+        $rustv = "1.57.0"
+        $tag = "manylinux2014_x86_64_maturin"
+        Get-Content manylinux.Dockerfile | docker build `
+            --build-arg USERNAME=$user `
+            --build-arg USER_UID=$uid `
+            --build-arg USER_GID=$gid `
+            --build-arg RUST_VERSION=$rustv `
+            -t $tag -
+    }
+}
+
 function Build-PyQIR([string]$project) {
     $srcPath = $repo.root
     $installationDirectory = Resolve-InstallationDirectory
 
     if (Test-RunInContainer) {
-        function Build-ContainerImage {
-            Write-BuildLog "Building container image manylinux-llvm-builder"
-            Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
-                Get-Content manylinux.Dockerfile | docker build -t manylinux2014_x86_64_maturin -
-            }
-        }
+        Build-ContainerImage $srcPath
         function Invoke-ContainerImage {
             Write-BuildLog "Running container image:"
             $ioVolume = "$($srcPath):/io"
             $llvmVolume = "$($installationDirectory):/usr/lib/llvm"
-            $userSpec = ""
+            $userName = [Environment]::UserName
 
             Invoke-LoggedCommand {
-                docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output cargo test --release --lib -vv -- --nocapture
+                docker run --rm --user $userName -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output cargo test --release --lib -vv -- --nocapture
             }
 
             Invoke-LoggedCommand {
-                docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output /usr/bin/maturin build --release
+                docker run --rm --user $userName -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output /usr/bin/maturin build --release
             }
 
             Invoke-LoggedCommand {
-                docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output python -m tox -e test
+                docker run --rm --user $userName -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output python -m tox -e test
             }
             
             Invoke-LoggedCommand {
-                docker run --rm $userSpec -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output cargo test --release -vv -- --nocapture
+                docker run --rm --user $userName -v $ioVolume -v $llvmVolume -e LLVM_SYS_110_PREFIX=/usr/lib/llvm -w /io/$project manylinux2014_x86_64_maturin conda run --no-capture-output cargo test --release -vv -- --nocapture
             }
         }
 
-        Build-ContainerImage
         Invoke-ContainerImage
     }
     else {
@@ -350,7 +383,7 @@ function Build-PyQIR([string]$project) {
     }
 }
 
-task run-examples-in-containers -precondition { $IsLinux -and (Test-CI) } {
+task run-examples-in-containers -precondition { Test-RunInContainer } {
     $userName = [Environment]::UserName
     $userId = $(id -u)
     $groupId = $(id -g)
@@ -429,6 +462,34 @@ function Create-DocsEnv() {
     finally {
         deactivate
     }
+}
+
+function install-llvm {
+    Param(
+        [Parameter(Mandatory)]
+        [string]$qirlibDir,
+        [Parameter(Mandatory)]
+        [ValidateSet("download", "build")]
+        [string]$operation
+    )
+
+    $installationDirectory = Resolve-InstallationDirectory
+    Use-LlvmInstallation $installationDirectory
+    $clear_cache_var = $false
+    if (!(Test-Path env:\QIRLIB_CACHE_DIR)) {
+        $clear_cache_var = $true
+        $env:QIRLIB_CACHE_DIR = $installationDirectory
+    }
+    try {
+        Invoke-LoggedCommand -wd $qirlibDir {
+            cargo build --release --no-default-features --features "$($operation)-llvm,no-llvm-linking" -vv
+        }
+    }
+    finally {
+        if ($clear_cache_var) {
+            Remove-Item -Path Env:QIRLIB_CACHE_DIR
+        }
+    }   
 }
 
 task check-licenses {

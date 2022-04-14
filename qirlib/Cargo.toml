@@ -1,16 +1,21 @@
 [package]
 name = "qirlib"
 version = "0.3.0"
-license = "MIT"
 edition = "2018"
+license = "MIT"
 description = "Base Profile QIR library"
+build = "build.rs"
+readme = "README.md"
+homepage = "https://github.com/qir-alliance/pyqir"
+repository = "https://github.com/qir-alliance/pyqir"
+rust-version = "1.56"
 
 [dependencies]
 llvm-sys = "110"
 inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["llvm11-0", "target-x86"] }
 log = "0.4.14"
-cty="0.2.1"
-rand="0.8.4"
+cty = "0.2.1"
+rand = "0.8.4"
 base64 = "0.13.0"
 lazy_static = "1.4.0"
 mut_static = "5.0.0"
@@ -21,8 +26,30 @@ serial_test = "0.5.1"
 tempfile = "3.2.0"
 normalize-line-endings = "0.3.0"
 
+[build-dependencies]
+cmake = "0.1.48"
+cc = "1.0"
+lazy_static = "1.0"
+regex = "1.0"
+semver = "1.0.6"
+
 [lib]
 name = "qirlib"
 
 [features]
-default = []
+
+# default to use llvm-sys/inkwell for llvm linking
+default = ["external-llvm-linking"]
+external-llvm-linking = []
+# disable linking for local installation or packaging
+no-llvm-linking = ["llvm-sys/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
+# let qirlib do the llvm linking
+qirlib-llvm-linking = ["llvm-sys/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
+
+download-llvm = []
+build-llvm = []
+
+# Dev use only for packaging LLVM builds
+package-llvm = ["build-llvm", "no-llvm-linking"]
+
+
