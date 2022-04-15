@@ -469,4 +469,16 @@ mod qis_declaration_tests {
             str_val.to_string()
         );
     }
+
+    #[test]
+    fn read_result_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = read_result(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare i1 @__quantum__qis__read_result__body(%Result*)\n",
+            str_val.to_string()
+        );
+    }
 }
