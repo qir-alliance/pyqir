@@ -39,11 +39,15 @@ fn get_result<'ctx>(
     // TODO: Panicking can be unfriendly to Python clients.
     // See: https://github.com/qir-alliance/pyqir/issues/31
     if generator.use_static_result_alloc {
+        // error if the key isn't found
+        // error if static result wasn't initialized
         results
             .get(name)
             .unwrap_or_else(|| panic!("Result {} not found.", name))
-            .unwrap_or_else(|| get_result(generator, results, "__unused__"))
+            .unwrap_or_else(|| panic!("Result {} not initialized.", name))
     } else {
+        // error if the key isn't found
+        // return 0 if result is accessed prior to read.
         results
             .get(name)
             .unwrap_or_else(|| panic!("Result {} not found.", name))

@@ -190,9 +190,6 @@ fn write_registers<'ctx>(
                 }
             }
         }
-        let indexed_name = "__unused__".to_owned();
-        let intptr = create_result_static_ptr(&indexed_name, generator, id);
-        registers.insert(indexed_name, intptr.into());
 
         registers
     } else {
