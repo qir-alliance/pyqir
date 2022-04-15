@@ -8,7 +8,7 @@ use log;
 use inkwell::module::{Linkage, Module};
 use inkwell::values::FunctionValue;
 
-use super::types::{double, qubit, result};
+use super::types::{self, double, qubit, result};
 
 pub(crate) fn cnot_body<'ctx>(
     context: &'ctx inkwell::context::Context,
@@ -252,6 +252,24 @@ pub(crate) fn get_function<'ctx>(
             None
         }
         Some(value) => Some(value),
+    }
+}
+
+/// `declare i1 @__quantum__qis__read_result__body(%Result*)`
+pub(crate) fn read_result<'ctx>(
+    context: &'ctx inkwell::context::Context,
+    module: &Module<'ctx>,
+) -> FunctionValue<'ctx> {
+    let function_name = format!("__quantum__qis__{}__body", "read_result");
+    if let Some(function) = get_function(module, function_name.as_str()) {
+        function
+    } else {
+        let result_ptr_type = result(context, module).ptr_type(AddressSpace::Generic);
+        let bool_type = types::bool(context);
+        let fn_type = bool_type.fn_type(&[result_ptr_type.into()], false);
+        let fn_value =
+            module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
+        fn_value
     }
 }
 

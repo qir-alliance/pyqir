@@ -4,6 +4,8 @@
 use lazy_static::lazy_static;
 #[allow(clippy::upper_case_acronyms)]
 type QUBIT = u64;
+#[allow(clippy::upper_case_acronyms)]
+type RESULT = u64;
 use mut_static::MutStatic;
 
 use crate::evaluation::interop::{
@@ -129,7 +131,15 @@ impl BaseProfile {
 
         log::debug!("m {}", qubit);
         self.model
-            .add_inst(Instruction::M(BaseProfile::measured(qubit)));
+            .add_inst(Instruction::M(BaseProfile::measured(qubit, None)));
+    }
+
+    pub fn mz(&mut self, qubit: QUBIT, result: RESULT) {
+        self.record_max_qubit_id(qubit);
+
+        log::debug!("m {} into {}", qubit, result);
+        self.model
+            .add_inst(Instruction::M(BaseProfile::measured(qubit, Some(result))));
     }
 
     pub fn rx(&mut self, theta: f64, qubit: QUBIT) {
@@ -219,8 +229,11 @@ impl BaseProfile {
         )
     }
 
-    fn measured(qubit: QUBIT) -> Measured {
-        Measured::new(BaseProfile::get_qubit_string(qubit), String::from(""))
+    fn measured(qubit: QUBIT, result: Option<RESULT>) -> Measured {
+        Measured::new(
+            BaseProfile::get_qubit_string(qubit),
+            BaseProfile::get_result_string(result),
+        )
     }
 
     fn rotated(theta: f64, qubit: QUBIT) -> Rotated {
@@ -233,5 +246,12 @@ impl BaseProfile {
 
     fn get_qubit_string(qubit: QUBIT) -> String {
         format!("{}", qubit)
+    }
+
+    fn get_result_string(result: Option<RESULT>) -> String {
+        match result {
+            Some(value) => format!("{}", value),
+            None => "".to_owned(),
+        }
     }
 }

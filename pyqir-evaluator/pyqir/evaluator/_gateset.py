@@ -19,6 +19,9 @@ class GateSet:
     def m(self, qubit: str, target: str):
         pass
 
+    def mz(self, qubit: str, target: str):
+        pass
+
     def reset(self, target: str):
         pass
 

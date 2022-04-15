@@ -24,3 +24,13 @@ pub(crate) fn equal<'a>(
         .emit_call_with_return(generator.rt_result_equal(), &[result1, result2], "equal")
         .into_int_value()
 }
+
+pub(crate) fn read_result<'a>(
+    generator: &CodeGenerator<'a>,
+    result: PointerValue<'a>,
+) -> IntValue<'a> {
+    let result = BasicMetadataValueEnum::PointerValue(result);
+    generator
+        .emit_call_with_return(generator.qis_read_result(), &[result], "equal")
+        .into_int_value()
+}

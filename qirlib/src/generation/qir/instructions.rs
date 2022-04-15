@@ -208,7 +208,13 @@ fn emit_if<'ctx>(
     if_: &If,
 ) {
     let result = get_result(generator, results, &if_.condition);
-    let condition = result::equal(generator, result, result::get_one(generator));
+
+    let condition = if generator.use_static_result_alloc {
+        result::read_result(generator, result)
+    } else {
+        result::equal(generator, result, result::get_one(generator))
+    };
+
     let then_block = generator.context.append_basic_block(entry_point, "then");
     let else_block = generator.context.append_basic_block(entry_point, "else");
 

@@ -212,6 +212,10 @@ impl<'ctx> CodeGenerator<'ctx> {
         result_equal(self.context, &self.module)
     }
 
+    pub fn qis_read_result(&self) -> FunctionValue<'ctx> {
+        qis::read_result(self.context, &self.module)
+    }
+
     pub fn rt_qubit_allocate(&self) -> FunctionValue<'ctx> {
         qubit_allocate(self.context, &self.module)
     }

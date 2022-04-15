@@ -108,8 +108,12 @@ impl PyNonadaptiveJit {
                     Instruction::Cz(ins) => controlled(pyobj, "cz", ins.control, ins.target)?,
                     Instruction::H(ins) => single(pyobj, "h", ins.qubit)?,
                     Instruction::M(ins) => {
-                        measured(pyobj, "m", ins.qubit, current_register.to_string())?;
-                        current_register += 1;
+                        if ins.target.is_empty() {
+                            measured(pyobj, "m", ins.qubit, current_register.to_string())?;
+                            current_register += 1;
+                        } else {
+                            measured(pyobj, "mz", ins.qubit, ins.target)?;
+                        }
                     }
                     Instruction::Reset(ins) => reset(pyobj, ins.qubit)?,
                     Instruction::Rx(ins) => rotated(pyobj, "rx", ins.theta, ins.qubit)?,

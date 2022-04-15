@@ -30,6 +30,9 @@ class GateLogger(GateSet):
     def m(self, qubit: str, target: str):
         self.instructions.append(f"m qubit[{qubit}] => out[{target}]")
 
+    def mz(self, qubit: str, target: str):
+        self.instructions.append(f"m qubit[{qubit}] => out[{target}]")
+
     def reset(self, target: str):
         self.instructions.append(f"reset {target}")
 

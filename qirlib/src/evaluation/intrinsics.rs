@@ -8,20 +8,29 @@ use super::gates::BaseProfile;
 use bitvec::prelude::*;
 use lazy_static::lazy_static;
 use mut_static::ForceSomeRwLockWriteGuard;
+use std::collections::HashMap;
 use std::ffi::c_void;
 use std::sync::atomic::{AtomicUsize, Ordering::Relaxed};
 use std::sync::Mutex;
 
 #[allow(clippy::upper_case_acronyms)]
 type QUBIT = u64;
+#[allow(clippy::upper_case_acronyms)]
+type RESULT = u64;
 
 lazy_static! {
     static ref RESULTS: Mutex<BitVec> = Mutex::new(bitvec![0]);
     static ref MAX_QUBIT_ID: AtomicUsize = AtomicUsize::new(0);
+    static ref STATIC_RESULT_CACHE: Mutex<HashMap<RESULT, bool>> = Mutex::new(HashMap::new());
 }
 
 pub(crate) fn reset_max_qubit_id() {
     (*MAX_QUBIT_ID).store(0, Relaxed);
+}
+
+pub(crate) fn reset_static_result_cache() {
+    let mut res = STATIC_RESULT_CACHE.lock().unwrap();
+    res.clear();
 }
 
 /// # Panics
@@ -210,6 +219,43 @@ pub extern "C" fn __quantum__qis__m__body(qubit: QUBIT) -> *mut c_void {
         __quantum__rt__result_get_one()
     } else {
         __quantum__rt__result_get_zero()
+    }
+}
+
+/// # Panics
+///
+/// This function will panic if the global state cannot be locked or if the result index is too
+/// large.
+#[no_mangle]
+pub extern "C" fn __quantum__qis__mz__body(qubit: QUBIT, result: RESULT) {
+    log::debug!("/__quantum__qis__mz__body/");
+
+    let mut gs = get_current_gate_processor();
+    gs.mz(qubit, result);
+
+    let mut res = RESULTS.lock().unwrap();
+    let mut cache = STATIC_RESULT_CACHE.lock().unwrap();
+    if res.pop() == Some(true) {
+        cache.insert(result, true);
+    } else {
+        cache.insert(result, false);
+    }
+}
+
+/// # Panics
+///
+/// This function will panic if the global state cannot be locked or if the result index is too
+/// large.
+#[no_mangle]
+pub extern "C" fn __quantum__qis__read_result__body(result: RESULT) -> bool {
+    log::debug!("/__quantum__qis__read_result__body/");
+
+    let res = RESULTS.lock().unwrap();
+    let cache = STATIC_RESULT_CACHE.lock().unwrap();
+    if cache.contains_key(&result) {
+        cache[&result]
+    } else {
+        false
     }
 }
 
