@@ -439,7 +439,7 @@ task run-examples {
             "h qubit[2]",
             "cx qubit[2], qubit[1]"
         )
-        Assert (@(Compare-Object $teleport_first_lines $teleport_expected).Length -eq 0) "Expected $bz_expected found $bz_first_lines"
+        Assert (@(Compare-Object $teleport_first_lines $teleport_expected).Length -eq 0) "Expected $teleport_expected found $teleport_first_lines"
     }
 }
 
