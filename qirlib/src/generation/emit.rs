@@ -306,8 +306,8 @@ mod result_alloc_tests {
     }
 
     #[test]
-    fn when_static_result_alloc_is_used_then_emitted_attribute_sums_registers_correctly() -> Result<(), String>
-    {
+    fn when_static_result_alloc_is_used_then_emitted_attribute_sums_registers_correctly(
+    ) -> Result<(), String> {
         let model = SemanticModel {
             name: "test".to_owned(),
             registers: vec![
