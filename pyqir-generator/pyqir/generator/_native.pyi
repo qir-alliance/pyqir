@@ -68,7 +68,10 @@ class SimpleModule:
 
     @property
     def results(self) -> Tuple[ResultRef, ...]:
-        """A sequence of result references representing the global classical register."""
+        """
+        A sequence of result references representing the global
+        classical register.
+        """
         ...
 
     @property
@@ -91,6 +94,26 @@ class SimpleModule:
         :param name: The name of the function.
         :param ty: The type of the function.
         :return: The function value.
+        """
+        ...
+
+    def use_static_qubit_alloc(self, value: bool):
+        """
+        Configures code generation to use static or dynamic qubit allocation
+        based on the provided value. Default is `True`.
+
+        :param name: The value indicating to use static qubit
+                     allocation (`True`) or dynamic allocation (`False`)
+        """
+        ...
+
+    def use_static_result_alloc(self, value: bool):
+        """
+        Configures code generation to use static or dynamic result allocation
+        based on the provided value. Default is `False`.
+
+        :param name: The value indicating to use static result
+                     allocation (`True`) or dynamic allocation (`False`)
         """
         ...
 
@@ -244,14 +267,14 @@ class BasicQisBuilder:
         """
         Builds a conditional branch on the result of a measurement.
 
-        Dereferences the result reference, then evaluates the instructions built
-        by ``one`` if the result is one, or the instructions built by ``zero``
-        if the result is zero. The one and zero callables should use this
-        builder to build instructions.
+        Dereferences the result reference, then evaluates the instructions
+        built by ``one`` if the result is one, or the instructions built by
+        ``zero`` if the result is zero. The one and zero callables should
+        use this builder to build instructions.
 
         :param result: The result to branch on.
-        :param one: A callable that builds instructions for the branch where the
-                    result is one.
+        :param one: A callable that builds instructions for the branch where
+                    the result is one.
         :param zero: A callable that builds instructions for the branch where
                      the result is zero.
         """
