@@ -147,10 +147,8 @@ function Test-AllowedToDownloadLlvm {
 }
 
 task init {
-    # Temorary, install maturin v0.12.12-beta.2 which has the
-    # PEP 639 license fixes.
     if ((Test-CI) -and !$IsLinux) {
-        cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12-beta.2
+        cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12
     }
     
     # qirlib has this logic built in when compiled on its own
