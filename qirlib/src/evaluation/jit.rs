@@ -3,7 +3,7 @@
 
 use crate::evaluation::{
     interop::SemanticModel,
-    intrinsics::{reset_max_qubit_id, set_measure_stream},
+    intrinsics::{reset_max_qubit_id, reset_static_result_cache, set_measure_stream},
     runtime::Simulator,
 };
 use crate::{module, passes::run_basic_passes_on};
@@ -63,6 +63,7 @@ pub fn run_module(
     inkwell::support::load_library_permanently("");
 
     reset_max_qubit_id();
+    reset_static_result_cache();
 
     set_measure_stream(&result_stream.unwrap_or_default());
 

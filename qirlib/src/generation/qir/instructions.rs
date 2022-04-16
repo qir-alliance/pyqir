@@ -38,10 +38,21 @@ fn get_result<'ctx>(
 ) -> PointerValue<'ctx> {
     // TODO: Panicking can be unfriendly to Python clients.
     // See: https://github.com/qir-alliance/pyqir/issues/31
-    results
-        .get(name)
-        .unwrap_or_else(|| panic!("Result {} not found.", name))
-        .unwrap_or_else(|| result::get_zero(generator))
+    if generator.use_static_result_alloc {
+        // error if the key isn't found
+        // error if static result wasn't initialized
+        results
+            .get(name)
+            .unwrap_or_else(|| panic!("Result {} not found.", name))
+            .unwrap_or_else(|| panic!("Result {} not initialized.", name))
+    } else {
+        // error if the key isn't found
+        // return 0 if result is accessed prior to read.
+        results
+            .get(name)
+            .unwrap_or_else(|| panic!("Result {} not found.", name))
+            .unwrap_or_else(|| result::get_zero(generator))
+    }
 }
 
 fn measure<'ctx>(
@@ -51,14 +62,24 @@ fn measure<'ctx>(
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
 ) {
-    // measure the qubit and save the result to a temporary value
-    let new_value = generator.emit_call_with_return(
-        generator.qis_m_body(),
-        &[get_qubit(qubits, qubit).into()],
-        target,
-    );
-
-    results.insert(target.to_owned(), Some(new_value.into_pointer_value()));
+    if generator.use_static_result_alloc {
+        // measure the qubit and save the result to a temporary value
+        generator.emit_void_call(
+            generator.qis_mz_body(),
+            &[
+                get_qubit(qubits, qubit).into(),
+                get_result(generator, results, target).into(),
+            ],
+        );
+    } else {
+        // measure the qubit and save the result to a temporary value
+        let new_value = generator.emit_call_with_return(
+            generator.qis_m_body(),
+            &[get_qubit(qubits, qubit).into()],
+            target,
+        );
+        results.insert(target.to_owned(), Some(new_value.into_pointer_value()));
+    }
 }
 
 fn controlled<'ctx>(
@@ -191,7 +212,13 @@ fn emit_if<'ctx>(
     if_: &If,
 ) {
     let result = get_result(generator, results, &if_.condition);
-    let condition = result::equal(generator, result, result::get_one(generator));
+
+    let condition = if generator.use_static_result_alloc {
+        result::read_result(generator, result)
+    } else {
+        result::equal(generator, result, result::get_one(generator))
+    };
+
     let then_block = generator.context.append_basic_block(entry_point, "then");
     let else_block = generator.context.append_basic_block(entry_point, "else");
 

@@ -5,8 +5,18 @@ from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
 from pyqir.generator import BasicQisBuilder, Qubit, ResultRef, SimpleModule
 import tempfile
 from typing import List, Optional
-import unittest
+import pytest
 
+
+# Combinations of static qubit and result code generation
+# first element => use_static_qubit_alloc
+# second element => use_static_result_alloc
+static_generator_variations = [
+    [False, False],
+    [False, True],
+    [True, False],
+    [True, True]
+]
 
 def teleport(qis: BasicQisBuilder, qubits: List[Qubit], results: List[ResultRef]) -> None:
     msg = qubits[0]
@@ -32,94 +42,97 @@ def teleport(qis: BasicQisBuilder, qubits: List[Qubit], results: List[ResultRef]
     qis.if_result(results[1], one=lambda: qis.x(target))
 
 
-class TeleportTest(unittest.TestCase):
-    def test_teleport_measures_zero_zero(self) -> None:
-        module = SimpleModule("teleport00", num_qubits=3, num_results=2)
-        qis = BasicQisBuilder(module.builder)
+@pytest.mark.parametrize("matrix", static_generator_variations)
+def test_teleport_measures_zero_zero(matrix) -> None:
+    module = SimpleModule("teleport00", num_qubits=3, num_results=2)
+    module.use_static_qubit_alloc(matrix[0])
+    module.use_static_result_alloc(matrix[1])
+    qis = BasicQisBuilder(module.builder)
 
-        teleport(qis, module.qubits, module.results)
+    teleport(qis, module.qubits, module.results)
 
-        logger = GateLogger()
-        _eval(module, logger, [False, False])
-        self.assertEqual(
-            logger.instructions,
-            [
-                "h qubit[2]",
-                "cx qubit[2], qubit[1]",
-                "cx qubit[0], qubit[2]",
-                "h qubit[0]",
-                "m qubit[0] => out[0]",
-                "reset 0",
-                "m qubit[2] => out[1]",
-                "reset 2",
-            ])
+    logger = GateLogger()
+    _eval(module, logger, [False, False])
+    assert logger.instructions == [
+            "h qubit[2]",
+            "cx qubit[2], qubit[1]",
+            "cx qubit[0], qubit[2]",
+            "h qubit[0]",
+            "m qubit[0] => out[0]",
+            "reset 0",
+            "m qubit[2] => out[1]",
+            "reset 2",
+        ]
 
-    def test_teleport_measures_zero_one(self) -> None:
-        module = SimpleModule("teleport01", num_qubits=3, num_results=2)
-        qis = BasicQisBuilder(module.builder)
+@pytest.mark.parametrize("matrix", static_generator_variations)
+def test_teleport_measures_zero_one(matrix) -> None:
+    module = SimpleModule("teleport01", num_qubits=3, num_results=2)
+    module.use_static_qubit_alloc(matrix[0])
+    module.use_static_result_alloc(matrix[1])
+    qis = BasicQisBuilder(module.builder)
 
-        teleport(qis, module.qubits, module.results)
+    teleport(qis, module.qubits, module.results)
 
-        logger = GateLogger()
-        _eval(module, logger, [False, True])
-        self.assertEqual(
-            logger.instructions,
-            [
-                "h qubit[2]",
-                "cx qubit[2], qubit[1]",
-                "cx qubit[0], qubit[2]",
-                "h qubit[0]",
-                "m qubit[0] => out[0]",
-                "reset 0",
-                "m qubit[2] => out[1]",
-                "reset 2",
-                "x qubit[1]",
-            ])
+    logger = GateLogger()
+    _eval(module, logger, [False, True])
+    assert logger.instructions == [
+            "h qubit[2]",
+            "cx qubit[2], qubit[1]",
+            "cx qubit[0], qubit[2]",
+            "h qubit[0]",
+            "m qubit[0] => out[0]",
+            "reset 0",
+            "m qubit[2] => out[1]",
+            "reset 2",
+            "x qubit[1]",
+        ]
 
-    def test_teleport_measures_one_zero(self) -> None:
-        module = SimpleModule("teleport10", num_qubits=3, num_results=2)
-        qis = BasicQisBuilder(module.builder)
+@pytest.mark.parametrize("matrix", static_generator_variations)
+def test_teleport_measures_one_zero(matrix) -> None:
+    module = SimpleModule("teleport10", num_qubits=3, num_results=2)
+    module.use_static_qubit_alloc(matrix[0])
+    module.use_static_result_alloc(matrix[1])
+    qis = BasicQisBuilder(module.builder)
 
-        teleport(qis, module.qubits, module.results)
+    teleport(qis, module.qubits, module.results)
 
-        logger = GateLogger()
-        _eval(module, logger, [True, False])
-        self.assertEqual(
-            logger.instructions,
-            [
-                "h qubit[2]",
-                "cx qubit[2], qubit[1]",
-                "cx qubit[0], qubit[2]",
-                "h qubit[0]",
-                "m qubit[0] => out[0]",
-                "reset 0",
-                "z qubit[1]",
-                "m qubit[2] => out[1]",
-                "reset 2",
-            ])
+    logger = GateLogger()
+    _eval(module, logger, [True, False])
+    assert logger.instructions == [
+            "h qubit[2]",
+            "cx qubit[2], qubit[1]",
+            "cx qubit[0], qubit[2]",
+            "h qubit[0]",
+            "m qubit[0] => out[0]",
+            "reset 0",
+            "z qubit[1]",
+            "m qubit[2] => out[1]",
+            "reset 2",
+        ]
 
-    def test_teleport_measures_one_one(self) -> None:
-        module = SimpleModule("teleport11", num_qubits=3, num_results=2)
-        qis = BasicQisBuilder(module.builder)
+@pytest.mark.parametrize("matrix", static_generator_variations)
+def test_teleport_measures_one_one(matrix) -> None:
+    module = SimpleModule("teleport11", num_qubits=3, num_results=2)
+    module.use_static_qubit_alloc(matrix[0])
+    module.use_static_result_alloc(matrix[1])
+    qis = BasicQisBuilder(module.builder)
 
-        teleport(qis, module.qubits, module.results)
+    teleport(qis, module.qubits, module.results)
 
-        logger = GateLogger()
-        _eval(module, logger, [True, True])
-        self.assertEqual(
-            logger.instructions,
-            [
-                "h qubit[2]",
-                "cx qubit[2], qubit[1]",
-                "cx qubit[0], qubit[2]",
-                "h qubit[0]",
-                "m qubit[0] => out[0]",
-                "reset 0",
-                "z qubit[1]",
-                "m qubit[2] => out[1]",
-                "reset 2",
-                "x qubit[1]",
-            ])
+    logger = GateLogger()
+    _eval(module, logger, [True, True])
+    assert logger.instructions == [
+            "h qubit[2]",
+            "cx qubit[2], qubit[1]",
+            "cx qubit[0], qubit[2]",
+            "h qubit[0]",
+            "m qubit[0] => out[0]",
+            "reset 0",
+            "z qubit[1]",
+            "m qubit[2] => out[1]",
+            "reset 2",
+            "x qubit[1]",
+        ]
 
 
 def _eval(module: SimpleModule,

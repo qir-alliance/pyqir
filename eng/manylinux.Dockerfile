@@ -38,7 +38,7 @@ ARG USER_GID=${USER_UID}
 USER $USERNAME
 
 # Temporary workaround installing beta for license/notice support
-RUN cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12-beta.2
+RUN cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12
 
 FROM base-with-rust
 

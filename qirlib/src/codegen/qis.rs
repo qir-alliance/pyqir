@@ -8,7 +8,7 @@ use log;
 use inkwell::module::{Linkage, Module};
 use inkwell::values::FunctionValue;
 
-use super::types::{double, qubit, result};
+use super::types::{self, double, qubit, result};
 
 pub(crate) fn cnot_body<'ctx>(
     context: &'ctx inkwell::context::Context,
@@ -108,6 +108,13 @@ pub(crate) fn reset_body<'ctx>(
     get_intrinsic_function_body(context, module, "reset")
 }
 
+pub(crate) fn mz_body<'ctx>(
+    context: &'ctx inkwell::context::Context,
+    module: &Module<'ctx>,
+) -> FunctionValue<'ctx> {
+    get_intrinsic_mz_function_body(context, module, "mz")
+}
+
 pub(crate) fn m_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
@@ -173,6 +180,26 @@ fn get_intrinsic_function_body_impl<'ctx>(
     }
 }
 
+/// `declare void @__quantum__qis__{}__body(%Qubit*, %Result*)`
+pub(crate) fn get_intrinsic_mz_function_body<'ctx>(
+    context: &'ctx inkwell::context::Context,
+    module: &Module<'ctx>,
+    name: &str,
+) -> FunctionValue<'ctx> {
+    let function_name = format!("__quantum__qis__{}__body", name.to_lowercase());
+    if let Some(function) = get_function(module, function_name.as_str()) {
+        function
+    } else {
+        let result_ptr_type = result(context, module).ptr_type(AddressSpace::Generic);
+        let qubit_ptr_type = qubit(context, module).ptr_type(AddressSpace::Generic);
+        let void_type = context.void_type();
+        let fn_type = void_type.fn_type(&[qubit_ptr_type.into(), result_ptr_type.into()], false);
+        let fn_value =
+            module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
+        fn_value
+    }
+}
+
 /// `declare %Result* @__quantum__qis__{}__body(%Qubit*)`
 pub(crate) fn get_intrinsic_m_function_body<'ctx>(
     context: &'ctx inkwell::context::Context,
@@ -225,6 +252,24 @@ pub(crate) fn get_function<'ctx>(
             None
         }
         Some(value) => Some(value),
+    }
+}
+
+/// `declare i1 @__quantum__qis__read_result__body(%Result*)`
+pub(crate) fn read_result<'ctx>(
+    context: &'ctx inkwell::context::Context,
+    module: &Module<'ctx>,
+) -> FunctionValue<'ctx> {
+    let function_name = format!("__quantum__qis__{}__body", "read_result");
+    if let Some(function) = get_function(module, function_name.as_str()) {
+        function
+    } else {
+        let result_ptr_type = result(context, module).ptr_type(AddressSpace::Generic);
+        let bool_type = types::bool(context);
+        let fn_type = bool_type.fn_type(&[result_ptr_type.into()], false);
+        let fn_value =
+            module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
+        fn_value
     }
 }
 
@@ -409,6 +454,30 @@ mod qis_declaration_tests {
         let str_val = function.print_to_string();
         assert_eq!(
             "declare %Result* @__quantum__qis__m__body(%Qubit*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn mz_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = mz_body(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare void @__quantum__qis__mz__body(%Qubit*, %Result*)\n",
+            str_val.to_string()
+        );
+    }
+
+    #[test]
+    fn read_result_is_declared_correctly() {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let function = read_result(&context, &module);
+        let str_val = function.print_to_string();
+        assert_eq!(
+            "declare i1 @__quantum__qis__read_result__body(%Result*)\n",
             str_val.to_string()
         );
     }

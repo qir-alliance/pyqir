@@ -85,6 +85,17 @@ impl<'ctx> Simulator {
             ee.add_global_mapping(&ins, super::intrinsics::__quantum__qis__m__body as usize);
         }
 
+        if let Some(ins) = intrinsics.mz {
+            ee.add_global_mapping(&ins, super::intrinsics::__quantum__qis__mz__body as usize);
+        }
+
+        if let Some(ins) = intrinsics.read_result {
+            ee.add_global_mapping(
+                &ins,
+                super::intrinsics::__quantum__qis__read_result__body as usize,
+            );
+        }
+
         let runtime = Runtime::new(module);
         if let Some(ins) = runtime.result_get_one {
             ee.add_global_mapping(
@@ -123,6 +134,7 @@ pub struct Intrinsics<'ctx> {
     pub cnot: Option<FunctionValue<'ctx>>,
     pub cz: Option<FunctionValue<'ctx>>,
     pub m: Option<FunctionValue<'ctx>>,
+    pub mz: Option<FunctionValue<'ctx>>,
     pub r_x: Option<FunctionValue<'ctx>>,
     pub r_y: Option<FunctionValue<'ctx>>,
     pub r_z: Option<FunctionValue<'ctx>>,
@@ -135,6 +147,7 @@ pub struct Intrinsics<'ctx> {
     pub s_adj: Option<FunctionValue<'ctx>>,
     pub t: Option<FunctionValue<'ctx>>,
     pub t_adj: Option<FunctionValue<'ctx>>,
+    pub read_result: Option<FunctionValue<'ctx>>,
 }
 
 impl<'ctx> Intrinsics<'ctx> {
@@ -143,6 +156,7 @@ impl<'ctx> Intrinsics<'ctx> {
             cnot: Intrinsics::get_qis_intrinsic_function_body(module, "cnot"),
             cz: Intrinsics::get_qis_intrinsic_function_body(module, "Cz"),
             m: Intrinsics::get_qis_intrinsic_function_body(module, "M"),
+            mz: Intrinsics::get_qis_intrinsic_function_body(module, "mz"),
             r_x: Intrinsics::get_qis_intrinsic_function_body(module, "Rx"),
             r_y: Intrinsics::get_qis_intrinsic_function_body(module, "Ry"),
             r_z: Intrinsics::get_qis_intrinsic_function_body(module, "Rz"),
@@ -155,6 +169,7 @@ impl<'ctx> Intrinsics<'ctx> {
             s_adj: Intrinsics::get_qis_intrinsic_function_adj(module, "S"),
             t: Intrinsics::get_qis_intrinsic_function_body(module, "T"),
             t_adj: Intrinsics::get_qis_intrinsic_function_adj(module, "T"),
+            read_result: Intrinsics::get_qis_intrinsic_function_body(module, "read_result"),
         };
 
         intrinsics
