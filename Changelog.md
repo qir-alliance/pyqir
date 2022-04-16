@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Adding static result allocation by @idavis in https://github.com/qir-alliance/pyqir/pull/103
+
 ## [0.3.2a1] - 2022-04-05
 
 - Add licensing checks and notice file by @idavis in https://github.com/qir-alliance/pyqir/pull/94
