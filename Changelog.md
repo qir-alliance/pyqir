@@ -27,6 +27,7 @@ boolean value of the `Result`.
 
 For the `pyqir-generator`, the use of static and dynamic `Qubit` and `Result` can now be configured via two new methods on the `SimpleModule`
 class:
+
 - `use_static_qubit_alloc(bool)`
 - `use_static_result_alloc(bool)`
 
