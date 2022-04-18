@@ -3,6 +3,32 @@
 ## [Unreleased]
 
 - Adding static result allocation by @idavis in https://github.com/qir-alliance/pyqir/pull/103
+- Bumping version to `0.4.0a1` by @idavis in https://github.com/qir-alliance/pyqir/pull/105
+- Changing default value of use_static_result_alloc to True by @idavis in https://github.com/qir-alliance/pyqir/pull/106
+
+PR [#106](https://github.com/qir-alliance/pyqir/pull/106) changes
+the default way `Result`s are emitted in emitted QIR.
+
+The previous approach
+used `call %Result* @__quantum__qis__m__body(%Qubit* null)` for
+measurement saving to a `Result` variable. Along with this, branching
+used `__quantum__rt__result_equal(%Result*, %Result*)` along with
+`__quantum__rt__result_get_zero` and `__quantum__rt__result_get_one`
+to perform branching.
+
+The new default usage in `0.4.0a1` uses static `Result` identifiers
+instead of dynamic `Result` values. With that, measurement now uses
+`"call void @__quantum__qis__mz__body(%Qubit*, %Result*)`
+which accepts the static `Result` identifier. As a result, the
+`pyqir-evaluator` can now see which `Result` is being written to.
+Branching has also changed to use
+`call i1 @__quantum__qir__read_result(%Result*)` which returns the
+boolean value of the `Result`.
+
+For the `pyqir-generator`, the use of static and dynamic `Qubit` and `Result` can now be configured via two new methods on the `SimpleModule`
+class:
+- `use_static_qubit_alloc(bool)`
+- `use_static_result_alloc(bool)`
 
 ## [0.3.2a1] - 2022-04-05
 
