@@ -69,6 +69,9 @@ RUN /bin/bash /tmp/Miniconda3.sh -b -p /usr/local/miniconda3
 
 RUN chown -R ${USER_UID}:${USER_GID} /usr/local/miniconda3
 
+RUN curl https://packages.microsoft.com/config/rhel/7/prod.repo | tee /etc/yum.repos.d/microsoft.repo && \
+    yum install -y powershell
+
 USER $USERNAME
 
 ENV PATH="/usr/local/miniconda3/bin:${PATH}"

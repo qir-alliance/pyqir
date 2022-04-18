@@ -17,7 +17,7 @@ include(ExternalProject)
 # Both
 # - CMAKE_INSTALL_PREFIX
 
-if (NOT $ENV{QIRLIB_DOWNLOAD_LLVM} MATCHES "false")
+if ($ENV{QIRLIB_DOWNLOAD_LLVM} MATCHES "true")
   message (STATUS "Install LLVM to ${CMAKE_INSTALL_PREFIX}")
 
   set(SHA256_NAME $ENV{QIRLIB_LLVM_PKG_NAME}.sha256)
