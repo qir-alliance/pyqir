@@ -110,7 +110,7 @@ class SimpleModule:
     def use_static_result_alloc(self, value: bool):
         """
         Configures code generation to use static or dynamic result allocation
-        based on the provided value. Default is `False`.
+        based on the provided value. Default is `True`.
 
         :param name: The value indicating to use static result
                      allocation (`True`) or dynamic allocation (`False`)

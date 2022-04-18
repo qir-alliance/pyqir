@@ -278,7 +278,7 @@ impl SimpleModule {
             qubits,
             instructions: Vec::new(),
             use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
+            use_static_result_alloc: true,
         };
 
         let builder = Py::new(py, Builder::new())?;
