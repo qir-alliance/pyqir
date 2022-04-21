@@ -51,7 +51,7 @@ properties {
 Include settings.ps1
 Include utils.ps1
 
-Task default -Depends pyqir-tests, parser, generator, evaluator, metawheel, run-examples
+Task default -Depends qirlib, pyqir-tests, parser, generator, evaluator, metawheel, run-examples
 
 Task manylinux -Depends Build-ManyLinuxContainerImage, Configure-SCCache -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
     $srcPath = $repo.root
@@ -71,8 +71,9 @@ Task manylinux -Depends Build-ManyLinuxContainerImage, Configure-SCCache -PreAct
     $userName = [Environment]::UserName
 
     Invoke-LoggedCommand {
-        docker run --rm -it --user $userName -v $ioVolume @cacheMount @cacheEnv -e QIRLIB_CACHE_DIR="/tmp/llvm" -w "$($linux.manylinux_root)" "$($linux.manylinux_tag)" conda run --no-capture-output pwsh build.ps1 -t default, run-examples-in-containers
+        docker run --rm --user $userName -v $ioVolume @cacheMount @cacheEnv -e QIRLIB_CACHE_DIR="/tmp/llvm" -w "$($linux.manylinux_root)" "$($linux.manylinux_tag)" conda run --no-capture-output pwsh build.ps1 -t default
     }
+    Invoke-Task "run-examples-in-containers"
 }
 
 Task musllinux -Depends Build-MuslContainerImage, Configure-SCCache -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
@@ -93,7 +94,7 @@ Task musllinux -Depends Build-MuslContainerImage, Configure-SCCache -PreAction {
     $userName = [Environment]::UserName
 
     Invoke-LoggedCommand {
-        docker run --rm -it --user $userName -v $ioVolume @cacheMount @cacheEnv -e QIRLIB_CACHE_DIR="/tmp/llvm" -w "$($linux.musllinux_root)" "$($linux.musllinux_tag)" pwsh build.ps1
+        docker run --rm --user $userName -v $ioVolume @cacheMount @cacheEnv -e QIRLIB_CACHE_DIR="/tmp/llvm" -w "$($linux.musllinux_root)" "$($linux.musllinux_tag)" pwsh build.ps1
     }
 }
 
@@ -128,6 +129,29 @@ Task parser -Depends init {
 
 Task pyqir-tests -Depends init {
     Build-PyQIR("pyqir-tests")
+}
+
+Task qirlib -Depends init {
+    if($IsLinux) {
+        $triple = rustc -vV | sed -n 's|host: ||p'
+        if($triple -eq "x86_64-unknown-linux-musl") {
+            $env:RUSTFLAGS="-C target-feature=-crt-static"
+        }
+        Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
+            cargo test --release -vv
+        }
+        $env:RUSTFLAGS=""
+        Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
+            cargo build --release -vv
+        }
+    } else {
+        Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
+            cargo test --release -vv
+        }
+        Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
+            cargo build --release -vv
+        }
+    }
 }
 
 Task metawheel {
