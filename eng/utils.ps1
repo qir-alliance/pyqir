@@ -117,5 +117,5 @@ function Invoke-LoggedCommand {
 }
 
 function Test-InCondaEnvironment {
-    (Test-Path env:\CONDA_PREFIX)
+    (Test-Path env:\CONDA_PREFIX) -or (Test-Path env:\CONDA_ROOT)
 }

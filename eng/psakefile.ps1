@@ -53,15 +53,17 @@ Include utils.ps1
 
 Task default -Depends qirlib, pyqir-tests, parser, generator, evaluator, metawheel, run-examples
 
-Task manylinux -Depends Build-ManyLinuxContainerImage, Configure-SCCache -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
+Task manylinux -Depends Build-ManyLinuxContainerImage, Run-ManyLinuxContainerImage, run-examples-in-containers 
+
+Task musllinux -Depends Build-MuslLinuxContainerImage, Run-MuslLinuxContainerImage
+
+Task Run-ManyLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
     $srcPath = $repo.root
 
     # For any of the volumes mapped, if the dir doesn't exist,
     # docker will create it and it will be owned by root and
     # the caching/install breaks with permission errors.
     # New-Item is idempotent so we don't need to check for existence
-
-    $ioVolume = "$($srcPath):$($linux.manylinux_root)"
 
     $userName = [Environment]::UserName
     $cacheMount, $cacheEnv = Get-CCacheParams
@@ -73,18 +75,15 @@ Task manylinux -Depends Build-ManyLinuxContainerImage, Configure-SCCache -PreAct
     Invoke-LoggedCommand {
         docker run --rm --user $userName -v $ioVolume @cacheMount @cacheEnv -e QIRLIB_CACHE_DIR="/tmp/llvm" -w "$($linux.manylinux_root)" "$($linux.manylinux_tag)" conda run --no-capture-output pwsh build.ps1 -t default
     }
-    Invoke-Task "run-examples-in-containers"
 }
 
-Task musllinux -Depends Build-MuslContainerImage, Configure-SCCache -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
+Task Run-MuslLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
     $srcPath = $repo.root
 
     # For any of the volumes mapped, if the dir doesn't exist,
     # docker will create it and it will be owned by root and
     # the caching/install breaks with permission errors.
     # New-Item is idempotent so we don't need to check for existence
-
-    $ioVolume = "$($srcPath):$($linux.musllinux_root)"
 
     $userName = [Environment]::UserName
     $cacheMount, $cacheEnv = Get-CCacheParams
@@ -272,16 +271,15 @@ function Write-CacheStats {
     }
 }
 
-task install-llvm-from-source -Depends Configure-SCCache -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
+task install-llvm-from-source -Depends Configure-SCCache -PostAction { Write-CacheStats } {
     if ($IsWindows) {
         Include vcvars.ps1
     }
     install-llvm $pyqir.qirlib.dir "build"
 }
 
-task Package-MuslLinuxLLVM -Depends Build-MuslContainerImage -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
+task Package-MuslLinuxLLVM -Depends Build-MuslLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
     if($IsLinux) {
-        Build-MuslContainerImage $repo.root
         $srcPath = $repo.root
         $ioVolume = "$($srcPath):$($linux.musllinux_root)"
         $userName = [Environment]::UserName
@@ -343,7 +341,7 @@ task Build-ManyLinuxContainerImage {
     }
 }
 
-task Build-MuslContainerImage {
+task Build-MuslLinuxContainerImage {
     $srcPath = $repo.root
     Write-BuildLog "Building container image musllinux-llvm-builder"
     Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
@@ -535,7 +533,7 @@ task update-noticefiles {
     }
 }
 
-Task Configure-SCCache {
+Task Configure-SCCache -PostAction { Write-CacheStats } {
     if (Test-CommandExists("sccache")) {
         Write-BuildLog "Starting sccache server"
         & { sccache --start-server } -ErrorAction SilentlyContinue

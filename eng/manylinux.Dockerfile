@@ -81,5 +81,3 @@ ENV PATH="/usr/lib/ccache:${PATH}"
 RUN conda init && \
     conda install -y -c conda-forge clang-11 libstdcxx-devel_linux-64 libgcc-devel_linux-64 && \
     cp /usr/local/miniconda3/bin/clang-11 /usr/local/miniconda3/bin/clang++-11
-
-RUN conda run python -m pip install -U tox
