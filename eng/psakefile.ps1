@@ -79,8 +79,6 @@ Task Run-ManyLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { W
 
 Task Run-MuslLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
     $srcPath = $repo.root
-    ls -la $srcPath
-    Assert $false
 
     # For any of the volumes mapped, if the dir doesn't exist,
     # docker will create it and it will be owned by root and
@@ -345,6 +343,8 @@ task Build-ManyLinuxContainerImage {
 
 task Build-MuslLinuxContainerImage {
     $srcPath = $repo.root
+    ls -la $srcPath
+    Assert $false
     Write-BuildLog "Building container image musllinux-llvm-builder"
     Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
         $user = "$([environment]::UserName)"
