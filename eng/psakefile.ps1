@@ -128,7 +128,27 @@ Task parser -Depends init {
 }
 
 Task pyqir-tests -Depends init {
-    Build-PyQIR("pyqir-tests")
+    $srcPath = $repo.root
+
+    exec -workingDirectory (Join-Path $srcPath "pyqir-tests") {
+        if(Test-InCondaEnvironment) {
+            Invoke-LoggedCommand -wd $pyqir.generator.dir {
+                maturin develop --release --cargo-extra-args="-vv"
+            }
+            Invoke-LoggedCommand -wd $pyqir.evaluator.dir {
+                maturin develop --release --cargo-extra-args="-vv"
+            }
+            & $python -m pip install pytest
+            & $python -m pytest
+        } else {
+            Invoke-LoggedCommand {
+                & $python -m pip install tox
+            }
+            Invoke-LoggedCommand {
+                & $python -m tox -v -e all
+            }
+        }
+    }
 }
 
 Task qirlib -Depends init {
@@ -309,7 +329,7 @@ task Build-ManyLinuxContainerImage {
     $srcPath = $repo.root
     Write-BuildLog "Building container image manylinux-llvm-builder"
     Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
-        $user = [environment]::UserName
+        $user = "$([environment]::UserName)"
         $uid = "$(id -u)"
         $gid = "$(id -g)"
         $rustv = "1.57.0"
@@ -327,7 +347,7 @@ task Build-MuslContainerImage {
     $srcPath = $repo.root
     Write-BuildLog "Building container image musllinux-llvm-builder"
     Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
-        $user = [environment]::UserName
+        $user = "$([environment]::UserName)"
         $uid = "$(id -u)"
         $gid = "$(id -g)"
         $rustv = "1.57.0"
@@ -345,28 +365,36 @@ function Build-PyQIR([string]$project) {
     $srcPath = $repo.root
 
     exec -workingDirectory (Join-Path $srcPath $project) {
-        Invoke-LoggedCommand {
-            & $python -m pip install tox
-        }
-
-        Invoke-LoggedCommand {
-            & $python -m tox -v -e all
+        if(Test-InCondaEnvironment) {
+            Invoke-LoggedCommand {
+                maturin build --release --cargo-extra-args="-vv"
+                maturin develop --release --cargo-extra-args="-vv"
+                & $python -m pip install pytest
+                & $python -m pytest
+            }
+        } else {
+            Invoke-LoggedCommand {
+                & $python -m pip install tox
+            }
+            Invoke-LoggedCommand {
+                & $python -m tox -v -e all
+            }
         }
     }
 }
 
 # This is only usable if building for manylinux
 Task run-examples-in-containers {
-    $userName = [Environment]::UserName
-    $userId = $(id -u)
-    $groupId = $(id -g)
+    $user = [Environment]::UserName
+    $uid = "$(id -u)"
+    $gid = "$(id -g)"
     $images = @("buster", "bullseye", "bionic", "focal")
     foreach ($image in $images) {
         exec -workingDirectory (Join-Path $repo.root "eng") {
-            get-content "$($image).Dockerfile" | docker build --build-arg USERNAME=$userName --build-arg USER_UID=$userId --build-arg USER_GID=$groupId -t "$image-samples" -
+            get-content "$($image).Dockerfile" | docker build --build-arg USERNAME=$user --build-arg USER_UID=$uid --build-arg USER_GID=$gid -t "pyqir-$image-examples" -
         }
         exec {
-            docker run --rm --user $userName -v "$($repo.root):/home/$userName" "$image-samples" build.ps1 -t run-examples
+            docker run --rm --user $user -v "$($repo.root):/home/$user" "pyqir-$image-examples" build.ps1 -t run-examples
         }
     }
 }

@@ -115,3 +115,7 @@ function Invoke-LoggedCommand {
         -retryTriggerErrorPattern $retryTriggerErrorPattern `
         -workingDirectory $workingDirectory
 }
+
+function Test-InCondaEnvironment {
+    (Test-Path env:\CONDA_PREFIX)
+}
