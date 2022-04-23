@@ -119,3 +119,35 @@ function Invoke-LoggedCommand {
 function Test-InCondaEnvironment {
     (Test-Path env:\CONDA_PREFIX) -or (Test-Path env:\CONDA_ROOT)
 }
+
+function Get-LinuxTargetTriple {
+    $triple = rustc -vV | sed -n 's|host: ||p'
+    $triple
+}
+
+function Get-LinuxContainerUserId {
+    if (Test-Path env:\PYQIR_CONTAINER_USERID) {
+        $env:PYQIR_CONTAINER_USERID
+    }
+    else {
+        "$(id -u)"
+    }
+}
+
+function Get-LinuxContainerGroupId {
+    if (Test-Path env:\PYQIR_CONTAINER_GROUPID) {
+        $env:PYQIR_CONTAINER_GROUPID
+    }
+    else {
+        "$(id -g)"
+    }
+}
+
+function Get-LinuxContainerUserName {
+    if (Test-Path env:\PYQIR_CONTAINER_USERNAME) {
+        $env:PYQIR_CONTAINER_USERNAME
+    }
+    else {
+        [Environment]::UserName
+    }
+}
