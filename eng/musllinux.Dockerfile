@@ -13,17 +13,17 @@ ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
 ARG RUST_VERSION=1.57.0
 
-RUN addgroup -g "${USER_GID}" "${USERNAME}"
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --ingroup "${USERNAME}" \
-    --uid "${USER_GID}" \
-    "${USERNAME}"
+# RUN addgroup -g "${USER_GID}" "${USERNAME}"
+# RUN adduser \
+#     --disabled-password \
+#     --gecos "" \
+#     --ingroup "${USERNAME}" \
+#     --uid "${USER_GID}" \
+#     "${USERNAME}"
 
-RUN apk add sudo
-RUN echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME}
-RUN chmod 0440 /etc/sudoers.d/${USERNAME}
+# RUN apk add sudo
+# RUN echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME}
+# RUN chmod 0440 /etc/sudoers.d/${USERNAME}
 
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
@@ -40,13 +40,13 @@ RUN apk add libcrypto1.1 libcurl libgcc libssl1.1 musl zlib
 RUN apk add rustup
 RUN rustup-init --no-modify-path --profile minimal --default-toolchain ${RUST_VERSION} -y
 
-RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME}; \
-    rustup --version; \
-    cargo --version; \
-    rustc --version;
+# RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME}; \
+#     rustup --version; \
+#     cargo --version; \
+#     rustc --version;
 
 WORKDIR /oi
-RUN chown ${USER_UID}:${USER_GID} /oi
+# RUN chown ${USER_UID}:${USER_GID} /oi
 
 FROM base-with-rust as builder
 
