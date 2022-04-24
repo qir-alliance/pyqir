@@ -6,24 +6,43 @@
 # 3.15 has llvm/clang 12.0.1
 # edge has llvm/13.0.1
 
-FROM python:3.6-alpine3.14 as base-with-rust
+ARG BASENAME=user
 
+FROM python:3.6-alpine3.14 as base-user
+
+ARG BASENAME=user
 ARG USERNAME=runner
 ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
 ARG RUST_VERSION=1.57.0
 
-# RUN addgroup -g "${USER_GID}" "${USERNAME}"
-# RUN adduser \
-#     --disabled-password \
-#     --gecos "" \
-#     --ingroup "${USERNAME}" \
-#     --uid "${USER_GID}" \
-#     "${USERNAME}"
+RUN addgroup -g "${USER_GID}" "${USERNAME}"
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --ingroup "${USERNAME}" \
+    --uid "${USER_GID}" \
+    "${USERNAME}"
 
-# RUN apk add sudo
-# RUN echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME}
-# RUN chmod 0440 /etc/sudoers.d/${USERNAME}
+RUN apk add sudo
+RUN echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME}
+RUN chmod 0440 /etc/sudoers.d/${USERNAME}
+
+WORKDIR /oi
+RUN chown ${USER_UID}:${USER_GID} /oi
+
+FROM python:3.6-alpine3.14 as base-root
+
+ARG BASENAME=user
+ARG USERNAME=runner
+ARG RUST_VERSION=1.57.0
+
+WORKDIR /oi
+
+FROM ${BASENAME} as base-with-rust
+
+ARG USERNAME=runner
+ARG RUST_VERSION=1.57.0
 
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
@@ -40,19 +59,14 @@ RUN apk add libcrypto1.1 libcurl libgcc libssl1.1 musl zlib
 RUN apk add rustup
 RUN rustup-init --no-modify-path --profile minimal --default-toolchain ${RUST_VERSION} -y
 
-# RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME}; \
-#     rustup --version; \
-#     cargo --version; \
-#     rustc --version;
-
-WORKDIR /oi
-# RUN chown ${USER_UID}:${USER_GID} /oi
+RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME}; \
+    rustup --version; \
+    cargo --version; \
+    rustc --version;
 
 FROM base-with-rust as builder
 
 ARG USERNAME=runner
-ARG USER_UID=1000
-ARG USER_GID=${USER_UID}
 
 USER $USERNAME
 
@@ -62,8 +76,6 @@ RUN cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12
 FROM base-with-rust
 
 ARG USERNAME=runner
-ARG USER_UID=1000
-ARG USER_GID=${USER_UID}
 
 USER root
 

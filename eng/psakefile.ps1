@@ -78,8 +78,6 @@ Task Run-ManyLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { W
 
 Task Configure-MuslContainerEnv {
     if (Test-CI) {
-        $env:PYQIR_CONTAINER_USERID = "0"
-        $env:PYQIR_CONTAINER_GROUPID = "0"
         $env:PYQIR_CONTAINER_USERNAME = "root"
     }
 }
@@ -351,7 +349,10 @@ task Build-ManyLinuxContainerImage {
 
 task Build-MuslLinuxContainerImage {
     $srcPath = $repo.root
-
+    $baseName = "base-user"
+    if (Test-CI) {
+        $baseName = "base-root"
+    }
     Write-BuildLog "Building container image musllinux-llvm-builder"
     Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
         $user = "$(Get-LinuxContainerUserName)"
@@ -360,6 +361,7 @@ task Build-MuslLinuxContainerImage {
         $rustv = "1.57.0"
         $tag = "$($linux.musllinux_tag)"
         Get-Content musllinux.Dockerfile | docker build `
+            --build-arg BASENAME=$baseName `
             --build-arg USERNAME=$user `
             --build-arg USER_UID=$uid `
             --build-arg USER_GID=$gid `
