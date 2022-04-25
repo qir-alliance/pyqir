@@ -366,6 +366,7 @@ task Build-MuslLinuxContainerImage {
             --build-arg USER_UID=$uid `
             --build-arg USER_GID=$gid `
             --build-arg RUST_VERSION=$rustv `
+            --target $baseName `
             -t $tag -
     }
 }
