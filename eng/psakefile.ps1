@@ -89,7 +89,9 @@ Task Run-MuslLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { W
     Write-BuildLog "Running container image:"
     $ioVolume = "$($srcPath):$($linux.musllinux_root)"
     $userName = Get-LinuxContainerUserName
-
+    if (Test-CI) {
+        $userName = "root"
+    }
     Invoke-LoggedCommand {
         docker run --rm --user $userName -v $ioVolume @cacheMount @cacheEnv -e QIRLIB_CACHE_DIR="/tmp/llvm" -w "$($linux.musllinux_root)" "$($linux.musllinux_tag)" pwsh build.ps1
     }
