@@ -8,29 +8,12 @@
 
 FROM python:3.6-alpine3.14 as base
 
-ARG USERNAME=runner
-ARG USER_UID=1000
-ARG USER_GID=${USER_UID}
 ARG RUST_VERSION=1.57.0
 
-RUN addgroup -g "${USER_GID}" "${USERNAME}"
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --ingroup "${USERNAME}" \
-    --uid "${USER_GID}" \
-    "${USERNAME}"
-
-RUN apk add sudo
-RUN echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME}
-RUN chmod 0440 /etc/sudoers.d/${USERNAME}
-
 WORKDIR /oi
-RUN chown ${USER_UID}:${USER_GID} /oi
 
 FROM base as base-with-rust
 
-ARG USERNAME=runner
 ARG RUST_VERSION=1.57.0
 
 ENV RUSTUP_HOME=/usr/local/rustup \
@@ -55,18 +38,10 @@ RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME}; \
 
 FROM base-with-rust as builder
 
-ARG USERNAME=runner
-
-USER $USERNAME
-
 # Temporary workaround installing beta for license/notice support
 RUN cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12
 
 FROM base-with-rust
-
-ARG USERNAME=runner
-
-USER root
 
 RUN apk add samurai
 
@@ -107,8 +82,6 @@ RUN chmod +x /opt/microsoft/powershell/7/pwsh
 RUN ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh
 
 RUN apk add patchelf
-
-USER $USERNAME
 
 RUN python -m pip install -U pip
 RUN python -m pip install --no-cache-dir cffi
