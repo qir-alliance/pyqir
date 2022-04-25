@@ -55,7 +55,7 @@ Task default -Depends qirlib, pyqir-tests, parser, generator, evaluator, metawhe
 
 Task manylinux -Depends Build-ManyLinuxContainerImage, Run-ManyLinuxContainerImage, run-examples-in-containers 
 
-Task musllinux -Depends Configure-MuslContainerEnv, Build-MuslLinuxContainerImage, Run-MuslLinuxContainerImage
+Task musllinux -Depends Build-MuslLinuxContainerImage, Run-MuslLinuxContainerImage
 
 Task Run-ManyLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
     $srcPath = $repo.root
@@ -73,12 +73,6 @@ Task Run-ManyLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { W
 
     Invoke-LoggedCommand {
         docker run --rm --user $userName -v $ioVolume @cacheMount @cacheEnv -e QIRLIB_CACHE_DIR="/tmp/llvm" -w "$($linux.manylinux_root)" "$($linux.manylinux_tag)" conda run --no-capture-output pwsh build.ps1 -t default
-    }
-}
-
-Task Configure-MuslContainerEnv {
-    if (Test-CI) {
-        $env:PYQIR_CONTAINER_USERNAME = "root"
     }
 }
 
