@@ -410,12 +410,12 @@ class QirRetTerminator(QirTerminator):
     """
 
     @property
-    def operand(self) -> QirOperand:
+    def operand(self) -> Optional[QirOperand]:
         """
-        Gets the operand that will be returned by the ret instruction.
+        Gets the operand that will be returned by the ret instruction or None for a void return.
         """
         if not hasattr(self, "_operand"):
-            self._operand = QirOperand(self.term.ret_operand)
+            self._operand = None if self.term.ret_operand is None else QirOperand(self.term.ret_operand)
         return self._operand
 
 
