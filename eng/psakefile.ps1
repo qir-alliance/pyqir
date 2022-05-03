@@ -412,10 +412,12 @@ Task run-examples-in-containers {
 }
 
 Task run-examples-in-musl-containers {
-    $user = Get-LinuxContainerUserName
-
+    $userName = Get-LinuxContainerUserName
+    if (Test-CI) {
+        $userName = "root"
+    }
     Invoke-LoggedCommand {
-        docker run --rm --user $user -w "/home/$user" -v "$($repo.root):/home/$user" "$($linux.musllinux_tag)" pwsh build.ps1 -t run-examples
+        docker run --rm --user $userName -w "/home/$user" -v "$($repo.root):/home/$user" "$($linux.musllinux_tag)" pwsh build.ps1 -t run-examples
     }
 }
 
