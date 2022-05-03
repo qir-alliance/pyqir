@@ -151,3 +151,13 @@ function Get-LinuxContainerUserName {
         [Environment]::UserName
     }
 }
+
+function Get-ToxTarget {
+    $triple = Get-LinuxTargetTriple
+    if ($triple -eq "x86_64-unknown-linux-musl") {
+        "allmusl"
+    }
+    else {
+        "all"
+    }
+}

@@ -55,7 +55,7 @@ Task default -Depends qirlib, pyqir-tests, parser, generator, evaluator, metawhe
 
 Task manylinux -Depends Build-ManyLinuxContainerImage, Run-ManyLinuxContainerImage, run-examples-in-containers 
 
-Task musllinux -Depends Build-MuslLinuxContainerImage, Run-MuslLinuxContainerImage
+Task musllinux -Depends Build-MuslLinuxContainerImage, Run-MuslLinuxContainerImage, run-examples-in-musl-containers
 
 Task Run-ManyLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
     $srcPath = $repo.root
@@ -145,7 +145,7 @@ Task pyqir-tests -Depends init {
                 & $python -m pip install tox
             }
             Invoke-LoggedCommand {
-                & $python -m tox -v -e all
+                & $python -m tox -v -e (Get-ToxTarget)
             }
         }
     }
@@ -389,7 +389,7 @@ function Build-PyQIR([string]$project) {
                 & $python -m pip install tox
             }
             Invoke-LoggedCommand {
-                & $python -m tox -v -e all
+                & $python -m tox -v -e (Get-ToxTarget)
             }
         }
     }
@@ -411,11 +411,20 @@ Task run-examples-in-containers {
     }
 }
 
+Task run-examples-in-musl-containers {
+    $user = Get-LinuxContainerUserName
+
+    Invoke-LoggedCommand {
+        docker run --rm --user $user -w "/home/$user" -v "$($repo.root):/home/$user" "$($linux.musllinux_tag)" pwsh build.ps1 -t run-examples
+    }
+}
+
 # run-examples assumes the wheels have already been installed locally
 task run-examples {   
     exec -workingDirectory $pyqir.generator.examples_dir {
+        & $python -m pip install -U pip
         & $python -m pip install -r requirements.txt
-        & $python -m pip install --no-index --find-links (Join-Path $repo.root "target" "wheels") pyqir-generator
+        & $python -m pip install --user -U --no-index --find-links (Join-Path $repo.root "target" "wheels") pyqir-generator
         & $python "bell_pair.py" | Tee-Object -Variable bell_pair_output
         $bell_first_line = $($bell_pair_output | Select-Object -first 1)
         $bell_expected = "; ModuleID = 'Bell'"
@@ -429,7 +438,7 @@ task run-examples {
     }
 
     exec -workingDirectory $pyqir.evaluator.examples_dir {
-        & $python -m pip install --no-index --find-links (Join-Path $repo.root "target" "wheels") pyqir-evaluator
+        & $python -m pip install --user -U --no-index --find-links (Join-Path $repo.root "target" "wheels") pyqir-evaluator
         & $python "bernstein_vazirani.py" | Tee-Object -Variable bz_output
         $bz_first_lines = @($bz_output | Select-Object -first 5)
         $bz_expected = @(
