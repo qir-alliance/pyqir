@@ -19,7 +19,8 @@ qirlib = { path = "../qirlib" }
 
 [features]
 extension-module = ["pyo3/abi3-py36", "pyo3/extension-module"]
-default = ["extension-module"]
+python-bindings = []
+default = ["extension-module", "python-bindings"]
 
 [lib]
 name = "pyqir_generator"
