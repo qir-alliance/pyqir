@@ -116,6 +116,18 @@ function Invoke-LoggedCommand {
         -workingDirectory $workingDirectory
 }
 
+function Use-ExternalLlvmInstallation {
+    Write-BuildLog "Using LLVM installation specified by QIRLIB_LLVM_EXTERNAL_DIR"
+    Assert (Test-Path $env:QIRLIB_LLVM_EXTERNAL_DIR) "QIRLIB_LLVM_EXTERNAL_DIR folder does not exist"
+    Use-LlvmInstallation $env:QIRLIB_LLVM_EXTERNAL_DIR
+}
+
+function Test-AllowedToDownloadLlvm {
+    # If QIRLIB_DOWNLOAD_LLVM isn't set, we don't allow for download
+    # If it is set, then we use its value
+    ((Test-Path env:\QIRLIB_DOWNLOAD_LLVM) -and ($env:QIRLIB_DOWNLOAD_LLVM -eq $true))
+}
+
 function Test-InCondaEnvironment {
     (Test-Path env:\CONDA_PREFIX) -or (Test-Path env:\CONDA_ROOT)
 }
@@ -153,11 +165,147 @@ function Get-LinuxContainerUserName {
 }
 
 function Get-ToxTarget {
-    $triple = Get-LinuxTargetTriple
-    if ($triple -eq "x86_64-unknown-linux-musl") {
+    if (Test-MuslLinux) {
         "allmusl"
     }
     else {
         "all"
     }
+}
+
+function Test-MuslLinux {
+    if ($IsLinux) {
+        $triple = Get-LinuxTargetTriple
+        $triple -eq "x86_64-unknown-linux-musl"
+    }
+    else {
+        $false
+    }
+}
+
+function Write-CacheStats {
+    if (Test-CommandExists("ccache")) {
+        Write-BuildLog "ccache config:"
+        & { ccache --show-config } -ErrorAction SilentlyContinue
+        Write-BuildLog "ccache stats:"
+        & { ccache --show-stats } -ErrorAction SilentlyContinue
+    }
+    if (Test-CommandExists("sccache")) {
+        Write-BuildLog "sccache config/stats:"
+        & { sccache --show-stats } -ErrorAction SilentlyContinue
+    }
+}
+
+function Build-PyQIR([string]$project) {
+    $srcPath = $repo.root
+
+    exec -workingDirectory (Join-Path $srcPath $project) {
+        if (Test-InCondaEnvironment) {
+            $build_extra_args = ""
+            if (Test-MuslLinux) {
+                $build_extra_args = "--skip-auditwheel"
+            }
+            Invoke-LoggedCommand {
+                maturin build --release $build_extra_args --cargo-extra-args="-vv"
+                maturin develop --release --cargo-extra-args="-vv"
+                & $python -m pip install pytest
+                & $python -m pytest
+            }
+        }
+        else {
+            Invoke-LoggedCommand {
+                & $python -m pip install tox
+            }
+            Invoke-LoggedCommand {
+                & $python -m tox -v -e (Get-ToxTarget)
+            }
+        }
+    }
+}
+
+function Create-DocsEnv() {
+    param(
+        [string]
+        $EnvironmentPath,
+        [string]
+        $RequirementsPath,
+        [string[]]
+        $ArtifactPaths
+    )
+
+    Write-Host "##[info]Creating virtual environment for use with docs at $EnvironmentPath..."
+    python -m venv $EnvironmentPath
+
+    $activateScript = (Join-Path $EnvironmentPath "bin" "Activate.ps1")
+    if (-not (Test-Path $activateScript -ErrorAction SilentlyContinue)) {
+        Get-ChildItem $EnvironmentPath | Write-Host
+        throw "No activate script found for virtual environment at $EnvironmentPath; environment creation failed."
+    }
+
+    & $activateScript
+    try {
+        pip install -r $RequirementsPath
+        foreach ($artifact in $ArtifactPaths) {
+            pip install $artifact
+        }
+    }
+    finally {
+        deactivate
+    }
+}
+
+function install-llvm {
+    Param(
+        [Parameter(Mandatory)]
+        [string]$qirlibDir,
+        [Parameter(Mandatory)]
+        [ValidateSet("download", "build")]
+        [string]$operation
+    )
+
+    $installationDirectory = Resolve-InstallationDirectory
+    New-Item -ItemType Directory -Force $installationDirectory | Out-Null
+    Use-LlvmInstallation $installationDirectory
+    $clear_cache_var = $false
+    if (!(Test-Path env:\QIRLIB_CACHE_DIR)) {
+        $clear_cache_var = $true
+        $env:QIRLIB_CACHE_DIR = $installationDirectory
+    }
+    try {
+        Invoke-LoggedCommand -wd $qirlibDir {
+            cargo build --release --no-default-features --features "$($operation)-llvm,no-llvm-linking" -vv
+        }
+    }
+    finally {
+        if ($clear_cache_var) {
+            Remove-Item -Path Env:QIRLIB_CACHE_DIR
+        }
+    }   
+}
+
+function Get-CCacheParams {
+    # only ccache is supported in the container for now.
+    # we would need a way to specify which cache is used to
+    # support both.
+    if (Test-CommandExists("ccache")) {
+        # we need to map the local cache dir into the
+        # container. If the env var isn't set, ask ccache
+        $cacheDir = ""
+        if (Test-Path env:\CCACHE_DIR) {
+            $cacheDir = $Env:CCACHE_DIR
+        }
+        else {
+            $cacheDir = exec { ccache -k cache_dir }
+        }
+        if (![string]::IsNullOrWhiteSpace($cacheDir)) {
+            New-Item -ItemType Directory -Force $cacheDir | Out-Null
+            
+            $cacheDir = Resolve-Path $cacheDir
+            # mount the cache outside of any runner mappings
+            $cacheMount = @("-v", "$($cacheDir):/ccache")
+            $cacheEnv = @("-e", "CCACHE_DIR=`"/ccache`"")
+            return $cacheMount, $cacheEnv
+        }
+    }
+    return "", ""
 }

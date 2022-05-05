@@ -48,16 +48,20 @@ properties {
     $wheelhouse = Join-Path $repo.root "target" "wheels" "*.whl"
 }
 
-Include settings.ps1
-Include utils.ps1
+include settings.ps1
+include utils.ps1
 
-Task default -Depends qirlib, pyqir-tests, parser, generator, evaluator, metawheel, run-examples
+task default -depends qirlib, pyqir-tests, parser, generator, evaluator, metawheel, run-examples
 
-Task manylinux -Depends Build-ManyLinuxContainerImage, Run-ManyLinuxContainerImage, run-examples-in-containers 
+task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers 
 
-Task musllinux -Depends Build-MuslLinuxContainerImage, Run-MuslLinuxContainerImage, run-examples-in-musl-containers
+task musllinux -depends build-musllinux-container-image, run-musllinux-container-image, run-examples-in-musl-containers
 
-Task Run-ManyLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
+task checks -depends cargo-fmt, cargo-clippy
+
+task rebuild -depends generator, evaluator, parser
+
+task run-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
     $srcPath = $repo.root
 
     # For any of the volumes mapped, if the dir doesn't exist,
@@ -76,7 +80,7 @@ Task Run-ManyLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { W
     }
 }
 
-Task Run-MuslLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
+task run-musllinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
     $srcPath = $repo.root
 
     # For any of the volumes mapped, if the dir doesn't exist,
@@ -97,36 +101,32 @@ Task Run-MuslLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { W
     }
 }
 
-Task checks -Depends cargo-fmt, cargo-clippy
-
-Task rebuild -Depends generator, evaluator, parser
-
-Task cargo-fmt {
+task cargo-fmt {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please run 'cargo fmt --all' before pushing" {
         cargo fmt --all -- --check
     }
 }
 
-Task cargo-clippy -Depends init {
+task cargo-clippy -depends init {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
         $extraArgs = (Test-CI) ? @("--", "-D", "warnings") : @()
         cargo clippy --workspace --all-targets @extraArgs
     }
 }
 
-Task generator -Depends init {
+task generator -depends init {
     Build-PyQIR($pyqir.generator.name)
 }
 
-Task evaluator -Depends init {
+task evaluator -depends init {
     Build-PyQIR($pyqir.evaluator.name)
 }
 
-Task parser -Depends init {
+task parser -depends init {
     Build-PyQIR($pyqir.parser.name)
 }
 
-Task pyqir-tests -Depends init {
+task pyqir-tests -depends init {
     $srcPath = $repo.root
 
     exec -workingDirectory (Join-Path $srcPath "pyqir-tests") {
@@ -151,31 +151,39 @@ Task pyqir-tests -Depends init {
     }
 }
 
-Task qirlib -Depends init {
-    if ($IsLinux) {
-        $triple = Get-LinuxTargetTriple
-        if ($triple -eq "x86_64-unknown-linux-musl") {
-            $env:RUSTFLAGS = "-C target-feature=-crt-static"
+task qirlib -depends init {
+    if (Test-MuslLinux) {
+        # https://github.com/rust-lang/rust/issues/71651
+        $old_rustflags = ""
+        $reset_rustflags = $false
+
+        if (Test-Path env:\RUSTFLAGS) {
+            $reset_rustflags = $true
+            $old_rustflags = $env:RUSTFLAGS
+            $env:RUSTFLAGS = "$($old_rustflags) -C target-feature=-crt-static".Trim()
         }
-        Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-            cargo test --release -vv
+        try {
+            Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
+                cargo test --release -vv
+            }
         }
-        $env:RUSTFLAGS = ""
-        Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-            cargo build --release -vv
+        finally {
+            if ($reset_rustflags) {
+                $env:RUSTFLAGS = $old_rustflags
+            }
         }
     }
     else {
         Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
             cargo test --release -vv
         }
-        Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-            cargo build --release -vv
-        }
+    }
+    Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
+        cargo build --release -vv
     }
 }
 
-Task metawheel {
+task metawheel {
     $wheelDir = Split-Path -Parent $wheelhouse
     if (!(Test-Path $wheelDir)) {
         New-Item -Path $wheelDir -ItemType Directory | Out-Null
@@ -185,11 +193,11 @@ Task metawheel {
     }
 }
 
-Task wheelhouse `
-    -Precondition { -not (Test-Path $wheelhouse -ErrorAction SilentlyContinue) } `
+task wheelhouse `
+    -precondition { -not (Test-Path $wheelhouse -ErrorAction SilentlyContinue) } `
 { Invoke-Task rebuild }
 
-Task docs -Depends wheelhouse {
+task docs -depends wheelhouse {
     # - Install artifacts into new venv along with sphinx.
     # - Run sphinx from within new venv.
     $envPath = Join-Path $repo.root ".docs-venv"
@@ -205,18 +213,6 @@ Task docs -Depends wheelhouse {
     finally {
         deactivate
     }
-}
-
-function Use-ExternalLlvmInstallation {
-    Write-BuildLog "Using LLVM installation specified by QIRLIB_LLVM_EXTERNAL_DIR"
-    Assert (Test-Path $env:QIRLIB_LLVM_EXTERNAL_DIR) "QIRLIB_LLVM_EXTERNAL_DIR folder does not exist"
-    Use-LlvmInstallation $env:QIRLIB_LLVM_EXTERNAL_DIR
-}
-
-function Test-AllowedToDownloadLlvm {
-    # If QIRLIB_DOWNLOAD_LLVM isn't set, we allow for download
-    # If it is set, then we use its value
-    ((Test-Path env:\QIRLIB_DOWNLOAD_LLVM) -and ($env:QIRLIB_DOWNLOAD_LLVM -eq $true))
 }
 
 task init {
@@ -260,27 +256,15 @@ task install-llvm-from-archive {
     install-llvm $pyqir.qirlib.dir "download"
 }
 
-function Write-CacheStats {
-    if (Test-CommandExists("ccache")) {
-        Write-BuildLog "ccache config:"
-        & { ccache --show-config } -ErrorAction SilentlyContinue
-        Write-BuildLog "ccache stats:"
-        & { ccache --show-stats } -ErrorAction SilentlyContinue
-    }
-    if (Test-CommandExists("sccache")) {
-        Write-BuildLog "sccache config/stats:"
-        & { sccache --show-stats } -ErrorAction SilentlyContinue
-    }
-}
 
-task install-llvm-from-source -Depends Configure-SCCache -PostAction { Write-CacheStats } {
+task install-llvm-from-source -depends configure-sccache -postaction { Write-CacheStats } {
     if ($IsWindows) {
         Include vcvars.ps1
     }
     install-llvm $pyqir.qirlib.dir "build"
 }
 
-task Package-MuslLinuxLLVM -Depends Build-MuslLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
+task package-musllinux-llvm -depends build-musllinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
     if ($IsLinux) {
         $srcPath = $repo.root
         $ioVolume = "$($srcPath):$($linux.musllinux_root)"
@@ -292,7 +276,7 @@ task Package-MuslLinuxLLVM -Depends Build-MuslLinuxContainerImage -PreAction { W
     }
 }
 
-task Package-ManyLinuxLLVM -Depends Build-ManyLinuxContainerImage -PreAction { Write-CacheStats } -PostAction { Write-CacheStats } {
+task package-manylinux-llvm -depends build-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
     if ($IsLinux) {
         $srcPath = $repo.root
         $ioVolume = "$($srcPath):$($linux.manylinux_root)"
@@ -325,14 +309,14 @@ task package-llvm {
     }
 }
 
-task Build-ManyLinuxContainerImage {
+task build-manylinux-container-image {
     $srcPath = $repo.root
     Write-BuildLog "Building container image manylinux-llvm-builder"
     Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
         $user = "$(Get-LinuxContainerUserName)"
         $uid = "$(Get-LinuxContainerUserId)"
         $gid = "$(Get-LinuxContainerGroupId)"
-        $rustv = "1.57.0"
+        $rustv = "$($rust.version)"
         $tag = "$($linux.manylinux_tag)"
         Get-Content manylinux.Dockerfile | docker build `
             --build-arg USERNAME=$user `
@@ -343,12 +327,12 @@ task Build-ManyLinuxContainerImage {
     }
 }
 
-task Build-MuslLinuxContainerImage {
+task build-musllinux-container-image {
     $srcPath = $repo.root
     Write-BuildLog "Building container image musllinux-llvm-builder"
     if (Test-CI) {
         Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
-            $rustv = "1.57.0"
+            $rustv = "$($rust.version)"
             $tag = "$($linux.musllinux_tag)"
             Get-Content musllinuxCI.Dockerfile | docker build `
                 --build-arg RUST_VERSION=$rustv `
@@ -360,7 +344,7 @@ task Build-MuslLinuxContainerImage {
             $user = "$(Get-LinuxContainerUserName)"
             $uid = "$(Get-LinuxContainerUserId)"
             $gid = "$(Get-LinuxContainerGroupId)"
-            $rustv = "1.57.0"
+            $rustv = "$($rust.version)"
             $tag = "$($linux.musllinux_tag)"
             Get-Content musllinux.Dockerfile | docker build `
                 --build-arg USERNAME=$user `
@@ -372,31 +356,8 @@ task Build-MuslLinuxContainerImage {
     }
 }
 
-function Build-PyQIR([string]$project) {
-    $srcPath = $repo.root
-
-    exec -workingDirectory (Join-Path $srcPath $project) {
-        if (Test-InCondaEnvironment) {
-            Invoke-LoggedCommand {
-                maturin build --release --cargo-extra-args="-vv"
-                maturin develop --release --cargo-extra-args="-vv"
-                & $python -m pip install pytest
-                & $python -m pytest
-            }
-        }
-        else {
-            Invoke-LoggedCommand {
-                & $python -m pip install tox
-            }
-            Invoke-LoggedCommand {
-                & $python -m tox -v -e (Get-ToxTarget)
-            }
-        }
-    }
-}
-
 # This is only usable if building for manylinux
-Task run-examples-in-containers {
+task run-examples-in-containers {
     $user = Get-LinuxContainerUserName
     $uid = "$(Get-LinuxContainerUserId)"
     $gid = "$(Get-LinuxContainerGroupId)"
@@ -411,7 +372,7 @@ Task run-examples-in-containers {
     }
 }
 
-Task run-examples-in-musl-containers {
+task run-examples-in-musl-containers {
     $userName = Get-LinuxContainerUserName
     if (Test-CI) {
         $userName = "root"
@@ -467,66 +428,6 @@ task run-examples {
     }
 }
 
-function Create-DocsEnv() {
-    param(
-        [string]
-        $EnvironmentPath,
-        [string]
-        $RequirementsPath,
-        [string[]]
-        $ArtifactPaths
-    )
-
-    Write-Host "##[info]Creating virtual environment for use with docs at $EnvironmentPath..."
-    python -m venv $EnvironmentPath
-
-    $activateScript = (Join-Path $EnvironmentPath "bin" "Activate.ps1")
-    if (-not (Test-Path $activateScript -ErrorAction SilentlyContinue)) {
-        Get-ChildItem $EnvironmentPath | Write-Host
-        throw "No activate script found for virtual environment at $EnvironmentPath; environment creation failed."
-    }
-
-    & $activateScript
-    try {
-        pip install -r $RequirementsPath
-        foreach ($artifact in $ArtifactPaths) {
-            pip install $artifact
-        }
-    }
-    finally {
-        deactivate
-    }
-}
-
-function install-llvm {
-    Param(
-        [Parameter(Mandatory)]
-        [string]$qirlibDir,
-        [Parameter(Mandatory)]
-        [ValidateSet("download", "build")]
-        [string]$operation
-    )
-
-    $installationDirectory = Resolve-InstallationDirectory
-    New-Item -ItemType Directory -Force $installationDirectory | Out-Null
-    Use-LlvmInstallation $installationDirectory
-    $clear_cache_var = $false
-    if (!(Test-Path env:\QIRLIB_CACHE_DIR)) {
-        $clear_cache_var = $true
-        $env:QIRLIB_CACHE_DIR = $installationDirectory
-    }
-    try {
-        Invoke-LoggedCommand -wd $qirlibDir {
-            cargo build --release --no-default-features --features "$($operation)-llvm,no-llvm-linking" -vv
-        }
-    }
-    finally {
-        if ($clear_cache_var) {
-            Remove-Item -Path Env:QIRLIB_CACHE_DIR
-        }
-    }   
-}
-
 task check-licenses {
     # Uses cargo-deny to verify that the linked components
     # only use approved licenses
@@ -556,37 +457,10 @@ task update-noticefiles {
     }
 }
 
-Task Configure-SCCache -PostAction { Write-CacheStats } {
+task configure-sccache -postaction { Write-CacheStats } {
     if (Test-CommandExists("sccache")) {
         Write-BuildLog "Starting sccache server"
         & { sccache --start-server } -ErrorAction SilentlyContinue
         Write-BuildLog "Started sccache server"
     }
-}
-
-function Get-CCacheParams {
-    # only ccache is supported in the container for now.
-    # we would need a way to specify which cache is used to
-    # support both.
-    if (Test-CommandExists("ccache")) {
-        # we need to map the local cache dir into the
-        # container. If the env var isn't set, ask ccache
-        $cacheDir = ""
-        if (Test-Path env:\CCACHE_DIR) {
-            $cacheDir = $Env:CCACHE_DIR
-        }
-        else {
-            $cacheDir = exec { ccache -k cache_dir }
-        }
-        if (![string]::IsNullOrWhiteSpace($cacheDir)) {
-            New-Item -ItemType Directory -Force $cacheDir | Out-Null
-            
-            $cacheDir = Resolve-Path $cacheDir
-            # mount the cache outside of any runner mappings
-            $cacheMount = @("-v", "$($cacheDir):/ccache")
-            $cacheEnv = @("-e", "CCACHE_DIR=`"/ccache`"")
-            return $cacheMount, $cacheEnv
-        }
-    }
-    return "", ""
 }
