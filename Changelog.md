@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Adding pyqir-evaluator example with result stream usage by @idavis in https://github.com/qir-alliance/pyqir/pull/97
+- Adding ability to do musl builds by @idavis in https://github.com/qir-alliance/pyqir/pull/111
+- Support for "ret void" in the parser by @LaurentAjdnik in https://github.com/qir-alliance/pyqir/pull/113
+
 ## [0.4.0a1] - 2022-04-18
 
 - Adding static result allocation by @idavis in https://github.com/qir-alliance/pyqir/pull/103
