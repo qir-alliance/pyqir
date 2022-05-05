@@ -12,7 +12,9 @@ rust-version = "1.56"
 
 [dependencies]
 llvm-sys = "110"
-inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["llvm11-0", "target-x86"] }
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = [
+    "target-x86",
+] }
 log = "0.4.14"
 cty = "0.2.1"
 rand = "0.8.4"
@@ -37,19 +39,26 @@ semver = "1.0.6"
 name = "qirlib"
 
 [features]
+llvm-11 = ["inkwell/llvm11-0"]
+llvm-12 = ["inkwell/llvm12-0"]
+llvm-13 = ["inkwell/llvm13-0"]
 
 # default to use llvm-sys/inkwell for llvm linking
-default = ["external-llvm-linking"]
+default = ["external-llvm-linking", "llvm-11"]
 external-llvm-linking = []
 # disable linking for local installation or packaging
-no-llvm-linking = ["llvm-sys/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
+no-llvm-linking = [
+    "llvm-sys/disable-alltargets-init",
+    "inkwell/llvm11-0-no-llvm-linking",
+]
 # let qirlib do the llvm linking
-qirlib-llvm-linking = ["llvm-sys/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
+qirlib-llvm-linking = [
+    "llvm-sys/disable-alltargets-init",
+    "inkwell/llvm11-0-no-llvm-linking",
+]
 
 download-llvm = []
 build-llvm = []
 
 # Dev use only for packaging LLVM builds
 package-llvm = ["build-llvm", "no-llvm-linking"]
-
-
