@@ -162,6 +162,9 @@ task qirlib -depends init {
             $old_rustflags = $env:RUSTFLAGS
             $env:RUSTFLAGS = "$($old_rustflags) -C target-feature=-crt-static".Trim()
         }
+        else {
+            $env:RUSTFLAGS = "-C target-feature=-crt-static"
+        }
         try {
             Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
                 cargo test --release -vv
@@ -170,6 +173,9 @@ task qirlib -depends init {
         finally {
             if ($reset_rustflags) {
                 $env:RUSTFLAGS = $old_rustflags
+            }
+            else {
+                Remove-Item env:\RUSTFLAGS
             }
         }
     }
