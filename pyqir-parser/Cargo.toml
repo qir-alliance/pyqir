@@ -12,14 +12,18 @@ repository = "https://github.com/qir-alliance/pyqir"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-llvm-ir = { version = "0.8.0", features = ["llvm-11"] }
+llvm-ir = "0.8.1"
 
 [dependencies.pyo3]
 version = "0.15.1"
 
 [features]
 extension-module = ["pyo3/abi3-py36", "pyo3/extension-module"]
-default = ["extension-module"]
+python-bindings = []
+llvm-11 = ["llvm-ir/llvm-11"]
+llvm-12 = ["llvm-ir/llvm-12"]
+llvm-13 = ["llvm-ir/llvm-13"]
+default = ["extension-module", "python-bindings", "llvm-11"]
 
 [lib]
 name = "pyqir_parser"
@@ -27,7 +31,7 @@ crate-type = ["cdylib"]
 
 [package.metadata.maturin]
 name = "pyqir.parser._native"
-classifier=[
+classifier = [
     "License :: OSI Approved :: MIT License",
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
