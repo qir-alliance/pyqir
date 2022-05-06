@@ -5,7 +5,7 @@ use pyo3::{
     basic::CompareOp,
     exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
     prelude::*,
-    types::PySequence,
+    types::{PyBytes, PySequence, PyString, PyUnicode},
     PyObjectProtocol,
 };
 use qirlib::generation::{
@@ -21,6 +21,20 @@ use std::{
     vec,
 };
 
+#[pyfunction]
+fn ir_to_bitcode<'a>(py: Python<'a>, value: &PyString, name: &PyString) -> PyResult<&'a PyBytes> {
+    let bitcode = qirlib::generation::ir_to_bitcode(value.to_str()?, name.to_str()?)
+        .map_err(PyOSError::new_err)?;
+    Ok(PyBytes::new(py, &bitcode))
+}
+
+#[pyfunction]
+fn bitcode_to_ir<'a>(py: Python<'a>, value: &PyBytes, name: &PyString) -> PyResult<&'a PyString> {
+    let ir = qirlib::generation::bitcode_to_ir(value.as_bytes(), name.to_str()?)
+        .map_err(PyOSError::new_err)?;
+    Ok(PyUnicode::new(py, ir.as_str()))
+}
+
 #[pymodule]
 #[pyo3(name = "_native")]
 fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -29,6 +43,8 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Function>()?;
     m.add_class::<Builder>()?;
     m.add_class::<SimpleModule>()?;
+    m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
+    m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
     m.add_class::<BasicQisBuilder>()
 }
 

@@ -6,6 +6,27 @@ from pyqir.generator._values import Value
 from typing import Callable, Sequence, Tuple
 
 
+def ir_to_bitcode(ir: str, name: str) -> bytes:
+    """
+    Converts the supplied QIR string to its bitcode equivalent.
+
+    :param ir: The QIR string to convert
+    :param name: The name of the QIR module
+    :return: The equivalent bitcode as bytes.
+    """
+    ...
+
+def bitcode_to_ir(bitcode: bytes, name: str) -> str:
+    """
+    Converts the supplied bitcode to its QIR string equivalent.
+
+    :param ir: The bitcode bytes to convert
+    :param name: The name of the QIR module
+    :return: The equivalent QIR string.
+    """
+    ...
+
+
 class Qubit:
     """A qubit identifier."""
     ...
