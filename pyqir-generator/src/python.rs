@@ -326,9 +326,12 @@ impl SimpleModule {
         emit::ir(&model).map_err(PyOSError::new_err)
     }
 
-    fn bitcode(&self, py: Python) -> PyResult<Vec<u8>> {
+    fn bitcode<'a>(&self, py: Python<'a>) -> PyResult<&'a PyBytes> {
         let model = self.model_from_builder(py);
-        emit::bitcode(&model).map_err(PyOSError::new_err)
+        match emit::bitcode(&model) {
+            Ok(bitcode) => Ok(PyBytes::new(py, &bitcode[..])),
+            Err(err) => Err(PyOSError::new_err(err)),
+        }
     }
 
     fn add_external_function(&mut self, py: Python, name: String, ty: PyFunctionType) -> Function {
