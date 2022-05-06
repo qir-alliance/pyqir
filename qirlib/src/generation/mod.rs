@@ -9,6 +9,9 @@ pub mod emit;
 pub mod interop;
 pub mod qir;
 
+/// # Errors
+///
+/// Will return `Err` if a module cannot be created from the supplied IR
 pub fn ir_to_bitcode(value: &str, name: &str) -> Result<Vec<u8>, String> {
     let context = Context::create();
     let bytes = value.as_bytes();
@@ -20,6 +23,9 @@ pub fn ir_to_bitcode(value: &str, name: &str) -> Result<Vec<u8>, String> {
     Ok(bitcode)
 }
 
+/// # Errors
+///
+/// Will return `Err` if a module cannot be created from the supplied bitcode
 pub fn bitcode_to_ir(value: &[u8], name: &str) -> Result<String, String> {
     let context = Context::create();
     let module = module::load_memory(value, name, &context)?;
