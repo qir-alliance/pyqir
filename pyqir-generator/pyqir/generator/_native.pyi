@@ -3,7 +3,30 @@
 
 from pyqir.generator import types
 from pyqir.generator._values import Value
-from typing import Callable, Sequence, Tuple
+from typing import Callable, Optional, Sequence, Tuple
+
+
+def ir_to_bitcode(ir: str, module_name: Optional[str], source_file_name: Optional[str]) -> bytes:
+    """
+    Converts the supplied QIR string to its bitcode equivalent.
+
+    :param ir: The QIR string to convert
+    :param module_name: The name of the QIR module, default is "" if None
+    :param source_file_name: The source file name of the QIR module. Unchanged if None
+    :return: The equivalent bitcode as bytes.
+    """
+    ...
+
+def bitcode_to_ir(bitcode: bytes, module_name: Optional[str], source_file_name: Optional[str]) -> str:
+    """
+    Converts the supplied bitcode to its QIR string equivalent.
+
+    :param ir: The bitcode bytes to convert
+    :param module_name: The name of the QIR module, default is "" if None
+    :param source_file_name: The source file name of the QIR module. Unchanged if None
+    :return: The equivalent QIR string.
+    """
+    ...
 
 
 class Qubit:
