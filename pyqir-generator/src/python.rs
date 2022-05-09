@@ -22,19 +22,20 @@ use std::{
 };
 
 #[pyfunction]
+#[allow(clippy::needless_pass_by_value)]
 fn ir_to_bitcode<'a>(
     py: Python<'a>,
-    value: String,
+    value: &str,
     module_name: Option<String>,
     source_file_name: Option<String>,
 ) -> PyResult<&'a PyBytes> {
-    let bitcode =
-        qirlib::generation::ir_to_bitcode(value.as_str(), &module_name, &source_file_name)
-            .map_err(PyOSError::new_err)?;
+    let bitcode = qirlib::generation::ir_to_bitcode(value, &module_name, &source_file_name)
+        .map_err(PyOSError::new_err)?;
     Ok(PyBytes::new(py, &bitcode))
 }
 
 #[pyfunction]
+#[allow(clippy::needless_pass_by_value)]
 fn bitcode_to_ir<'a>(
     py: Python<'a>,
     value: &PyBytes,
