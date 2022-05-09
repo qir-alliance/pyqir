@@ -22,15 +22,25 @@ use std::{
 };
 
 #[pyfunction]
-fn ir_to_bitcode<'a>(py: Python<'a>, value: &PyString, name: &PyString) -> PyResult<&'a PyBytes> {
-    let bitcode = qirlib::generation::ir_to_bitcode(value.to_str()?, name.to_str()?)
+fn ir_to_bitcode<'a>(
+    py: Python<'a>,
+    value: String,
+    module_name: Option<String>,
+    source_file_name: Option<String>,
+) -> PyResult<&'a PyBytes> {
+    let bitcode = qirlib::generation::ir_to_bitcode(value.as_str(), module_name, source_file_name)
         .map_err(PyOSError::new_err)?;
     Ok(PyBytes::new(py, &bitcode))
 }
 
 #[pyfunction]
-fn bitcode_to_ir<'a>(py: Python<'a>, value: &PyBytes, name: &PyString) -> PyResult<&'a PyString> {
-    let ir = qirlib::generation::bitcode_to_ir(value.as_bytes(), name.to_str()?)
+fn bitcode_to_ir<'a>(
+    py: Python<'a>,
+    value: &PyBytes,
+    module_name: Option<String>,
+    source_file_name: Option<String>,
+) -> PyResult<&'a PyString> {
+    let ir = qirlib::generation::bitcode_to_ir(value.as_bytes(), module_name, source_file_name)
         .map_err(PyOSError::new_err)?;
     Ok(PyUnicode::new(py, ir.as_str()))
 }
@@ -43,9 +53,12 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Function>()?;
     m.add_class::<Builder>()?;
     m.add_class::<SimpleModule>()?;
+    m.add_class::<BasicQisBuilder>()?;
+
     m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
     m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
-    m.add_class::<BasicQisBuilder>()
+
+    Ok(())
 }
 
 const TYPES_MODULE_NAME: &str = "pyqir.generator.types";
