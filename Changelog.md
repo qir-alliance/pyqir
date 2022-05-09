@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add bitcode/qir conversion functions to generator by @idavis in https://github.com/qir-alliance/pyqir/pull/115
+
 ## [0.4.0a1] - 2022-04-18
 
 - Adding static result allocation by @idavis in https://github.com/qir-alliance/pyqir/pull/103
