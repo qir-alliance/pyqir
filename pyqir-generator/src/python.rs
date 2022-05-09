@@ -28,7 +28,7 @@ fn ir_to_bitcode<'a>(
     module_name: Option<String>,
     source_file_name: Option<String>,
 ) -> PyResult<&'a PyBytes> {
-    let bitcode = qirlib::generation::ir_to_bitcode(value.as_str(), module_name, source_file_name)
+    let bitcode = qirlib::generation::ir_to_bitcode(value.as_str(), &module_name, &source_file_name)
         .map_err(PyOSError::new_err)?;
     Ok(PyBytes::new(py, &bitcode))
 }
@@ -40,7 +40,7 @@ fn bitcode_to_ir<'a>(
     module_name: Option<String>,
     source_file_name: Option<String>,
 ) -> PyResult<&'a PyString> {
-    let ir = qirlib::generation::bitcode_to_ir(value.as_bytes(), module_name, source_file_name)
+    let ir = qirlib::generation::bitcode_to_ir(value.as_bytes(), &module_name, &source_file_name)
         .map_err(PyOSError::new_err)?;
     Ok(PyUnicode::new(py, ir.as_str()))
 }

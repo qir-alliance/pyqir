@@ -14,12 +14,12 @@ pub mod qir;
 /// Will return `Err` if a module cannot be created from the supplied IR
 pub fn ir_to_bitcode(
     value: &str,
-    module_name: Option<String>,
-    source_file_name: Option<String>,
+    module_name: &Option<String>,
+    source_file_name: &Option<String>,
 ) -> Result<Vec<u8>, String> {
     let context = Context::create();
     let bytes = value.as_bytes();
-    let buffer_name = match module_name.as_ref() {
+    let buffer_name = match module_name {
         Some(name) => name.as_str(),
         None => "",
     };
@@ -28,7 +28,7 @@ pub fn ir_to_bitcode(
         .create_module_from_ir(memory_buffer)
         .map_err(|err| err.to_string())?;
 
-    if let Some(source_name) = source_file_name.as_ref() {
+    if let Some(source_name) = source_file_name {
         module.set_source_file_name(source_name.as_str());
     }
 
@@ -41,8 +41,8 @@ pub fn ir_to_bitcode(
 /// Will return `Err` if a module cannot be created from the supplied bitcode
 pub fn bitcode_to_ir(
     value: &[u8],
-    module_name: Option<String>,
-    source_file_name: Option<String>,
+    module_name: &Option<String>,
+    source_file_name: &Option<String>,
 ) -> Result<String, String> {
     let context = Context::create();
     let buffer_name = match module_name.as_ref() {
@@ -95,11 +95,11 @@ mod module_conversion_tests {
     fn ir_round_trip_is_identical() -> Result<(), String> {
         let model = get_model("test".to_owned(), false, false);
         let actual_ir: String = emit::ir(&model)?;
-        let bitcode = ir_to_bitcode(actual_ir.as_str(), None, None)?;
+        let bitcode = ir_to_bitcode(actual_ir.as_str(), &None, &None)?;
         let converted_ir = bitcode_to_ir(
             bitcode.as_slice(),
-            Some("test".to_owned()),
-            Some("test".to_owned()),
+            &Some("test".to_owned()),
+            &Some("test".to_owned()),
         )?;
         assert_eq!(actual_ir, converted_ir);
         Ok(())
@@ -109,11 +109,11 @@ mod module_conversion_tests {
     fn module_name_is_normalized() -> Result<(), String> {
         let model = get_model("tests".to_owned(), false, false);
         let actual_ir: String = emit::ir(&model)?;
-        let bitcode = ir_to_bitcode(actual_ir.as_str(), None, None)?;
+        let bitcode = ir_to_bitcode(actual_ir.as_str(), &None, &None)?;
         let converted_ir = bitcode_to_ir(
             bitcode.as_slice(),
-            Some("tests".to_owned()),
-            Some("tests".to_owned()),
+            &Some("tests".to_owned()),
+            &Some("tests".to_owned()),
         )?;
         assert_eq!(actual_ir, converted_ir);
         Ok(())
