@@ -430,10 +430,9 @@ dependencies = [
 
 [[package]]
 name = "pyqir-generator"
-version = "0.4.0-alpha"
+version = "0.4.1-alpha"
 dependencies = [
  "env_logger",
- "inkwell",
  "log",
  "pyo3",
  "qirlib",
@@ -441,7 +440,7 @@ dependencies = [
 
 [[package]]
 name = "pyqir-parser"
-version = "0.4.0-alpha"
+version = "0.4.1-alpha"
 dependencies = [
  "llvm-ir",
  "pyo3",
