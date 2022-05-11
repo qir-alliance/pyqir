@@ -123,7 +123,7 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v2
         with:
-          name: artifacts
+          name: manylinux-artifacts
           path: wheelhouse
 
       - name: Build Docs
