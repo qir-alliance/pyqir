@@ -59,7 +59,7 @@ task musllinux -depends build-musllinux-container-image, run-musllinux-container
 
 task checks -depends cargo-fmt, cargo-clippy
 
-task rebuild -depends generator, evaluator, parser
+task rebuild -depends qirlib, generator, evaluator, parser
 
 task run-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
     $srcPath = $repo.root
@@ -204,6 +204,9 @@ task wheelhouse `
 { Invoke-Task rebuild }
 
 task docs -depends wheelhouse {
+    # Write out the wheels available
+    Write-Host (Get-ChildItem $wheelhouse -Include *.whl)
+
     # - Install artifacts into new venv along with sphinx.
     # - Run sphinx from within new venv.
     $envPath = Join-Path $repo.root ".docs-venv"

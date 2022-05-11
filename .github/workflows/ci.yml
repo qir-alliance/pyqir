@@ -124,18 +124,11 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: manylinux-artifacts
-          path: wheelhouse
+          path: target/wheels
 
       - name: Build Docs
-        run: |
-          $properties = @{
-            "wheelhouse" = (Resolve-Path "wheelhouse/*-linux_x86_64.whl")
-          };
-          ./eng/build.ps1 `
-            -taskList docs `
-            -properties $properties
+        run: ./build.ps1 -t docs
         shell: pwsh
-
       # Always publish docs as an artifact, but only publish docs to GitHub Pages
       # when pushing to main.
       - name: Publish Docs as Artifacts
