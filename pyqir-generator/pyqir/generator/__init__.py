@@ -18,6 +18,8 @@ from pyqir.generator._native import (
     Qubit as Qubit,
     ResultRef as ResultRef,
     SimpleModule as SimpleModule,
+    ir_to_bitcode as ir_to_bitcode,
+    bitcode_to_ir as bitcode_to_ir,
 )
 
 from pyqir.generator._values import Value as Value

@@ -5,7 +5,7 @@ use pyo3::{
     basic::CompareOp,
     exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
     prelude::*,
-    types::PySequence,
+    types::{PyBytes, PySequence, PyString, PyUnicode},
     PyObjectProtocol,
 };
 use qirlib::generation::{
@@ -21,6 +21,32 @@ use std::{
     vec,
 };
 
+#[pyfunction]
+#[allow(clippy::needless_pass_by_value)]
+fn ir_to_bitcode<'a>(
+    py: Python<'a>,
+    value: &str,
+    module_name: Option<String>,
+    source_file_name: Option<String>,
+) -> PyResult<&'a PyBytes> {
+    let bitcode = qirlib::generation::ir_to_bitcode(value, &module_name, &source_file_name)
+        .map_err(PyOSError::new_err)?;
+    Ok(PyBytes::new(py, &bitcode))
+}
+
+#[pyfunction]
+#[allow(clippy::needless_pass_by_value)]
+fn bitcode_to_ir<'a>(
+    py: Python<'a>,
+    value: &PyBytes,
+    module_name: Option<String>,
+    source_file_name: Option<String>,
+) -> PyResult<&'a PyString> {
+    let ir = qirlib::generation::bitcode_to_ir(value.as_bytes(), &module_name, &source_file_name)
+        .map_err(PyOSError::new_err)?;
+    Ok(PyUnicode::new(py, ir.as_str()))
+}
+
 #[pymodule]
 #[pyo3(name = "_native")]
 fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -29,7 +55,12 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Function>()?;
     m.add_class::<Builder>()?;
     m.add_class::<SimpleModule>()?;
-    m.add_class::<BasicQisBuilder>()
+    m.add_class::<BasicQisBuilder>()?;
+
+    m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
+    m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
+
+    Ok(())
 }
 
 const TYPES_MODULE_NAME: &str = "pyqir.generator.types";
@@ -310,9 +341,12 @@ impl SimpleModule {
         emit::ir(&model).map_err(PyOSError::new_err)
     }
 
-    fn bitcode(&self, py: Python) -> PyResult<Vec<u8>> {
+    fn bitcode<'a>(&self, py: Python<'a>) -> PyResult<&'a PyBytes> {
         let model = self.model_from_builder(py);
-        emit::bitcode(&model).map_err(PyOSError::new_err)
+        match emit::bitcode(&model) {
+            Ok(bitcode) => Ok(PyBytes::new(py, &bitcode[..])),
+            Err(err) => Err(PyOSError::new_err(err)),
+        }
     }
 
     fn add_external_function(&mut self, py: Python, name: String, ty: PyFunctionType) -> Function {

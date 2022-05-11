@@ -2,9 +2,11 @@
 
 ## [Unreleased]
 
-- Adding pyqir-evaluator example with result stream usage by @idavis in https://github.com/qir-alliance/pyqir/pull/97
-- Adding ability to do musl builds by @idavis in https://github.com/qir-alliance/pyqir/pull/111
+## [0.4.1a1] - 2022-05-09
+
+- Adding pyqir-evaluator example with result stream usage. by @idavis in https://github.com/qir-alliance/pyqir/pull/97
 - Support for "ret void" in the parser by @LaurentAjdnik in https://github.com/qir-alliance/pyqir/pull/113
+- Add bitcode/qir conversion functions to generator by @idavis in https://github.com/qir-alliance/pyqir/pull/115
 
 ## [0.4.0a1] - 2022-04-18
 
@@ -99,7 +101,8 @@ class:
 
 - Initial Release
 
-[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.4.0a1...HEAD
+[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.4.1a1...HEAD
+[0.4.1a1]: https://github.com/qir-alliance/pyqir/compare/v0.4.0a1...v0.4.1a1
 [0.4.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.3.2a1...v0.4.0a1
 [0.3.2a1]: https://github.com/qir-alliance/pyqir/compare/v0.3.1a1...v0.3.2a1
 [0.3.1a1]: https://github.com/qir-alliance/pyqir/compare/v0.3.0a1...v0.3.1a1

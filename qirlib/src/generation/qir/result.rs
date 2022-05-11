@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 use crate::codegen::CodeGenerator;
 use inkwell::values::{BasicMetadataValueEnum, IntValue, PointerValue};
 
