@@ -37,7 +37,6 @@ Install Rust from [rustup](https://rustup.rs/).
 Install Python 3.6+ from one of the following and make sure it is added to the
 path.
 
-- [Windows store](https://docs.microsoft.com/en-us/windows/python/beginners#install-python)
 - [Miniconda](https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links)
 - [Python.org](https://www.python.org/downloads/)
 

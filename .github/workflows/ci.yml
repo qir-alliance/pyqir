@@ -26,16 +26,37 @@ jobs:
           - {
               os: "ubuntu-20.04",
               arch: "amd64",
+              target: "checks",
+              env: {},
+            }
+          - {
+              os: "ubuntu-20.04",
+              arch: "amd64",
+              target: "musllinux",
+              env: {},
+            }
+          - {
+              os: "ubuntu-20.04",
+              arch: "amd64",
+              target: "manylinux",
+              env: {},
+            }
+          - {
+              os: "ubuntu-20.04",
+              arch: "amd64",
+              target: "default",
               env: {},
             }
           - {
               os: "windows-2019",
               arch: "amd64",
+              target: "default",
               env: {},
             }
           - {
               os: "macOS-10.15",
               arch: "amd64",
+              target: "default",
               env: {},
             }
     steps:
@@ -63,9 +84,9 @@ jobs:
         with:
           path: |
             ${{ env.CCACHE_DIR }}
-          key: ${{ matrix.config.os }}-ccache-${{ steps.timestamp.outputs.timestamp }}
+          key: ${{ matrix.config.os }}-${{ matrix.config.target }}-ccache-${{ steps.timestamp.outputs.timestamp }}
           restore-keys: |
-              ${{ matrix.config.os }}-ccache-
+              ${{ matrix.config.os }}-${{ matrix.config.target }}-ccache-
         if: ${{ matrix.config.os != 'windows-2019' }}
       - name: SCCACHE cache
         uses: actions/cache@v3
@@ -76,15 +97,21 @@ jobs:
           restore-keys: |
               ${{ matrix.config.os }}-sccache-
         if: ${{ matrix.config.os == 'windows-2019' }}
-      - name: "Build all"
-        run: ./build.ps1
+      - name: "Build ${{ matrix.config.target }}"
+        run: ./build.ps1 -t ${{ matrix.config.target }}
         shell: pwsh
+      - name: Artifacts - manylinux
+        uses: actions/upload-artifact@v2
+        with:
+          name: manylinux-artifacts
+          path: target/wheels/*manylinux*.whl
+        if: ${{ matrix.config.os == 'ubuntu-20.04' }}
       - name: Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: artifacts
+          name: ${{ matrix.config.os }}-artifacts
           path: target/wheels/*
-
+        if: ${{ matrix.config.os != 'ubuntu-20.04' }}
   docs:
     runs-on: "ubuntu-20.04"
     needs: build
@@ -96,19 +123,12 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v2
         with:
-          name: artifacts
-          path: wheelhouse
+          name: manylinux-artifacts
+          path: target/wheels
 
       - name: Build Docs
-        run: |
-          $properties = @{
-            "wheelhouse" = (Resolve-Path "wheelhouse/*-linux_x86_64.whl")
-          };
-          ./eng/build.ps1 `
-            -taskList docs `
-            -properties $properties
+        run: ./build.ps1 -t docs
         shell: pwsh
-
       # Always publish docs as an artifact, but only publish docs to GitHub Pages
       # when pushing to main.
       - name: Publish Docs as Artifacts

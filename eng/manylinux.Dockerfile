@@ -69,6 +69,9 @@ RUN /bin/bash /tmp/Miniconda3.sh -b -p /usr/local/miniconda3
 
 RUN chown -R ${USER_UID}:${USER_GID} /usr/local/miniconda3
 
+RUN curl https://packages.microsoft.com/config/rhel/7/prod.repo | tee /etc/yum.repos.d/microsoft.repo && \
+    yum install -y powershell
+
 USER $USERNAME
 
 ENV PATH="/usr/local/miniconda3/bin:${PATH}"
@@ -78,5 +81,3 @@ ENV PATH="/usr/lib/ccache:${PATH}"
 RUN conda init && \
     conda install -y -c conda-forge clang-11 libstdcxx-devel_linux-64 libgcc-devel_linux-64 && \
     cp /usr/local/miniconda3/bin/clang-11 /usr/local/miniconda3/bin/clang++-11
-
-RUN conda run python -m pip install -U tox
