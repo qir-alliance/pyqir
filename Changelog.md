@@ -12,7 +12,7 @@
 
 - Adding static result allocation by @idavis in https://github.com/qir-alliance/pyqir/pull/103
 - Bumping version to `0.4.0a1` by @idavis in https://github.com/qir-alliance/pyqir/pull/105
-- Changing default value of use_static_result_alloc to True by @idavis in https://github.com/qir-alliance/pyqir/pull/106
+- Changing default value of `use_static_result_alloc` to `True` by @idavis in https://github.com/qir-alliance/pyqir/pull/106
 
 PR [#106](https://github.com/qir-alliance/pyqir/pull/106) changes
 the default way `Result`s are emitted in emitted QIR.
