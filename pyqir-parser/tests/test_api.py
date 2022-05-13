@@ -46,6 +46,21 @@ def test_parser_pythonic():
     assert isinstance(instr.type, QirIntegerType)
     assert instr.type.width == 1
 
+def test_parser_pyhthonic_select():
+    mod = QirModule("tests/select.bc")
+    func = mod.get_funcs_by_attr("EntryPoint")[0]
+    block = func.blocks[0]
+    instr = block.instructions[5]
+    assert isinstance(instr, QirSelectInstr)
+    assert instr == func.get_instruction_by_output_name("spec.select")
+    assert isinstance(instr.condition, QirLocalOperand)
+    assert instr.condition.name == "0"
+    assert isinstance(instr.true_value, QirIntConstant)
+    assert instr.true_value.value == 2
+    assert instr.true_value.width == 64
+    assert isinstance(instr.false_value, QirIntConstant)
+    assert instr.false_value.value == 0
+    assert instr.false_value.width == 64
 
 def test_parser():
     mod = module_from_bitcode("tests/teleportchain.baseprofile.bc")
