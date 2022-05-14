@@ -52,7 +52,7 @@ def test_parser_pyhthonic_select():
     block = func.blocks[0]
     instr = block.instructions[5]
     assert isinstance(instr, QirSelectInstr)
-    assert instr == func.get_instruction_by_output_name("spec.select")
+    assert isinstance(func.get_instruction_by_output_name("spec.select"), QirSelectInstr)
     assert isinstance(instr.condition, QirLocalOperand)
     assert instr.condition.name == "0"
     assert isinstance(instr.true_value, QirIntConstant)
