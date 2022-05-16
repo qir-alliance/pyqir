@@ -12,7 +12,7 @@ rust-version = "1.56"
 
 [dependencies]
 llvm-sys = "110"
-inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["llvm11-0", "target-x86"] }
+inkwell = { git = "https://github.com/TheDan64/inkwell", rev = "6ab2b19e1b90be55fa4f9f056f29bd1ed557b990", default-features = false, features = ["llvm11-0", "target-x86"] }
 log = "0.4.14"
 cty = "0.2.1"
 rand = "0.8.4"
