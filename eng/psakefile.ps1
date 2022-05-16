@@ -226,10 +226,12 @@ task check-environment {
         Write-BuildLog "Setting up virtual environment in $($pyenv)"
         & $python -m venv $pyenv
         if($IsWindows) {
-            & (Join-Path $pyenv "Scripts" "activate")
+            . (Join-Path $pyenv "Scripts" "Activate.ps1")
         } else {
-            source $pyenv
+            . (Join-Path $pyenv "bin" "Activate.ps1")
         }
+    } else {
+        Write-BuildLog "Virtual environment found."
     }
     # ensure that we are now in a virtual environment
     Assert ((Test-InVirtualEnvironment) -eq $true) "$($env_message -join ' ')"
