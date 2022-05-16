@@ -4,7 +4,7 @@
 from pyqir.parser import *
 
 
-def test_parser_pythonic():
+def test_parser():
     mod = QirModule("tests/teleportchain.baseprofile.bc")
     func_name = "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
     func = mod.get_func_by_name(func_name)
@@ -46,7 +46,7 @@ def test_parser_pythonic():
     assert isinstance(instr.type, QirIntegerType)
     assert instr.type.width == 1
 
-def test_parser_pyhthonic_select():
+def test_parser_select_support():
     mod = QirModule("tests/select.bc")
     func = mod.get_funcs_by_attr("EntryPoint")[0]
     block = func.blocks[0]
@@ -62,7 +62,7 @@ def test_parser_pyhthonic_select():
     assert instr.false_value.value == 0
     assert instr.false_value.width == 64
 
-def test_parser():
+def test_parser_internals():
     mod = module_from_bitcode("tests/teleportchain.baseprofile.bc")
     func_name = "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
     func = mod.get_func_by_name(func_name)
