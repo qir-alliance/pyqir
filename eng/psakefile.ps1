@@ -220,6 +220,18 @@ task check-environment {
         "Neither the VIRTUAL_ENV nor CONDA_PREFIX environment variables are set).",
         "See https://virtualenv.pypa.io/en/latest/index.html on how to use virtualenv"
     )
+    if((Test-InVirtualEnvironment) -eq $false) {
+        Write-BuildLog "No virtual environment found."
+        $pyenv = Join-Path $repo.target ".env"
+        Write-BuildLog "Setting up virtual environment in $($pyenv)"
+        & $python -m venv $pyenv
+        if($IsWindows) {
+            & (Join-Path $pyenv "Scripts" "activate")
+        } else {
+            source $pyenv
+        }
+    }
+    # ensure that we are now in a virtual environment
     Assert ((Test-InVirtualEnvironment) -eq $true) "$($env_message -join ' ')"
 }
 
