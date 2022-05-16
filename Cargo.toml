@@ -5,3 +5,4 @@ members = [
     "pyqir-parser",
     "qirlib",
 ]
+resolver = "2"

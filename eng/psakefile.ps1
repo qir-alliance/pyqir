@@ -132,10 +132,10 @@ task pyqir-tests -depends init {
     exec -workingDirectory (Join-Path $srcPath "pyqir-tests") {
         if (Test-InCondaEnvironment) {
             Invoke-LoggedCommand -wd $pyqir.generator.dir {
-                maturin develop --release --cargo-extra-args="-vv"
+                maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
             }
             Invoke-LoggedCommand -wd $pyqir.evaluator.dir {
-                maturin develop --release --cargo-extra-args="-vv"
+                maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
             }
             & $python -m pip install pytest
             & $python -m pytest
@@ -167,7 +167,7 @@ task qirlib -depends init {
         }
         try {
             Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-                cargo test --release -vv
+                cargo test --release @("$($env:CARGO_EXTRA_ARGS)" -split " ")
             }
         }
         finally {
@@ -181,11 +181,11 @@ task qirlib -depends init {
     }
     else {
         Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-            cargo test --release -vv
+            cargo test --release @("$($env:CARGO_EXTRA_ARGS)" -split " ")
         }
     }
     Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-        cargo build --release -vv
+        cargo build --release @("$($env:CARGO_EXTRA_ARGS)" -split " ")
     }
 }
 
@@ -228,7 +228,9 @@ task init {
     if ((Test-CI)) {
         cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12
     }
-    
+
+    $env:CARGO_EXTRA_ARGS = "-vv --features `"$(Get-LLVMFeatureVersion)`""
+
     # qirlib has this logic built in when compiled on its own
     # but we must have LLVM installed prior to the wheels being built.
     
@@ -239,7 +241,7 @@ task init {
     }
     else {
         $packagePath = Resolve-InstallationDirectory
-        if (Test-Path (Join-Path $packagePath "bin")) {
+        if (Test-LlvmConfig $packagePath) {
             Write-BuildLog "LLVM target is already installed."
             # LLVM is already downloaded
             Use-LlvmInstallation $packagePath
@@ -257,12 +259,16 @@ task init {
                 # So we need to build it.
                 Invoke-Task "install-llvm-from-source"
             }
+            $installationDirectory = Resolve-InstallationDirectory
+            Use-LlvmInstallation $installationDirectory
         }
     }
 }
 
 task install-llvm-from-archive {
     install-llvm $pyqir.qirlib.dir "download"
+    $installationDirectory = Resolve-InstallationDirectory
+    Assert (Test-LlvmConfig $installationDirectory) "install-llvm-from-archive failed to install a usable LLVM installation"
 }
 
 
@@ -270,7 +276,9 @@ task install-llvm-from-source -depends configure-sccache -postaction { Write-Cac
     if ($IsWindows) {
         Include vcvars.ps1
     }
-    install-llvm $pyqir.qirlib.dir "build"
+    install-llvm "$($pyqir.qirlib.dir)" "build" "$(Get-LLVMFeatureVersion)"
+    $installationDirectory = Resolve-InstallationDirectory
+    Assert (Test-LlvmConfig $installationDirectory) "install-llvm-from-source failed to install a usable LLVM installation"
 }
 
 task package-musllinux-llvm -depends build-musllinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
