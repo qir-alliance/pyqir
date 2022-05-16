@@ -157,7 +157,15 @@ function Test-AllowedToDownloadLlvm {
 }
 
 function Test-InCondaEnvironment {
-    (Test-Path env:\CONDA_PREFIX) -or (Test-Path env:\CONDA_ROOT)
+    (Test-Path env:\CONDA_PREFIX)
+}
+
+function Test-InVenvEnvironment {
+    (Test-Path env:\VIRTUAL_ENV)
+}
+
+function Test-InVirtualEnvironment {
+    (Test-InCondaEnvironment) -or (Test-InVenvEnvironment)
 }
 
 function Get-LinuxTargetTriple {
@@ -189,15 +197,6 @@ function Get-LinuxContainerUserName {
     }
     else {
         [Environment]::UserName
-    }
-}
-
-function Get-ToxTarget {
-    if (Test-MuslLinux) {
-        "allmusl"
-    }
-    else {
-        "all"
     }
 }
 
@@ -238,25 +237,15 @@ function Build-PyQIR([string]$project) {
     $srcPath = $repo.root
 
     exec -workingDirectory (Join-Path $srcPath $project) {
-        if (Test-InCondaEnvironment) {
-            $build_extra_args = ""
-            if (Test-MuslLinux) {
-                $build_extra_args = "--skip-auditwheel"
-            }
-            Invoke-LoggedCommand {
-                maturin build --release $build_extra_args --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
-                maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
-                & $python -m pip install pytest
-                & $python -m pytest
-            }
+        $build_extra_args = ""
+        if (Test-MuslLinux) {
+            $build_extra_args = "--skip-auditwheel"
         }
-        else {
-            Invoke-LoggedCommand {
-                & $python -m pip install tox
-            }
-            Invoke-LoggedCommand {
-                & $python -m tox -v -e (Get-ToxTarget)
-            }
+        Invoke-LoggedCommand {
+            maturin build --release $build_extra_args --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
+            maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
+            & $python -m pip install pytest
+            & $python -m pytest
         }
     }
 }

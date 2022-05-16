@@ -130,24 +130,14 @@ task pyqir-tests -depends init {
     $srcPath = $repo.root
 
     exec -workingDirectory (Join-Path $srcPath "pyqir-tests") {
-        if (Test-InCondaEnvironment) {
-            Invoke-LoggedCommand -wd $pyqir.generator.dir {
-                maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
-            }
-            Invoke-LoggedCommand -wd $pyqir.evaluator.dir {
-                maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
-            }
-            & $python -m pip install pytest
-            & $python -m pytest
+        Invoke-LoggedCommand -wd $pyqir.generator.dir {
+            maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
         }
-        else {
-            Invoke-LoggedCommand {
-                & $python -m pip install tox
-            }
-            Invoke-LoggedCommand {
-                & $python -m tox -v -e (Get-ToxTarget)
-            }
+        Invoke-LoggedCommand -wd $pyqir.evaluator.dir {
+            maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
         }
+        & $python -m pip install pytest
+        & $python -m pytest
     }
 }
 
@@ -224,7 +214,16 @@ task docs -depends wheelhouse {
     }
 }
 
-task init {
+task check-environment {
+    $env_message = @(
+        "PyQIR requires a virtualenv or conda environment to build.",
+        "Neither the VIRTUAL_ENV nor CONDA_PREFIX environment variables are set).",
+        "See https://virtualenv.pypa.io/en/latest/index.html on how to use virtualenv"
+    )
+    Assert ((Test-InVirtualEnvironment) -eq $true) "$($env_message -join ' ')"
+}
+
+task init -depends check-environment {
     if ((Test-CI)) {
         cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12
     }

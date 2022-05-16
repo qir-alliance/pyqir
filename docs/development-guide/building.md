@@ -27,7 +27,7 @@ Install python and libs:
 ```bash
 sudo apt-get install -y --no-install-recommends python3-dev python3-pip
 python3 -m pip install --user -U pip
-python3 -m pip install --user maturin tox
+python3 -m pip install --user maturin
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
@@ -43,7 +43,7 @@ path.
 In a command prompt:
 
 ```bash
-python -m pip install --user maturin tox
+python -m pip install --user maturin
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
@@ -56,7 +56,7 @@ or brew:
 
 ```bash
 brew install 'python@3.9'
-python -m pip install --user maturin tox
+python -m pip install --user maturin
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
@@ -125,15 +125,6 @@ build the project and run Rust tests.
 - `cargo test`: Build and run the Rust cdylib tests
 - `cargo test --release`: Build and run the Rust cdylib tests in release mode
 
-[Tox](https://tox.readthedocs.io/) can be used as well:
-
-Two targets are available for tox:
-
-- `python -m tox -e test`
-- Runs the python tests in an isolated environment
-- `python -m tox -e pack`
-- Packages all wheels in an isolated environment
-
 ### Environment Variables
 
 For those directly consuming `qirlib`, refer to the
@@ -157,13 +148,12 @@ be linked into the rest of the build.
 
 ### Packaging
 
-The `build.(ps1|sh|cmd)`, `maturin`, and `tox` builds all generate Python wheels
+The `build.(ps1|sh|cmd)`, `maturin` builds all generate Python wheels
 to the `target/wheels` folder. The default Python3 installation will be used
 targeting Python ABI 3.6.
 
 The manylinux support uses a Docker image in the build scripts to run the builds
 in the CI environment.
 
-The Windows packaging will look for python installations available and build for
-them. More information on [supporting multiple python versions on
-Windows](https://tox.readthedocs.io/en/latest/developers.html?highlight=windows#multiple-python-versions-on-windows)
+The musllinux support uses a Docker image in the build scripts to run the builds
+in the CI environment.
