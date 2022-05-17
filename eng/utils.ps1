@@ -244,7 +244,7 @@ function Build-PyQIR([string]$project) {
         Invoke-LoggedCommand {
             maturin build --release $build_extra_args --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
             maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
-            & $python -m pip install pytest
+            & $python -m pip install -r requirements-dev.txt
             & $python -m pytest
         }
     }
