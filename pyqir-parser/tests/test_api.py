@@ -61,6 +61,12 @@ def test_parser_select_support():
     assert isinstance(instr.false_value, QirIntConstant)
     assert instr.false_value.value == 0
     assert instr.false_value.width == 64
+    instr2 = block.instructions[9]
+    assert isinstance(instr2, QirSelectInstr)
+    assert isinstance(instr2.true_value, QirLocalOperand)
+    assert instr2.true_value.name == "spec.select"
+    assert isinstance(instr2.false_value, QirLocalOperand)
+    assert instr2.false_value.name == "val.i.1"
 
 def test_parser_internals():
     mod = module_from_bitcode("tests/teleportchain.baseprofile.bc")
