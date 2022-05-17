@@ -62,6 +62,7 @@ __all__ = [
     "QirFNegInstr",
     "QirICmpInstr",
     "QirFCmpInstr",
+    "QirSelectInstr",
     "QirPhiInstr",
     "QirCallInstr",
     "QirQisCallInstr",
@@ -567,6 +568,8 @@ class QirInstr:
             return super().__new__(QirFCmpInstr)
         elif instr.is_phi:
             return super().__new__(QirPhiInstr)
+        elif instr.is_select:
+            return super().__new__(QirSelectInstr)
         else:
             return super().__new__(cls)
 
@@ -772,6 +775,40 @@ class QirFCmpInstr(QirOpInstr):
         "ule", "une", and "true"
         """
         return self.instr.fcmp_predicate
+
+
+class QirSelectInstr(QirInstr):
+    """
+    Instances of QirSelectInstr represent a select instruction that chooses a value to output based
+    on a boolean operand.
+    """
+
+    @property
+    def condition(self) -> QirOperand:
+        """
+        Gets the condition operand that the select instruction will use to choose with result to output.
+        """
+        if not hasattr(self, "_condition"):
+            self._condition = QirOperand(self.instr.select_condition)
+        return self._condition
+
+    @property
+    def true_value(self) -> QirOperand:
+        """
+        Gets the operand that will be the result of the select if the condition is true.
+        """
+        if not hasattr(self, "_true_value"):
+            self._true_value = QirOperand(self.instr.select_true_value)
+        return self._true_value
+
+    @property
+    def false_value(self) -> QirOperand:
+        """
+        Gets the operand that will be the result of the select if the condition is false.
+        """
+        if not hasattr(self, "_false_value"):
+            self._false_value = QirOperand(self.instr.select_false_value)
+        return self._false_value
 
 
 class QirPhiInstr(QirInstr):

@@ -589,6 +589,60 @@ impl PyQirInstruction {
     }
 
     #[getter]
+    fn get_select_condition(&self) -> Option<PyQirOperand> {
+        match_contents!(
+            &self.instr,
+            llvm_ir::Instruction::Select(llvm_ir::instruction::Select {
+                condition,
+                true_value: _,
+                false_value: _,
+                dest: _,
+                debugloc: _,
+            }),
+            PyQirOperand {
+                op: condition.clone(),
+                types: self.types.clone(),
+            }
+        )
+    }
+
+    #[getter]
+    fn get_select_true_value(&self) -> Option<PyQirOperand> {
+        match_contents!(
+            &self.instr,
+            llvm_ir::Instruction::Select(llvm_ir::instruction::Select {
+                condition: _,
+                true_value,
+                false_value: _,
+                dest: _,
+                debugloc: _,
+            }),
+            PyQirOperand {
+                op: true_value.clone(),
+                types: self.types.clone(),
+            }
+        )
+    }
+
+    #[getter]
+    fn get_select_false_value(&self) -> Option<PyQirOperand> {
+        match_contents!(
+            &self.instr,
+            llvm_ir::Instruction::Select(llvm_ir::instruction::Select {
+                condition: _,
+                true_value: _,
+                false_value,
+                dest: _,
+                debugloc: _,
+            }),
+            PyQirOperand {
+                op: false_value.clone(),
+                types: self.types.clone(),
+            }
+        )
+    }
+
+    #[getter]
     fn get_is_call(&self) -> bool {
         matches!(self.instr, llvm_ir::Instruction::Call(_))
     }
