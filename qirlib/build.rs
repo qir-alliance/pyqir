@@ -255,20 +255,16 @@ fn get_package_file_name() -> Result<String, Box<dyn Error>> {
 fn get_llvm_tag() -> String {
     if let Ok(tag) = env::var("QIRLIB_LLVM_TAG") {
         tag
+    } else if cfg!(feature = "llvm11-0") {
+        "llvmorg-11.1.0".to_owned() // 1fdec59bf
+    } else if cfg!(feature = "llvm12-0") {
+        "llvmorg-12.0.1".to_owned() // fed4134
+    } else if cfg!(feature = "llvm13-0") {
+        "llvmorg-13.0.1".to_owned() // 75e33f7
+    } else if cfg!(feature = "llvm14-0") {
+        "llvmorg-14.0.3".to_owned() // 1f91400
     } else {
-        if cfg!(feature = "llvm11-0") {
-            "llvmorg-11.1.0".to_owned() // 1fdec59bf
-        } else if cfg!(feature = "llvm12-0") {
-            "llvmorg-12.0.1".to_owned() // fed4134
-        } else if cfg!(feature = "llvm13-0") {
-            "llvmorg-13.0.1".to_owned() // 75e33f7
-        } else if cfg!(feature = "llvm14-0") {
-            "llvmorg-14.0.3".to_owned() // 1f91400
-        } else {
-            panic!(
-                "Unsupported LLVM version. The LLVM feature flags or QIRLIB_LLVM_TAG must be set."
-            )
-        }
+        panic!("Unsupported LLVM version. The LLVM feature flags or QIRLIB_LLVM_TAG must be set.")
     }
 }
 
