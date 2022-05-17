@@ -110,7 +110,7 @@ task cargo-fmt {
 task cargo-clippy -depends init {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
         $extraArgs = (Test-CI) ? @("--", "-D", "warnings") : @()
-        cargo clippy --workspace --all-targets @extraArgs
+        cargo clippy --workspace --all-targets @extraArgs @("$($env:CARGO_EXTRA_ARGS)" -split " ")
     }
 }
 
