@@ -271,7 +271,7 @@ impl TypeExt for llvm_ir::Type {
 pub trait ConstantExt {
     fn qubit_id(&self) -> Option<u64>;
     fn result_id(&self) -> Option<u64>;
-    fn string_val(&self) -> Option<String>;
+    fn bytes_val(&self) -> Option<Vec<i8>>;
 }
 
 macro_rules! constant_id {
@@ -301,24 +301,19 @@ impl ConstantExt for llvm_ir::Constant {
     constant_id!(qubit_id, TypeExt::is_qubit);
     constant_id!(result_id, TypeExt::is_result);
 
-    fn string_val(&self) -> Option<String> {
+    fn bytes_val(&self) -> Option<Vec<i8>> {
         match &self {
             llvm_ir::Constant::Array {
                 element_type: elem_type,
-                elements: chars,
+                elements: bytes,
             } => match elem_type.as_ref() {
-                llvm_ir::Type::IntegerType { bits: 8 } => chars
+                llvm_ir::Type::IntegerType { bits: 8 } => Some(bytes
                     .iter()
-                    .rev()
-                    .skip(1)
-                    .rev()
-                    .map(|c| match c.as_ref() {
+                    .map(|b| match b.as_ref() {
                         llvm_ir::Constant::Int { bits: 8, value } => (*value).try_into().unwrap(),
-                        _ => 0_u8,
+                        _ => panic!("Array of 8 bit integers should only container 8 bit integers!"),
                     })
-                    .fold(Some("".to_owned()), |accum, c| {
-                        Some(accum.unwrap() + &(c as char).to_string())
-                    }),
+                    .collect()),
                 _ => None,
             },
             _ => None,

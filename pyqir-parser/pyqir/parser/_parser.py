@@ -34,7 +34,7 @@ __all__ = [
     "QirNullConstant",
     "QirQubitConstant",
     "QirResultConstant",
-    "QirGlobalStringConstant",
+    "QirGlobalByteArrayConstant",
     "QirTerminator",
     "QirRetTerminator",
     "QirBrTerminator",
@@ -248,8 +248,8 @@ class QirOperand:
                 return super().__new__(QirDoubleConstant)
             elif op.constant.is_null:
                 return super().__new__(QirNullConstant)
-            elif op.constant.is_global_string:
-                return super().__new__(QirGlobalStringConstant)
+            elif op.constant.is_global_byte_array:
+                return super().__new__(QirGlobalByteArrayConstant)
             else:
                 return super().__new__(cls)
         else:
@@ -384,9 +384,9 @@ class QirResultConstant(QirConstant):
         """
         return self.value
 
-class QirGlobalStringConstant(QirConstant):
+class QirGlobalByteArrayConstant(QirConstant):
     """
-    Instances of QirGlobalStringConstant represent a globally defined string in a QIR program.
+    Instances of QirGlobalByteArrayConstant represent a globally defined array of bytes in a QIR program.
     """
     pass
 
@@ -1152,9 +1152,12 @@ class QirModule:
             ]
         return self._interop_funcs
 
-    def get_global_string_value(self, global_ref: QirGlobalStringConstant) -> Optional[str]:
+    def get_global_bytes_value(self, global_ref: QirGlobalByteArrayConstant) -> Optional[bytes]:
         """
-        Gets any globally defined string values matching the given global string constant.
-        :param global_ref: the global string constant whose value should be retrieved.
+        Gets any globally defined bytes values matching the given global constant.
+        :param global_ref: the global constant whose bytes should be retrieved.
         """
-        return global_ref.const.get_global_string_value(self.module)
+        byte_array = global_ref.const.get_global_byte_array_value(self.module)
+        if byte_array != None:
+            return bytes(byte_array)
+        return None

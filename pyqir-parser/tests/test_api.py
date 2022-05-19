@@ -78,8 +78,8 @@ def test_global_string():
     instr = func.blocks[0].instructions[0]
     assert isinstance(instr, QirRtCallInstr)
     assert instr.func_name == "__quantum__rt__string_create"
-    assert isinstance(instr.func_args[0], QirGlobalStringConstant)
-    assert mod.get_global_string_value(instr.func_args[0]) == "Hello World!"
+    assert isinstance(instr.func_args[0], QirGlobalByteArrayConstant)
+    assert mod.get_global_bytes_value(instr.func_args[0]).decode('utf-8') == "Hello World!\0"
 
 def test_parser_internals():
     mod = module_from_bitcode("tests/teleportchain.baseprofile.bc")

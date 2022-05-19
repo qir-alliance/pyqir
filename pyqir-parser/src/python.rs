@@ -1006,7 +1006,7 @@ impl PyQirConstant {
     }
 
     #[getter]
-    fn get_is_global_string(&self) -> bool {
+    fn get_is_global_byte_array(&self) -> bool {
         match self.constantref.as_ref() {
             llvm_ir::Constant::GetElementPtr(llvm_ir::constant::GetElementPtr {
                 address: addr,
@@ -1029,7 +1029,7 @@ impl PyQirConstant {
         }
     }
 
-    fn get_global_string_value(&self, module: &PyQirModule) -> Option<String> {
+    fn get_global_byte_array_value(&self, module: &PyQirModule) -> Option<Vec<i8>> {
         match self.constantref.as_ref() {
             llvm_ir::Constant::GetElementPtr(llvm_ir::constant::GetElementPtr {
                 address: addr,
@@ -1051,7 +1051,7 @@ impl PyQirConstant {
                         global
                             .initializer
                             .as_ref()
-                            .map(|init| init.as_ref().string_val())
+                            .map(|init| init.as_ref().bytes_val())
                     })
                     .flatten(),
                 _ => None,
