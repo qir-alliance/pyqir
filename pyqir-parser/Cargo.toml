@@ -27,7 +27,7 @@ default = ["extension-module", "python-bindings"]
 
 [lib]
 name = "pyqir_parser"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "lib"]
 
 [package.metadata.maturin]
 name = "pyqir.parser._native"
