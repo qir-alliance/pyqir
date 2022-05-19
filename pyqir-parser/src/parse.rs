@@ -307,13 +307,19 @@ impl ConstantExt for llvm_ir::Constant {
                 element_type: elem_type,
                 elements: bytes,
             } => match elem_type.as_ref() {
-                llvm_ir::Type::IntegerType { bits: 8 } => Some(bytes
-                    .iter()
-                    .map(|b| match b.as_ref() {
-                        llvm_ir::Constant::Int { bits: 8, value } => (*value).try_into().unwrap(),
-                        _ => panic!("Array of 8 bit integers should only container 8 bit integers!"),
-                    })
-                    .collect()),
+                llvm_ir::Type::IntegerType { bits: 8 } => Some(
+                    bytes
+                        .iter()
+                        .map(|b| match b.as_ref() {
+                            llvm_ir::Constant::Int { bits: 8, value } => {
+                                (*value).try_into().unwrap()
+                            }
+                            _ => panic!(
+                                "Array of 8 bit integers should only container 8 bit integers!"
+                            ),
+                        })
+                        .collect(),
+                ),
                 _ => None,
             },
             _ => None,
