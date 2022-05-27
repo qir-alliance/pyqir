@@ -99,7 +99,10 @@ the solution, run
 ./build.ps1
 ```
 
-Alternatively, you can use `build.sh` or `build.cmd`.
+Alternatively, you can use `build.sh` or `build.cmd`. This will compile
+`qirlib` and its dependencies with the appropriate environment
+variables set for their build scripts. After this is run, the build
+commands below can be used instead of `build.(ps1|sh|cmd)`.
 
 The {ref}`building/environment-variables` section
 details ways to change this behavior.
