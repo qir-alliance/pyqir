@@ -21,6 +21,7 @@ python-bindings = []
 llvm11-0 = ["llvm-ir/llvm-11"]
 llvm12-0 = ["llvm-ir/llvm-12"]
 llvm13-0 = ["llvm-ir/llvm-13"]
+#llvm14-0 = ["llvm-ir/llvm-14"]
 default = ["extension-module", "python-bindings"]
 
 [lib]

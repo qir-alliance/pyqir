@@ -228,7 +228,7 @@ function Get-LLVMFeatureVersion {
         $env:PYQIR_LLVM_FEATURE_VERSION
     }
     else {
-        # "llvm11-0", "llvm12-0", "llvm13-0"
+        # "llvm11-0", "llvm12-0", "llvm13-0", "llvm14-0"
         "llvm11-0"
     }
 }
@@ -289,7 +289,7 @@ function install-llvm {
         [ValidateSet("download", "build")]
         [string]$operation,
         [Parameter(Mandatory)]
-        [ValidateSet("llvm11-0", "llvm12-0", "llvm13-0")]
+        [ValidateSet("llvm11-0", "llvm12-0", "llvm13-0", "llvm14-0")]
         [string]$feature
     )
 
