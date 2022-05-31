@@ -12,8 +12,8 @@ repository = "https://github.com/qir-alliance/pyqir"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pyo3 = "0.15.2"
 qirlib = { path = "../qirlib" }
+pyo3 = { version="0.15.2", optional = true }
 
 [features]
 extension-module = ["pyo3/abi3-py36", "pyo3/extension-module"]

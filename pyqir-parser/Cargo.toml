@@ -13,9 +13,7 @@ repository = "https://github.com/qir-alliance/pyqir"
 
 [dependencies]
 llvm-ir = { version = "0.8.1" }
-
-[dependencies.pyo3]
-version = "0.15.2"
+pyo3 = { version="0.15.2", optional = true }
 
 [features]
 extension-module = ["pyo3/abi3-py36", "pyo3/extension-module"]
