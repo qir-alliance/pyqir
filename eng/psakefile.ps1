@@ -110,7 +110,7 @@ task cargo-fmt {
 task cargo-clippy -depends init {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
         $extraArgs = (Test-CI) ? @("--", "-D", "warnings") : @()
-        cargo clippy --workspace --all-targets @extraArgs
+        cargo clippy --workspace --all-targets @("$($env:CARGO_EXTRA_ARGS)" -split " ") @extraArgs
     }
 }
 
@@ -130,24 +130,14 @@ task pyqir-tests -depends init {
     $srcPath = $repo.root
 
     exec -workingDirectory (Join-Path $srcPath "pyqir-tests") {
-        if (Test-InCondaEnvironment) {
-            Invoke-LoggedCommand -wd $pyqir.generator.dir {
-                maturin develop --release --cargo-extra-args="-vv"
-            }
-            Invoke-LoggedCommand -wd $pyqir.evaluator.dir {
-                maturin develop --release --cargo-extra-args="-vv"
-            }
-            & $python -m pip install pytest
-            & $python -m pytest
+        Invoke-LoggedCommand -wd $pyqir.generator.dir {
+            maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
         }
-        else {
-            Invoke-LoggedCommand {
-                & $python -m pip install tox
-            }
-            Invoke-LoggedCommand {
-                & $python -m tox -v -e (Get-ToxTarget)
-            }
+        Invoke-LoggedCommand -wd $pyqir.evaluator.dir {
+            maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
         }
+        & $python -m pip install pytest
+        & $python -m pytest
     }
 }
 
@@ -167,7 +157,7 @@ task qirlib -depends init {
         }
         try {
             Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-                cargo test --release -vv
+                cargo test --release @("$($env:CARGO_EXTRA_ARGS)" -split " ")
             }
         }
         finally {
@@ -181,11 +171,11 @@ task qirlib -depends init {
     }
     else {
         Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-            cargo test --release -vv
+            cargo test --release @("$($env:CARGO_EXTRA_ARGS)" -split " ")
         }
     }
     Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-        cargo build --release -vv
+        cargo build --release @("$($env:CARGO_EXTRA_ARGS)" -split " ")
     }
 }
 
@@ -224,11 +214,36 @@ task docs -depends wheelhouse {
     }
 }
 
-task init {
+task check-environment {
+    $env_message = @(
+        "PyQIR requires a virtualenv or conda environment to build.",
+        "Neither the VIRTUAL_ENV nor CONDA_PREFIX environment variables are set).",
+        "See https://virtualenv.pypa.io/en/latest/index.html on how to use virtualenv"
+    )
+    if((Test-InVirtualEnvironment) -eq $false) {
+        Write-BuildLog "No virtual environment found."
+        $pyenv = Join-Path $repo.target ".env"
+        Write-BuildLog "Setting up virtual environment in $($pyenv)"
+        & $python -m venv $pyenv
+        if($IsWindows) {
+            . (Join-Path $pyenv "Scripts" "Activate.ps1")
+        } else {
+            . (Join-Path $pyenv "bin" "Activate.ps1")
+        }
+    } else {
+        Write-BuildLog "Virtual environment found."
+    }
+    # ensure that we are now in a virtual environment
+    Assert ((Test-InVirtualEnvironment) -eq $true) "$($env_message -join ' ')"
+}
+
+task init -depends check-environment {
     if ((Test-CI)) {
         cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12
     }
-    
+
+    $env:CARGO_EXTRA_ARGS = "-vv --features `"$(Get-LLVMFeatureVersion)`""
+
     # qirlib has this logic built in when compiled on its own
     # but we must have LLVM installed prior to the wheels being built.
     
@@ -239,7 +254,7 @@ task init {
     }
     else {
         $packagePath = Resolve-InstallationDirectory
-        if (Test-Path (Join-Path $packagePath "bin")) {
+        if (Test-LlvmConfig $packagePath) {
             Write-BuildLog "LLVM target is already installed."
             # LLVM is already downloaded
             Use-LlvmInstallation $packagePath
@@ -257,12 +272,16 @@ task init {
                 # So we need to build it.
                 Invoke-Task "install-llvm-from-source"
             }
+            $installationDirectory = Resolve-InstallationDirectory
+            Use-LlvmInstallation $installationDirectory
         }
     }
 }
 
 task install-llvm-from-archive {
     install-llvm $pyqir.qirlib.dir "download"
+    $installationDirectory = Resolve-InstallationDirectory
+    Assert (Test-LlvmConfig $installationDirectory) "install-llvm-from-archive failed to install a usable LLVM installation"
 }
 
 
@@ -270,7 +289,9 @@ task install-llvm-from-source -depends configure-sccache -postaction { Write-Cac
     if ($IsWindows) {
         Include vcvars.ps1
     }
-    install-llvm $pyqir.qirlib.dir "build"
+    install-llvm "$($pyqir.qirlib.dir)" "build" "$(Get-LLVMFeatureVersion)"
+    $installationDirectory = Resolve-InstallationDirectory
+    Assert (Test-LlvmConfig $installationDirectory) "install-llvm-from-source failed to install a usable LLVM installation"
 }
 
 task package-musllinux-llvm -depends build-musllinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
@@ -394,9 +415,9 @@ task run-examples-in-musl-containers {
 # run-examples assumes the wheels have already been installed locally
 task run-examples {   
     exec -workingDirectory $pyqir.generator.examples_dir {
-        & $python -m pip install -U pip
+        & $python -m pip install -U pip wheel
         & $python -m pip install -r requirements.txt
-        & $python -m pip install --user -U --no-index --find-links (Join-Path $repo.root "target" "wheels") pyqir-generator
+        & $python -m pip install -U --no-index --find-links (Join-Path $repo.root "target" "wheels") pyqir-generator
         & $python "bell_pair.py" | Tee-Object -Variable bell_pair_output
         $bell_first_line = $($bell_pair_output | Select-Object -first 1)
         $bell_expected = "; ModuleID = 'Bell'"
@@ -410,7 +431,7 @@ task run-examples {
     }
 
     exec -workingDirectory $pyqir.evaluator.examples_dir {
-        & $python -m pip install --user -U --no-index --find-links (Join-Path $repo.root "target" "wheels") pyqir-evaluator
+        & $python -m pip install -U --no-index --find-links (Join-Path $repo.root "target" "wheels") pyqir-evaluator
         & $python "bernstein_vazirani.py" | Tee-Object -Variable bz_output
         $bz_first_lines = @($bz_output | Select-Object -first 5)
         $bz_expected = @(

@@ -6,4 +6,6 @@
 #![allow(clippy::used_underscore_binding)]
 
 pub mod parse;
+
+#[cfg(feature = "python-bindings")]
 pub mod python;

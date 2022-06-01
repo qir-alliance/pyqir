@@ -27,7 +27,7 @@ Install python and libs:
 ```bash
 sudo apt-get install -y --no-install-recommends python3-dev python3-pip
 python3 -m pip install --user -U pip
-python3 -m pip install --user maturin tox
+python3 -m pip install --user maturin
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
@@ -43,7 +43,7 @@ path.
 In a command prompt:
 
 ```bash
-python -m pip install --user maturin tox
+python -m pip install --user maturin
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
@@ -56,7 +56,7 @@ or brew:
 
 ```bash
 brew install 'python@3.9'
-python -m pip install --user maturin tox
+python -m pip install --user maturin
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
@@ -88,9 +88,7 @@ not, you can install Clang manually:
 
 The build scripts will automatically download an LLVM toolchain which is
 detailed in the [Development](#development) section. The build installs the
-toolchain to `$HOME/.pyqir` (Windows: `$HOME\.pyqir`) and configures Rust to use
-this installation by setting the `LLVM_SYS_110_PREFIX` environment variable in
-the root `.cargo/config.toml`
+toolchain to `target/llvm-<version>`.
 
 ## Development
 
@@ -101,38 +99,38 @@ the solution, run
 ./build.ps1
 ```
 
-Alternatively, you can use `build.sh` or `build.cmd`.
+Alternatively, you can use `build.sh` or `build.cmd`. This will compile
+`qirlib` and its dependencies with the appropriate environment
+variables set for their build scripts. After this is run, the build
+commands below can be used instead of `build.(ps1|sh|cmd)`.
 
 The {ref}`building/environment-variables` section
 details ways to change this behavior.
 
 Within each project folder, the build can be run specifically for that project.
 
+For any of these commands, the LLVM version must be added via features. For `maturin`,
+they must be added to the `cargo-extra-args` option.
+
+- `<features>` is a placeholder for `--features (llvm11-0 | llvm12-0 | llvm13-0)`
+- `qirlib` can be compiled with `llvm14-0`
+
 Build commands:
 
-- `maturin build`: Build the crate into python packages
-- `maturin build --release`: Build and pass --release to cargo
+- `maturin build --cargo-extra-args="<features>"`: Build the crate into python packages
+- `maturin build --release --cargo-extra-args="<features>"`: Build and pass --release to cargo
 - `maturin build --help`: to view more options
-- `maturin develop`: Installs the crate as module in the current virtualenv
-- `maturin develop && pytest`: Installs the crate as module in the current
+- `maturin develop --cargo-extra-args="<features>"`: Installs the crate as module in the current virtualenv
+- `maturin develop --cargo-extra-args="<features>" && pytest`: Installs the crate as module in the current
   virtualenv and runs the Python tests
 
 If you do not wish to package and test the Python wheels, `cargo` can be used to
 build the project and run Rust tests.
 
-- `cargo build`: Build the Rust cdylib
-- `cargo build --release`: Build the Rust cdylib in release mode
-- `cargo test`: Build and run the Rust cdylib tests
-- `cargo test --release`: Build and run the Rust cdylib tests in release mode
-
-[Tox](https://tox.readthedocs.io/) can be used as well:
-
-Two targets are available for tox:
-
-- `python -m tox -e test`
-- Runs the python tests in an isolated environment
-- `python -m tox -e pack`
-- Packages all wheels in an isolated environment
+- `cargo build <features>`: Build the Rust cdylib
+- `cargo build --release <features>`: Build the Rust cdylib in release mode
+- `cargo test <features>`: Build and run the Rust cdylib tests
+- `cargo test --release <features>`: Build and run the Rust cdylib tests in release mode
 
 ### Environment Variables
 
@@ -148,8 +146,8 @@ default order is:
 
 - Use specific LLVM installation if specified
 - Locate existing LLVM installation on `PATH`
-- Download LLVM if allowed from specified source
 - Build LLVM from source
+- Download LLVM if allowed from specified source
 
 Afterward, the build configures the `LLVM_SYS_*_PREFIX` environment variable
 according to what the environment has configured. This will allow LLVM to
@@ -157,13 +155,12 @@ be linked into the rest of the build.
 
 ### Packaging
 
-The `build.(ps1|sh|cmd)`, `maturin`, and `tox` builds all generate Python wheels
+The `build.(ps1|sh|cmd)`, `maturin` builds all generate Python wheels
 to the `target/wheels` folder. The default Python3 installation will be used
 targeting Python ABI 3.6.
 
 The manylinux support uses a Docker image in the build scripts to run the builds
 in the CI environment.
 
-The Windows packaging will look for python installations available and build for
-them. More information on [supporting multiple python versions on
-Windows](https://tox.readthedocs.io/en/latest/developers.html?highlight=windows#multiple-python-versions-on-windows)
+The musllinux support uses a Docker image in the build scripts to run the builds
+in the CI environment.

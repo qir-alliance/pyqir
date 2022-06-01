@@ -12,14 +12,17 @@ repository = "https://github.com/qir-alliance/pyqir"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-env_logger = "0.9.0"
-log = "0.4.14"
-pyo3 = "0.15.1"
 qirlib = { path = "../qirlib" }
+pyo3 = { version="0.15.2", optional = true }
 
 [features]
 extension-module = ["pyo3/abi3-py36", "pyo3/extension-module"]
-default = ["extension-module"]
+python-bindings = []
+default = ["extension-module", "python-bindings"]
+llvm11-0 = ["qirlib/llvm11-0"]
+llvm12-0 = ["qirlib/llvm12-0"]
+llvm13-0 = ["qirlib/llvm13-0"]
+llvm14-0 = ["qirlib/llvm14-0"]
 
 [lib]
 name = "pyqir_generator"
