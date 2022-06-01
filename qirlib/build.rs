@@ -19,7 +19,37 @@ extern crate lazy_static;
 extern crate regex;
 extern crate semver;
 
-// Make sure exactly one of the linking features is used
+// Make sure one version of llvm features is used
+#[cfg(all(
+    not(any(feature = "llvm11-0")),
+    not(any(feature = "llvm12-0")),
+    not(any(feature = "llvm13-0")),
+    not(any(feature = "llvm14-0")),
+))]
+compile_error!("One of the features `qirlib/llvm11-0`, `qirlib/llvm12-0`, `qirlib/llvm13-0`, and `qirlib/llvm14-0` must be used exclusive.");
+
+// Make sure only one llvm option is used.
+#[cfg(any(
+    all(
+        feature = "llvm11-0",
+        any(feature = "llvm12-0", feature = "llvm13-0", feature = "llvm14-0")
+    ),
+    all(
+        feature = "llvm12-0",
+        any(feature = "llvm11-0", feature = "llvm13-0", feature = "llvm14-0")
+    ),
+    all(
+        feature = "llvm13-0",
+        any(feature = "llvm11-0", feature = "llvm12-0", feature = "llvm14-0")
+    ),
+    all(
+        feature = "llvm14-0",
+        any(feature = "llvm11-0", feature = "llvm12-0", feature = "llvm13-0")
+    ),
+))]
+compile_error!("Features `qirlib/llvm11-0`, `qirlib/llvm12-0`, `qirlib/llvm13-0`, and `qirlib/llvm14-0` must be used exclusive.");
+
+// Make sure one of the linking features is used
 #[cfg(all(
     not(any(feature = "qirlib-llvm-linking")),
     not(any(feature = "external-llvm-linking")),
@@ -238,8 +268,16 @@ fn get_package_file_name() -> Result<String, Box<dyn Error>> {
 fn get_llvm_tag() -> String {
     if let Ok(tag) = env::var("QIRLIB_LLVM_TAG") {
         tag
-    } else {
+    } else if cfg!(feature = "llvm11-0") {
         "llvmorg-11.1.0".to_owned() // 1fdec59bf
+    } else if cfg!(feature = "llvm12-0") {
+        "llvmorg-12.0.1".to_owned() // fed4134
+    } else if cfg!(feature = "llvm13-0") {
+        "llvmorg-13.0.1".to_owned() // 75e33f7
+    } else if cfg!(feature = "llvm14-0") {
+        "llvmorg-14.0.3".to_owned() // 1f91400
+    } else {
+        panic!("Unsupported LLVM version. The LLVM feature flags or QIRLIB_LLVM_TAG must be set.")
     }
 }
 

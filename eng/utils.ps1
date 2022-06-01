@@ -62,7 +62,35 @@ function Use-LlvmInstallation {
         [string]$path
     )
     Write-BuildLog "LLVM installation set to: $path"
-    $env:LLVM_SYS_110_PREFIX = $path
+    $llvm_config_options = @(Get-Command (Join-Path $path "bin" "llvm-config*"))
+    Assert ($llvm_config_options.Length -gt 0) "llvm config not found in $path"
+    $llvm_config = $llvm_config_options[0].Source
+    Write-BuildLog "Found llvm-config : $llvm_config"
+    $version = [Version]::Parse("$(&$llvm_config --version)")
+    $prefix = "LLVM_SYS_$($version.Major)0_PREFIX"
+    Write-BuildLog "Setting $prefix set to: $path"
+    [Environment]::SetEnvironmentVariable($prefix, $path)
+}
+
+function Test-LlvmConfig {
+    param (
+        [string]$path
+    )
+
+    $llvm_config_options = @(Get-Command (Join-Path $path "bin" "llvm-config*"))
+    if ($llvm_config_options.Length -eq 0) {
+        return $false
+    }
+    $llvm_config = $llvm_config_options[0].Source
+    try {
+        exec {
+            & $llvm_config --version | Out-Null
+        }
+    }
+    catch {
+        return $false
+    }
+    return $true
 }
 
 function Resolve-InstallationDirectory {
@@ -80,7 +108,7 @@ function Get-DefaultInstallDirectory {
         $env:QIRLIB_CACHE_DIR
     }
     else {
-        Join-Path "$HOME" ".pyqir"
+        Join-Path "$($repo.target)" "$(Get-LLVMFeatureVersion)"
     }
 }
 
@@ -129,7 +157,15 @@ function Test-AllowedToDownloadLlvm {
 }
 
 function Test-InCondaEnvironment {
-    (Test-Path env:\CONDA_PREFIX) -or (Test-Path env:\CONDA_ROOT)
+    (Test-Path env:\CONDA_PREFIX)
+}
+
+function Test-InVenvEnvironment {
+    (Test-Path env:\VIRTUAL_ENV)
+}
+
+function Test-InVirtualEnvironment {
+    (Test-InCondaEnvironment) -or (Test-InVenvEnvironment)
 }
 
 function Get-LinuxTargetTriple {
@@ -164,15 +200,6 @@ function Get-LinuxContainerUserName {
     }
 }
 
-function Get-ToxTarget {
-    if (Test-MuslLinux) {
-        "allmusl"
-    }
-    else {
-        "all"
-    }
-}
-
 function Test-MuslLinux {
     if ($IsLinux) {
         $triple = Get-LinuxTargetTriple
@@ -196,29 +223,29 @@ function Write-CacheStats {
     }
 }
 
+function Get-LLVMFeatureVersion {
+    if (Test-Path env:\PYQIR_LLVM_FEATURE_VERSION) {
+        $env:PYQIR_LLVM_FEATURE_VERSION
+    }
+    else {
+        # "llvm11-0", "llvm12-0", "llvm13-0", "llvm14-0"
+        "llvm11-0"
+    }
+}
+
 function Build-PyQIR([string]$project) {
     $srcPath = $repo.root
 
     exec -workingDirectory (Join-Path $srcPath $project) {
-        if (Test-InCondaEnvironment) {
-            $build_extra_args = ""
-            if (Test-MuslLinux) {
-                $build_extra_args = "--skip-auditwheel"
-            }
-            Invoke-LoggedCommand {
-                maturin build --release $build_extra_args --cargo-extra-args="-vv"
-                maturin develop --release --cargo-extra-args="-vv"
-                & $python -m pip install pytest
-                & $python -m pytest
-            }
+        $build_extra_args = ""
+        if (Test-MuslLinux) {
+            $build_extra_args = "--skip-auditwheel"
         }
-        else {
-            Invoke-LoggedCommand {
-                & $python -m pip install tox
-            }
-            Invoke-LoggedCommand {
-                & $python -m tox -v -e (Get-ToxTarget)
-            }
+        Invoke-LoggedCommand {
+            maturin build --release $build_extra_args --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
+            maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
+            & $python -m pip install -r requirements-dev.txt
+            & $python -m pytest
         }
     }
 }
@@ -260,12 +287,14 @@ function install-llvm {
         [string]$qirlibDir,
         [Parameter(Mandatory)]
         [ValidateSet("download", "build")]
-        [string]$operation
+        [string]$operation,
+        [Parameter(Mandatory)]
+        [ValidateSet("llvm11-0", "llvm12-0", "llvm13-0", "llvm14-0")]
+        [string]$feature
     )
 
     $installationDirectory = Resolve-InstallationDirectory
     New-Item -ItemType Directory -Force $installationDirectory | Out-Null
-    Use-LlvmInstallation $installationDirectory
     $clear_cache_var = $false
     if (!(Test-Path env:\QIRLIB_CACHE_DIR)) {
         $clear_cache_var = $true
@@ -273,7 +302,7 @@ function install-llvm {
     }
     try {
         Invoke-LoggedCommand -wd $qirlibDir {
-            cargo build --release --no-default-features --features "$($operation)-llvm,no-llvm-linking" -vv
+            cargo build --release --no-default-features --features "$($operation)-llvm,$feature-no-llvm-linking" -vv
         }
     }
     finally {

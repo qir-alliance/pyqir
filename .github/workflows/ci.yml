@@ -104,7 +104,9 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: manylinux-artifacts
-          path: target/wheels/*manylinux*.whl
+          path: |
+            target/wheels/*manylinux_2_17*.whl
+            target/wheels/pyqir-*.whl
         if: ${{ matrix.config.os == 'ubuntu-20.04' }}
       - name: Artifacts
         uses: actions/upload-artifact@v2

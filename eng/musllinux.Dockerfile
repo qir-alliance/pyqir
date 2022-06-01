@@ -115,4 +115,6 @@ RUN python -m pip install --no-cache-dir cffi
 
 COPY --from=builder ${CARGO_HOME}/bin/maturin /usr/bin/maturin
 
-RUN python -m pip install -U tox
+ENV VIRTUAL_ENV=/opt/venv
+RUN python -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
