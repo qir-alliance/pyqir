@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Authoring PyQIR Documentation &#8212; PyQIR  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -33,10 +34,10 @@
           <div class="body" role="main">
             
   <section id="authoring-pyqir-documentation">
-<h1>Authoring PyQIR Documentation<a class="headerlink" href="#authoring-pyqir-documentation" title="Permalink to this headline">¶</a></h1>
+<h1>Authoring PyQIR Documentation<a class="headerlink" href="#authoring-pyqir-documentation" title="Permalink to this heading">¶</a></h1>
 <p>On this page, we briefly describe some of the process for writing, maintaining, and improving PyQIR documentation.</p>
 <section id="about-sphinx-and-myst">
-<h2>About Sphinx and MyST<a class="headerlink" href="#about-sphinx-and-myst" title="Permalink to this headline">¶</a></h2>
+<h2>About Sphinx and MyST<a class="headerlink" href="#about-sphinx-and-myst" title="Permalink to this heading">¶</a></h2>
 <p>PyQIR documentation is written using the <a class="reference external" href="https://www.sphinx-doc.org/">Sphinx documentation engine</a>, together with the <a class="reference external" href="https://myst-parser.readthedocs.io/">MyST variant of Markdown</a>. As an extension to Markdown, MyST includes all common Markdown syntax (e.g.: headings, emphasis, code blocks). In addition, MyST extends plain Markdown with additional syntax called <em>roles</em> and <em>directives</em> that allow Sphinx and its plugins to add new functionality to MyST.</p>
 <p>In particular, <em>roles</em> allow Sphinx to define new inline markup (within a paragraph), while <em>directives</em> allow Sphinx to define new block markup (at the level of paragraphs). For instance, the <code class="docutils literal notranslate"><span class="pre">math</span></code> role can be used to embed LaTeX-style equations:</p>
 <div class="highlight-md notranslate"><div class="highlight"><pre><span></span>Fresh qubits start in the {math}`\left|0\right\rangle` state.
@@ -58,9 +59,9 @@ index
 For more details on MyST additions to standard Markdown, please see <span class="xref std std-ref">myst-parser:example_syntax</span>.</p>
 </section>
 <section id="links-in-sphinx-documentation">
-<h2>Links in Sphinx documentation<a class="headerlink" href="#links-in-sphinx-documentation" title="Permalink to this headline">¶</a></h2>
+<h2>Links in Sphinx documentation<a class="headerlink" href="#links-in-sphinx-documentation" title="Permalink to this heading">¶</a></h2>
 <p>While MyST supports traditional Markdown links, Sphinx provides additional roles for links that allow for verifying link targets, automatically generating link text from document and section headings, and other enhancements. Thus, when writing PyQIR documentation, we recommend the following:</p>
-<table class="colwidths-auto docutils align-default">
+<table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Link target</p></th>
 <th class="head"><p>Syntax</p></th>
@@ -141,7 +142,7 @@ For more details on MyST additions to standard Markdown, please see <span class=
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -158,7 +159,7 @@ For more details on MyST additions to standard Markdown, please see <span class=
       &copy;2021, QIR Alliance.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

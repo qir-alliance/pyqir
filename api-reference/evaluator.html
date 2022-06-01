@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>pyqir.evaluator &#8212; PyQIR  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -34,9 +35,9 @@
           <div class="body" role="main">
             
   <section id="pyqir-evaluator">
-<h1>pyqir.evaluator<a class="headerlink" href="#pyqir-evaluator" title="Permalink to this headline">¶</a></h1>
+<h1>pyqir.evaluator<a class="headerlink" href="#pyqir-evaluator" title="Permalink to this heading">¶</a></h1>
 <section id="nonadaptiveevaluator-class">
-<h2><code class="docutils literal notranslate"><span class="pre">NonadaptiveEvaluator</span></code> class<a class="headerlink" href="#nonadaptiveevaluator-class" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">NonadaptiveEvaluator</span></code> class<a class="headerlink" href="#nonadaptiveevaluator-class" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyqir.evaluator.NonadaptiveEvaluator">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.evaluator.</span></span><span class="sig-name descname"><span class="pre">NonadaptiveEvaluator</span></span><a class="headerlink" href="#pyqir.evaluator.NonadaptiveEvaluator" title="Permalink to this definition">¶</a></dt>
@@ -45,14 +46,14 @@
 state. Measurement results are pre-determined before the program starts.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.evaluator.NonadaptiveEvaluator.eval">
-<span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gateset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyqir.evaluator.GateSet" title="pyqir.evaluator._gateset.GateSet"><span class="pre">pyqir.evaluator._gateset.GateSet</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">entry_point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result_stream</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.evaluator.NonadaptiveEvaluator.eval" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gateset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyqir.evaluator.GateSet" title="pyqir.evaluator._gateset.GateSet"><span class="pre">GateSet</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">entry_point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result_stream</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.evaluator.NonadaptiveEvaluator.eval" title="Permalink to this definition">¶</a></dt>
 <dd><p>JIT compiles and evaluates the QIR program, delegating quantum
 operations to the supplied gate set.</p>
 <p>The result stream will be read in order by the measurement instruction.
 Each measurement will pop a result from the beginning of the stream. If
 the stream runs out of results, measurement returns zero.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>file_path</strong> – file path of existing QIR in a ll or bc file</p></li>
 <li><p><strong>gateset</strong> – python GateSet based object defining the operations</p></li>
@@ -67,7 +68,7 @@ the stream runs out of results, measurement returns zero.</p>
 
 </section>
 <section id="gateset-class">
-<h2><code class="docutils literal notranslate"><span class="pre">GateSet</span></code> class<a class="headerlink" href="#gateset-class" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">GateSet</span></code> class<a class="headerlink" href="#gateset-class" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyqir.evaluator.GateSet">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.evaluator.</span></span><span class="sig-name descname"><span class="pre">GateSet</span></span><a class="headerlink" href="#pyqir.evaluator.GateSet" title="Permalink to this definition">¶</a></dt>
@@ -164,11 +165,11 @@ callbacks during evaluation of QIR</p>
 
 </section>
 <section id="gatelogger-class">
-<h2><code class="docutils literal notranslate"><span class="pre">GateLogger</span></code> class<a class="headerlink" href="#gatelogger-class" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">GateLogger</span></code> class<a class="headerlink" href="#gatelogger-class" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyqir.evaluator.GateLogger">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.evaluator.</span></span><span class="sig-name descname"><span class="pre">GateLogger</span></span><a class="headerlink" href="#pyqir.evaluator.GateLogger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pyqir.evaluator.GateSet" title="pyqir.evaluator._gateset.GateSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqir.evaluator._gateset.GateSet</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.evaluator.GateSet" title="pyqir.evaluator._gateset.GateSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">GateSet</span></code></a></p>
 <p>Records the quantum circuit operations executed during QIR evaluation.</p>
 <p>number_of_qubits: int
 number_of_registers: int
@@ -317,7 +318,7 @@ instructions: List[str]</p>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -334,7 +335,7 @@ instructions: List[str]</p>
       &copy;2021, QIR Alliance.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
