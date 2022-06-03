@@ -62,6 +62,7 @@ __all__ = [
     "QirFNegInstr",
     "QirICmpInstr",
     "QirFCmpInstr",
+    "QirZExtInstr",
     "QirSelectInstr",
     "QirPhiInstr",
     "QirCallInstr",
@@ -570,6 +571,8 @@ class QirInstr:
             return super().__new__(QirPhiInstr)
         elif instr.is_select:
             return super().__new__(QirSelectInstr)
+        elif instr.is_zext:
+            return super().__new__(QirZExtInstr)
         else:
             return super().__new__(cls)
 
@@ -775,6 +778,14 @@ class QirFCmpInstr(QirOpInstr):
         "ule", "une", and "true"
         """
         return self.instr.fcmp_predicate
+
+
+class QirZExtInstr(QirOpInstr):
+    """
+    Instances of QirZExtInstr represent a zero-extension instruction that expands the bitwidth
+    of the given integer operand to match the width of the output operand.
+    """
+    pass
 
 
 class QirSelectInstr(QirInstr):
