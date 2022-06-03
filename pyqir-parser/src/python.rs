@@ -297,14 +297,18 @@ impl PyQirBasicBlock {
 impl PyQirInstruction {
     #[getter]
     fn get_target_operands(&self) -> Vec<PyQirOperand> {
-        self.instr
-            .get_target_operands()
-            .iter()
-            .map(|op| PyQirOperand {
-                op: op.clone(),
-                types: self.types.clone(),
-            })
-            .collect()
+        if self.get_is_zext() {
+            vec![self.get_zext_operand().unwrap()]
+        } else {
+            self.instr
+                .get_target_operands()
+                .iter()
+                .map(|op| PyQirOperand {
+                    op: op.clone(),
+                    types: self.types.clone(),
+                })
+                .collect()
+        }
     }
 
     #[getter]
@@ -462,6 +466,23 @@ impl PyQirInstruction {
     #[getter]
     fn get_is_zext(&self) -> bool {
         matches!(self.instr, llvm_ir::Instruction::ZExt(_))
+    }
+
+    #[getter]
+    fn get_zext_operand(&self) -> Option<PyQirOperand> {
+        match_contents!(
+            &self.instr,
+            llvm_ir::Instruction::ZExt(llvm_ir::instruction::ZExt {
+                operand,
+                to_type: _,
+                dest: _,
+                debugloc: _,
+            }),
+            PyQirOperand {
+                op: operand.clone(),
+                types: self.types.clone(),
+            }
+        )
     }
 
     #[getter]

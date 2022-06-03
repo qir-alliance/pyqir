@@ -68,6 +68,7 @@ def test_parser_select_support():
     assert isinstance(instr2.false_value, QirLocalOperand)
     assert instr2.false_value.name == "val.i.1"
 
+
 def test_global_string():
     mod = QirModule("tests/hello.bc")
     func_name = "program__main__body"
@@ -80,6 +81,22 @@ def test_global_string():
     assert instr.func_name == "__quantum__rt__string_create"
     assert isinstance(instr.func_args[0], QirGlobalByteArrayConstant)
     assert mod.get_global_bytes_value(instr.func_args[0]).decode('utf-8') == "Hello World!\0"
+
+
+def test_parser_zext_support():
+    mod = QirModule("tests/select.bc")
+    func = mod.get_funcs_by_attr("EntryPoint")[0]
+    block = func.blocks[0]
+    instr = block.instructions[7]
+    assert isinstance(instr, QirZExtInstr)
+    assert isinstance(instr.type, QirIntegerType)
+    assert instr.type.width == 64
+    assert instr.output_name == "2"
+    assert len(instr.target_operands) == 1
+    assert isinstance(instr.target_operands[0], QirLocalOperand)
+    assert instr.target_operands[0].name == "1"
+    assert instr.target_operands[0].type.width == 1
+
 
 def test_parser_internals():
     mod = module_from_bitcode("tests/teleportchain.baseprofile.bc")
