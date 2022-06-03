@@ -9103,7 +9103,7 @@ SOFTWARE.
 
 
 
-pyqir-evaluator 0.4.1-alpha - SPDX: MIT - MIT License
+pyqir-evaluator 0.4.2-alpha - SPDX: MIT - MIT License
 https://github.com/qir-alliance/pyqir
 
 MIT License

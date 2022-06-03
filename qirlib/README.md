@@ -163,7 +163,7 @@ qirlib> cargo build --release --no-default-features --features "llvm14-0-qirlib-
 ### Downloading (and linking) LLVM from pre-compiled binaries
 
 Downloading an existing LLVM package and installing it can be configured via
-[Environment variables]($Environment-variables). This is an advanced feature
+[Environment variables](#environment-variables). This is an advanced feature
 and requires more effort to use.
 
 In order to build and link LLVM from source, we must also tell
