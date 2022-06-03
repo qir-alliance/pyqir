@@ -1025,6 +1025,61 @@ impl PyQirConstant {
     fn get_result_static_id(&self) -> Option<u64> {
         self.constantref.result_id()
     }
+
+    #[getter]
+    fn get_is_global_byte_array(&self) -> bool {
+        match self.constantref.as_ref() {
+            llvm_ir::Constant::GetElementPtr(llvm_ir::constant::GetElementPtr {
+                address: addr,
+                indices: _,
+                in_bounds: _,
+            }) => match addr.as_ref() {
+                llvm_ir::Constant::GlobalReference {
+                    name: llvm_ir::Name::Number(_),
+                    ty: typeref,
+                } => match typeref.as_ref() {
+                    llvm_ir::Type::ArrayType {
+                        element_type: typeref,
+                        num_elements: _,
+                    } => matches!(typeref.as_ref(), llvm_ir::Type::IntegerType { bits: 8 }),
+                    _ => false,
+                },
+                _ => false,
+            },
+            _ => false,
+        }
+    }
+
+    fn get_global_byte_array_value(&self, module: &PyQirModule) -> Option<Vec<i8>> {
+        match self.constantref.as_ref() {
+            llvm_ir::Constant::GetElementPtr(llvm_ir::constant::GetElementPtr {
+                address: addr,
+                indices: _,
+                in_bounds: _,
+            }) => match addr.as_ref() {
+                llvm_ir::Constant::GlobalReference {
+                    name: llvm_ir::Name::Number(n),
+                    ty: _,
+                } => module
+                    .module
+                    .global_vars
+                    .iter()
+                    .find(|g| match &g.name {
+                        llvm_ir::Name::Number(m) => m == n,
+                        llvm_ir::Name::Name(_) => false,
+                    })
+                    .and_then(|global| {
+                        global
+                            .initializer
+                            .as_ref()
+                            .map(|init| init.as_ref().bytes_val())
+                    })
+                    .flatten(),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
 }
 
 #[pymethods]

@@ -33,6 +33,7 @@ __all__ = [
     "QirNullConstant",
     "QirQubitConstant",
     "QirResultConstant",
+    "QirGlobalByteArrayConstant",
     "QirTerminator",
     "QirRetTerminator",
     "QirBrTerminator",
@@ -247,6 +248,8 @@ class QirOperand:
                 return super().__new__(QirDoubleConstant)
             elif op.constant.is_null:
                 return super().__new__(QirNullConstant)
+            elif op.constant.is_global_byte_array:
+                return super().__new__(QirGlobalByteArrayConstant)
             else:
                 return super().__new__(cls)
         else:
@@ -380,6 +383,12 @@ class QirResultConstant(QirConstant):
         gets the integer identifier for this result constant.
         """
         return self.value
+
+class QirGlobalByteArrayConstant(QirConstant):
+    """
+    Instances of QirGlobalByteArrayConstant represent a globally defined array of bytes in a QIR program.
+    """
+    pass
 
 
 class QirTerminator:
@@ -1152,3 +1161,13 @@ class QirModule:
                 QirFunction(i) for i in self.module.get_interop_funcs()
             ]
         return self._interop_funcs
+
+    def get_global_bytes_value(self, global_ref: QirGlobalByteArrayConstant) -> Optional[bytes]:
+        """
+        Gets any globally defined bytes values matching the given global constant.
+        :param global_ref: the global constant whose bytes should be retrieved.
+        """
+        byte_array = global_ref.const.get_global_byte_array_value(self.module)
+        if byte_array != None:
+            return bytes(byte_array)
+        return None
