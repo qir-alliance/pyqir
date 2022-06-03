@@ -19,7 +19,7 @@ jobs:
       matrix:
         config:
           - {
-              os: "ubuntu-20.04",
+              os: "ubuntu-22.04",
               arch: "amd64",
               env: {},
             }
@@ -46,8 +46,8 @@ jobs:
       - name: MacOS - Install build dependencies, ccache, ninja
         run: brew install ccache ninja
         if: ${{ matrix.config.os == 'macOS-10.15' }}
-      - name: Windows - Install LLVM 11.1.0
-        run: choco install llvm --version=11.1.0 --allow-downgrade
+      - name: Windows - Install LLVM 13.0.1
+        run: choco install llvm --version=13.0.1 --allow-downgrade
         if: ${{ matrix.config.os == 'windows-2019' }}
       - name: "Build and Package LLVM"
         run: ./build.ps1 -t package-llvm

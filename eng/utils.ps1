@@ -229,7 +229,7 @@ function Get-LLVMFeatureVersion {
     }
     else {
         # "llvm11-0", "llvm12-0", "llvm13-0", "llvm14-0"
-        "llvm11-0"
+        "llvm13-0"
     }
 }
 
