@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from tokenize import String
 from pyqir.parser._native import (
     PyQirModule,
     PyQirFunction,
