@@ -51,6 +51,6 @@ jobs:
         incremental_files_only: true
         config: 'cspell.json'
     - name: "Check type annotations and mypy stub files"
-      uses: jpetrucciani/mypy-check@v0.930
+      uses: jpetrucciani/mypy-check@0.930
       with:
         path: '.'
