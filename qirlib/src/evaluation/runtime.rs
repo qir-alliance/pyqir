@@ -11,20 +11,21 @@ use log;
 use inkwell::values::FunctionValue;
 
 use super::gates::GateScope;
+use super::jit::module_functions;
 
 pub(crate) struct Simulator {
     _scope: GateScope,
 }
 
 impl<'ctx> Simulator {
-    pub fn new(module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) -> Self {
+    pub fn new(module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) -> Result<Self, String> {
         let simulator = Simulator {
             _scope: crate::evaluation::gates::GateScope::new(),
         };
 
-        Simulator::bind(module, ee);
+        Simulator::bind(module, ee)?;
 
-        simulator
+        Ok(simulator)
     }
 
     pub fn get_model() -> SemanticModel {
@@ -33,7 +34,19 @@ impl<'ctx> Simulator {
         gs.get_model()
     }
 
-    fn bind(module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) {
+    fn bind(module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) -> Result<(), String> {
+        if let Some(f) = module_functions(module).find(|f| {
+            let name = f.get_name().to_str().unwrap();
+            f.as_global_value().is_declaration()
+                && !Intrinsics::is_qis_supported(name)
+                && !Runtime::is_rt_supported(name)
+        }) {
+            return Err(format!(
+                "Unsupported function `{}`.",
+                f.get_name().to_str().unwrap()
+            ));
+        }
+
         let intrinsics = Intrinsics::new(module);
         if let Some(ins) = intrinsics.cnot {
             ee.add_global_mapping(&ins, super::intrinsics::__quantum__qis__cnot__body as usize);
@@ -127,6 +140,8 @@ impl<'ctx> Simulator {
                 super::intrinsics::__quantum__rt__qubit_release as usize,
             );
         }
+
+        Ok(())
     }
 }
 
@@ -190,6 +205,29 @@ impl<'ctx> Intrinsics<'ctx> {
         let function_name = format!("__quantum__qis__{}__adj", name.to_lowercase());
         get_function(module, function_name.as_str())
     }
+
+    fn is_qis_supported(name: &str) -> bool {
+        match name {
+            "__quantum__qis__cnot__body"
+            | "__quantum__qis__cz__body"
+            | "__quantum__qis__m__body"
+            | "__quantum__qis__mz__body"
+            | "__quantum__qis__rx__body"
+            | "__quantum__qis__ry__body"
+            | "__quantum__qis__rz__body"
+            | "__quantum__qis__reset__body"
+            | "__quantum__qis__h__body"
+            | "__quantum__qis__x__body"
+            | "__quantum__qis__y__body"
+            | "__quantum__qis__z__body"
+            | "__quantum__qis__s__body"
+            | "__quantum__qis__s__adj"
+            | "__quantum__qis__t__body"
+            | "__quantum__qis__t__adj"
+            | "__quantum__qis__read_result__body" => true,
+            _ => false,
+        }
+    }
 }
 
 pub struct Runtime<'ctx> {
@@ -219,6 +257,17 @@ impl<'ctx> Runtime<'ctx> {
     ) -> Option<FunctionValue<'ctx>> {
         let function_name = format!("__quantum__rt__{}", name.to_lowercase());
         get_function(module, function_name.as_str())
+    }
+
+    fn is_rt_supported(name: &str) -> bool {
+        match name {
+            "__quantum__rt__result_get_one"
+            | "__quantum__rt__result_get_zero"
+            | "__quantum__rt__result_equal"
+            | "__quantum__rt__qubit_allocate"
+            | "__quantum__rt__qubit_release" => true,
+            _ => false,
+        }
     }
 }
 

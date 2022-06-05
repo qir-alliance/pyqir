@@ -28,6 +28,10 @@ class NonadaptiveEvaluator:
         Each measurement will pop a result from the beginning of the stream. If
         the stream runs out of results, measurement returns zero.
 
+        Right now the evaluator does not have a full runtime environment and can
+        JIT QIR produced by the pyqir-generator, but cannot use any external function
+        calls.
+
         :param file_path: file path of existing QIR in a ll or bc file
         :param gateset: python GateSet based object defining the operations
         :param entry_point: entry point name; required if QIR contains multiple entry points
