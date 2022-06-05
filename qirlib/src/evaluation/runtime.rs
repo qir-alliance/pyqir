@@ -23,7 +23,14 @@ impl<'ctx> Simulator {
             _scope: crate::evaluation::gates::GateScope::new(),
         };
 
-        Simulator::bind(module, ee)?;
+        if let Some(f) = Simulator::unsupported_function(module) {
+            return Err(format!(
+                "Unsupported function `{}`.",
+                f.get_name().to_str().unwrap()
+            ));
+        }
+
+        Simulator::bind(module, ee);
 
         Ok(simulator)
     }
@@ -34,19 +41,16 @@ impl<'ctx> Simulator {
         gs.get_model()
     }
 
-    fn bind(module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) -> Result<(), String> {
-        if let Some(f) = module_functions(module).find(|f| {
+    fn unsupported_function(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
+        module_functions(module).find(|f| {
             let name = f.get_name().to_str().unwrap();
             f.as_global_value().is_declaration()
                 && !Intrinsics::is_qis_supported(name)
                 && !Runtime::is_rt_supported(name)
-        }) {
-            return Err(format!(
-                "Unsupported function `{}`.",
-                f.get_name().to_str().unwrap()
-            ));
-        }
+        })
+    }
 
+    fn bind(module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) {
         let intrinsics = Intrinsics::new(module);
         if let Some(ins) = intrinsics.cnot {
             ee.add_global_mapping(&ins, super::intrinsics::__quantum__qis__cnot__body as usize);
@@ -140,8 +144,6 @@ impl<'ctx> Simulator {
                 super::intrinsics::__quantum__rt__qubit_release as usize,
             );
         }
-
-        Ok(())
     }
 }
 
@@ -207,26 +209,26 @@ impl<'ctx> Intrinsics<'ctx> {
     }
 
     fn is_qis_supported(name: &str) -> bool {
-        match name {
+        matches!(
+            name,
             "__quantum__qis__cnot__body"
-            | "__quantum__qis__cz__body"
-            | "__quantum__qis__m__body"
-            | "__quantum__qis__mz__body"
-            | "__quantum__qis__rx__body"
-            | "__quantum__qis__ry__body"
-            | "__quantum__qis__rz__body"
-            | "__quantum__qis__reset__body"
-            | "__quantum__qis__h__body"
-            | "__quantum__qis__x__body"
-            | "__quantum__qis__y__body"
-            | "__quantum__qis__z__body"
-            | "__quantum__qis__s__body"
-            | "__quantum__qis__s__adj"
-            | "__quantum__qis__t__body"
-            | "__quantum__qis__t__adj"
-            | "__quantum__qis__read_result__body" => true,
-            _ => false,
-        }
+                | "__quantum__qis__cz__body"
+                | "__quantum__qis__m__body"
+                | "__quantum__qis__mz__body"
+                | "__quantum__qis__rx__body"
+                | "__quantum__qis__ry__body"
+                | "__quantum__qis__rz__body"
+                | "__quantum__qis__reset__body"
+                | "__quantum__qis__h__body"
+                | "__quantum__qis__x__body"
+                | "__quantum__qis__y__body"
+                | "__quantum__qis__z__body"
+                | "__quantum__qis__s__body"
+                | "__quantum__qis__s__adj"
+                | "__quantum__qis__t__body"
+                | "__quantum__qis__t__adj"
+                | "__quantum__qis__read_result__body"
+        )
     }
 }
 
@@ -260,14 +262,14 @@ impl<'ctx> Runtime<'ctx> {
     }
 
     fn is_rt_supported(name: &str) -> bool {
-        match name {
+        matches!(
+            name,
             "__quantum__rt__result_get_one"
-            | "__quantum__rt__result_get_zero"
-            | "__quantum__rt__result_equal"
-            | "__quantum__rt__qubit_allocate"
-            | "__quantum__rt__qubit_release" => true,
-            _ => false,
-        }
+                | "__quantum__rt__result_get_zero"
+                | "__quantum__rt__result_equal"
+                | "__quantum__rt__qubit_allocate"
+                | "__quantum__rt__qubit_release"
+        )
     }
 }
 
