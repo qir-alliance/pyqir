@@ -1,4 +1,4 @@
-# Generated from .\MockLanguage.g4 by ANTLR 4.9.1
+# Generated from MockLanguage.g4 by ANTLR 4.10.1
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .MockLanguageParser import MockLanguageParser
