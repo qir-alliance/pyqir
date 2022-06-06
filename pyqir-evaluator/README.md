@@ -10,7 +10,9 @@ purpose of:
 It contains the necessary [just-in-time
 compilation](https://en.wikipedia.org/wiki/Just-in-time_compilation)
 infrastructure as well as an extensibility mechanism to define what actions to
-perform when a gate is applied in Python.
+perform when a gate is applied in Python. Right now the evaluator does not have
+a full runtime environment and can JIT QIR produced by the pyqir-generator, but
+cannot use any external function calls.
 
 ## Installation
 

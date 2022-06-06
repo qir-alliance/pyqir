@@ -25,6 +25,7 @@ use std::path::Path;
 /// - Module fails to load.
 /// - LLVM fails to initialize local JIT Engine and components
 /// - Entrypoint cannot be resolved
+/// - Module contains unknown external functions
 pub fn run_module_file(
     path: impl AsRef<Path>,
     entry_point: Option<&str>,
@@ -39,6 +40,7 @@ pub fn run_module_file(
 ///
 /// - LLVM fails to initialize local JIT Engine and components
 /// - Entrypoint cannot be resolved
+/// - Module contains unknown external functions
 pub fn run_module(
     module: &Module,
     entry_point: Option<&str>,
@@ -71,7 +73,7 @@ pub fn run_module(
         .create_jit_execution_engine(OptimizationLevel::None)
         .map_err(|e| e.to_string())?;
 
-    let _simulator = Simulator::new(module, &execution_engine);
+    let _simulator = Simulator::new(module, &execution_engine)?;
 
     unsafe {
         run_entry_point(&execution_engine, entry_point)?;
@@ -116,7 +118,9 @@ fn is_entry_point(function: FunctionValue) -> bool {
         .is_some()
 }
 
-fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = FunctionValue<'ctx>> {
+pub(crate) fn module_functions<'ctx>(
+    module: &Module<'ctx>,
+) -> impl Iterator<Item = FunctionValue<'ctx>> {
     struct FunctionValueIter<'ctx>(Option<FunctionValue<'ctx>>);
 
     impl<'ctx> Iterator for FunctionValueIter<'ctx> {
@@ -134,11 +138,12 @@ fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = Functio
 
 #[cfg(test)]
 mod tests {
-    use super::run_module;
+    use super::{run_module, run_module_file};
     use crate::evaluation::interop::{Instruction, SemanticModel, Single};
     use crate::module;
     use inkwell::context::Context;
     use serial_test::serial;
+    use std::path::PathBuf;
 
     const BELL_QIR_MEASURE: &[u8] = include_bytes!("../../resources/tests/bell_qir_measure.bc");
     const CUSTOM_ENTRY_POINT_NAME: &[u8] =
@@ -250,6 +255,23 @@ mod tests {
         assert_eq!(
             result.err(),
             Some("Entry point has parameters or a non-void return type.".to_owned())
+        );
+        Ok(())
+    }
+
+    #[serial]
+    #[test]
+    fn fails_if_unknown_external_func() -> Result<(), String> {
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("resources");
+        path.push("tests");
+        path.push("test_unknown_external_func");
+        path.set_extension("ll");
+
+        let result = run_module_file(path, None, None);
+        assert_eq!(
+            result.err(),
+            Some("Unsupported functions `__quantum__rt__bool_to_string`.".to_owned())
         );
         Ok(())
     }
