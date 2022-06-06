@@ -23,11 +23,9 @@ impl<'ctx> Simulator {
             _scope: crate::evaluation::gates::GateScope::new(),
         };
 
-        if let Some(f) = Simulator::unsupported_function(module) {
-            return Err(format!(
-                "Unsupported function `{}`.",
-                f.get_name().to_str().unwrap()
-            ));
+        let bad_funcs = Simulator::unsupported_function_names(module);
+        if !bad_funcs.is_empty() {
+            return Err(format!("Unsupported functions {}.", bad_funcs));
         }
 
         Simulator::bind(module, ee);
@@ -41,13 +39,25 @@ impl<'ctx> Simulator {
         gs.get_model()
     }
 
-    fn unsupported_function(module: &Module<'ctx>) -> Option<FunctionValue<'ctx>> {
-        module_functions(module).find(|f| {
+    fn unsupported_function_names(module: &Module<'ctx>) -> String {
+        let mut out = String::new();
+        for f in module_functions(module) {
             let name = f.get_name().to_str().unwrap();
-            f.as_global_value().is_declaration()
+            if f.as_global_value().is_declaration()
                 && !Intrinsics::is_qis_supported(name)
                 && !Runtime::is_rt_supported(name)
-        })
+            {
+                if !out.is_empty() {
+                    out.push_str(", ");
+                }
+
+                out.push('`');
+                out.push_str(name);
+                out.push('`');
+            }
+        }
+
+        out
     }
 
     fn bind(module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) {

@@ -118,7 +118,9 @@ fn is_entry_point(function: FunctionValue) -> bool {
         .is_some()
 }
 
-pub fn module_functions<'ctx>(module: &Module<'ctx>) -> impl Iterator<Item = FunctionValue<'ctx>> {
+pub(crate) fn module_functions<'ctx>(
+    module: &Module<'ctx>,
+) -> impl Iterator<Item = FunctionValue<'ctx>> {
     struct FunctionValueIter<'ctx>(Option<FunctionValue<'ctx>>);
 
     impl<'ctx> Iterator for FunctionValueIter<'ctx> {
@@ -269,7 +271,7 @@ mod tests {
         let result = run_module_file(path, None, None);
         assert_eq!(
             result.err(),
-            Some("Unsupported function `__quantum__rt__bool_to_string`.".to_owned())
+            Some("Unsupported functions `__quantum__rt__bool_to_string`.".to_owned())
         );
         Ok(())
     }
