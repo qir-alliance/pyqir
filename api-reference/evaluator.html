@@ -52,6 +52,9 @@ operations to the supplied gate set.</p>
 <p>The result stream will be read in order by the measurement instruction.
 Each measurement will pop a result from the beginning of the stream. If
 the stream runs out of results, measurement returns zero.</p>
+<p>Right now the evaluator does not have a full runtime environment and can
+JIT QIR produced by the pyqir-generator, but cannot use any external function
+calls.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
