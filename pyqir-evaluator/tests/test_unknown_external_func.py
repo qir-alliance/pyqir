@@ -34,7 +34,7 @@ def test_unknown_external_func():
     assert str(excinfo.value) == "Unsupported functions `__quantum__rt__bool_to_string`."
 
 
-def test_unknown_external_func():
+def test_multiple_unknown_external_funcs():
     content = """
         ; ModuleID = 'test_unknown_external_func'
         source_filename = "test_unknown_external_func"
