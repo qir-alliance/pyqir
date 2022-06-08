@@ -51,12 +51,3 @@ jobs:
         incremental_files_only: true
         config: 'cspell.json'
 
-  check-type-annotations:
-    runs-on: ubuntu-latest
-    name: "Check type annotations and mypy stub files"
-    steps:
-      - uses: actions/checkout@v3
-      - name: "Run mypy"
-        run: ./build.ps1 -t checkmypy
-        shell: pwsh
-
