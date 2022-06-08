@@ -128,7 +128,9 @@ task checkmypy -depends wheelhouse {
         -ArtifactPaths (Get-Item $wheelhouse)
     & (Join-Path $envPath "bin" "Activate.ps1")
     try {
-        mypy "$($pyqir.parser.python_dir)" "$($pyqir.generator.python_dir)" "$($pyqir.evaluator.python_dir)"
+        Invoke-LoggedCommand -errorMessage "Please fix the above mypy errors" {
+            mypy "$($pyqir.parser.python_dir)" "$($pyqir.generator.python_dir)" "$($pyqir.evaluator.python_dir)"
+        }
     }
     finally {
         deactivate
