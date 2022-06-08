@@ -250,7 +250,7 @@ function Build-PyQIR([string]$project) {
     }
 }
 
-function Create-DocsEnv() {
+function Create-PyEnv() {
     param(
         [string]
         $EnvironmentPath,
@@ -275,32 +275,6 @@ function Create-DocsEnv() {
         foreach ($artifact in $ArtifactPaths) {
             pip install $artifact
         }
-    }
-    finally {
-        deactivate
-    }
-}
-
-function Create-MypyEnv() {
-    param(
-        [string]
-        $EnvironmentPath,
-        [string]
-        $RequirementsPath
-    )
-
-    Write-Host "##[info]Creating virtual environment for use with docs at $EnvironmentPath..."
-    python -m venv $EnvironmentPath
-
-    $activateScript = (Join-Path $EnvironmentPath "bin" "Activate.ps1")
-    if (-not (Test-Path $activateScript -ErrorAction SilentlyContinue)) {
-        Get-ChildItem $EnvironmentPath | Write-Host
-        throw "No activate script found for virtual environment at $EnvironmentPath; environment creation failed."
-    }
-
-    & $activateScript
-    try {
-        pip install -r $RequirementsPath
     }
     finally {
         deactivate

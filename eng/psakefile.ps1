@@ -117,13 +117,15 @@ task cargo-clippy -depends init {
     }
 }
 
-task checkmypy -depends wheelhouse {
+task checkmypy {
 
-    # - Run mypy from within new venv.
+    # - Run mypy from within new venv. Reuse same script from task docs
+    Write-Host (Get-ChildItem $wheelhouse -Include *.whl)
     $envPath = Join-Path $repo.root ".mypy-venv"
-    Create-MypyEnv `
+    Create-PyEnv `
         -EnvironmentPath $envPath `
         -RequirementsPath (Join-Path $repo.root "eng" "lint-requirements.txt") `
+        -ArtifactPaths (Get-Item $wheelhouse)
     & (Join-Path $envPath "bin" "Activate.ps1")
     try {
         mypy "$($pyqir.parser.python_dir)" "$($pyqir.generator.python_dir)" "$($pyqir.evaluator.python_dir)"
@@ -220,7 +222,7 @@ task docs -depends wheelhouse {
     # - Run sphinx from within new venv.
     $envPath = Join-Path $repo.root ".docs-venv"
     $sphinxOpts = $docs.build.opts
-    Create-DocsEnv `
+    Create-PyEnv `
         -EnvironmentPath $envPath `
         -RequirementsPath (Join-Path $repo.root "eng" "docs-requirements.txt") `
         -ArtifactPaths (Get-Item $wheelhouse)
