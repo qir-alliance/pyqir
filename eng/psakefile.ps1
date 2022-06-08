@@ -119,10 +119,9 @@ task cargo-clippy -depends init {
 
 task checkmypy -depends wheelhouse {
 
-    # - Install artifacts into new venv along with sphinx.
-    # - Run sphinx from within new venv.
+    # - Run mypy from within new venv.
     $envPath = Join-Path $repo.root ".mypy-venv"
-    Create-DocsEnv `
+    Create-MypyEnv `
         -EnvironmentPath $envPath `
         -RequirementsPath (Join-Path $repo.root "eng" "lint-requirements.txt") `
     & (Join-Path $envPath "bin" "Activate.ps1")
