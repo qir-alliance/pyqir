@@ -52,6 +52,11 @@ jobs:
       - name: "Build and Package LLVM"
         run: ./build.ps1 -t package-llvm
         shell: pwsh
+        if: ${{ matrix.config.os != 'ubuntu-20.04' }}
+      - name: "Build and Package LLVM for manylinux"
+        run: ./build.ps1 -t package-manylinux-llvm
+        shell: pwsh
+        if: ${{ matrix.config.os == 'ubuntu-20.04' }}
       - name: Artifacts
         uses: actions/upload-artifact@v3
         with:
