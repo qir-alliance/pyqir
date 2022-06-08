@@ -19,16 +19,19 @@ properties {
     $pyqir.parser = @{}
     $pyqir.parser.name = "pyqir-parser"
     $pyqir.parser.dir = Join-Path $repo.root "pyqir-parser"
+    $pyqir.parser.python_dir = Join-Path $pyqir.parser.dir "pyqir" "parser"
 
     $pyqir.generator = @{}
     $pyqir.generator.name = "pyqir-generator"
     $pyqir.generator.dir = Join-Path $repo.root "pyqir-generator"
     $pyqir.generator.examples_dir = Join-Path $repo.root "examples" "generator"
+    $pyqir.generator.python_dir = Join-Path $pyqir.generator.dir "pyqir" "generator"
 
     $pyqir.evaluator = @{}
     $pyqir.evaluator.name = "pyqir-evaluator"
     $pyqir.evaluator.dir = Join-Path $repo.root "pyqir-evaluator"
     $pyqir.evaluator.examples_dir = Join-Path $repo.root "examples" "evaluator"
+    $pyqir.evaluator.python_dir = Join-Path $pyqir.evaluator.dir "pyqir" "evaluator"
 
     $docs = @{}
     $docs.root = Join-Path $repo.root "docs"
@@ -57,7 +60,7 @@ task manylinux -depends build-manylinux-container-image, run-manylinux-container
 
 task musllinux -depends build-musllinux-container-image, run-musllinux-container-image, run-examples-in-musl-containers
 
-task checks -depends cargo-fmt, cargo-clippy
+task checks -depends cargo-fmt, cargo-clippy, checkmypy
 
 task rebuild -depends qirlib, generator, evaluator, parser
 
@@ -111,6 +114,23 @@ task cargo-clippy -depends init {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
         $extraArgs = (Test-CI) ? @("--", "-D", "warnings") : @()
         cargo clippy --workspace --all-targets @("$($env:CARGO_EXTRA_ARGS)" -split " ") @extraArgs
+    }
+}
+
+task checkmypy -depends wheelhouse {
+
+    # - Install artifacts into new venv along with sphinx.
+    # - Run sphinx from within new venv.
+    $envPath = Join-Path $repo.root ".mypy-venv"
+    Create-DocsEnv `
+        -EnvironmentPath $envPath `
+        -RequirementsPath (Join-Path $repo.root "eng" "lint-requirements.txt") `
+    & (Join-Path $envPath "bin" "Activate.ps1")
+    try {
+        mypy "$($pyqir.parser.python_dir)" "$($pyqir.generator.python_dir)" "$($pyqir.evaluator.python_dir)"
+    }
+    finally {
+        deactivate
     }
 }
 
