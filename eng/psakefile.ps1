@@ -117,7 +117,7 @@ task cargo-clippy -depends init {
     }
 }
 
-task checkmypy {
+task checkmypy -depends wheelhouse {
 
     # - Run mypy from within new venv. Reuse same script from task docs
     Write-Host (Get-ChildItem $wheelhouse -Include *.whl)
