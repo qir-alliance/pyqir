@@ -50,4 +50,3 @@ jobs:
         strict: false
         incremental_files_only: true
         config: 'cspell.json'
-
