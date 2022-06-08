@@ -52,6 +52,11 @@ jobs:
         config: 'cspell.json'
 
   check-type-annotations:
-  - name: "Check type annotations and mypy stub files"
-    run: ./build.ps1 -t checkmypy
-    shell: pwsh
+    runs-on: ubuntu-latest
+    name: "Check type annotations and mypy stub files"
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Run mypy"
+        run: ./build.ps1 -t checkmypy
+        shell: pwsh
+
