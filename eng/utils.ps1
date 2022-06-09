@@ -250,7 +250,7 @@ function Build-PyQIR([string]$project) {
     }
 }
 
-function Create-DocsEnv() {
+function Create-PyEnv() {
     param(
         [string]
         $EnvironmentPath,

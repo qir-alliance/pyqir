@@ -19,16 +19,19 @@ properties {
     $pyqir.parser = @{}
     $pyqir.parser.name = "pyqir-parser"
     $pyqir.parser.dir = Join-Path $repo.root "pyqir-parser"
+    $pyqir.parser.python_dir = Join-Path $pyqir.parser.dir "pyqir" "parser"
 
     $pyqir.generator = @{}
     $pyqir.generator.name = "pyqir-generator"
     $pyqir.generator.dir = Join-Path $repo.root "pyqir-generator"
     $pyqir.generator.examples_dir = Join-Path $repo.root "examples" "generator"
+    $pyqir.generator.python_dir = Join-Path $pyqir.generator.dir "pyqir" "generator"
 
     $pyqir.evaluator = @{}
     $pyqir.evaluator.name = "pyqir-evaluator"
     $pyqir.evaluator.dir = Join-Path $repo.root "pyqir-evaluator"
     $pyqir.evaluator.examples_dir = Join-Path $repo.root "examples" "evaluator"
+    $pyqir.evaluator.python_dir = Join-Path $pyqir.evaluator.dir "pyqir" "evaluator"
 
     $docs = @{}
     $docs.root = Join-Path $repo.root "docs"
@@ -111,6 +114,26 @@ task cargo-clippy -depends init {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
         $extraArgs = (Test-CI) ? @("--", "-D", "warnings") : @()
         cargo clippy --workspace --all-targets @("$($env:CARGO_EXTRA_ARGS)" -split " ") @extraArgs
+    }
+}
+
+task checkmypy -depends wheelhouse {
+
+    # - Run mypy from within new venv. Reuse same script from task docs
+    Write-Host (Get-ChildItem $wheelhouse -Include *.whl)
+    $envPath = Join-Path $repo.root ".mypy-venv"
+    Create-PyEnv `
+        -EnvironmentPath $envPath `
+        -RequirementsPath (Join-Path $repo.root "eng" "lint-requirements.txt") `
+        -ArtifactPaths (Get-Item $wheelhouse)
+    & (Join-Path $envPath "bin" "Activate.ps1")
+    try {
+        Invoke-LoggedCommand -errorMessage "Please fix the above mypy errors" {
+            mypy "$($pyqir.parser.python_dir)" "$($pyqir.generator.python_dir)" "$($pyqir.evaluator.python_dir)"
+        }
+    }
+    finally {
+        deactivate
     }
 }
 
@@ -201,7 +224,7 @@ task docs -depends wheelhouse {
     # - Run sphinx from within new venv.
     $envPath = Join-Path $repo.root ".docs-venv"
     $sphinxOpts = $docs.build.opts
-    Create-DocsEnv `
+    Create-PyEnv `
         -EnvironmentPath $envPath `
         -RequirementsPath (Join-Path $repo.root "eng" "docs-requirements.txt") `
         -ArtifactPaths (Get-Item $wheelhouse)
