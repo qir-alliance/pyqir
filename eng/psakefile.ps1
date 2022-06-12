@@ -60,7 +60,7 @@ task manylinux -depends build-manylinux-container-image, run-manylinux-container
 
 task musllinux -depends build-musllinux-container-image, run-musllinux-container-image, run-examples-in-musl-containers
 
-task checks -depends cargo-fmt, cargo-clippy
+task checks -depends cargo-fmt, cargo-clippy, checkmypy
 
 task rebuild -depends qirlib, generator, evaluator, parser
 
