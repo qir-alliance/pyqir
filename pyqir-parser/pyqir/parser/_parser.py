@@ -587,7 +587,7 @@ class QirInstr:
 
     def __init__(self, instr: PyQirInstruction):
         self.instr = instr
-        self._type = None
+        self._type: Optional[QirType] = None
 
     @property
     def output_name(self) -> Optional[str]:
@@ -917,9 +917,9 @@ class QirBlock:
 
     def __init__(self, block: PyQirBasicBlock):
         self.block = block
-        self._instructions = None
-        self._terminator = None
-        self._phi_nodes = None
+        self._instructions: Optional[List[QirInstr]] = None
+        self._terminator: Optional[QirTerminator] = None
+        self._phi_nodes: Optional[List[QirPhiInstr]] = None
 
     @property
     def name(self) -> str:
@@ -979,7 +979,7 @@ class QirParameter:
 
     def __init__(self, param: PyQirParameter):
         self.param = param
-        self._type = None
+        self._type: Optional[QirType] = None
 
     @property
     def name(self) -> str:
@@ -1007,10 +1007,9 @@ class QirFunction:
 
     def __init__(self, func: PyQirFunction):
         self.func = func
-        self._parameters = None
-        self._parameters = None
-        self._return_type = None
-        self._blocks = None
+        self._parameters: Optional[List[QirParameter]] = None
+        self._return_type: Optional[QirType] = None
+        self._blocks: Optional[List[QirBlock]] = None
 
     @property
     def name(self) -> str:
@@ -1042,8 +1041,6 @@ class QirFunction:
         """
         Gets all the basic blocks for this function.
         """
-        self._blocks: Optional[List[QirBlock]] # Required to avoid type checking error
-
         if self._blocks == None:
             self._blocks = [QirBlock(i) for i in self.func.blocks]
         return self._blocks
