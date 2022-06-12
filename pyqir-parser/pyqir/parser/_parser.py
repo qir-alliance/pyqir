@@ -1042,6 +1042,8 @@ class QirFunction:
         """
         Gets all the basic blocks for this function.
         """
+        self._blocks: Optional[List[QirBlock]] # Required for type hinting
+
         if self._blocks == None:
             self._blocks = [QirBlock(i) for i in self.func.blocks]
         return self._blocks
