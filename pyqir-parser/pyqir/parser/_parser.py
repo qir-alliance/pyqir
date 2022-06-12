@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.parser._native import (
+from pyqir.parser._native import ( # type: ignore
     PyQirModule,
     PyQirFunction,
     PyQirParameter,
@@ -11,7 +11,7 @@ from pyqir.parser._native import (
     PyQirOperand,
     PyQirType,
     module_from_bitcode
-) # type: ignore
+)
 from typing import cast, List, Optional, Tuple
 
 __all__ = [
