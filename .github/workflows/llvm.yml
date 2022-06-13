@@ -63,7 +63,7 @@ jobs:
           name: artifacts
           if-no-files-found: error
           path: |
-            target/*.zip
-            target/*.tar.gz
-            target/*.rpm
-            target/*.deb
+            target/**/*.zip
+            target/**/*.tar.gz
+            target/**/*.rpm
+            target/**/*.deb
