@@ -603,9 +603,12 @@ class QirInstr:
         Gets the QirType instance representing the output of this instruction. If the instruction
         has no output, the type will be an instance of QirVoidType.
         """
-        if self._type == None:
-            self._type = QirType(self.instr.type)
-        return cast(QirType, self._type)
+        if self._type is None:
+            ty = QirType(self.instr.type)
+            self._type = ty
+        else:
+            ty = self._type
+        return ty
 
 
 class QirOpInstr(QirInstr):
