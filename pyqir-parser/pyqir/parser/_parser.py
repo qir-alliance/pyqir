@@ -603,13 +603,9 @@ class QirInstr:
         Gets the QirType instance representing the output of this instruction. If the instruction
         has no output, the type will be an instance of QirVoidType.
         """
-        if self._type is None:
-            ty = QirType(self.instr.type)
-            self._type = ty
-        else:
-            ty = self._type
-        return ty
-
+        if self._instructions is None:
+            self._instructions = [QirInstr(i) for i in self.block.instructions]
+        return cast(List[QirInstr], self._instructions)
 
 class QirOpInstr(QirInstr):
     """
@@ -949,7 +945,7 @@ class QirBlock:
         Gets the terminator instruction for this block. Every block has exactly one terminator
         and it is the last intruction in the block.
         """
-        if self._terminator == None:
+        if self._terminator is None:
             self._terminator = QirTerminator(self.block.terminator)
         return cast(QirTerminator, self._terminator)
 
@@ -961,7 +957,7 @@ class QirBlock:
         of phi nodes, but they are always the first instructions in any given block. A block with no
         phi nodes will return an empty list.
         """
-        if self._phi_nodes == None:
+        if self._phi_nodes is None:
             self._phi_nodes = [QirPhiInstr(i) for i in self.block.phi_nodes]
         return cast(List[QirPhiInstr], self._phi_nodes)
 
@@ -997,7 +993,7 @@ class QirParameter:
         """
         Gets the type of this parameter as represented in the QIR.
         """
-        if self._type == None:
+        if self._type is None:
             self._type = QirType(self.param.type)
         return cast(QirType, self._type)
 
@@ -1026,7 +1022,7 @@ class QirFunction:
         """
         Gets the list of parameters used when calling this function.
         """
-        if self._parameters == None:
+        if self._parameters is None:
             self._parameters = [QirParameter(i) for i in self.func.parameters]
         return cast(List[QirParameter], self._parameters)
 
@@ -1035,7 +1031,7 @@ class QirFunction:
         """
         Gets the return type for this function.
         """
-        if self._return_type == None:
+        if self._return_type is None:
             self._return_type = QirType(self.func.return_type)
         return cast(QirType, self._return_type)
 
@@ -1044,7 +1040,7 @@ class QirFunction:
         """
         Gets all the basic blocks for this function.
         """
-        if self._blocks == None:
+        if self._blocks is None:
             self._blocks = [QirBlock(i) for i in self.func.blocks]
         return cast(List[QirBlock], self._blocks)
 
@@ -1120,7 +1116,7 @@ class QirModule:
         """
         Gets all the functions defined in this module.
         """
-        if self._functions == None:
+        if self._functions is None:
             self._functions = [QirFunction(i) for i in self.module.functions]
         return self._functions
 
@@ -1147,7 +1143,7 @@ class QirModule:
         """
         Gets any functions with the "EntryPoint" attribute.
         """
-        if self._entrypoint_funcs == None:
+        if self._entrypoint_funcs is None:
             self._entrypoint_funcs = [
                 QirFunction(i) for i in self.module.get_entrypoint_funcs()
             ]
@@ -1158,7 +1154,7 @@ class QirModule:
         """
         Gets any functions with the "InteropFriendly" attribute.
         """
-        if self._interop_funcs == None:
+        if self._interop_funcs is None:
             self._interop_funcs = [
                 QirFunction(i) for i in self.module.get_interop_funcs()
             ]
