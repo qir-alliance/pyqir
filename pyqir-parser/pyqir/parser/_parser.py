@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.parser._native import (
+from pyqir.parser._native import ( # type: ignore
     PyQirModule,
     PyQirFunction,
     PyQirParameter,
@@ -12,7 +12,7 @@ from pyqir.parser._native import (
     PyQirType,
     module_from_bitcode
 )
-from typing import List, Optional, Tuple
+from typing import cast, List, Optional, Tuple
 
 __all__ = [
     "QirType",
@@ -587,7 +587,7 @@ class QirInstr:
 
     def __init__(self, instr: PyQirInstruction):
         self.instr = instr
-        self._type = None
+        self._type: Optional[QirType] = None
 
     @property
     def output_name(self) -> Optional[str]:
@@ -605,7 +605,7 @@ class QirInstr:
         """
         if self._type == None:
             self._type = QirType(self.instr.type)
-        return self._type
+        return cast(QirType, self._type)
 
 
 class QirOpInstr(QirInstr):
@@ -917,9 +917,9 @@ class QirBlock:
 
     def __init__(self, block: PyQirBasicBlock):
         self.block = block
-        self._instructions = None
-        self._terminator = None
-        self._phi_nodes = None
+        self._instructions: Optional[List[QirInstr]] = None
+        self._terminator: Optional[QirTerminator] = None
+        self._phi_nodes: Optional[List[QirPhiInstr]] = None
 
     @property
     def name(self) -> str:
@@ -938,7 +938,7 @@ class QirBlock:
         """
         if self._instructions == None:
             self._instructions = [QirInstr(i) for i in self.block.instructions]
-        return self._instructions
+        return cast(List[QirInstr], self._instructions)
 
     @property
     def terminator(self) -> QirTerminator:
@@ -948,7 +948,7 @@ class QirBlock:
         """
         if self._terminator == None:
             self._terminator = QirTerminator(self.block.terminator)
-        return self._terminator
+        return cast(QirTerminator, self._terminator)
 
     @property
     def phi_nodes(self) -> List[QirPhiInstr]:
@@ -960,7 +960,7 @@ class QirBlock:
         """
         if self._phi_nodes == None:
             self._phi_nodes = [QirPhiInstr(i) for i in self.block.phi_nodes]
-        return self._phi_nodes
+        return cast(List[QirPhiInstr], self._phi_nodes)
 
     def get_phi_pairs_by_source_name(self, name: str) -> List[Tuple[str, QirOperand]]:
         """
@@ -979,7 +979,7 @@ class QirParameter:
 
     def __init__(self, param: PyQirParameter):
         self.param = param
-        self._type = None
+        self._type: Optional[QirType] = None
 
     @property
     def name(self) -> str:
@@ -996,7 +996,7 @@ class QirParameter:
         """
         if self._type == None:
             self._type = QirType(self.param.type)
-        return self._type
+        return cast(QirType, self._type)
 
 
 class QirFunction:
@@ -1007,10 +1007,9 @@ class QirFunction:
 
     def __init__(self, func: PyQirFunction):
         self.func = func
-        self._parameters = None
-        self._parameters = None
-        self._return_type = None
-        self._blocks = None
+        self._parameters: Optional[List[QirParameter]] = None
+        self._return_type: Optional[QirType] = None
+        self._blocks: Optional[List[QirBlock]] = None
 
     @property
     def name(self) -> str:
@@ -1026,7 +1025,7 @@ class QirFunction:
         """
         if self._parameters == None:
             self._parameters = [QirParameter(i) for i in self.func.parameters]
-        return self._parameters
+        return cast(List[QirParameter], self._parameters)
 
     @property
     def return_type(self) -> QirType:
@@ -1035,7 +1034,7 @@ class QirFunction:
         """
         if self._return_type == None:
             self._return_type = QirType(self.func.return_type)
-        return self._return_type
+        return cast(QirType, self._return_type)
 
     @property
     def blocks(self) -> List[QirBlock]:
@@ -1044,7 +1043,7 @@ class QirFunction:
         """
         if self._blocks == None:
             self._blocks = [QirBlock(i) for i in self.func.blocks]
-        return self._blocks
+        return cast(List[QirBlock], self._blocks)
 
     @property
     def required_qubits(self) -> Optional[int]:

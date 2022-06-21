@@ -145,20 +145,3 @@ jobs:
           branch: gh-pages
           folder: docs/_build/html
         if: ${{ github.event_name == 'push' }}
-  mypy:
-    runs-on: "ubuntu-20.04"
-    needs: build
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: false
-
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: manylinux-artifacts
-          path: target/wheels
-
-      - name: Check type annotations and mypy stub files
-        run: ./build.ps1 -t checkmypy
-        shell: pwsh
