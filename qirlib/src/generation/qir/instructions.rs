@@ -96,6 +96,7 @@ pub(crate) fn emit<'ctx>(
     inst: &Instruction,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    variables: &mut HashMap<i64, BasicValueEnum<'ctx>>,
     entry_point: FunctionValue,
 ) {
     let get_qubit = |name| get_qubit(qubits, name);
@@ -168,8 +169,8 @@ pub(crate) fn emit<'ctx>(
         Instruction::Z(inst) => {
             generator.emit_void_call(generator.qis_z_body(), &[get_qubit(&inst.qubit).into()]);
         }
-        Instruction::Call(call) => emit_call(generator, qubits, results, call),
-        Instruction::If(if_) => emit_if(generator, qubits, results, entry_point, if_),
+        Instruction::Call(call) => emit_call(generator, qubits, results, variables, call),
+        Instruction::If(if_) => emit_if(generator, qubits, results, variables, entry_point, if_),
     }
 }
 
@@ -177,6 +178,7 @@ fn emit_call<'ctx>(
     generator: &CodeGenerator<'ctx>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     results: &HashMap<String, Option<PointerValue<'ctx>>>,
+    variables: &mut HashMap<i64, BasicValueEnum<'ctx>>,
     call: &Call,
 ) {
     let args: Vec<_> = call
@@ -191,6 +193,7 @@ fn emit_call<'ctx>(
             Value::Double(value) => generator.f64_to_f64(*value),
             Value::Qubit(name) => get_qubit(qubits, name).into(),
             Value::Result(name) => get_result(generator, results, name).into(),
+            Value::Variable(id) => (*variables.get(id).unwrap()).into(),
         })
         .collect();
 
@@ -201,13 +204,22 @@ fn emit_call<'ctx>(
         .get_function(&call.name)
         .unwrap_or_else(|| panic!("Function {} not found.", &call.name));
 
-    generator.emit_void_call(function, args.as_slice());
+    match call.result {
+        None => {
+            generator.emit_void_call(function, args.as_slice());
+        }
+        Some(variable) => {
+            let value = generator.emit_call_with_return(function, args.as_slice(), "");
+            variables.insert(variable, value);
+        }
+    }
 }
 
 fn emit_if<'ctx>(
     generator: &CodeGenerator<'ctx>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    variables: &mut HashMap<i64, BasicValueEnum<'ctx>>,
     entry_point: FunctionValue,
     if_: &If,
 ) {
@@ -234,7 +246,7 @@ fn emit_if<'ctx>(
         generator.builder.position_at_end(block);
 
         for inst in insts {
-            emit(generator, inst, qubits, results, entry_point);
+            emit(generator, inst, qubits, results, variables, entry_point);
         }
 
         generator.builder.build_unconditional_branch(continue_block);

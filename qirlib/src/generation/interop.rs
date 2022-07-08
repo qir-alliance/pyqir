@@ -129,6 +129,7 @@ pub enum Instruction {
 pub struct Call {
     pub name: String,
     pub args: Vec<Value>,
+    pub result: Option<i64>,
 }
 
 #[derive(Clone, Copy)]
@@ -157,6 +158,7 @@ pub enum Value {
     Double(f64),
     Qubit(String),
     Result(String),
+    Variable(i64), // TODO: Use a stronger type.
 }
 
 #[derive(Clone, Debug, PartialEq)]

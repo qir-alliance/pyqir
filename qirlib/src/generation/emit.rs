@@ -85,7 +85,16 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
 
     let qubits = write_qubits(model, generator);
     let mut registers = write_registers(model, generator);
-    write_instructions(model, generator, &qubits, &mut registers, entry_point);
+    let mut variables = HashMap::new();
+
+    write_instructions(
+        model,
+        generator,
+        &qubits,
+        &mut registers,
+        &mut variables,
+        entry_point,
+    );
 
     if !model.use_static_qubit_alloc {
         free_qubits(generator, &qubits);
@@ -233,10 +242,11 @@ fn write_instructions<'ctx>(
     generator: &CodeGenerator<'ctx>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    variables: &mut HashMap<i64, BasicValueEnum<'ctx>>,
     entry_point: FunctionValue,
 ) {
     for inst in &model.instructions {
-        qir::instructions::emit(generator, inst, qubits, registers, entry_point);
+        qir::instructions::emit(generator, inst, qubits, registers, variables, entry_point);
     }
 }
 
@@ -372,16 +382,12 @@ mod result_alloc_tests {
 /// 3. Unset the environment variable and run the tests again to confirm that they pass.
 #[cfg(test)]
 mod if_tests {
-    use crate::generation::{
-        emit,
-        interop::{
-            ClassicalRegister, If, Instruction, Measured, QuantumRegister, SemanticModel, Single,
-        },
+    use super::test_utils::check_or_save_reference_ir;
+    use crate::generation::interop::{
+        Call, ClassicalRegister, FunctionType, If, Instruction, Measured, QuantumRegister,
+        ReturnType, SemanticModel, Single, Value, ValueType,
     };
-    use normalize_line_endings::normalized;
-    use std::{collections::HashMap, env, fs, path::PathBuf};
-
-    const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
+    use std::collections::HashMap;
 
     #[test]
     fn test_if_then() -> Result<(), String> {
@@ -623,7 +629,56 @@ mod if_tests {
         check_or_save_reference_ir(&model)
     }
 
-    fn check_or_save_reference_ir(model: &SemanticModel) -> Result<(), String> {
+    #[test]
+    fn test_call_variable() -> Result<(), String> {
+        check_or_save_reference_ir(&SemanticModel {
+            name: "test_call_variable".to_string(),
+            registers: vec![],
+            qubits: vec![],
+            instructions: vec![
+                Instruction::Call(Call {
+                    result: Some(0),
+                    name: "foo".to_string(),
+                    args: vec![],
+                }),
+                Instruction::Call(Call {
+                    result: None,
+                    name: "bar".to_string(),
+                    args: vec![Value::Variable(0)],
+                }),
+            ],
+            use_static_qubit_alloc: true,
+            use_static_result_alloc: false,
+            external_functions: HashMap::from([
+                // TODO: Order of functions in generated IR is nondeterministic.
+                (
+                    "foo".to_string(),
+                    FunctionType {
+                        param_types: vec![],
+                        return_type: ReturnType::Value(ValueType::Integer { width: 64 }),
+                    },
+                ),
+                (
+                    "bar".to_string(),
+                    FunctionType {
+                        param_types: vec![ValueType::Integer { width: 64 }],
+                        return_type: ReturnType::Void,
+                    },
+                ),
+            ]),
+        })
+    }
+}
+
+#[cfg(test)]
+mod test_utils {
+    use crate::generation::{emit, interop::SemanticModel};
+    use normalize_line_endings::normalized;
+    use std::{env, fs, path::PathBuf};
+
+    const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
+
+    pub(crate) fn check_or_save_reference_ir(model: &SemanticModel) -> Result<(), String> {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("resources");
         path.push("tests");

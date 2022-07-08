@@ -267,7 +267,13 @@ impl Builder {
             .map(|(arg, &ty)| extract_value(arg?, ty))
             .collect::<PyResult<_>>()?;
 
-        self.push_inst(Instruction::Call(Call { name, args }));
+        // TODO: Return a reference to the result variable.
+        self.push_inst(Instruction::Call(Call {
+            name,
+            args,
+            result: None,
+        }));
+
         Ok(())
     }
 }
