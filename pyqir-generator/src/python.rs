@@ -234,6 +234,12 @@ struct Function {
     name: String,
 }
 
+#[derive(Clone)]
+#[pyclass]
+struct Variable {
+    id: i64,
+}
+
 #[pyclass]
 struct Builder {
     frames: Vec<Vec<Instruction>>,
@@ -250,7 +256,7 @@ impl Builder {
         }
     }
 
-    fn call(&mut self, function: Function, args: &PySequence) -> PyResult<()> {
+    fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Variable>> {
         let name = function.name;
         let ty = self.external_functions.get(&name).unwrap();
         let num_params = ty.param_types.len();
@@ -267,14 +273,19 @@ impl Builder {
             .map(|(arg, &ty)| extract_value(arg?, ty))
             .collect::<PyResult<_>>()?;
 
-        // TODO: Return a reference to the result variable.
+        // TODO: Get a fresh variable ID.
+        let variable = match ty.return_type {
+            ReturnType::Void => None,
+            _ => Some(0),
+        };
+
         self.push_inst(Instruction::Call(Call {
             name,
             args,
-            result: None,
+            result: variable,
         }));
 
-        Ok(())
+        Ok(variable.map(|id| Variable { id }))
     }
 }
 
@@ -517,15 +528,18 @@ impl BasicQisBuilder {
 }
 
 fn extract_value(ob: &PyAny, ty: ValueType) -> PyResult<Value> {
-    match ty {
-        ValueType::Integer { width } => IntegerValue::new(width, ob.extract()?)
-            .map(Value::Integer)
-            .ok_or_else(|| {
-                let message = format!("Value too big for {}-bit integer.", width);
-                PyErr::new::<PyOverflowError, _>(message)
-            }),
-        ValueType::Double => Ok(Value::Double(ob.extract()?)),
-        ValueType::Qubit => Ok(Value::Qubit(ob.extract::<Qubit>()?.id())),
-        ValueType::Result => Ok(Value::Result(ob.extract::<ResultRef>()?.id())),
+    match ob.extract::<Variable>() {
+        Ok(variable) => Ok(Value::Variable(variable.id)),
+        Err(_) => match ty {
+            ValueType::Integer { width } => IntegerValue::new(width, ob.extract()?)
+                .map(Value::Integer)
+                .ok_or_else(|| {
+                    let message = format!("Value too big for {}-bit integer.", width);
+                    PyErr::new::<PyOverflowError, _>(message)
+                }),
+            ValueType::Double => Ok(Value::Double(ob.extract()?)),
+            ValueType::Qubit => Ok(Value::Qubit(ob.extract::<Qubit>()?.id())),
+            ValueType::Result => Ok(Value::Result(ob.extract::<ResultRef>()?.id())),
+        },
     }
 }

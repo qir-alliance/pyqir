@@ -17,6 +17,7 @@ def ir_to_bitcode(ir: str, module_name: Optional[str], source_file_name: Optiona
     """
     ...
 
+
 def bitcode_to_ir(bitcode: bytes, module_name: Optional[str], source_file_name: Optional[str]) -> str:
     """
     Converts the supplied bitcode to its QIR string equivalent.
@@ -47,7 +48,8 @@ class Function:
 class Builder:
     """An instruction builder."""
 
-    def call(self, function: Function, args: Sequence[Value]) -> None:
+    # TODO: Value needs to be updated to include variables.
+    def call(self, function: Function, args: Sequence[Value]) -> Optional[Value]:
         """
         Builds a call instruction.
 

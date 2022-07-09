@@ -203,3 +203,16 @@ class ExternalFunctionsTest(unittest.TestCase):
                 message = f"Expected {len(param_types)} arguments, got {len(args)}."
                 with self.assertRaisesRegex(ValueError, message):
                     mod.builder.call(f, args)
+
+    def test_variable(self) -> None:
+        mod = SimpleModule("test", 0, 0)
+        foo = mod.add_external_function("foo", types.Function([], types.INT))
+        bar = mod.add_external_function(
+            "bar", types.Function([types.INT], types.VOID))
+
+        x = mod.builder.call(foo, [])
+        mod.builder.call(bar, [x])
+
+        ir = mod.ir()
+        self.assertIn("%0 = call i64 @foo()", ir)
+        self.assertIn("call void @bar(i64 %0)", ir)
