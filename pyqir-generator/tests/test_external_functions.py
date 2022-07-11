@@ -229,3 +229,18 @@ class ExternalFunctionsTest(unittest.TestCase):
         # TODO: Should this be a TypeError?
         with self.assertRaisesRegex(OSError, "Call parameter type does not match function signature!"):
             mod.ir()
+
+    def test_two_variables(self) -> None:
+        mod = SimpleModule("test", 0, 0)
+        foo = mod.add_external_function("foo", types.Function([], types.INT))
+        bar = mod.add_external_function(
+            "bar", types.Function([types.INT, types.INT], types.VOID))
+
+        x = mod.builder.call(foo, [])
+        y = mod.builder.call(foo, [])
+        mod.builder.call(bar, [x, y])
+
+        ir = mod.ir()
+        self.assertIn("%0 = call i64 @foo()", ir)
+        self.assertIn("%1 = call i64 @foo()", ir)
+        self.assertIn("call void @bar(i64 %0, i64 %1)", ir)

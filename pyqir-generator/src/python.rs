@@ -244,6 +244,7 @@ struct Variable {
 struct Builder {
     frames: Vec<Vec<Instruction>>,
     external_functions: HashMap<String, FunctionType>,
+    next_variable: i64
 }
 
 #[pymethods]
@@ -253,6 +254,7 @@ impl Builder {
         Builder {
             frames: vec![vec![]],
             external_functions: HashMap::new(),
+            next_variable: 0
         }
     }
 
@@ -273,11 +275,12 @@ impl Builder {
             .map(|(arg, &ty)| extract_value(arg?, ty))
             .collect::<PyResult<_>>()?;
 
-        // TODO: Get a fresh variable ID.
         let variable = match ty.return_type {
             ReturnType::Void => None,
-            _ => Some(0),
+            _ => Some(self.next_variable),
         };
+
+        self.next_variable += 1;
 
         self.push_inst(Instruction::Call(Call {
             name,
