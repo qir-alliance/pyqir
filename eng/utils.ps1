@@ -55,21 +55,31 @@ function Test-InDevContainer {
     $IsLinux -and (Test-Path env:\IN_DEV_CONTAINER)
 }
 
-# This method should be able to be removed when Rust 1.56 is released
-# which contains the feature for env sections in the .cargo/config.toml
+
+# Sets the LLVM path in the env section of the .cargo/config.toml
+# Configures vscode rust analyzer to the correct features
 function Use-LlvmInstallation {
     param (
         [string]$path
     )
-    Write-BuildLog "LLVM installation set to: $path"
+    Write-BuildLog "Setting LLVM installation to: $path"
+
     $llvm_config_options = @(Get-Command (Join-Path $path "bin" "llvm-config*"))
     Assert ($llvm_config_options.Length -gt 0) "llvm config not found in $path"
+
     $llvm_config = $llvm_config_options[0].Source
     Write-BuildLog "Found llvm-config : $llvm_config"
+
     $version = [Version]::Parse("$(&$llvm_config --version)")
     $prefix = "LLVM_SYS_$($version.Major)0_PREFIX"
+
     Write-BuildLog "Setting $prefix set to: $path"
-    
+
+    if ($IsWindows) {
+        # we have to escape '\'
+        $path = $path.Replace('\', '\\')
+    }
+
     # Create the workspace cofig.toml and set the LLVM_SYS env var
     New-Item -ItemType File -Path $repo.workspace_config_file -Force
     Add-Content -Path $repo.workspace_config_file -Value "[env]"
