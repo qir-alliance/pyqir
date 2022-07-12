@@ -11,7 +11,6 @@
 - Fix type hinting errors by @LaurentAjdnik in https://github.com/qir-alliance/pyqir/pull/133
 - Create CODEOWNERS by @samarsha in https://github.com/qir-alliance/pyqir/pull/134
 
-
 ## [0.4.2a1] - 2022-06-03
 
 - Adding ability to do musl/alpine builds by @idavis in https://github.com/qir-alliance/pyqir/pull/111
