@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.5.0a1] - 2022-07-13
+
+- Added mypy github action to check type annotations and mypy stub files by @WingCode in https://github.com/qir-alliance/pyqir/pull/127
+- Evaluator: Raise if bitcode contains unknown external functions. by @georgios-ts in https://github.com/qir-alliance/pyqir/pull/128
+- Regenerate mock parser using ANTLR-4.10 by @georgios-ts in https://github.com/qir-alliance/pyqir/pull/129
+- Set LLVM 13 as the default by @idavis in https://github.com/qir-alliance/pyqir/pull/131
+- Fix type hinting errors by @LaurentAjdnik in https://github.com/qir-alliance/pyqir/pull/133
+- Create CODEOWNERS by @samarsha in https://github.com/qir-alliance/pyqir/pull/134
+
+
 ## [0.4.2a1] - 2022-06-03
 
 - Adding ability to do musl/alpine builds by @idavis in https://github.com/qir-alliance/pyqir/pull/111
@@ -109,7 +119,8 @@ class:
 
 - Initial Release
 
-[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.4.2a1...HEAD
+[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.5.0a1...HEAD
+[0.5.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.4.2a1...v0.5.0a1
 [0.4.2a1]: https://github.com/qir-alliance/pyqir/compare/v0.4.1a1...v0.4.2a1
 [0.4.1a1]: https://github.com/qir-alliance/pyqir/compare/v0.4.0a1...v0.4.1a1
 [0.4.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.3.2a1...v0.4.0a1
