@@ -69,7 +69,23 @@ function Use-LlvmInstallation {
     $version = [Version]::Parse("$(&$llvm_config --version)")
     $prefix = "LLVM_SYS_$($version.Major)0_PREFIX"
     Write-BuildLog "Setting $prefix set to: $path"
-    [Environment]::SetEnvironmentVariable($prefix, $path)
+    
+    # Create the workspace cofig.toml and set the LLVM_SYS env var
+    New-Item -ItemType File -Path $repo.workspace_config_file -Force
+    Add-Content -Path $repo.workspace_config_file -Value "[env]"
+    Add-Content -Path $repo.workspace_config_file -Value "$($prefix) = `"$($path)`""
+
+    # Add llvm feature version for rust-analyzer extension
+    $vscode_settings = @{}
+    if (!(Test-Path $repo.vscode_config_file)) {
+        New-Item -ItemType File -Path $repo.vscode_config_file -Force
+    }
+    else {
+        $vscode_settings = Get-Content $repo.vscode_config_file | ConvertFrom-Json -AsHashtable
+    }
+
+    $vscode_settings."rust-analyzer.cargo.features" = @("$(Get-LLVMFeatureVersion)")
+    $vscode_settings | ConvertTo-Json | Set-Content -Path $repo.vscode_config_file
 }
 
 function Test-LlvmConfig {

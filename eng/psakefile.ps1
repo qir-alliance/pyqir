@@ -5,6 +5,10 @@ properties {
     $repo = @{}
     $repo.root = Resolve-Path (Split-Path -parent $PSScriptRoot)
     $repo.target = Join-Path $repo.root "target"
+    $repo.dot_cargo = Join-Path $repo.root ".cargo"
+    $repo.workspace_config_file = Join-Path $repo.dot_cargo "config.toml"
+    $repo.dot_vscode = Join-Path $repo.root ".vscode"
+    $repo.vscode_config_file = Join-Path $repo.dot_vscode "settings.json"
 
     $pyqir = @{}
 
