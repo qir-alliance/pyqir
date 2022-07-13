@@ -9,6 +9,8 @@
 // from within rust, and wrappers for each class and function will be added to __init__.py so that the
 // parser API can have full python doc comments for usability.
 
+use crate::parse::verify_module_can_be_loaded;
+
 use super::parse::{
     BasicBlockExt, CallExt, ConstantExt, FunctionExt, IntructionExt, ModuleExt, NameExt, PhiExt,
     TypeExt,
@@ -32,6 +34,7 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
 
     #[pyfn(m)]
     fn module_from_bitcode(bc_path: PathBuf) -> PyResult<PyQirModule> {
+        verify_module_can_be_loaded(&bc_path).map_err(PyRuntimeError::new_err)?;
         llvm_ir::Module::from_bc_path(bc_path)
             .map(|module| PyQirModule { module })
             .map_err(PyRuntimeError::new_err)
