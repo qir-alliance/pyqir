@@ -343,6 +343,7 @@ impl NameExt for llvm_ir::Name {
 
 pub(crate) fn can_load_module_from_bitcode(path: impl AsRef<Path>) -> Result<(), String> {
     let context = inkwell::context::Context::create();
-    let _ = inkwell::module::Module::parse_bitcode_from_path(path, &context).map_err(|e| e.to_string())?;
+    let _ = inkwell::module::Module::parse_bitcode_from_path(path, &context)
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
