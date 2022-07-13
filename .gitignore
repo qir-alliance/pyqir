@@ -153,4 +153,6 @@ cython_debug/
 /.cargo/config.toml
 wheelhouse/
 
+/.vscode/settings.json
+
 .local/

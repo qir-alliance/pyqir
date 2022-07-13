@@ -55,21 +55,47 @@ function Test-InDevContainer {
     $IsLinux -and (Test-Path env:\IN_DEV_CONTAINER)
 }
 
-# This method should be able to be removed when Rust 1.56 is released
-# which contains the feature for env sections in the .cargo/config.toml
+
+# Sets the LLVM path in the env section of the .cargo/config.toml
+# Configures vscode rust analyzer to the correct features
 function Use-LlvmInstallation {
     param (
         [string]$path
     )
-    Write-BuildLog "LLVM installation set to: $path"
+    Write-BuildLog "Setting LLVM installation to: $path"
+
     $llvm_config_options = @(Get-Command (Join-Path $path "bin" "llvm-config*"))
     Assert ($llvm_config_options.Length -gt 0) "llvm config not found in $path"
+
     $llvm_config = $llvm_config_options[0].Source
     Write-BuildLog "Found llvm-config : $llvm_config"
+
     $version = [Version]::Parse("$(&$llvm_config --version)")
     $prefix = "LLVM_SYS_$($version.Major)0_PREFIX"
+
     Write-BuildLog "Setting $prefix set to: $path"
-    [Environment]::SetEnvironmentVariable($prefix, $path)
+
+    if ($IsWindows) {
+        # we have to escape '\'
+        $path = $path.Replace('\', '\\')
+    }
+
+    # Create the workspace cofig.toml and set the LLVM_SYS env var
+    New-Item -ItemType File -Path $repo.workspace_config_file -Force
+    Add-Content -Path $repo.workspace_config_file -Value "[env]"
+    Add-Content -Path $repo.workspace_config_file -Value "$($prefix) = `"$($path)`""
+
+    # Add llvm feature version for rust-analyzer extension
+    $vscode_settings = @{}
+    if (!(Test-Path $repo.vscode_config_file)) {
+        New-Item -ItemType File -Path $repo.vscode_config_file -Force
+    }
+    else {
+        $vscode_settings = Get-Content $repo.vscode_config_file | ConvertFrom-Json -AsHashtable
+    }
+
+    $vscode_settings."rust-analyzer.cargo.features" = @("$(Get-LLVMFeatureVersion)")
+    $vscode_settings | ConvertTo-Json | Set-Content -Path $repo.vscode_config_file
 }
 
 function Test-LlvmConfig {
@@ -229,7 +255,7 @@ function Get-LLVMFeatureVersion {
     }
     else {
         # "llvm11-0", "llvm12-0", "llvm13-0", "llvm14-0"
-        "llvm11-0"
+        "llvm13-0"
     }
 }
 

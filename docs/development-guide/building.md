@@ -4,11 +4,11 @@
 
 ### Requirements
 
-- [Rust 1.56+](https://rustup.rs/)
+- [Rust 1.57+](https://rustup.rs/)
 - [Python 3.6+](https://www.python.org)
 - [PowerShell 7+
   (Core)](https://github.com/powershell/powershell#get-powershell)
-- [LLVM/Clang 11.1.0](https://llvm.org/) - See [Installing
+- [LLVM/Clang 13.0.1](https://llvm.org/) - See [Installing
   LLVM](#installing-llvm)
 - If compiling LLVM from source:
   - [CMake 3.10+](https://github.com/Kitware/CMake/releases/tag/v3.10.3)
@@ -63,25 +63,23 @@ Install Rust from [rustup](https://rustup.rs/).
 
 ### Installing Clang and Ninja
 
-If you have a working installation of LLVM and [Clang](https://clang.llvm.org/),
-each project can be built by running `cargo build` in the project directory. If
-not, you can install Clang manually:
+You can install Clang manually:
 
-- Linux (Ubuntu)
+- Linux (Ubuntu 22.04)
 
   ```bash
   apt-get update
-  apt-get install -y clang-11 lldb-11 lld-11 clangd-11
-  apt-get install -y --no-install-recommends ninja-build clang-tidy-11 build-essential
+  apt-get install -y clang-13 lldb-13 lld-11 clangd-13
+  apt-get install -y --no-install-recommends ninja-build clang-tidy-13 build-essential
   ```
 
 - Windows
-  - Download and install the `LLVM-11.1.0-win64.exe` from the [11.1.0
-    Release](https://github.com/llvm/llvm-project/releases/tag/llvmorg-11.1.0)
+  - Download and install the `LLVM-13.0.1-win64.exe` from the [13.0.1
+    Release](https://github.com/llvm/llvm-project/releases/tag/llvmorg-13.0.1)
     page.
   - This package only contains the Clang components. There is no package that
     contains Clang and LLVM.
-  - MacOS
+- MacOS
   - Should be preinstalled.
 
 ### Installing LLVM
