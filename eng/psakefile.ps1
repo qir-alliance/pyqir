@@ -5,6 +5,10 @@ properties {
     $repo = @{}
     $repo.root = Resolve-Path (Split-Path -parent $PSScriptRoot)
     $repo.target = Join-Path $repo.root "target"
+    $repo.dot_cargo = Join-Path $repo.root ".cargo"
+    $repo.workspace_config_file = Join-Path $repo.dot_cargo "config.toml"
+    $repo.dot_vscode = Join-Path $repo.root ".vscode"
+    $repo.vscode_config_file = Join-Path $repo.dot_vscode "settings.json"
 
     $pyqir = @{}
 
@@ -74,7 +78,7 @@ task run-manylinux-container-image -preaction { Write-CacheStats } -postaction {
 
     $cacheMount, $cacheEnv = Get-CCacheParams
 
-    Write-BuildLog "Running container image:"
+    Write-BuildLog "Running container image: $($linux.manylinux_tag)"
     $ioVolume = "$($srcPath):$($linux.manylinux_root)"
     $userName = Get-LinuxContainerUserName
 
@@ -93,7 +97,7 @@ task run-musllinux-container-image -preaction { Write-CacheStats } -postaction {
 
     $cacheMount, $cacheEnv = Get-CCacheParams
 
-    Write-BuildLog "Running container image:"
+    Write-BuildLog "Running container image: $($linux.musllinux_tag)"
     $ioVolume = "$($srcPath):$($linux.musllinux_root)"
     $userName = Get-LinuxContainerUserName
     if (Test-CI) {
@@ -243,17 +247,19 @@ task check-environment {
         "Neither the VIRTUAL_ENV nor CONDA_PREFIX environment variables are set).",
         "See https://virtualenv.pypa.io/en/latest/index.html on how to use virtualenv"
     )
-    if((Test-InVirtualEnvironment) -eq $false) {
+    if ((Test-InVirtualEnvironment) -eq $false) {
         Write-BuildLog "No virtual environment found."
         $pyenv = Join-Path $repo.target ".env"
         Write-BuildLog "Setting up virtual environment in $($pyenv)"
         & $python -m venv $pyenv
-        if($IsWindows) {
+        if ($IsWindows) {
             . (Join-Path $pyenv "Scripts" "Activate.ps1")
-        } else {
+        }
+        else {
             . (Join-Path $pyenv "bin" "Activate.ps1")
         }
-    } else {
+    }
+    else {
         Write-BuildLog "Virtual environment found."
     }
     # ensure that we are now in a virtual environment
@@ -318,26 +324,42 @@ task install-llvm-from-source -depends configure-sccache -postaction { Write-Cac
 }
 
 task package-musllinux-llvm -depends build-musllinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    if ($IsLinux) {
-        $srcPath = $repo.root
-        $ioVolume = "$($srcPath):$($linux.musllinux_root)"
-        $userName = Get-LinuxContainerUserName
+    $srcPath = $repo.root
 
-        Invoke-LoggedCommand {
-            docker run --rm --user $userName -v $ioVolume -w "$($linux.musllinux_root)/qirlib" -e QIRLIB_PKG_DEST="$($linux.musllinux_root)/target" "$($linux.musllinux_tag)" cargo build --release --no-default-features --features package-llvm -vv
-        }
+    # For any of the volumes mapped, if the dir doesn't exist,
+    # docker will create it and it will be owned by root and
+    # the caching/install breaks with permission errors.
+    # New-Item is idempotent so we don't need to check for existence
+
+    $cacheMount, $cacheEnv = Get-CCacheParams
+
+    Write-BuildLog "Running container image: $($linux.musllinux_tag)"
+    $ioVolume = "$($srcPath):$($linux.musllinux_root)"
+    $userName = Get-LinuxContainerUserName
+    if (Test-CI) {
+        $userName = "root"
+    }
+    Invoke-LoggedCommand {
+        docker run --rm --user $userName -v $ioVolume @cacheMount @cacheEnv -w "$($linux.musllinux_root)" -e QIRLIB_PKG_DEST="$($linux.musllinux_root)/target/musllinux" "$($linux.musllinux_tag)" pwsh build.ps1 -t package-llvm
     }
 }
 
 task package-manylinux-llvm -depends build-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    if ($IsLinux) {
-        $srcPath = $repo.root
-        $ioVolume = "$($srcPath):$($linux.manylinux_root)"
-        $userName = Get-LinuxContainerUserName
+    $srcPath = $repo.root
 
-        Invoke-LoggedCommand {
-            docker run --rm --user $userName -v $ioVolume -w "$($linux.manylinux_root)/qirlib" -e QIRLIB_PKG_DEST="$($linux.manylinux_root)/target" "$($linux.manylinux_tag)" conda run --no-capture-output cargo build --release --no-default-features --features package-llvm -vv
-        }
+    # For any of the volumes mapped, if the dir doesn't exist,
+    # docker will create it and it will be owned by root and
+    # the caching/install breaks with permission errors.
+    # New-Item is idempotent so we don't need to check for existence
+
+    $cacheMount, $cacheEnv = Get-CCacheParams
+
+    Write-BuildLog "Running container image: $($linux.manylinux_tag)"
+    $ioVolume = "$($srcPath):$($linux.manylinux_root)"
+    $userName = Get-LinuxContainerUserName
+
+    Invoke-LoggedCommand {
+        docker run --rm --user $userName -v $ioVolume @cacheMount @cacheEnv -w "$($linux.manylinux_root)" -e QIRLIB_PKG_DEST="$($linux.manylinux_root)/target/manylinux" "$($linux.manylinux_tag)" conda run --no-capture-output pwsh build.ps1 -t package-llvm
     }
 }
 
@@ -350,9 +372,10 @@ task package-llvm {
         $clear_pkg_dest_var = $true
         $env:QIRLIB_PKG_DEST = Join-Path $repo.root "target"
     }
+    New-Item $env:QIRLIB_PKG_DEST -ItemType Directory -Force
     try {
         Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-            cargo build --release  --no-default-features --features package-llvm -vv
+            cargo build --release --no-default-features --features "package-llvm,$(Get-LLVMFeatureVersion)-no-llvm-linking" -vv
         }
     }
     finally {
