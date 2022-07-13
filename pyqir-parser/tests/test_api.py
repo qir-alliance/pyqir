@@ -103,14 +103,14 @@ def test_loading_invalid_bitcode():
     path = "tests/teleportchain.ll.reference"
     with pytest.raises(RuntimeError) as exc_info:
         _ = module_from_bitcode(path)
-    assert str(exc_info.value) == "Invalid bitcode signature"
+    assert str(exc_info.value).lower() == "invalid bitcode signature"
 
 
 def test_loading_bad_bitcode_file_path():
     path = "tests/does_not_exist.bc"
     with pytest.raises(RuntimeError) as exc_info:
         _ = module_from_bitcode(path)
-    assert str(exc_info.value) == "No such file or directory"
+    assert str(exc_info.value).lower() == "no such file or directory"
 
 
 def test_parser_internals():
