@@ -41,11 +41,11 @@
 <section id="requirements">
 <h3>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
-<li><p><a class="reference external" href="https://rustup.rs/">Rust 1.56+</a></p></li>
+<li><p><a class="reference external" href="https://rustup.rs/">Rust 1.57+</a></p></li>
 <li><p><a class="reference external" href="https://www.python.org">Python 3.6+</a></p></li>
 <li><p><a class="reference external" href="https://github.com/powershell/powershell#get-powershell">PowerShell 7+
 (Core)</a></p></li>
-<li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 11.1.0</a> - See <span class="xref myst">Installing
+<li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 13.0.1</a> - See <span class="xref myst">Installing
 LLVM</span></p></li>
 <li><p>If compiling LLVM from source:</p>
 <ul>
@@ -102,25 +102,26 @@ python -m pip install --user maturin
 </section>
 <section id="installing-clang-and-ninja">
 <h3>Installing Clang and Ninja<a class="headerlink" href="#installing-clang-and-ninja" title="Permalink to this heading">¶</a></h3>
-<p>If you have a working installation of LLVM and <a class="reference external" href="https://clang.llvm.org/">Clang</a>,
-each project can be built by running <code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">build</span></code> in the project directory. If
-not, you can install Clang manually:</p>
+<p>You can install Clang manually:</p>
 <ul>
-<li><p>Linux (Ubuntu)</p>
+<li><p>Linux (Ubuntu 22.04)</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>apt-get update
-apt-get install -y clang-11 lldb-11 lld-11 clangd-11
-apt-get install -y --no-install-recommends ninja-build clang-tidy-11 build-essential
+apt-get install -y clang-13 lldb-13 lld-11 clangd-13
+apt-get install -y --no-install-recommends ninja-build clang-tidy-13 build-essential
 </pre></div>
 </div>
 </li>
 <li><p>Windows</p>
 <ul class="simple">
-<li><p>Download and install the <code class="docutils literal notranslate"><span class="pre">LLVM-11.1.0-win64.exe</span></code> from the <a class="reference external" href="https://github.com/llvm/llvm-project/releases/tag/llvmorg-11.1.0">11.1.0
+<li><p>Download and install the <code class="docutils literal notranslate"><span class="pre">LLVM-13.0.1-win64.exe</span></code> from the <a class="reference external" href="https://github.com/llvm/llvm-project/releases/tag/llvmorg-13.0.1">13.0.1
 Release</a>
 page.</p></li>
 <li><p>This package only contains the Clang components. There is no package that
 contains Clang and LLVM.</p></li>
-<li><p>MacOS</p></li>
+</ul>
+</li>
+<li><p>MacOS</p>
+<ul class="simple">
 <li><p>Should be preinstalled.</p></li>
 </ul>
 </li>
