@@ -129,7 +129,7 @@ pub enum Instruction {
 pub struct Call {
     pub name: String,
     pub args: Vec<Value>,
-    pub result: Option<i64>,
+    pub result: Option<VariableValue>,
 }
 
 #[derive(Clone, Copy)]
@@ -158,7 +158,24 @@ pub enum Value {
     Double(f64),
     Qubit(String),
     Result(String),
-    Variable(i64), // TODO: Use a stronger type.
+    Variable(VariableValue),
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct VariableValue {
+    id: i64,
+}
+
+impl Default for VariableValue {
+    fn default() -> Self {
+        Self { id: 0 }
+    }
+}
+
+impl VariableValue {
+    pub fn next(&self) -> Self {
+        Self { id: self.id + 1 }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]

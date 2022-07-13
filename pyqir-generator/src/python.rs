@@ -13,6 +13,7 @@ use qirlib::generation::{
     interop::{
         Call, ClassicalRegister, Controlled, FunctionType, If, Instruction, IntegerValue, Measured,
         QuantumRegister, ReturnType, Rotated, SemanticModel, Single, Value, ValueType,
+        VariableValue,
     },
 };
 use std::{
@@ -236,15 +237,13 @@ struct Function {
 
 #[derive(Clone)]
 #[pyclass]
-struct Variable {
-    id: i64,
-}
+struct Variable(VariableValue);
 
 #[pyclass]
 struct Builder {
     frames: Vec<Vec<Instruction>>,
     external_functions: HashMap<String, FunctionType>,
-    next_variable: i64
+    next_variable: VariableValue,
 }
 
 #[pymethods]
@@ -254,41 +253,35 @@ impl Builder {
         Builder {
             frames: vec![vec![]],
             external_functions: HashMap::new(),
-            next_variable: 0
+            next_variable: Default::default(),
         }
     }
 
     fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Variable>> {
         let name = function.name;
         let ty = self.external_functions.get(&name).unwrap();
+
         let num_params = ty.param_types.len();
         let num_args = args.len()?;
-
-        let typed_args = if num_args == num_params {
-            args.iter()?.zip(&ty.param_types)
-        } else {
+        if num_args != num_params {
             let message = format!("Expected {} arguments, got {}.", num_params, num_args);
             return Err(PyErr::new::<PyValueError, _>(message));
-        };
+        }
 
-        let args = typed_args
+        let args = args
+            .iter()?
+            .zip(&ty.param_types)
             .map(|(arg, &ty)| extract_value(arg?, ty))
             .collect::<PyResult<_>>()?;
 
-        let variable = match ty.return_type {
+        let result = match ty.return_type {
             ReturnType::Void => None,
             _ => Some(self.next_variable),
         };
 
-        self.next_variable += 1;
-
-        self.push_inst(Instruction::Call(Call {
-            name,
-            args,
-            result: variable,
-        }));
-
-        Ok(variable.map(|id| Variable { id }))
+        self.next_variable = self.next_variable.next();
+        self.push_inst(Instruction::Call(Call { name, args, result }));
+        Ok(result.map(Variable))
     }
 }
 
@@ -532,7 +525,7 @@ impl BasicQisBuilder {
 
 fn extract_value(ob: &PyAny, ty: ValueType) -> PyResult<Value> {
     match ob.extract::<Variable>() {
-        Ok(variable) => Ok(Value::Variable(variable.id)),
+        Ok(variable) => Ok(Value::Variable(variable.0)),
         Err(_) => match ty {
             ValueType::Integer { width } => IntegerValue::new(width, ob.extract()?)
                 .map(Value::Integer)
