@@ -3,6 +3,7 @@
 
 from pyqir.parser import *
 
+import pytest
 
 def test_parser():
     mod = QirModule("tests/teleportchain.baseprofile.bc")
@@ -96,6 +97,20 @@ def test_parser_zext_support():
     assert isinstance(instr.target_operands[0], QirLocalOperand)
     assert instr.target_operands[0].name == "1"
     assert instr.target_operands[0].type.width == 1
+
+
+def test_loading_invalid_bitcode():
+    path = "tests/teleportchain.ll.reference"
+    with pytest.raises(RuntimeError) as exc_info:
+        _ = module_from_bitcode(path)
+    assert str(exc_info.value) == "Invalid bitcode signature"
+
+
+def test_loading_bad_bitcode_file_path():
+    path = "tests/does_not_exist.bc"
+    with pytest.raises(RuntimeError) as exc_info:
+        _ = module_from_bitcode(path)
+    assert str(exc_info.value) == "No such file or directory"
 
 
 def test_parser_internals():
