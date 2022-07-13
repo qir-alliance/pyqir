@@ -341,9 +341,9 @@ impl NameExt for llvm_ir::Name {
     }
 }
 
-pub(crate) fn can_load_module_from_bitcode(path: impl AsRef<Path>) -> Result<(), String> {
+pub(crate) fn verify_module_can_be_loaded(path: impl AsRef<Path>) -> Result<(), String> {
     let context = inkwell::context::Context::create();
-    let _ = inkwell::module::Module::parse_bitcode_from_path(path, &context)
+    let _droppable = inkwell::module::Module::parse_bitcode_from_path(path, &context)
         .map_err(|e| e.to_string())?;
     Ok(())
 }
