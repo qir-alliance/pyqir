@@ -1,9 +1,9 @@
 ; ModuleID = 'test_call_variable'
 source_filename = "test_call_variable"
 
-declare void @bar(i64)
-
 declare i64 @foo()
+
+declare void @bar(i64)
 
 define void @main() #0 {
 entry:

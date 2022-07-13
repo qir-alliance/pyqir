@@ -17,7 +17,7 @@ use qirlib::generation::{
     },
 };
 use std::{
-    collections::{hash_map::DefaultHasher, HashMap},
+    collections::hash_map::DefaultHasher,
     hash::{Hash, Hasher},
     vec,
 };
@@ -242,7 +242,7 @@ struct Variable(VariableValue);
 #[pyclass]
 struct Builder {
     frames: Vec<Vec<Instruction>>,
-    external_functions: HashMap<String, FunctionType>,
+    external_functions: Vec<(String, FunctionType)>,
     next_variable: VariableValue,
 }
 
@@ -252,18 +252,21 @@ impl Builder {
     fn new() -> Builder {
         Builder {
             frames: vec![vec![]],
-            external_functions: HashMap::new(),
+            external_functions: vec![],
             next_variable: Default::default(),
         }
     }
 
     fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Variable>> {
-        let name = function.name;
-        let ty = self.external_functions.get(&name).unwrap();
+        let (_, ty) = self
+            .external_functions
+            .iter()
+            .find(|f| f.0 == function.name)
+            .expect("Function not found in module.");
 
         let num_params = ty.param_types.len();
         let num_args = args.len()?;
-        if num_args != num_params {
+        if num_params != num_args {
             let message = format!("Expected {} arguments, got {}.", num_params, num_args);
             return Err(PyErr::new::<PyValueError, _>(message));
         }
@@ -279,8 +282,13 @@ impl Builder {
             _ => Some(self.next_variable),
         };
 
+        self.push_inst(Instruction::Call(Call {
+            name: function.name,
+            args,
+            result,
+        }));
+
         self.next_variable = self.next_variable.next();
-        self.push_inst(Instruction::Call(Call { name, args, result }));
         Ok(result.map(Variable))
     }
 }
@@ -317,7 +325,7 @@ impl SimpleModule {
 
         let model = SemanticModel {
             name,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
             registers,
             qubits,
             instructions: Vec::new(),
@@ -364,7 +372,7 @@ impl SimpleModule {
 
     fn add_external_function(&mut self, py: Python, name: String, ty: PyFunctionType) -> Function {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.external_functions.insert(name.clone(), ty.into());
+        builder.external_functions.push((name.clone(), ty.into()));
         Function { name }
     }
 

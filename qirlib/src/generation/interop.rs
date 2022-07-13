@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use std::collections::HashMap;
-
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct QuantumRegister {
     pub name: String,
@@ -214,7 +212,7 @@ pub struct SemanticModel {
     pub instructions: Vec<Instruction>,
     pub use_static_qubit_alloc: bool,
     pub use_static_result_alloc: bool,
-    pub external_functions: HashMap<String, FunctionType>,
+    pub external_functions: Vec<(String, FunctionType)>,
 }
 
 impl SemanticModel {
@@ -227,7 +225,7 @@ impl SemanticModel {
             instructions: vec![],
             use_static_qubit_alloc: false,
             use_static_result_alloc: true,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         }
     }
 

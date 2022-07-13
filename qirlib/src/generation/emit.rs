@@ -106,7 +106,7 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
 
 fn add_external_functions<'a>(
     generator: &CodeGenerator,
-    functions: impl Iterator<Item = (&'a String, &'a interop::FunctionType)>,
+    functions: impl Iterator<Item = &'a (String, interop::FunctionType)>,
 ) {
     for (name, ty) in functions {
         let ty = get_function_type(generator, ty);
@@ -258,7 +258,6 @@ mod result_alloc_tests {
             ClassicalRegister, Instruction, Measured, QuantumRegister, SemanticModel, Single,
         },
     };
-    use std::collections::HashMap;
 
     fn get_model(
         name: String,
@@ -275,7 +274,7 @@ mod result_alloc_tests {
             ))],
             use_static_qubit_alloc,
             use_static_result_alloc,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         }
     }
 
@@ -332,7 +331,7 @@ mod result_alloc_tests {
             ))],
             use_static_qubit_alloc: false,
             use_static_result_alloc: true,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
         let actual_ir: String = emit::ir(&model)?;
         assert!(actual_ir.contains("attributes #0 = { \"EntryPoint\" \"requiredResults\"=\"8\" }"));
@@ -349,7 +348,7 @@ mod result_alloc_tests {
             instructions: vec![Instruction::H(Single::new("q0".to_string()))],
             use_static_qubit_alloc: false,
             use_static_result_alloc: true,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
         let actual_ir: String = emit::ir(&model)?;
         assert!(actual_ir.contains("attributes #0 = { \"EntryPoint\" \"requiredResults\"=\"0\" }"));
@@ -387,7 +386,6 @@ mod if_tests {
         Call, ClassicalRegister, FunctionType, If, Instruction, Measured, QuantumRegister,
         ReturnType, SemanticModel, Single, Value, ValueType, VariableValue,
     };
-    use std::collections::HashMap;
 
     #[test]
     fn test_if_then() -> Result<(), String> {
@@ -405,7 +403,7 @@ mod if_tests {
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -427,7 +425,7 @@ mod if_tests {
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -450,7 +448,7 @@ mod if_tests {
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -473,7 +471,7 @@ mod if_tests {
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -496,7 +494,7 @@ mod if_tests {
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -523,7 +521,7 @@ mod if_tests {
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -550,7 +548,7 @@ mod if_tests {
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -577,7 +575,7 @@ mod if_tests {
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -604,7 +602,7 @@ mod if_tests {
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -623,7 +621,7 @@ mod if_tests {
             })],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -649,8 +647,7 @@ mod if_tests {
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::from([
-                // TODO: Order of functions in generated IR is nondeterministic.
+            external_functions: vec![
                 (
                     "foo".to_string(),
                     FunctionType {
@@ -665,7 +662,7 @@ mod if_tests {
                         return_type: ReturnType::Void,
                     },
                 ),
-            ]),
+            ],
         })
     }
 }
