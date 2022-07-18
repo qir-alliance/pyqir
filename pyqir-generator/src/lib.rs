@@ -9,5 +9,9 @@
 //     here since it's introduced by an upstream macro and not something
 //     we can directly control in our code.
 #![allow(clippy::needless_option_as_deref)]
+// This was introduced in 1.62, but we can't update the dependency to
+// to resolve it until we move to a newer version of python.
+#![allow(clippy::format_push_string)]
 
+#[cfg(feature = "python-bindings")]
 pub mod python;

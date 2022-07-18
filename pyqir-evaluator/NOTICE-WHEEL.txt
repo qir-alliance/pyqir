@@ -9,7 +9,7 @@ This work contains work released under the following licenses:
 - BSD-3-Clause (1)
 - Apache-2.0 WITH LLVM-exception (1)
 
-windows-sys 0.34.0 - SPDX: Apache-2.0 - Apache License 2.0
+windows-sys 0.36.1 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/microsoft/windows-rs
 
                                  Apache License
@@ -630,7 +630,7 @@ https://github.com/retep998/winapi-rs
 
 
 
-libc 0.2.121 - SPDX: Apache-2.0 - Apache License 2.0
+libc 0.2.125 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/rust-lang/libc
 
                               Apache License
@@ -3710,7 +3710,7 @@ limitations under the License.
 
 
 
-parking_lot_core 0.9.2 - SPDX: Apache-2.0 - Apache License 2.0
+parking_lot_core 0.9.3 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/Amanieu/parking_lot
 
                               Apache License
@@ -4538,7 +4538,7 @@ limitations under the License.
 
 
 
-proc-macro2 1.0.36 - SPDX: Apache-2.0 - Apache License 2.0
+proc-macro2 1.0.38 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/dtolnay/proc-macro2
 
                               Apache License
@@ -4745,7 +4745,7 @@ limitations under the License.
 
 
 
-quote 1.0.17 - SPDX: Apache-2.0 - Apache License 2.0
+quote 1.0.18 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/dtolnay/quote
 
                               Apache License
@@ -5366,7 +5366,7 @@ limitations under the License.
 
 
 
-syn 1.0.90 - SPDX: Apache-2.0 - Apache License 2.0
+syn 1.0.93 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/dtolnay/syn
 
                               Apache License
@@ -5573,7 +5573,7 @@ limitations under the License.
 
 
 
-unicode-xid 0.2.2 - SPDX: Apache-2.0 - Apache License 2.0
+unicode-xid 0.2.3 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/unicode-rs/unicode-xid
 
                               Apache License
@@ -5780,7 +5780,7 @@ limitations under the License.
 
 
 
-unindent 0.1.8 - SPDX: Apache-2.0 - Apache License 2.0
+unindent 0.1.9 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/dtolnay/indoc
 
                               Apache License
@@ -6997,7 +6997,7 @@ limitations under the License.
 
 
 
-log 0.4.16 - SPDX: Apache-2.0 - Apache License 2.0
+log 0.4.17 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/rust-lang/log
 
                               Apache License
@@ -7204,7 +7204,7 @@ limitations under the License.
 
 
 
-pyo3 0.15.1 - SPDX: Apache-2.0 - Apache License 2.0
+pyo3 0.15.2 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/pyo3/pyo3
 
    Copyright (c) 2017-present PyO3 Project and Contributors.  https://github.com/PyO3
@@ -7399,7 +7399,7 @@ https://github.com/pyo3/pyo3
 
 
 
-pyo3-build-config 0.15.1 - SPDX: Apache-2.0 - Apache License 2.0
+pyo3-build-config 0.15.2 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/pyo3/pyo3
 
    Copyright (c) 2017-present PyO3 Project and Contributors.  https://github.com/PyO3
@@ -7594,7 +7594,7 @@ https://github.com/pyo3/pyo3
 
 
 
-pyo3-macros 0.15.1 - SPDX: Apache-2.0 - Apache License 2.0
+pyo3-macros 0.15.2 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/pyo3/pyo3
 
    Copyright (c) 2017-present PyO3 Project and Contributors.  https://github.com/PyO3
@@ -7789,7 +7789,7 @@ https://github.com/pyo3/pyo3
 
 
 
-pyo3-macros-backend 0.15.1 - SPDX: Apache-2.0 - Apache License 2.0
+pyo3-macros-backend 0.15.2 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/pyo3/pyo3
 
    Copyright (c) 2017-present PyO3 Project and Contributors.  https://github.com/PyO3
@@ -8311,7 +8311,7 @@ limitations under the License.
 
 
 
-windows_aarch64_msvc 0.34.0 - SPDX: Apache-2.0 - Apache License 2.0
+windows_aarch64_msvc 0.36.1 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/microsoft/windows-rs
 
 Apache License
@@ -8390,7 +8390,7 @@ limitations under the License.
 
 
 
-windows_i686_gnu 0.34.0 - SPDX: Apache-2.0 - Apache License 2.0
+windows_i686_gnu 0.36.1 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/microsoft/windows-rs
 
 Apache License
@@ -8469,7 +8469,7 @@ limitations under the License.
 
 
 
-windows_i686_msvc 0.34.0 - SPDX: Apache-2.0 - Apache License 2.0
+windows_i686_msvc 0.36.1 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/microsoft/windows-rs
 
 Apache License
@@ -8548,7 +8548,7 @@ limitations under the License.
 
 
 
-windows_x86_64_gnu 0.34.0 - SPDX: Apache-2.0 - Apache License 2.0
+windows_x86_64_gnu 0.36.1 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/microsoft/windows-rs
 
 Apache License
@@ -8627,7 +8627,7 @@ limitations under the License.
 
 
 
-windows_x86_64_msvc 0.34.0 - SPDX: Apache-2.0 - Apache License 2.0
+windows_x86_64_msvc 0.36.1 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/microsoft/windows-rs
 
 Apache License
@@ -8706,7 +8706,7 @@ limitations under the License.
 
 
 
-unicode-xid 0.2.2 - SPDX: Apache-2.0 - Apache License 2.0
+unicode-xid 0.2.3 - SPDX: Apache-2.0 - Apache License 2.0
 https://github.com/unicode-rs/unicode-xid
 
 Licensed under the Apache License, Version 2.0
@@ -8752,7 +8752,157 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 
+qirlib 0.3.0 - SPDX: MIT - MIT License
+https://github.com/qir-alliance/pyqir
+
+/*
+Copyright (c) 2015 Peter Marheine
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
+/* llvm-c/Target.h helper functions wrappers.
+ *
+ * The LLVMInitializeAll* functions and friends are defined `static inline`, so
+ * we can't bind directly to them (the function body is generated via macro),
+ * so here are some wrappers.
+ */
+#include <llvm-c/Target.h>
+
+void LLVM_InitializeAllTargetInfos(void) {
+    LLVMInitializeAllTargetInfos();
+}
+
+void LLVM_InitializeAllTargets(void) {
+    LLVMInitializeAllTargets();
+}
+
+void LLVM_InitializeAllTargetMCs(void) {
+    LLVMInitializeAllTargetMCs();
+}
+
+void LLVM_InitializeAllAsmPrinters(void) {
+    LLVMInitializeAllAsmPrinters();
+}
+
+void LLVM_InitializeAllAsmParsers(void) {
+    LLVMInitializeAllAsmParsers();
+}
+
+void LLVM_InitializeAllDisassemblers(void) {
+    LLVMInitializeAllDisassemblers();
+}
+
+/* These functions return true on failure. */
+LLVMBool LLVM_InitializeNativeTarget(void) {
+    return LLVMInitializeNativeTarget();
+}
+
+LLVMBool LLVM_InitializeNativeAsmParser(void) {
+    return LLVMInitializeNativeAsmParser();
+}
+
+LLVMBool LLVM_InitializeNativeAsmPrinter(void) {
+    return LLVMInitializeNativeAsmPrinter();
+}
+
+LLVMBool LLVM_InitializeNativeDisassembler(void) {
+    return LLVMInitializeNativeDisassembler();
+}
+
+
 llvm-sys 110.0.3 - SPDX: MIT - MIT License
+https://gitlab.com/taricorp/llvm-sys.rs
+
+Copyright (c) 2015 Peter Marheine
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+
+llvm-sys 120.2.4 - SPDX: MIT - MIT License
+https://gitlab.com/taricorp/llvm-sys.rs
+
+Copyright (c) 2015 Peter Marheine
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+
+llvm-sys 130.0.4 - SPDX: MIT - MIT License
+https://gitlab.com/taricorp/llvm-sys.rs
+
+Copyright (c) 2015 Peter Marheine
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+
+llvm-sys 140.0.2 - SPDX: MIT - MIT License
 https://gitlab.com/taricorp/llvm-sys.rs
 
 Copyright (c) 2015 Peter Marheine
@@ -8953,7 +9103,7 @@ SOFTWARE.
 
 
 
-pyqir-evaluator 0.4.0-alpha - SPDX: MIT - MIT License
+pyqir-evaluator 0.5.0-alpha - SPDX: MIT - MIT License
 https://github.com/qir-alliance/pyqir
 
 MIT License
@@ -8980,26 +9130,11 @@ SOFTWARE.
 
 
 
-qirlib 0.3.0 - SPDX: MIT - MIT License
-https://crates.io/crates/qirlib
 
-MIT License
-
-Copyright (c) <year> <copyright holders>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
-
-
-LLVM 11.0 - Apache-2.0 WITH LLVM-exception - Apache License v2.0 with LLVM Exceptions
+LLVM 13.0 - Apache-2.0 WITH LLVM-exception - Apache License v2.0 with LLVM Exceptions
 https://github.com/llvm/llvm-project
 
-https://github.com/llvm/llvm-project/blob/llvmorg-11.1.0/llvm/LICENSE.TXT
+https://github.com/llvm/llvm-project/blob/llvmorg-13.0.1/llvm/LICENSE.TXT
 
 ==============================================================================
 The LLVM Project is under the Apache License v2.0 with LLVM Exceptions:

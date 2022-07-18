@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+## [0.5.0a1] - 2022-07-13
+
+- Added mypy github action to check type annotations and mypy stub files by @WingCode in https://github.com/qir-alliance/pyqir/pull/127
+- Evaluator: Raise if bitcode contains unknown external functions. by @georgios-ts in https://github.com/qir-alliance/pyqir/pull/128
+- Regenerate mock parser using ANTLR-4.10 by @georgios-ts in https://github.com/qir-alliance/pyqir/pull/129
+- Set LLVM 13 as the default by @idavis in https://github.com/qir-alliance/pyqir/pull/131
+- Fix type hinting errors by @LaurentAjdnik in https://github.com/qir-alliance/pyqir/pull/133
+- Create CODEOWNERS by @samarsha in https://github.com/qir-alliance/pyqir/pull/134
+- Parser should throw appropriate exception when loading invalid bitcode by @idavis in https://github.com/qir-alliance/pyqir/pull/136
+
+## [0.4.2a1] - 2022-06-03
+
+- Adding ability to do musl/alpine builds by @idavis in https://github.com/qir-alliance/pyqir/pull/111
+- Adds support for select instructions to pyqir-parser by @swernli in https://github.com/qir-alliance/pyqir/pull/118
+- Allowing multiple LLVM versions to be used by @nilslice and @idavis in https://github.com/qir-alliance/pyqir/pull/119
+- Support for parsing global byte array constants by @swernli in https://github.com/qir-alliance/pyqir/pull/120
+- Add zext support to parser by @swernli in https://github.com/qir-alliance/pyqir/pull/124
+
+## [0.4.1a1] - 2022-05-09
+
+- Adding pyqir-evaluator example with result stream usage. by @idavis in https://github.com/qir-alliance/pyqir/pull/97
+- Support for "ret void" in the parser by @LaurentAjdnik in https://github.com/qir-alliance/pyqir/pull/113
+- Add bitcode/qir conversion functions to generator by @idavis in https://github.com/qir-alliance/pyqir/pull/115
+
 ## [0.4.0a1] - 2022-04-18
 
 - Adding static result allocation by @idavis in https://github.com/qir-alliance/pyqir/pull/103
@@ -95,7 +119,10 @@ class:
 
 - Initial Release
 
-[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.4.0a1...HEAD
+[Unreleased]: https://github.com/qir-alliance/pyqir/compare/v0.5.0a1...HEAD
+[0.5.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.4.2a1...v0.5.0a1
+[0.4.2a1]: https://github.com/qir-alliance/pyqir/compare/v0.4.1a1...v0.4.2a1
+[0.4.1a1]: https://github.com/qir-alliance/pyqir/compare/v0.4.0a1...v0.4.1a1
 [0.4.0a1]: https://github.com/qir-alliance/pyqir/compare/v0.3.2a1...v0.4.0a1
 [0.3.2a1]: https://github.com/qir-alliance/pyqir/compare/v0.3.1a1...v0.3.2a1
 [0.3.1a1]: https://github.com/qir-alliance/pyqir/compare/v0.3.0a1...v0.3.1a1

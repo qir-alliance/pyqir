@@ -3,8 +3,9 @@
 
 from pyqir.parser import *
 
+import pytest
 
-def test_parser_pythonic():
+def test_parser():
     mod = QirModule("tests/teleportchain.baseprofile.bc")
     func_name = "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
     func = mod.get_func_by_name(func_name)
@@ -46,8 +47,73 @@ def test_parser_pythonic():
     assert isinstance(instr.type, QirIntegerType)
     assert instr.type.width == 1
 
+def test_parser_select_support():
+    mod = QirModule("tests/select.bc")
+    func = mod.get_funcs_by_attr("EntryPoint")[0]
+    block = func.blocks[0]
+    instr = block.instructions[5]
+    assert isinstance(instr, QirSelectInstr)
+    assert isinstance(func.get_instruction_by_output_name("spec.select"), QirSelectInstr)
+    assert isinstance(instr.condition, QirLocalOperand)
+    assert instr.condition.name == "0"
+    assert isinstance(instr.true_value, QirIntConstant)
+    assert instr.true_value.value == 2
+    assert instr.true_value.width == 64
+    assert isinstance(instr.false_value, QirIntConstant)
+    assert instr.false_value.value == 0
+    assert instr.false_value.width == 64
+    instr2 = block.instructions[9]
+    assert isinstance(instr2, QirSelectInstr)
+    assert isinstance(instr2.true_value, QirLocalOperand)
+    assert instr2.true_value.name == "spec.select"
+    assert isinstance(instr2.false_value, QirLocalOperand)
+    assert instr2.false_value.name == "val.i.1"
 
-def test_parser():
+
+def test_global_string():
+    mod = QirModule("tests/hello.bc")
+    func_name = "program__main__body"
+    func = mod.get_func_by_name(func_name)
+    assert isinstance(func, QirFunction)
+    assert isinstance(func.blocks[0], QirBlock)
+    assert func.blocks[0].name == "entry"
+    instr = func.blocks[0].instructions[0]
+    assert isinstance(instr, QirRtCallInstr)
+    assert instr.func_name == "__quantum__rt__string_create"
+    assert isinstance(instr.func_args[0], QirGlobalByteArrayConstant)
+    assert mod.get_global_bytes_value(instr.func_args[0]).decode('utf-8') == "Hello World!\0"
+
+
+def test_parser_zext_support():
+    mod = QirModule("tests/select.bc")
+    func = mod.get_funcs_by_attr("EntryPoint")[0]
+    block = func.blocks[0]
+    instr = block.instructions[7]
+    assert isinstance(instr, QirZExtInstr)
+    assert isinstance(instr.type, QirIntegerType)
+    assert instr.type.width == 64
+    assert instr.output_name == "2"
+    assert len(instr.target_operands) == 1
+    assert isinstance(instr.target_operands[0], QirLocalOperand)
+    assert instr.target_operands[0].name == "1"
+    assert instr.target_operands[0].type.width == 1
+
+
+def test_loading_invalid_bitcode():
+    path = "tests/teleportchain.ll.reference"
+    with pytest.raises(RuntimeError) as exc_info:
+        _ = module_from_bitcode(path)
+    assert str(exc_info.value).lower() == "invalid bitcode signature"
+
+
+def test_loading_bad_bitcode_file_path():
+    path = "tests/does_not_exist.bc"
+    with pytest.raises(RuntimeError) as exc_info:
+        _ = module_from_bitcode(path)
+    assert str(exc_info.value).lower() == "no such file or directory"
+
+
+def test_parser_internals():
     mod = module_from_bitcode("tests/teleportchain.baseprofile.bc")
     func_name = "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
     func = mod.get_func_by_name(func_name)

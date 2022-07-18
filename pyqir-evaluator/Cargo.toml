@@ -1,7 +1,7 @@
 [package]
 authors = ["Microsoft"]
 name = "pyqir-evaluator"
-version = "0.4.0-alpha"
+version = "0.5.0-alpha"
 edition = "2018"
 license = "MIT"
 description = "Python based QIR Evaluation (JIT) library."
@@ -13,16 +13,19 @@ repository = "https://github.com/qir-alliance/pyqir"
 
 [dependencies]
 qirlib = { path = "../qirlib" }
-
-[dependencies.pyo3]
-version = "0.15.1"
+pyo3 = { version="0.15.2", optional = true }
 
 [features]
 extension-module = ["pyo3/abi3-py36", "pyo3/extension-module"]
-default = ["extension-module"]
+python-bindings = []
+default = ["extension-module", "python-bindings"]
+llvm11-0 = ["qirlib/llvm11-0"]
+llvm12-0 = ["qirlib/llvm12-0"]
+llvm13-0 = ["qirlib/llvm13-0"]
+llvm14-0 = ["qirlib/llvm14-0"]
 
 [dev-dependencies]
-serial_test = "0.5.1"
+serial_test = "0.6.0"
 
 [lib]
 name = "pyqir_evaluator"

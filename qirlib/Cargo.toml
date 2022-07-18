@@ -8,11 +8,18 @@ build = "build.rs"
 readme = "README.md"
 homepage = "https://github.com/qir-alliance/pyqir"
 repository = "https://github.com/qir-alliance/pyqir"
-rust-version = "1.56"
+rust-version = "1.57"
 
 [dependencies]
-llvm-sys = "110"
-inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["llvm11-0", "target-x86"] }
+# We can't reference the disable-alltargets-init feature without including
+# llvm-sys as a dep, even though inkwell brings in these exact versions.
+llvm-sys-110 = { package = "llvm-sys", version = "110.0.3", optional = true }
+llvm-sys-120 = { package = "llvm-sys", version = "120.2.2", optional = true }
+llvm-sys-130 = { package = "llvm-sys", version = "130.0.2", optional = true }
+llvm-sys-140 = { package = "llvm-sys", version = "140.0.2", optional = true }
+
+# The llvm version of inkwell is controlled through this crates features.
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["target-x86"] }
 log = "0.4.14"
 cty = "0.2.1"
 rand = "0.8.4"
@@ -22,7 +29,7 @@ mut_static = "5.0.0"
 bitvec = "1.0.0"
 
 [dev-dependencies]
-serial_test = "0.5.1"
+serial_test = "0.6.0"
 tempfile = "3.2.0"
 normalize-line-endings = "0.3.0"
 
@@ -37,19 +44,35 @@ semver = "1.0.6"
 name = "qirlib"
 
 [features]
+llvm11-0 = ["inkwell/llvm11-0"]
+llvm12-0 = ["inkwell/llvm12-0"]
+llvm13-0 = ["inkwell/llvm13-0"]
+llvm14-0 = ["inkwell/llvm14-0"]
 
 # default to use llvm-sys/inkwell for llvm linking
 default = ["external-llvm-linking"]
 external-llvm-linking = []
+
 # disable linking for local installation or packaging
-no-llvm-linking = ["llvm-sys/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
+# no-llvm-linking is marker used in the cfg checks
+llvm11-0-no-llvm-linking = ["llvm11-0", "no-llvm-linking", "llvm-sys-110/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
+llvm12-0-no-llvm-linking = ["llvm12-0", "no-llvm-linking", "llvm-sys-120/disable-alltargets-init", "inkwell/llvm12-0-no-llvm-linking"]
+llvm13-0-no-llvm-linking = ["llvm13-0", "no-llvm-linking", "llvm-sys-130/disable-alltargets-init", "inkwell/llvm13-0-no-llvm-linking"]
+llvm14-0-no-llvm-linking = ["llvm14-0", "no-llvm-linking", "llvm-sys-140/disable-alltargets-init", "inkwell/llvm14-0-no-llvm-linking"]
+
+no-llvm-linking = []
+
 # let qirlib do the llvm linking
-qirlib-llvm-linking = ["llvm-sys/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
+# qirlib-llvm-linking is marker used in the cfg checks
+llvm11-0-qirlib-llvm-linking = ["llvm11-0", "qirlib-llvm-linking", "llvm-sys-110/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
+llvm12-0-qirlib-llvm-linking = ["llvm12-0", "qirlib-llvm-linking", "llvm-sys-120/disable-alltargets-init", "inkwell/llvm12-0-no-llvm-linking"]
+llvm13-0-qirlib-llvm-linking = ["llvm13-0", "qirlib-llvm-linking", "llvm-sys-130/disable-alltargets-init", "inkwell/llvm13-0-no-llvm-linking"]
+llvm14-0-qirlib-llvm-linking = ["llvm14-0", "qirlib-llvm-linking", "llvm-sys-140/disable-alltargets-init", "inkwell/llvm14-0-no-llvm-linking"]
+
+qirlib-llvm-linking = []
 
 download-llvm = []
 build-llvm = []
 
 # Dev use only for packaging LLVM builds
 package-llvm = ["build-llvm", "no-llvm-linking"]
-
-

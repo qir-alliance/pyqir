@@ -9,6 +9,8 @@
 // from within rust, and wrappers for each class and function will be added to __init__.py so that the
 // parser API can have full python doc comments for usability.
 
+use crate::parse::verify_module_can_be_loaded;
+
 use super::parse::{
     BasicBlockExt, CallExt, ConstantExt, FunctionExt, IntructionExt, ModuleExt, NameExt, PhiExt,
     TypeExt,
@@ -32,6 +34,7 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
 
     #[pyfn(m)]
     fn module_from_bitcode(bc_path: PathBuf) -> PyResult<PyQirModule> {
+        verify_module_can_be_loaded(&bc_path).map_err(PyRuntimeError::new_err)?;
         llvm_ir::Module::from_bc_path(bc_path)
             .map(|module| PyQirModule { module })
             .map_err(PyRuntimeError::new_err)
@@ -297,14 +300,18 @@ impl PyQirBasicBlock {
 impl PyQirInstruction {
     #[getter]
     fn get_target_operands(&self) -> Vec<PyQirOperand> {
-        self.instr
-            .get_target_operands()
-            .iter()
-            .map(|op| PyQirOperand {
-                op: op.clone(),
-                types: self.types.clone(),
-            })
-            .collect()
+        if self.get_is_zext() {
+            vec![self.get_zext_operand().unwrap()]
+        } else {
+            self.instr
+                .get_target_operands()
+                .iter()
+                .map(|op| PyQirOperand {
+                    op: op.clone(),
+                    types: self.types.clone(),
+                })
+                .collect()
+        }
     }
 
     #[getter]
@@ -465,6 +472,23 @@ impl PyQirInstruction {
     }
 
     #[getter]
+    fn get_zext_operand(&self) -> Option<PyQirOperand> {
+        match_contents!(
+            &self.instr,
+            llvm_ir::Instruction::ZExt(llvm_ir::instruction::ZExt {
+                operand,
+                to_type: _,
+                dest: _,
+                debugloc: _,
+            }),
+            PyQirOperand {
+                op: operand.clone(),
+                types: self.types.clone(),
+            }
+        )
+    }
+
+    #[getter]
     fn get_is_sext(&self) -> bool {
         matches!(self.instr, llvm_ir::Instruction::SExt(_))
     }
@@ -586,6 +610,60 @@ impl PyQirInstruction {
     #[getter]
     fn get_is_select(&self) -> bool {
         matches!(self.instr, llvm_ir::Instruction::Select(_))
+    }
+
+    #[getter]
+    fn get_select_condition(&self) -> Option<PyQirOperand> {
+        match_contents!(
+            &self.instr,
+            llvm_ir::Instruction::Select(llvm_ir::instruction::Select {
+                condition,
+                true_value: _,
+                false_value: _,
+                dest: _,
+                debugloc: _,
+            }),
+            PyQirOperand {
+                op: condition.clone(),
+                types: self.types.clone(),
+            }
+        )
+    }
+
+    #[getter]
+    fn get_select_true_value(&self) -> Option<PyQirOperand> {
+        match_contents!(
+            &self.instr,
+            llvm_ir::Instruction::Select(llvm_ir::instruction::Select {
+                condition: _,
+                true_value,
+                false_value: _,
+                dest: _,
+                debugloc: _,
+            }),
+            PyQirOperand {
+                op: true_value.clone(),
+                types: self.types.clone(),
+            }
+        )
+    }
+
+    #[getter]
+    fn get_select_false_value(&self) -> Option<PyQirOperand> {
+        match_contents!(
+            &self.instr,
+            llvm_ir::Instruction::Select(llvm_ir::instruction::Select {
+                condition: _,
+                true_value: _,
+                false_value,
+                dest: _,
+                debugloc: _,
+            }),
+            PyQirOperand {
+                op: false_value.clone(),
+                types: self.types.clone(),
+            }
+        )
     }
 
     #[getter]
@@ -949,6 +1027,61 @@ impl PyQirConstant {
     #[getter]
     fn get_result_static_id(&self) -> Option<u64> {
         self.constantref.result_id()
+    }
+
+    #[getter]
+    fn get_is_global_byte_array(&self) -> bool {
+        match self.constantref.as_ref() {
+            llvm_ir::Constant::GetElementPtr(llvm_ir::constant::GetElementPtr {
+                address: addr,
+                indices: _,
+                in_bounds: _,
+            }) => match addr.as_ref() {
+                llvm_ir::Constant::GlobalReference {
+                    name: llvm_ir::Name::Number(_),
+                    ty: typeref,
+                } => match typeref.as_ref() {
+                    llvm_ir::Type::ArrayType {
+                        element_type: typeref,
+                        num_elements: _,
+                    } => matches!(typeref.as_ref(), llvm_ir::Type::IntegerType { bits: 8 }),
+                    _ => false,
+                },
+                _ => false,
+            },
+            _ => false,
+        }
+    }
+
+    fn get_global_byte_array_value(&self, module: &PyQirModule) -> Option<Vec<i8>> {
+        match self.constantref.as_ref() {
+            llvm_ir::Constant::GetElementPtr(llvm_ir::constant::GetElementPtr {
+                address: addr,
+                indices: _,
+                in_bounds: _,
+            }) => match addr.as_ref() {
+                llvm_ir::Constant::GlobalReference {
+                    name: llvm_ir::Name::Number(n),
+                    ty: _,
+                } => module
+                    .module
+                    .global_vars
+                    .iter()
+                    .find(|g| match &g.name {
+                        llvm_ir::Name::Number(m) => m == n,
+                        llvm_ir::Name::Name(_) => false,
+                    })
+                    .and_then(|global| {
+                        global
+                            .initializer
+                            .as_ref()
+                            .map(|init| init.as_ref().bytes_val())
+                    })
+                    .flatten(),
+                _ => None,
+            },
+            _ => None,
+        }
     }
 }
 
