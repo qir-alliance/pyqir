@@ -127,7 +127,7 @@ pub enum Instruction {
 pub struct Call {
     pub name: String,
     pub args: Vec<Value>,
-    pub result: Option<VariableValue>,
+    pub result: Option<Variable>,
 }
 
 #[derive(Clone, Copy)]
@@ -152,46 +152,46 @@ pub struct FunctionType {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
-    Integer(IntegerValue),
+    Integer(Integer),
     Double(f64),
     Qubit(String),
     Result(String),
-    Variable(VariableValue),
+    Variable(Variable),
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct VariableValue {
+pub struct Variable {
     id: i64,
 }
 
-impl Default for VariableValue {
+impl Default for Variable {
     fn default() -> Self {
         Self { id: 0 }
     }
 }
 
-impl VariableValue {
+impl Variable {
     pub fn next(&self) -> Self {
         Self { id: self.id + 1 }
     }
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct IntegerValue {
+pub struct Integer {
     width: u32,
     value: u64,
 }
 
-impl IntegerValue {
-    /// Creates a new `IntegerValue`, returning `None` if the number of bits required to represent
-    /// `value` is greater than `width`.
+impl Integer {
+    /// Creates a new integer, returning `None` if the number of bits required to represent `value`
+    /// is greater than `width`.
     #[must_use]
-    pub fn new(width: u32, value: u64) -> Option<IntegerValue> {
+    pub fn new(width: u32, value: u64) -> Option<Self> {
         let value_width = u64::BITS - u64::leading_zeros(value);
         if value_width > width {
             None
         } else {
-            Some(IntegerValue { width, value })
+            Some(Self { width, value })
         }
     }
 

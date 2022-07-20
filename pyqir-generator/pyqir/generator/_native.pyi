@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from pyqir.generator import types
-from pyqir.generator._values import Value
+from pyqir.generator._values import Valuable
 from typing import Callable, Optional, Sequence, Tuple
 
 
@@ -45,11 +45,14 @@ class Function:
     ...
 
 
+class Value:
+    """A value."""
+
+
 class Builder:
     """An instruction builder."""
 
-    # TODO: Value needs to be updated to include variables.
-    def call(self, function: Function, args: Sequence[Value]) -> Optional[Value]:
+    def call(self, function: Function, args: Sequence[Valuable]) -> Optional[Value]:
         """
         Builds a call instruction.
 

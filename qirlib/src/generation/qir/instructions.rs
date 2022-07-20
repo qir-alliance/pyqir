@@ -4,7 +4,7 @@
 use crate::{
     codegen::CodeGenerator,
     generation::{
-        interop::{Call, If, Instruction, Value, VariableValue},
+        interop::{Call, If, Instruction, Value, Variable},
         qir::result,
     },
 };
@@ -96,7 +96,7 @@ pub(crate) fn emit<'ctx>(
     inst: &Instruction,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
-    variables: &mut HashMap<VariableValue, BasicValueEnum<'ctx>>,
+    variables: &mut HashMap<Variable, BasicValueEnum<'ctx>>,
     entry_point: FunctionValue,
 ) {
     let get_qubit = |name| get_qubit(qubits, name);
@@ -178,7 +178,7 @@ fn emit_call<'ctx>(
     generator: &CodeGenerator<'ctx>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     results: &HashMap<String, Option<PointerValue<'ctx>>>,
-    variables: &mut HashMap<VariableValue, BasicValueEnum<'ctx>>,
+    variables: &mut HashMap<Variable, BasicValueEnum<'ctx>>,
     call: &Call,
 ) {
     let args: Vec<_> = call
@@ -219,7 +219,7 @@ fn emit_if<'ctx>(
     generator: &CodeGenerator<'ctx>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
-    variables: &mut HashMap<VariableValue, BasicValueEnum<'ctx>>,
+    variables: &mut HashMap<Variable, BasicValueEnum<'ctx>>,
     entry_point: FunctionValue,
     if_: &If,
 ) {

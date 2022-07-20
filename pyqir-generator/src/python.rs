@@ -11,9 +11,8 @@ use pyo3::{
 use qirlib::generation::{
     emit,
     interop::{
-        Call, ClassicalRegister, Controlled, FunctionType, If, Instruction, IntegerValue, Measured,
-        QuantumRegister, ReturnType, Rotated, SemanticModel, Single, Value, ValueType,
-        VariableValue,
+        self, Call, ClassicalRegister, Controlled, FunctionType, If, Instruction, Integer,
+        Measured, QuantumRegister, ReturnType, Rotated, SemanticModel, Single, ValueType, Variable,
     },
 };
 use std::{
@@ -55,6 +54,7 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<ResultRef>()?;
     m.add_class::<Function>()?;
     m.add_class::<Builder>()?;
+    m.add_class::<Value>()?;
     m.add_class::<SimpleModule>()?;
     m.add_class::<BasicQisBuilder>()?;
 
@@ -237,13 +237,13 @@ struct Function {
 
 #[derive(Clone)]
 #[pyclass]
-struct Variable(VariableValue);
+struct Value(interop::Value);
 
 #[pyclass]
 struct Builder {
     frames: Vec<Vec<Instruction>>,
     external_functions: Vec<(String, FunctionType)>,
-    next_variable: VariableValue,
+    next_variable: Variable,
 }
 
 #[pymethods]
@@ -257,7 +257,7 @@ impl Builder {
         }
     }
 
-    fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Variable>> {
+    fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Value>> {
         let (_, ty) = self
             .external_functions
             .iter()
@@ -289,7 +289,7 @@ impl Builder {
         }));
 
         self.next_variable = self.next_variable.next();
-        Ok(result.map(Variable))
+        Ok(result.map(|v| Value(interop::Value::Variable(v))))
     }
 }
 
@@ -531,19 +531,19 @@ impl BasicQisBuilder {
     }
 }
 
-fn extract_value(ob: &PyAny, ty: ValueType) -> PyResult<Value> {
-    match ob.extract::<Variable>() {
-        Ok(variable) => Ok(Value::Variable(variable.0)),
+fn extract_value(ob: &PyAny, ty: ValueType) -> PyResult<interop::Value> {
+    match ob.extract::<Value>() {
+        Ok(value) => Ok(value.0),
         Err(_) => match ty {
-            ValueType::Integer { width } => IntegerValue::new(width, ob.extract()?)
-                .map(Value::Integer)
+            ValueType::Integer { width } => Integer::new(width, ob.extract()?)
+                .map(interop::Value::Integer)
                 .ok_or_else(|| {
                     let message = format!("Value too big for {}-bit integer.", width);
                     PyErr::new::<PyOverflowError, _>(message)
                 }),
-            ValueType::Double => Ok(Value::Double(ob.extract()?)),
-            ValueType::Qubit => Ok(Value::Qubit(ob.extract::<Qubit>()?.id())),
-            ValueType::Result => Ok(Value::Result(ob.extract::<ResultRef>()?.id())),
+            ValueType::Double => Ok(interop::Value::Double(ob.extract()?)),
+            ValueType::Qubit => Ok(interop::Value::Qubit(ob.extract::<Qubit>()?.id())),
+            ValueType::Result => Ok(interop::Value::Result(ob.extract::<ResultRef>()?.id())),
         },
     }
 }

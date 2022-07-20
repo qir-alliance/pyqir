@@ -4,7 +4,7 @@
 use crate::{
     codegen::CodeGenerator,
     generation::{
-        interop::{self, ReturnType, SemanticModel, ValueType, VariableValue},
+        interop::{self, ReturnType, SemanticModel, ValueType, Variable},
         qir,
     },
     passes::run_basic_passes_on,
@@ -242,7 +242,7 @@ fn write_instructions<'ctx>(
     generator: &CodeGenerator<'ctx>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
     registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
-    variables: &mut HashMap<VariableValue, BasicValueEnum<'ctx>>,
+    variables: &mut HashMap<Variable, BasicValueEnum<'ctx>>,
     entry_point: FunctionValue,
 ) {
     for inst in &model.instructions {
@@ -384,7 +384,7 @@ mod if_tests {
     use super::test_utils::check_or_save_reference_ir;
     use crate::generation::interop::{
         Call, ClassicalRegister, FunctionType, If, Instruction, Measured, QuantumRegister,
-        ReturnType, SemanticModel, Single, Value, ValueType, VariableValue,
+        ReturnType, SemanticModel, Single, Value, ValueType, Variable,
     };
 
     #[test]
@@ -635,14 +635,14 @@ mod if_tests {
             qubits: vec![],
             instructions: vec![
                 Instruction::Call(Call {
-                    result: Some(VariableValue::default()),
+                    result: Some(Variable::default()),
                     name: "foo".to_string(),
                     args: vec![],
                 }),
                 Instruction::Call(Call {
                     result: None,
                     name: "bar".to_string(),
-                    args: vec![Value::Variable(VariableValue::default())],
+                    args: vec![Value::Variable(Variable::default())],
                 }),
             ],
             use_static_qubit_alloc: true,
