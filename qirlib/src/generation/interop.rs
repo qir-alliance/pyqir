@@ -71,13 +71,13 @@ impl Measured {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rotated {
-    pub theta: f64,
+    pub theta: Value,
     pub qubit: String,
 }
 
 impl Rotated {
     #[must_use]
-    pub fn new(theta: f64, qubit: String) -> Self {
+    pub fn new(theta: Value, qubit: String) -> Self {
         Rotated { theta, qubit }
     }
 }

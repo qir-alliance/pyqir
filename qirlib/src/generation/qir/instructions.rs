@@ -8,7 +8,7 @@ use crate::{
         qir::result,
     },
 };
-use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue};
+use inkwell::values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, PointerValue};
 use std::collections::HashMap;
 
 /// # Panics
@@ -52,6 +52,29 @@ fn get_result<'ctx>(
             .get(name)
             .unwrap_or_else(|| panic!("Result {} not found.", name))
             .unwrap_or_else(|| result::get_zero(generator))
+    }
+}
+
+fn get_value<'ctx>(
+    generator: &CodeGenerator<'ctx>,
+    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
+    results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    variables: &HashMap<Variable, BasicValueEnum<'ctx>>,
+    value: &Value,
+) -> BasicMetadataValueEnum<'ctx> {
+    match value {
+        Value::Integer(i) => generator
+            .context
+            .custom_width_int_type(i.width())
+            .const_int(i.value(), false)
+            .into(),
+        Value::Double(d) => generator.f64_to_f64(*d),
+        Value::Qubit(q) => get_qubit(qubits, q).into(),
+        Value::Result(r) => get_result(generator, results, r).into(),
+        Value::Variable(v) => (*variables
+            .get(v)
+            .unwrap_or_else(|| panic!("Variable {:?} not found.", v)))
+        .into(),
     }
 }
 
@@ -122,31 +145,19 @@ pub(crate) fn emit<'ctx>(
             generator.emit_void_call(generator.qis_reset_body(), &[get_qubit(&inst.qubit).into()]);
         }
         Instruction::Rx(inst) => {
-            generator.emit_void_call(
-                generator.qis_rx_body(),
-                &[
-                    generator.f64_to_f64(inst.theta),
-                    get_qubit(&inst.qubit).into(),
-                ],
-            );
+            let theta = get_value(generator, qubits, results, variables, &inst.theta);
+            let qubit = get_qubit(&inst.qubit).into();
+            generator.emit_void_call(generator.qis_rx_body(), &[theta, qubit]);
         }
         Instruction::Ry(inst) => {
-            generator.emit_void_call(
-                generator.qis_ry_body(),
-                &[
-                    generator.f64_to_f64(inst.theta),
-                    get_qubit(&inst.qubit).into(),
-                ],
-            );
+            let theta = get_value(generator, qubits, results, variables, &inst.theta);
+            let qubit = get_qubit(&inst.qubit).into();
+            generator.emit_void_call(generator.qis_ry_body(), &[theta, qubit]);
         }
         Instruction::Rz(inst) => {
-            generator.emit_void_call(
-                generator.qis_rz_body(),
-                &[
-                    generator.f64_to_f64(inst.theta),
-                    get_qubit(&inst.qubit).into(),
-                ],
-            );
+            let theta = get_value(generator, qubits, results, variables, &inst.theta);
+            let qubit = get_qubit(&inst.qubit).into();
+            generator.emit_void_call(generator.qis_rz_body(), &[theta, qubit]);
         }
         Instruction::S(inst) => {
             generator.emit_void_call(generator.qis_s_body(), &[get_qubit(&inst.qubit).into()]);

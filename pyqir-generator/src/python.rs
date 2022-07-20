@@ -437,19 +437,25 @@ impl BasicQisBuilder {
         self.push_inst(py, Instruction::Reset(single));
     }
 
-    fn rx(&self, py: Python, theta: f64, qubit: &Qubit) {
+    fn rx(&self, py: Python, theta: &PyAny, qubit: &Qubit) -> PyResult<()> {
+        let theta = extract_value(theta, ValueType::Double)?;
         let rotated = Rotated::new(theta, qubit.id());
         self.push_inst(py, Instruction::Rx(rotated));
+        Ok(())
     }
 
-    fn ry(&self, py: Python, theta: f64, qubit: &Qubit) {
+    fn ry(&self, py: Python, theta: &PyAny, qubit: &Qubit) -> PyResult<()> {
+        let theta = extract_value(theta, ValueType::Double)?;
         let rotated = Rotated::new(theta, qubit.id());
         self.push_inst(py, Instruction::Ry(rotated));
+        Ok(())
     }
 
-    fn rz(&self, py: Python, theta: f64, qubit: &Qubit) {
+    fn rz(&self, py: Python, theta: &PyAny, qubit: &Qubit) -> PyResult<()> {
+        let theta = extract_value(theta, ValueType::Double)?;
         let rotated = Rotated::new(theta, qubit.id());
         self.push_inst(py, Instruction::Rz(rotated));
+        Ok(())
     }
 
     fn s(&self, py: Python, qubit: &Qubit) {

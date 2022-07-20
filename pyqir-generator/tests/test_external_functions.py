@@ -244,3 +244,17 @@ class ExternalFunctionsTest(unittest.TestCase):
         self.assertIn("%0 = call i64 @foo()", ir)
         self.assertIn("%1 = call i64 @foo()", ir)
         self.assertIn("call void @bar(i64 %0, i64 %1)", ir)
+
+    def test_computed_rotation(self) -> None:
+        mod = SimpleModule("test", 1, 0)
+        qis = BasicQisBuilder(mod.builder)
+        foo = mod.add_external_function(
+            "foo", types.Function([], types.DOUBLE))
+
+        theta = mod.builder.call(foo, [])
+        qis.rz(theta, mod.qubits[0])
+
+        ir = mod.ir()
+        self.assertIn("%0 = call double @foo()", ir)
+        self.assertIn(
+            "call void @__quantum__qis__rz__body(double %0, %Qubit* null)", ir)
