@@ -69,3 +69,12 @@ linked with a separate library at compile time.
 
 Note that it's not currently possible to use the return value of an external
 function in subsequent instructions.
+
+## Python subset to QIR
+
+[python2qir.py](python2qir.py) transforms a subset of the Python language into QIR, by using:
+
+- the built-in `ast` (Abstract Syntax Tree) library to parse the source code
+- the `pyqir-generator` package to generate and display QIR
+
+Here, we transform a Qiskit circuit without using the Qiskit package.

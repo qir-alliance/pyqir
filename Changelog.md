@@ -10,6 +10,7 @@
 - Set LLVM 13 as the default by @idavis in https://github.com/qir-alliance/pyqir/pull/131
 - Fix type hinting errors by @LaurentAjdnik in https://github.com/qir-alliance/pyqir/pull/133
 - Create CODEOWNERS by @samarsha in https://github.com/qir-alliance/pyqir/pull/134
+- Parser should throw appropriate exception when loading invalid bitcode by @idavis in https://github.com/qir-alliance/pyqir/pull/136
 
 ## [0.4.2a1] - 2022-06-03
 

@@ -3,6 +3,7 @@
 
 use std::convert::{TryFrom, TryInto};
 use std::num::ParseIntError;
+use std::path::Path;
 
 use llvm_ir;
 
@@ -338,4 +339,11 @@ impl NameExt for llvm_ir::Name {
             llvm_ir::Name::Number(n) => n.to_string(),
         }
     }
+}
+
+pub(crate) fn verify_module_can_be_loaded(path: impl AsRef<Path>) -> Result<(), String> {
+    let context = inkwell::context::Context::create();
+    let _droppable = inkwell::module::Module::parse_bitcode_from_path(path, &context)
+        .map_err(|e| e.to_string())?;
+    Ok(())
 }

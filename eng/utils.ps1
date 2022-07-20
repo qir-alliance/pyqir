@@ -268,10 +268,18 @@ function Build-PyQIR([string]$project) {
             $build_extra_args = "--skip-auditwheel"
         }
         Invoke-LoggedCommand {
-            maturin build --release $build_extra_args --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
-            maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
-            & $python -m pip install -r requirements-dev.txt
-            & $python -m pytest
+            exec {
+                maturin build --release $build_extra_args --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
+            }
+            exec {
+                maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
+            }
+            exec {
+                & $python -m pip install -r requirements-dev.txt
+            }
+            exec {
+                & $python -m pytest
+            }
         }
     }
 }
