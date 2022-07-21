@@ -11,8 +11,8 @@ use pyo3::{
 use qirlib::generation::{
     emit,
     interop::{
-        self, Call, ClassicalRegister, Controlled, If, Instruction, Int, Measured, QuantumRegister,
-        Rotated, SemanticModel, Single, Type, Variable,
+        self, BinaryKind, BinaryOp, Call, ClassicalRegister, Controlled, If, Instruction, Int,
+        IntPredicate, Measured, QuantumRegister, Rotated, SemanticModel, Single, Type, Variable,
     },
 };
 use std::{
@@ -231,6 +231,84 @@ impl Builder {
         }
     }
 
+    fn neg(&mut self, _value: Value) -> Value {
+        todo!()
+    }
+
+    #[pyo3(name = "and_")]
+    fn and(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::And, lhs, rhs)
+    }
+
+    #[pyo3(name = "or_")]
+    fn or(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Or, lhs, rhs)
+    }
+
+    fn xor(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Xor, lhs, rhs)
+    }
+
+    fn add(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Add, lhs, rhs)
+    }
+
+    fn sub(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Sub, lhs, rhs)
+    }
+
+    fn mul(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Mul, lhs, rhs)
+    }
+
+    fn shl(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Shl, lhs, rhs)
+    }
+
+    fn lshr(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::LShr, lhs, rhs)
+    }
+
+    fn icmp_eq(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::ICmp(IntPredicate::EQ), lhs, rhs)
+    }
+
+    fn icmp_neq(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::ICmp(IntPredicate::NE), lhs, rhs)
+    }
+
+    fn icmp_ugt(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::ICmp(IntPredicate::UGT), lhs, rhs)
+    }
+
+    fn icmp_uge(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::ICmp(IntPredicate::UGE), lhs, rhs)
+    }
+
+    fn icmp_ult(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::ICmp(IntPredicate::ULT), lhs, rhs)
+    }
+
+    fn icmp_ule(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::ICmp(IntPredicate::ULE), lhs, rhs)
+    }
+
+    fn icmp_sgt(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::ICmp(IntPredicate::SGT), lhs, rhs)
+    }
+
+    fn icmp_sge(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::ICmp(IntPredicate::SGE), lhs, rhs)
+    }
+
+    fn icmp_slt(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::ICmp(IntPredicate::SLT), lhs, rhs)
+    }
+
+    fn icmp_sle(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::ICmp(IntPredicate::SLE), lhs, rhs)
+    }
+
     fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Value>> {
         let (param_types, return_type) = match function.ty {
             Type::Function { params, result } => (params, result),
@@ -282,6 +360,18 @@ impl Builder {
         let v = self.next_variable;
         self.next_variable = v.next();
         v
+    }
+
+    fn push_binary_op(&mut self, kind: BinaryKind, lhs: Value, rhs: Value) -> Value {
+        let result = self.fresh_variable();
+        self.push_inst(Instruction::BinaryOp(BinaryOp {
+            kind,
+            lhs: lhs.0,
+            rhs: rhs.0,
+            result,
+        }));
+
+        Value(interop::Value::Variable(result))
     }
 }
 

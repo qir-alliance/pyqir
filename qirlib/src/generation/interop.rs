@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::IntPredicate;
+pub use inkwell::IntPredicate;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct QuantumRegister {
