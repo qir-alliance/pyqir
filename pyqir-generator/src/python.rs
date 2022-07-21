@@ -253,7 +253,7 @@ impl Builder {
         Builder {
             frames: vec![vec![]],
             external_functions: vec![],
-            next_variable: Default::default(),
+            next_variable: Variable::default(),
         }
     }
 
@@ -279,7 +279,7 @@ impl Builder {
 
         let result = match ty.return_type {
             ReturnType::Void => None,
-            _ => Some(self.next_variable),
+            ReturnType::Value(_) => Some(self.next_variable),
         };
 
         self.push_inst(Instruction::Call(Call {
