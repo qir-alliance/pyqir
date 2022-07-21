@@ -226,7 +226,6 @@ class ExternalFunctionsTest(unittest.TestCase):
         x = mod.builder.call(foo, [])
         mod.builder.call(bar, [x])
 
-        # TODO: Should this be a TypeError?
         with self.assertRaisesRegex(OSError, "Call parameter type does not match function signature!"):
             mod.ir()
 
@@ -238,7 +237,6 @@ class ExternalFunctionsTest(unittest.TestCase):
         x = mod.builder.call(foo, [])
         qis.rz(x, mod.qubits[0])
 
-        # TODO: Should this be a TypeError?
         with self.assertRaisesRegex(OSError, "Call parameter type does not match function signature!"):
             mod.ir()
 
