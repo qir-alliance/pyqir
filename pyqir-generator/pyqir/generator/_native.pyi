@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from pyqir.generator import types
-from pyqir.generator._values import Value
+from pyqir.generator._values import Valuable
 from typing import Callable, Optional, Sequence, Tuple
 
 
@@ -16,6 +16,7 @@ def ir_to_bitcode(ir: str, module_name: Optional[str], source_file_name: Optiona
     :return: The equivalent bitcode as bytes.
     """
     ...
+
 
 def bitcode_to_ir(bitcode: bytes, module_name: Optional[str], source_file_name: Optional[str]) -> str:
     """
@@ -44,10 +45,14 @@ class Function:
     ...
 
 
+class Value:
+    """A value."""
+
+
 class Builder:
     """An instruction builder."""
 
-    def call(self, function: Function, args: Sequence[Value]) -> None:
+    def call(self, function: Function, args: Sequence[Valuable]) -> Optional[Value]:
         """
         Builds a call instruction.
 
@@ -198,7 +203,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def rx(self, theta: float, qubit: Qubit) -> None:
+    def rx(self, theta: Valuable, qubit: Qubit) -> None:
         """
         Builds a rotation gate about the :math:`x` axis.
 
@@ -207,7 +212,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def ry(self, theta: float, qubit: Qubit) -> None:
+    def ry(self, theta: Valuable, qubit: Qubit) -> None:
         """
         Builds a rotation gate about the :math:`y` axis.
 
@@ -216,7 +221,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def rz(self, theta: float, qubit: Qubit) -> None:
+    def rz(self, theta: Valuable, qubit: Qubit) -> None:
         """
         Builds a rotation gate about the :math:`z` axis.
 

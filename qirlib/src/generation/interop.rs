@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use std::collections::HashMap;
-
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct QuantumRegister {
     pub name: String,
@@ -73,13 +71,13 @@ impl Measured {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rotated {
-    pub theta: f64,
+    pub theta: Value,
     pub qubit: String,
 }
 
 impl Rotated {
     #[must_use]
-    pub fn new(theta: f64, qubit: String) -> Self {
+    pub fn new(theta: Value, qubit: String) -> Self {
         Rotated { theta, qubit }
     }
 }
@@ -129,6 +127,7 @@ pub enum Instruction {
 pub struct Call {
     pub name: String,
     pub args: Vec<Value>,
+    pub result: Option<Variable>,
 }
 
 #[derive(Clone, Copy)]
@@ -153,28 +152,41 @@ pub struct FunctionType {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
-    Integer(IntegerValue),
+    Integer(Integer),
     Double(f64),
     Qubit(String),
     Result(String),
+    Variable(Variable),
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub struct Variable {
+    id: i64,
+}
+
+impl Variable {
+    #[must_use]
+    pub fn next(&self) -> Self {
+        Self { id: self.id + 1 }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct IntegerValue {
+pub struct Integer {
     width: u32,
     value: u64,
 }
 
-impl IntegerValue {
-    /// Creates a new `IntegerValue`, returning `None` if the number of bits required to represent
-    /// `value` is greater than `width`.
+impl Integer {
+    /// Creates a new integer, returning `None` if the number of bits required to represent `value`
+    /// is greater than `width`.
     #[must_use]
-    pub fn new(width: u32, value: u64) -> Option<IntegerValue> {
+    pub fn new(width: u32, value: u64) -> Option<Self> {
         let value_width = u64::BITS - u64::leading_zeros(value);
         if value_width > width {
             None
         } else {
-            Some(IntegerValue { width, value })
+            Some(Self { width, value })
         }
     }
 
@@ -195,7 +207,7 @@ pub struct SemanticModel {
     pub instructions: Vec<Instruction>,
     pub use_static_qubit_alloc: bool,
     pub use_static_result_alloc: bool,
-    pub external_functions: HashMap<String, FunctionType>,
+    pub external_functions: Vec<(String, FunctionType)>,
 }
 
 impl SemanticModel {
@@ -208,7 +220,7 @@ impl SemanticModel {
             instructions: vec![],
             use_static_qubit_alloc: false,
             use_static_result_alloc: true,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         }
     }
 

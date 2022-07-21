@@ -62,8 +62,6 @@ pub fn bitcode_to_ir(
 
 #[cfg(test)]
 mod module_conversion_tests {
-    use std::collections::HashMap;
-
     use crate::generation::emit;
 
     use super::interop::{
@@ -87,7 +85,7 @@ mod module_conversion_tests {
             ))],
             use_static_qubit_alloc,
             use_static_result_alloc,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         }
     }
 

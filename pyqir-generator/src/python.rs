@@ -11,12 +11,12 @@ use pyo3::{
 use qirlib::generation::{
     emit,
     interop::{
-        Call, ClassicalRegister, Controlled, FunctionType, If, Instruction, IntegerValue, Measured,
-        QuantumRegister, ReturnType, Rotated, SemanticModel, Single, Value, ValueType,
+        self, Call, ClassicalRegister, Controlled, FunctionType, If, Instruction, Integer,
+        Measured, QuantumRegister, ReturnType, Rotated, SemanticModel, Single, ValueType, Variable,
     },
 };
 use std::{
-    collections::{hash_map::DefaultHasher, HashMap},
+    collections::hash_map::DefaultHasher,
     hash::{Hash, Hasher},
     vec,
 };
@@ -54,6 +54,7 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<ResultRef>()?;
     m.add_class::<Function>()?;
     m.add_class::<Builder>()?;
+    m.add_class::<Value>()?;
     m.add_class::<SimpleModule>()?;
     m.add_class::<BasicQisBuilder>()?;
 
@@ -234,10 +235,15 @@ struct Function {
     name: String,
 }
 
+#[derive(Clone)]
+#[pyclass]
+struct Value(interop::Value);
+
 #[pyclass]
 struct Builder {
     frames: Vec<Vec<Instruction>>,
-    external_functions: HashMap<String, FunctionType>,
+    external_functions: Vec<(String, FunctionType)>,
+    next_variable: Variable,
 }
 
 #[pymethods]
@@ -246,29 +252,44 @@ impl Builder {
     fn new() -> Builder {
         Builder {
             frames: vec![vec![]],
-            external_functions: HashMap::new(),
+            external_functions: vec![],
+            next_variable: Variable::default(),
         }
     }
 
-    fn call(&mut self, function: Function, args: &PySequence) -> PyResult<()> {
-        let name = function.name;
-        let ty = self.external_functions.get(&name).unwrap();
+    fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Value>> {
+        let (_, ty) = self
+            .external_functions
+            .iter()
+            .find(|f| f.0 == function.name)
+            .expect("Function not found in module.");
+
         let num_params = ty.param_types.len();
         let num_args = args.len()?;
-
-        let typed_args = if num_args == num_params {
-            args.iter()?.zip(&ty.param_types)
-        } else {
+        if num_params != num_args {
             let message = format!("Expected {} arguments, got {}.", num_params, num_args);
             return Err(PyErr::new::<PyValueError, _>(message));
-        };
+        }
 
-        let args = typed_args
+        let args = args
+            .iter()?
+            .zip(&ty.param_types)
             .map(|(arg, &ty)| extract_value(arg?, ty))
             .collect::<PyResult<_>>()?;
 
-        self.push_inst(Instruction::Call(Call { name, args }));
-        Ok(())
+        let result = match ty.return_type {
+            ReturnType::Void => None,
+            ReturnType::Value(_) => Some(self.next_variable),
+        };
+
+        self.push_inst(Instruction::Call(Call {
+            name: function.name,
+            args,
+            result,
+        }));
+
+        self.next_variable = self.next_variable.next();
+        Ok(result.map(|v| Value(interop::Value::Variable(v))))
     }
 }
 
@@ -304,7 +325,7 @@ impl SimpleModule {
 
         let model = SemanticModel {
             name,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
             registers,
             qubits,
             instructions: Vec::new(),
@@ -351,7 +372,7 @@ impl SimpleModule {
 
     fn add_external_function(&mut self, py: Python, name: String, ty: PyFunctionType) -> Function {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.external_functions.insert(name.clone(), ty.into());
+        builder.external_functions.push((name.clone(), ty.into()));
         Function { name }
     }
 
@@ -416,19 +437,25 @@ impl BasicQisBuilder {
         self.push_inst(py, Instruction::Reset(single));
     }
 
-    fn rx(&self, py: Python, theta: f64, qubit: &Qubit) {
+    fn rx(&self, py: Python, theta: &PyAny, qubit: &Qubit) -> PyResult<()> {
+        let theta = extract_value(theta, ValueType::Double)?;
         let rotated = Rotated::new(theta, qubit.id());
         self.push_inst(py, Instruction::Rx(rotated));
+        Ok(())
     }
 
-    fn ry(&self, py: Python, theta: f64, qubit: &Qubit) {
+    fn ry(&self, py: Python, theta: &PyAny, qubit: &Qubit) -> PyResult<()> {
+        let theta = extract_value(theta, ValueType::Double)?;
         let rotated = Rotated::new(theta, qubit.id());
         self.push_inst(py, Instruction::Ry(rotated));
+        Ok(())
     }
 
-    fn rz(&self, py: Python, theta: f64, qubit: &Qubit) {
+    fn rz(&self, py: Python, theta: &PyAny, qubit: &Qubit) -> PyResult<()> {
+        let theta = extract_value(theta, ValueType::Double)?;
         let rotated = Rotated::new(theta, qubit.id());
         self.push_inst(py, Instruction::Rz(rotated));
+        Ok(())
     }
 
     fn s(&self, py: Python, qubit: &Qubit) {
@@ -510,16 +537,19 @@ impl BasicQisBuilder {
     }
 }
 
-fn extract_value(ob: &PyAny, ty: ValueType) -> PyResult<Value> {
-    match ty {
-        ValueType::Integer { width } => IntegerValue::new(width, ob.extract()?)
-            .map(Value::Integer)
-            .ok_or_else(|| {
-                let message = format!("Value too big for {}-bit integer.", width);
-                PyErr::new::<PyOverflowError, _>(message)
-            }),
-        ValueType::Double => Ok(Value::Double(ob.extract()?)),
-        ValueType::Qubit => Ok(Value::Qubit(ob.extract::<Qubit>()?.id())),
-        ValueType::Result => Ok(Value::Result(ob.extract::<ResultRef>()?.id())),
+fn extract_value(ob: &PyAny, ty: ValueType) -> PyResult<interop::Value> {
+    match ob.extract::<Value>() {
+        Ok(value) => Ok(value.0),
+        Err(_) => match ty {
+            ValueType::Integer { width } => Integer::new(width, ob.extract()?)
+                .map(interop::Value::Integer)
+                .ok_or_else(|| {
+                    let message = format!("Value too big for {}-bit integer.", width);
+                    PyErr::new::<PyOverflowError, _>(message)
+                }),
+            ValueType::Double => Ok(interop::Value::Double(ob.extract()?)),
+            ValueType::Qubit => Ok(interop::Value::Qubit(ob.extract::<Qubit>()?.id())),
+            ValueType::Result => Ok(interop::Value::Result(ob.extract::<ResultRef>()?.id())),
+        },
     }
 }

@@ -203,3 +203,74 @@ class ExternalFunctionsTest(unittest.TestCase):
                 message = f"Expected {len(param_types)} arguments, got {len(args)}."
                 with self.assertRaisesRegex(ValueError, message):
                     mod.builder.call(f, args)
+
+    def test_variable(self) -> None:
+        mod = SimpleModule("test", 0, 0)
+        foo = mod.add_external_function("foo", types.Function([], types.INT))
+        bar = mod.add_external_function(
+            "bar", types.Function([types.INT], types.VOID))
+
+        x = mod.builder.call(foo, [])
+        mod.builder.call(bar, [x])
+
+        ir = mod.ir()
+        self.assertIn("%0 = call i64 @foo()", ir)
+        self.assertIn("call void @bar(i64 %0)", ir)
+
+    def test_variable_wrong_external_type(self) -> None:
+        mod = SimpleModule("test", 0, 0)
+        foo = mod.add_external_function("foo", types.Function([], types.INT))
+        bar = mod.add_external_function(
+            "bar", types.Function([types.QUBIT], types.VOID))
+
+        x = mod.builder.call(foo, [])
+        mod.builder.call(bar, [x])
+
+        with self.assertRaisesRegex(OSError, "Call parameter type does not match function signature!"):
+            mod.ir()
+
+    def test_variable_wrong_angle_type(self) -> None:
+        mod = SimpleModule("test", 1, 0)
+        qis = BasicQisBuilder(mod.builder)
+        foo = mod.add_external_function("foo", types.Function([], types.INT))
+
+        x = mod.builder.call(foo, [])
+        qis.rz(x, mod.qubits[0])
+
+        with self.assertRaisesRegex(OSError, "Call parameter type does not match function signature!"):
+            mod.ir()
+
+    def test_two_variables(self) -> None:
+        mod = SimpleModule("test", 0, 0)
+        foo = mod.add_external_function("foo", types.Function([], types.INT))
+        bar = mod.add_external_function(
+            "bar", types.Function([types.INT, types.INT], types.VOID))
+
+        x = mod.builder.call(foo, [])
+        y = mod.builder.call(foo, [])
+        mod.builder.call(bar, [x, y])
+
+        ir = mod.ir()
+        self.assertIn("%0 = call i64 @foo()", ir)
+        self.assertIn("%1 = call i64 @foo()", ir)
+        self.assertIn("call void @bar(i64 %0, i64 %1)", ir)
+
+    def test_computed_rotation(self) -> None:
+        mod = SimpleModule("test", 1, 0)
+        qis = BasicQisBuilder(mod.builder)
+        foo = mod.add_external_function(
+            "foo", types.Function([], types.DOUBLE))
+
+        theta = mod.builder.call(foo, [])
+        qis.rx(theta, mod.qubits[0])
+        qis.ry(theta, mod.qubits[0])
+        qis.rz(theta, mod.qubits[0])
+
+        ir = mod.ir()
+        self.assertIn("%0 = call double @foo()", ir)
+        self.assertIn(
+            "call void @__quantum__qis__rx__body(double %0, %Qubit* null)", ir)
+        self.assertIn(
+            "call void @__quantum__qis__ry__body(double %0, %Qubit* null)", ir)
+        self.assertIn(
+            "call void @__quantum__qis__rz__body(double %0, %Qubit* null)", ir)
