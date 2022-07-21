@@ -159,18 +159,13 @@ pub enum Value {
     Variable(Variable),
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 pub struct Variable {
     id: i64,
 }
 
-impl Default for Variable {
-    fn default() -> Self {
-        Self { id: 0 }
-    }
-}
-
 impl Variable {
+    #[must_use]
     pub fn next(&self) -> Self {
         Self { id: self.id + 1 }
     }
