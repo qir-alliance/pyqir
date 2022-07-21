@@ -217,7 +217,7 @@ class ExternalFunctionsTest(unittest.TestCase):
         self.assertIn("%0 = call i64 @foo()", ir)
         self.assertIn("call void @bar(i64 %0)", ir)
 
-    def test_variable_type_mismatch(self) -> None:
+    def test_variable_wrong_external_type(self) -> None:
         mod = SimpleModule("test", 0, 0)
         foo = mod.add_external_function("foo", types.Function([], types.INT))
         bar = mod.add_external_function(
@@ -225,6 +225,18 @@ class ExternalFunctionsTest(unittest.TestCase):
 
         x = mod.builder.call(foo, [])
         mod.builder.call(bar, [x])
+
+        # TODO: Should this be a TypeError?
+        with self.assertRaisesRegex(OSError, "Call parameter type does not match function signature!"):
+            mod.ir()
+
+    def test_variable_wrong_angle_type(self) -> None:
+        mod = SimpleModule("test", 1, 0)
+        qis = BasicQisBuilder(mod.builder)
+        foo = mod.add_external_function("foo", types.Function([], types.INT))
+
+        x = mod.builder.call(foo, [])
+        qis.rz(x, mod.qubits[0])
 
         # TODO: Should this be a TypeError?
         with self.assertRaisesRegex(OSError, "Call parameter type does not match function signature!"):

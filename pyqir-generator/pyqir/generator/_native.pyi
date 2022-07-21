@@ -203,7 +203,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def rx(self, theta: float, qubit: Qubit) -> None:
+    def rx(self, theta: Valuable, qubit: Qubit) -> None:
         """
         Builds a rotation gate about the :math:`x` axis.
 
@@ -212,7 +212,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def ry(self, theta: float, qubit: Qubit) -> None:
+    def ry(self, theta: Valuable, qubit: Qubit) -> None:
         """
         Builds a rotation gate about the :math:`y` axis.
 
@@ -221,7 +221,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def rz(self, theta: float, qubit: Qubit) -> None:
+    def rz(self, theta: Valuable, qubit: Qubit) -> None:
         """
         Builds a rotation gate about the :math:`z` axis.
 
