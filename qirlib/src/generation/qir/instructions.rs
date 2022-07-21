@@ -5,7 +5,7 @@ use crate::{
     codegen::CodeGenerator,
     generation::{
         env::{Environment, ResultState},
-        interop::{Call, If, Instruction, Value},
+        interop::{BinaryKind, BinaryOp, Call, If, Instruction, Value},
         qir::result,
     },
 };
@@ -157,9 +157,31 @@ pub(crate) fn emit<'ctx>(
             let qubit = get_value(generator, env, &inst.qubit);
             generator.emit_void_call(generator.qis_z_body(), &[qubit]);
         }
+        Instruction::BinaryOp(op) => emit_binary_op(generator, env, op),
         Instruction::Call(call) => emit_call(generator, env, call),
         Instruction::If(if_) => emit_if(generator, env, entry_point, if_),
     }
+}
+
+fn emit_binary_op<'ctx>(
+    generator: &CodeGenerator<'ctx>,
+    env: &mut Environment<'ctx>,
+    op: &BinaryOp,
+) {
+    let lhs = get_value(generator, env, &op.lhs).into_int_value();
+    let rhs = get_value(generator, env, &op.rhs).into_int_value();
+    let result = match op.kind {
+        BinaryKind::And => generator.builder.build_and(lhs, rhs, ""),
+        BinaryKind::Or => generator.builder.build_or(lhs, rhs, ""),
+        BinaryKind::Xor => generator.builder.build_xor(lhs, rhs, ""),
+        BinaryKind::Add => generator.builder.build_int_add(lhs, rhs, ""),
+        BinaryKind::Sub => generator.builder.build_int_sub(lhs, rhs, ""),
+        BinaryKind::Mul => generator.builder.build_int_mul(lhs, rhs, ""),
+        BinaryKind::Shl => generator.builder.build_left_shift(lhs, rhs, ""),
+        BinaryKind::LShr => generator.builder.build_right_shift(lhs, rhs, false, ""),
+        BinaryKind::ICmp(pred) => generator.builder.build_int_compare(pred, lhs, rhs, ""),
+    };
+    env.set_variable(op.result, result.into()).unwrap();
 }
 
 fn emit_call<'ctx>(generator: &CodeGenerator<'ctx>, env: &mut Environment<'ctx>, call: &Call) {

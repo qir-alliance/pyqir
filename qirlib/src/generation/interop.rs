@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use inkwell::IntPredicate;
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct QuantumRegister {
     pub name: String,
@@ -119,8 +121,30 @@ pub enum Instruction {
     Rz(Rotated),
     Reset(Single),
     M(Measured),
+    BinaryOp(BinaryOp),
     Call(Call),
     If(If),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct BinaryOp {
+    pub kind: BinaryKind,
+    pub lhs: Value,
+    pub rhs: Value,
+    pub result: Variable,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum BinaryKind {
+    And,
+    Or,
+    Xor,
+    Add,
+    Sub,
+    Mul,
+    Shl,
+    LShr,
+    ICmp(IntPredicate),
 }
 
 #[derive(Clone, Debug, PartialEq)]
