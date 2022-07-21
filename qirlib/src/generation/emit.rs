@@ -383,9 +383,10 @@ mod result_alloc_tests {
 mod if_tests {
     use super::test_utils::check_or_save_reference_ir;
     use crate::generation::interop::{
-        Call, ClassicalRegister, FunctionType, If, Instruction, Measured, QuantumRegister,
-        ReturnType, SemanticModel, Single, Value, ValueType, Variable,
+        BinaryKind, BinaryOp, Call, ClassicalRegister, FunctionType, If, Instruction, Measured,
+        QuantumRegister, ReturnType, SemanticModel, Single, Value, ValueType, Variable,
     };
+    use inkwell::IntPredicate;
 
     #[test]
     fn test_if_then() -> Result<(), String> {
@@ -659,6 +660,97 @@ mod if_tests {
                     "bar".to_string(),
                     FunctionType {
                         param_types: vec![ValueType::Integer { width: 64 }],
+                        return_type: ReturnType::Void,
+                    },
+                ),
+            ],
+        })
+    }
+
+    #[test]
+    fn test_int_binop_intrinsics() -> Result<(), String> {
+        let mut instructions = vec![];
+        let lhs = Variable::default();
+        let rhs = lhs.next();
+
+        for result in [lhs, rhs] {
+            instructions.push(Instruction::Call(Call {
+                name: "source".to_string(),
+                args: vec![],
+                result: Some(result),
+            }));
+        }
+
+        let kinds = [
+            BinaryKind::And,
+            BinaryKind::Or,
+            BinaryKind::Xor,
+            BinaryKind::Add,
+            BinaryKind::Sub,
+            BinaryKind::Mul,
+            BinaryKind::Shl,
+            BinaryKind::LShr,
+            BinaryKind::ICmp(IntPredicate::EQ),
+            BinaryKind::ICmp(IntPredicate::NE),
+            BinaryKind::ICmp(IntPredicate::UGT),
+            BinaryKind::ICmp(IntPredicate::UGE),
+            BinaryKind::ICmp(IntPredicate::ULT),
+            BinaryKind::ICmp(IntPredicate::ULE),
+            BinaryKind::ICmp(IntPredicate::SGT),
+            BinaryKind::ICmp(IntPredicate::SGE),
+            BinaryKind::ICmp(IntPredicate::SLT),
+            BinaryKind::ICmp(IntPredicate::SLE),
+        ];
+
+        let mut result = rhs.next();
+        for kind in kinds {
+            let sink = match kind {
+                BinaryKind::ICmp(_) => "sink_i1".to_string(),
+                _ => "sink_i32".to_string(),
+            };
+
+            instructions.push(Instruction::BinaryOp(BinaryOp {
+                kind,
+                lhs: Value::Variable(lhs),
+                rhs: Value::Variable(rhs),
+                result,
+            }));
+
+            instructions.push(Instruction::Call(Call {
+                name: sink,
+                args: vec![Value::Variable(result)],
+                result: None,
+            }));
+
+            result = result.next();
+        }
+
+        check_or_save_reference_ir(&SemanticModel {
+            name: "test_int_binop_intrinsics".to_string(),
+            registers: vec![],
+            qubits: vec![],
+            instructions,
+            use_static_qubit_alloc: false,
+            use_static_result_alloc: false,
+            external_functions: vec![
+                (
+                    "source".to_string(),
+                    FunctionType {
+                        param_types: vec![],
+                        return_type: ReturnType::Value(ValueType::Integer { width: 32 }),
+                    },
+                ),
+                (
+                    "sink_i1".to_string(),
+                    FunctionType {
+                        param_types: vec![ValueType::Integer { width: 1 }],
+                        return_type: ReturnType::Void,
+                    },
+                ),
+                (
+                    "sink_i32".to_string(),
+                    FunctionType {
+                        param_types: vec![ValueType::Integer { width: 32 }],
                         return_type: ReturnType::Void,
                     },
                 ),
