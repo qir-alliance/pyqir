@@ -252,9 +252,15 @@ class ExternalFunctionsTest(unittest.TestCase):
             "foo", types.Function([], types.DOUBLE))
 
         theta = mod.builder.call(foo, [])
+        qis.rx(theta, mod.qubits[0])
+        qis.ry(theta, mod.qubits[0])
         qis.rz(theta, mod.qubits[0])
 
         ir = mod.ir()
         self.assertIn("%0 = call double @foo()", ir)
+        self.assertIn(
+            "call void @__quantum__qis__rx__body(double %0, %Qubit* null)", ir)
+        self.assertIn(
+            "call void @__quantum__qis__ry__body(double %0, %Qubit* null)", ir)
         self.assertIn(
             "call void @__quantum__qis__rz__body(double %0, %Qubit* null)", ir)
