@@ -217,7 +217,7 @@ fn constant(ty: PyType, value: &PyAny) -> PyResult<Value> {
 struct Builder {
     frames: Vec<Vec<Instruction>>,
     external_functions: Vec<Function>,
-    next_variable: Variable,
+    last_variable: Option<Variable>,
 }
 
 #[pymethods]
@@ -227,86 +227,92 @@ impl Builder {
         Builder {
             frames: vec![vec![]],
             external_functions: vec![],
-            next_variable: Variable::default(),
+            last_variable: None,
         }
     }
 
-    fn neg(&mut self, _value: Value) -> Value {
-        todo!()
+    fn neg(&mut self, value: Value) -> PyResult<Value> {
+        match value.0.type_of() {
+            Type::Int { width, .. } => {
+                let zero = interop::Value::Int(Int::new(width, 0).unwrap());
+                Ok(self.push_binary_op(BinaryKind::Sub, zero, value.0))
+            }
+            _ => Err(PyTypeError::new_err("Value must be an integer.")),
+        }
     }
 
     #[pyo3(name = "and_")]
-    fn and(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::And, lhs, rhs)
+    fn and(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::And, lhs, rhs)
     }
 
     #[pyo3(name = "or_")]
-    fn or(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::Or, lhs, rhs)
+    fn or(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::Or, lhs, rhs)
     }
 
-    fn xor(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::Xor, lhs, rhs)
+    fn xor(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::Xor, lhs, rhs)
     }
 
-    fn add(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::Add, lhs, rhs)
+    fn add(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::Add, lhs, rhs)
     }
 
-    fn sub(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::Sub, lhs, rhs)
+    fn sub(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::Sub, lhs, rhs)
     }
 
-    fn mul(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::Mul, lhs, rhs)
+    fn mul(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::Mul, lhs, rhs)
     }
 
-    fn shl(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::Shl, lhs, rhs)
+    fn shl(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::Shl, lhs, rhs)
     }
 
-    fn lshr(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::LShr, lhs, rhs)
+    fn lshr(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::LShr, lhs, rhs)
     }
 
-    fn icmp_eq(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::ICmp(IntPredicate::EQ), lhs, rhs)
+    fn icmp_eq(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::EQ), lhs, rhs)
     }
 
-    fn icmp_neq(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::ICmp(IntPredicate::NE), lhs, rhs)
+    fn icmp_neq(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::NE), lhs, rhs)
     }
 
-    fn icmp_ugt(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::ICmp(IntPredicate::UGT), lhs, rhs)
+    fn icmp_ugt(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::UGT), lhs, rhs)
     }
 
-    fn icmp_uge(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::ICmp(IntPredicate::UGE), lhs, rhs)
+    fn icmp_uge(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::UGE), lhs, rhs)
     }
 
-    fn icmp_ult(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::ICmp(IntPredicate::ULT), lhs, rhs)
+    fn icmp_ult(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::ULT), lhs, rhs)
     }
 
-    fn icmp_ule(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::ICmp(IntPredicate::ULE), lhs, rhs)
+    fn icmp_ule(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::ULE), lhs, rhs)
     }
 
-    fn icmp_sgt(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::ICmp(IntPredicate::SGT), lhs, rhs)
+    fn icmp_sgt(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::SGT), lhs, rhs)
     }
 
-    fn icmp_sge(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::ICmp(IntPredicate::SGE), lhs, rhs)
+    fn icmp_sge(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::SGE), lhs, rhs)
     }
 
-    fn icmp_slt(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::ICmp(IntPredicate::SLT), lhs, rhs)
+    fn icmp_slt(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::SLT), lhs, rhs)
     }
 
-    fn icmp_sle(&mut self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::ICmp(IntPredicate::SLE), lhs, rhs)
+    fn icmp_sle(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::SLE), lhs, rhs)
     }
 
     fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Value>> {
@@ -330,13 +336,13 @@ impl Builder {
 
         let result = match *return_type {
             Type::Void => None,
-            _ => Some(self.fresh_variable()),
+            _ => Some(self.fresh_variable(*return_type)),
         };
 
         self.push_inst(Instruction::Call(Call {
             name: function.name,
             args,
-            result,
+            result: result.clone(),
         }));
 
         Ok(result.map(|v| Value(interop::Value::Variable(v))))
@@ -356,19 +362,38 @@ impl Builder {
         self.frames.pop()
     }
 
-    fn fresh_variable(&mut self) -> Variable {
-        let v = self.next_variable;
-        self.next_variable = v.next();
+    fn fresh_variable(&mut self, ty: Type) -> Variable {
+        let v = match &self.last_variable {
+            None => Variable::new(ty),
+            Some(v) => v.next(ty),
+        };
+        self.last_variable = Some(v.clone());
         v
     }
 
-    fn push_binary_op(&mut self, kind: BinaryKind, lhs: Value, rhs: Value) -> Value {
-        let result = self.fresh_variable();
+    fn push_binary_op_any(
+        &mut self,
+        kind: BinaryKind,
+        lhs: &PyAny,
+        rhs: &PyAny,
+    ) -> PyResult<Value> {
+        let (lhs, rhs) = extract_binary_operands(lhs, rhs)?;
+        Ok(self.push_binary_op(kind, lhs, rhs))
+    }
+
+    fn push_binary_op(
+        &mut self,
+        kind: BinaryKind,
+        lhs: interop::Value,
+        rhs: interop::Value,
+    ) -> Value {
+        // TODO: Check both types are equal.
+        let result = self.fresh_variable(lhs.type_of());
         self.push_inst(Instruction::BinaryOp(BinaryOp {
             kind,
-            lhs: lhs.0,
-            rhs: rhs.0,
-            result,
+            lhs,
+            rhs,
+            result: result.clone(),
         }));
 
         Value(interop::Value::Variable(result))
@@ -637,6 +662,26 @@ fn extract_value(ty: &Type, ob: &PyAny) -> PyResult<interop::Value> {
             Type::Result => Ok(interop::Value::Result(ob.extract::<ResultRef>()?.id())),
             Type::Void | Type::Qubit | Type::Function { .. } => Err(PyTypeError::new_err(
                 "Can't convert Python value into this type.",
+            )),
+        },
+    }
+}
+
+fn extract_binary_operands(lhs: &PyAny, rhs: &PyAny) -> PyResult<(interop::Value, interop::Value)> {
+    match lhs.extract::<Value>() {
+        Ok(Value(lhs)) => {
+            let ty = lhs.type_of();
+            let rhs = extract_value(&ty, rhs)?;
+            Ok((lhs, rhs))
+        }
+        Err(_) => match rhs.extract::<Value>() {
+            Ok(Value(rhs)) => {
+                let ty = rhs.type_of();
+                let lhs = extract_value(&ty, lhs)?;
+                Ok((lhs, rhs))
+            }
+            Err(_) => Err(PyErr::new::<PyTypeError, _>(
+                "At least one operand must be a Value.",
             )),
         },
     }

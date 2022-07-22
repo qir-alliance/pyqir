@@ -668,20 +668,23 @@ mod if_tests {
 
     #[test]
     fn test_call_variable() -> Result<(), String> {
+        let i64 = Type::Int { width: 64 };
+        let x = Variable::new(i64.clone());
+
         check_or_save_reference_ir(&SemanticModel {
             name: "test_call_variable".to_string(),
             registers: vec![],
             qubits: vec![],
             instructions: vec![
                 Instruction::Call(Call {
-                    result: Some(Variable::default()),
                     name: "foo".to_string(),
                     args: vec![],
+                    result: Some(x.clone()),
                 }),
                 Instruction::Call(Call {
-                    result: None,
                     name: "bar".to_string(),
-                    args: vec![Value::Variable(Variable::default())],
+                    args: vec![Value::Variable(x)],
+                    result: None,
                 }),
             ],
             use_static_qubit_alloc: true,
@@ -691,13 +694,13 @@ mod if_tests {
                     "foo".to_string(),
                     Type::Function {
                         params: vec![],
-                        result: Box::new(Type::Int { width: 64 }),
+                        result: Box::new(i64.clone()),
                     },
                 ),
                 (
                     "bar".to_string(),
                     Type::Function {
-                        params: vec![Type::Int { width: 64 }],
+                        params: vec![i64],
                         result: Box::new(Type::Void),
                     },
                 ),
@@ -707,11 +710,13 @@ mod if_tests {
 
     #[test]
     fn test_int_binop_intrinsics() -> Result<(), String> {
+        let i1 = Type::Int { width: 1 };
+        let i32 = Type::Int { width: 32 };
         let mut instructions = vec![];
-        let lhs = Variable::default();
-        let rhs = lhs.next();
+        let lhs = Variable::new(i32.clone());
+        let rhs = lhs.next(i32.clone());
 
-        for result in [lhs, rhs] {
+        for result in [lhs.clone(), rhs.clone()] {
             instructions.push(Instruction::Call(Call {
                 name: "source".to_string(),
                 args: vec![],
@@ -740,27 +745,31 @@ mod if_tests {
             BinaryKind::ICmp(IntPredicate::SLE),
         ];
 
-        let mut result = rhs.next();
+        let mut result = rhs.clone();
         for kind in kinds {
             let sink = match kind {
-                BinaryKind::ICmp(_) => "sink_i1".to_string(),
-                _ => "sink_i32".to_string(),
+                BinaryKind::ICmp(_) => {
+                    result = result.next(i1.clone());
+                    "sink_i1".to_string()
+                }
+                _ => {
+                    result = result.next(i32.clone());
+                    "sink_i32".to_string()
+                }
             };
 
             instructions.push(Instruction::BinaryOp(BinaryOp {
                 kind,
-                lhs: Value::Variable(lhs),
-                rhs: Value::Variable(rhs),
-                result,
+                lhs: Value::Variable(lhs.clone()),
+                rhs: Value::Variable(rhs.clone()),
+                result: result.clone(),
             }));
 
             instructions.push(Instruction::Call(Call {
                 name: sink,
-                args: vec![Value::Variable(result)],
+                args: vec![Value::Variable(result.clone())],
                 result: None,
             }));
-
-            result = result.next();
         }
 
         check_or_save_reference_ir(&SemanticModel {

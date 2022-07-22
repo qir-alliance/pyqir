@@ -58,7 +58,7 @@ class IntIntrinsicsTest(unittest.TestCase):
                 y = build(mod.builder)(1, x)
                 mod.builder.call(sink, [y])
 
-                self.assertIn(f"%2 = {name} i64 1, %1", mod.ir())
+                self.assertIn(f"%1 = {name} i64 1, %0", mod.ir())
 
     def test_neg(self) -> None:
         mod = SimpleModule("test_neg", 0, 0)
@@ -71,4 +71,4 @@ class IntIntrinsicsTest(unittest.TestCase):
         y = mod.builder.neg(x)
         mod.builder.call(sink, [y])
 
-        self.assertIn("%1 = sub i64 0, %1", mod.ir())
+        self.assertIn("%1 = sub i64 0, %0", mod.ir())

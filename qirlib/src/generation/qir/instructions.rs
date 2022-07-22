@@ -61,7 +61,7 @@ fn get_value<'ctx>(
         &Value::Double(d) => generator.f64_to_f64(d),
         Value::Qubit(q) => get_qubit(env, q).into(),
         Value::Result(r) => get_result(generator, env, r).into(),
-        &Value::Variable(v) => env
+        Value::Variable(v) => env
             .variable(v)
             .unwrap_or_else(|| panic!("Variable {:?} not found.", v))
             .into(),
@@ -181,7 +181,7 @@ fn emit_binary_op<'ctx>(
         BinaryKind::LShr => generator.builder.build_right_shift(lhs, rhs, false, ""),
         BinaryKind::ICmp(pred) => generator.builder.build_int_compare(pred, lhs, rhs, ""),
     };
-    env.set_variable(op.result, result.into()).unwrap();
+    env.set_variable(op.result.clone(), result.into()).unwrap();
 }
 
 fn emit_call<'ctx>(generator: &CodeGenerator<'ctx>, env: &mut Environment<'ctx>, call: &Call) {
@@ -198,13 +198,13 @@ fn emit_call<'ctx>(generator: &CodeGenerator<'ctx>, env: &mut Environment<'ctx>,
         .get_function(&call.name)
         .unwrap_or_else(|| panic!("Function {} not found.", &call.name));
 
-    match call.result {
+    match &call.result {
         None => {
             generator.emit_void_call(function, args.as_slice());
         }
         Some(var) => {
             let value = generator.emit_call_with_return(function, args.as_slice(), "");
-            env.set_variable(var, value).unwrap();
+            env.set_variable(var.clone(), value).unwrap();
         }
     }
 }

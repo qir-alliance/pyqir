@@ -154,7 +154,7 @@ pub struct Call {
     pub result: Option<Variable>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Type {
     Void,
     Int {
@@ -178,15 +178,35 @@ pub enum Value {
     Variable(Variable),
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+impl Value {
+    pub fn type_of(&self) -> Type {
+        match self {
+            &Self::Int(Int { width, .. }) => Type::Int { width },
+            Self::Double(_) => Type::Double,
+            Self::Qubit(_) => Type::Qubit,
+            Self::Result(_) => Type::Result,
+            Self::Variable(v) => v.ty.clone(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Variable {
+    ty: Type,
     id: i64,
 }
 
 impl Variable {
+    pub fn new(ty: Type) -> Self {
+        Self { ty, id: 0 }
+    }
+
     #[must_use]
-    pub fn next(&self) -> Self {
-        Self { id: self.id + 1 }
+    pub fn next(&self, ty: Type) -> Self {
+        Self {
+            ty,
+            id: self.id + 1,
+        }
     }
 }
 

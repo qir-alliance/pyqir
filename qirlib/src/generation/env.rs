@@ -56,8 +56,8 @@ impl<'ctx> Environment<'ctx> {
         }
     }
 
-    pub(crate) fn variable(&self, var: Variable) -> Option<BasicValueEnum<'ctx>> {
-        self.variables.get(&var).copied()
+    pub(crate) fn variable(&self, var: &Variable) -> Option<BasicValueEnum<'ctx>> {
+        self.variables.get(var).copied()
     }
 
     pub(crate) fn set_variable(
