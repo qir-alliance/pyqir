@@ -630,20 +630,23 @@ mod if_tests {
 
     #[test]
     fn test_call_variable() -> Result<(), String> {
+        let i64 = ValueType::Integer { width: 64 };
+        let x = Variable::new(i64);
+
         check_or_save_reference_ir(&SemanticModel {
             name: "test_call_variable".to_string(),
             registers: vec![],
             qubits: vec![],
             instructions: vec![
                 Instruction::Call(Call {
-                    result: Some(Variable::default()),
                     name: "foo".to_string(),
                     args: vec![],
+                    result: Some(x),
                 }),
                 Instruction::Call(Call {
-                    result: None,
                     name: "bar".to_string(),
-                    args: vec![Value::Variable(Variable::default())],
+                    args: vec![Value::Variable(x)],
+                    result: None,
                 }),
             ],
             use_static_qubit_alloc: true,
@@ -653,13 +656,13 @@ mod if_tests {
                     "foo".to_string(),
                     FunctionType {
                         param_types: vec![],
-                        return_type: ReturnType::Value(ValueType::Integer { width: 64 }),
+                        return_type: ReturnType::Value(i64),
                     },
                 ),
                 (
                     "bar".to_string(),
                     FunctionType {
-                        param_types: vec![ValueType::Integer { width: 64 }],
+                        param_types: vec![i64],
                         return_type: ReturnType::Void,
                     },
                 ),
@@ -669,9 +672,11 @@ mod if_tests {
 
     #[test]
     fn test_int_binop_intrinsics() -> Result<(), String> {
+        let i1 = ValueType::Integer { width: 1 };
+        let i32 = ValueType::Integer { width: 32 };
         let mut instructions = vec![];
-        let lhs = Variable::default();
-        let rhs = lhs.next();
+        let lhs = Variable::new(i32);
+        let rhs = lhs.next(i32);
 
         for result in [lhs, rhs] {
             instructions.push(Instruction::Call(Call {
@@ -702,11 +707,17 @@ mod if_tests {
             BinaryKind::ICmp(IntPredicate::SLE),
         ];
 
-        let mut result = rhs.next();
+        let mut result = rhs;
         for kind in kinds {
             let sink = match kind {
-                BinaryKind::ICmp(_) => "sink_i1".to_string(),
-                _ => "sink_i32".to_string(),
+                BinaryKind::ICmp(_) => {
+                    result = result.next(i1);
+                    "sink_i1".to_string()
+                }
+                _ => {
+                    result = result.next(i32);
+                    "sink_i32".to_string()
+                }
             };
 
             instructions.push(Instruction::BinaryOp(BinaryOp {
@@ -721,8 +732,6 @@ mod if_tests {
                 args: vec![Value::Variable(result)],
                 result: None,
             }));
-
-            result = result.next();
         }
 
         check_or_save_reference_ir(&SemanticModel {
