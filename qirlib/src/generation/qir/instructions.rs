@@ -4,7 +4,7 @@
 use crate::{
     codegen::CodeGenerator,
     generation::{
-        interop::{Call, If, Instruction, Value, Variable},
+        interop::{BinaryKind, BinaryOp, Call, If, Instruction, Value, Variable},
         qir::result,
     },
 };
@@ -58,7 +58,7 @@ fn get_result<'ctx>(
 fn get_value<'ctx>(
     generator: &CodeGenerator<'ctx>,
     qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    results: &HashMap<String, Option<PointerValue<'ctx>>>,
     variables: &HashMap<Variable, BasicValueEnum<'ctx>>,
     value: &Value,
 ) -> BasicMetadataValueEnum<'ctx> {
@@ -180,9 +180,33 @@ pub(crate) fn emit<'ctx>(
         Instruction::Z(inst) => {
             generator.emit_void_call(generator.qis_z_body(), &[get_qubit(&inst.qubit).into()]);
         }
+        Instruction::BinaryOp(op) => emit_binary_op(generator, qubits, results, variables, op),
         Instruction::Call(call) => emit_call(generator, qubits, results, variables, call),
         Instruction::If(if_) => emit_if(generator, qubits, results, variables, entry_point, if_),
     }
+}
+
+fn emit_binary_op<'ctx>(
+    generator: &CodeGenerator<'ctx>,
+    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
+    results: &HashMap<String, Option<PointerValue<'ctx>>>,
+    variables: &mut HashMap<Variable, BasicValueEnum<'ctx>>,
+    op: &BinaryOp,
+) {
+    let lhs = get_value(generator, qubits, results, variables, &op.lhs).into_int_value();
+    let rhs = get_value(generator, qubits, results, variables, &op.rhs).into_int_value();
+    let result = match op.kind {
+        BinaryKind::And => generator.builder.build_and(lhs, rhs, ""),
+        BinaryKind::Or => generator.builder.build_or(lhs, rhs, ""),
+        BinaryKind::Xor => generator.builder.build_xor(lhs, rhs, ""),
+        BinaryKind::Add => generator.builder.build_int_add(lhs, rhs, ""),
+        BinaryKind::Sub => generator.builder.build_int_sub(lhs, rhs, ""),
+        BinaryKind::Mul => generator.builder.build_int_mul(lhs, rhs, ""),
+        BinaryKind::Shl => generator.builder.build_left_shift(lhs, rhs, ""),
+        BinaryKind::LShr => generator.builder.build_right_shift(lhs, rhs, false, ""),
+        BinaryKind::ICmp(pred) => generator.builder.build_int_compare(pred, lhs, rhs, ""),
+    };
+    variables.insert(op.result, result.into());
 }
 
 fn emit_call<'ctx>(
