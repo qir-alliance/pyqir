@@ -19,6 +19,12 @@ use inkwell::{
 };
 use std::{collections::HashMap, convert::Into};
 
+pub(crate) struct Environment<'ctx> {
+    pub(crate) qubits: HashMap<String, BasicValueEnum<'ctx>>,
+    pub(crate) results: HashMap<String, Option<PointerValue<'ctx>>>,
+    pub(crate) variables: HashMap<Variable, BasicValueEnum<'ctx>>,
+}
+
 /// # Errors
 ///
 /// Will return `Err` if module fails verification that the current `Module` is valid.
@@ -83,21 +89,16 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
     let entry = generator.context.append_basic_block(entry_point, "entry");
     generator.builder.position_at_end(entry);
 
-    let qubits = write_qubits(model, generator);
-    let mut registers = write_registers(model, generator);
-    let mut variables = HashMap::new();
+    let mut env = Environment {
+        qubits: write_qubits(model, generator),
+        results: write_registers(model, generator),
+        variables: HashMap::new(),
+    };
 
-    write_instructions(
-        model,
-        generator,
-        &qubits,
-        &mut registers,
-        &mut variables,
-        entry_point,
-    );
+    write_instructions(model, generator, &mut env, entry_point);
 
     if !model.use_static_qubit_alloc {
-        free_qubits(generator, &qubits);
+        free_qubits(generator, &env.qubits);
     }
 
     generator.builder.build_return(None);
@@ -240,13 +241,11 @@ fn create_result_static_ptr<'ctx>(
 fn write_instructions<'ctx>(
     model: &SemanticModel,
     generator: &CodeGenerator<'ctx>,
-    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
-    variables: &mut HashMap<Variable, BasicValueEnum<'ctx>>,
+    env: &mut Environment<'ctx>,
     entry_point: FunctionValue,
 ) {
     for inst in &model.instructions {
-        qir::instructions::emit(generator, inst, qubits, registers, variables, entry_point);
+        qir::instructions::emit(generator, env, inst, entry_point);
     }
 }
 

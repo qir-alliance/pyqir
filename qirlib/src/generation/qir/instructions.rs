@@ -4,7 +4,8 @@
 use crate::{
     codegen::CodeGenerator,
     generation::{
-        interop::{Call, If, Instruction, Value, Variable},
+        emit::Environment,
+        interop::{Call, If, Instruction, Value},
         qir::result,
     },
 };
@@ -57,9 +58,7 @@ fn get_result<'ctx>(
 
 fn get_value<'ctx>(
     generator: &CodeGenerator<'ctx>,
-    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
-    variables: &HashMap<Variable, BasicValueEnum<'ctx>>,
+    env: &Environment<'ctx>,
     value: &Value,
 ) -> BasicMetadataValueEnum<'ctx> {
     match value {
@@ -69,9 +68,10 @@ fn get_value<'ctx>(
             .const_int(i.value(), false)
             .into(),
         Value::Double(d) => generator.f64_to_f64(*d),
-        Value::Qubit(q) => get_qubit(qubits, q).into(),
-        Value::Result(r) => get_result(generator, results, r).into(),
-        Value::Variable(v) => (*variables
+        Value::Qubit(q) => get_qubit(&env.qubits, q).into(),
+        Value::Result(r) => get_result(generator, &env.results, r).into(),
+        Value::Variable(v) => (*env
+            .variables
             .get(v)
             .unwrap_or_else(|| panic!("Variable {:?} not found.", v)))
         .into(),
@@ -80,28 +80,28 @@ fn get_value<'ctx>(
 
 fn measure<'ctx>(
     generator: &CodeGenerator<'ctx>,
+    env: &mut Environment<'ctx>,
     qubit: &str,
     target: &str,
-    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
 ) {
     if generator.use_static_result_alloc {
         // measure the qubit and save the result to a temporary value
         generator.emit_void_call(
             generator.qis_mz_body(),
             &[
-                get_qubit(qubits, qubit).into(),
-                get_result(generator, results, target).into(),
+                get_qubit(&env.qubits, qubit).into(),
+                get_result(generator, &env.results, target).into(),
             ],
         );
     } else {
         // measure the qubit and save the result to a temporary value
         let new_value = generator.emit_call_with_return(
             generator.qis_m_body(),
-            &[get_qubit(qubits, qubit).into()],
+            &[get_qubit(&env.qubits, qubit).into()],
             target,
         );
-        results.insert(target.to_owned(), Some(new_value.into_pointer_value()));
+        env.results
+            .insert(target.to_owned(), Some(new_value.into_pointer_value()));
     }
 }
 
@@ -116,13 +116,11 @@ fn controlled<'ctx>(
 
 pub(crate) fn emit<'ctx>(
     generator: &CodeGenerator<'ctx>,
+    env: &mut Environment<'ctx>,
     inst: &Instruction,
-    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
-    variables: &mut HashMap<Variable, BasicValueEnum<'ctx>>,
     entry_point: FunctionValue,
 ) {
-    let get_qubit = |name| get_qubit(qubits, name);
+    let get_qubit = |name| get_qubit(&env.qubits, name);
 
     match inst {
         Instruction::Cx(inst) => {
@@ -138,24 +136,22 @@ pub(crate) fn emit<'ctx>(
         Instruction::H(inst) => {
             generator.emit_void_call(generator.qis_h_body(), &[get_qubit(&inst.qubit).into()]);
         }
-        Instruction::M(inst) => {
-            measure(generator, &inst.qubit, &inst.target, qubits, results);
-        }
+        Instruction::M(inst) => measure(generator, env, &inst.qubit, &inst.target),
         Instruction::Reset(inst) => {
             generator.emit_void_call(generator.qis_reset_body(), &[get_qubit(&inst.qubit).into()]);
         }
         Instruction::Rx(inst) => {
-            let theta = get_value(generator, qubits, results, variables, &inst.theta);
+            let theta = get_value(generator, env, &inst.theta);
             let qubit = get_qubit(&inst.qubit).into();
             generator.emit_void_call(generator.qis_rx_body(), &[theta, qubit]);
         }
         Instruction::Ry(inst) => {
-            let theta = get_value(generator, qubits, results, variables, &inst.theta);
+            let theta = get_value(generator, env, &inst.theta);
             let qubit = get_qubit(&inst.qubit).into();
             generator.emit_void_call(generator.qis_ry_body(), &[theta, qubit]);
         }
         Instruction::Rz(inst) => {
-            let theta = get_value(generator, qubits, results, variables, &inst.theta);
+            let theta = get_value(generator, env, &inst.theta);
             let qubit = get_qubit(&inst.qubit).into();
             generator.emit_void_call(generator.qis_rz_body(), &[theta, qubit]);
         }
@@ -180,18 +176,12 @@ pub(crate) fn emit<'ctx>(
         Instruction::Z(inst) => {
             generator.emit_void_call(generator.qis_z_body(), &[get_qubit(&inst.qubit).into()]);
         }
-        Instruction::Call(call) => emit_call(generator, qubits, results, variables, call),
-        Instruction::If(if_) => emit_if(generator, qubits, results, variables, entry_point, if_),
+        Instruction::Call(call) => emit_call(generator, env, call),
+        Instruction::If(if_) => emit_if(generator, env, entry_point, if_),
     }
 }
 
-fn emit_call<'ctx>(
-    generator: &CodeGenerator<'ctx>,
-    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    results: &HashMap<String, Option<PointerValue<'ctx>>>,
-    variables: &mut HashMap<Variable, BasicValueEnum<'ctx>>,
-    call: &Call,
-) {
+fn emit_call<'ctx>(generator: &CodeGenerator<'ctx>, env: &mut Environment<'ctx>, call: &Call) {
     let args: Vec<_> = call
         .args
         .iter()
@@ -202,9 +192,9 @@ fn emit_call<'ctx>(
                 .const_int(value.value(), false)
                 .into(),
             Value::Double(value) => generator.f64_to_f64(*value),
-            Value::Qubit(name) => get_qubit(qubits, name).into(),
-            Value::Result(name) => get_result(generator, results, name).into(),
-            Value::Variable(variable) => (*variables.get(variable).unwrap()).into(),
+            Value::Qubit(name) => get_qubit(&env.qubits, name).into(),
+            Value::Result(name) => get_result(generator, &env.results, name).into(),
+            Value::Variable(variable) => (*env.variables.get(variable).unwrap()).into(),
         })
         .collect();
 
@@ -221,20 +211,18 @@ fn emit_call<'ctx>(
         }
         Some(variable) => {
             let value = generator.emit_call_with_return(function, args.as_slice(), "");
-            variables.insert(variable, value);
+            env.variables.insert(variable, value);
         }
     }
 }
 
 fn emit_if<'ctx>(
     generator: &CodeGenerator<'ctx>,
-    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    results: &mut HashMap<String, Option<PointerValue<'ctx>>>,
-    variables: &mut HashMap<Variable, BasicValueEnum<'ctx>>,
+    env: &mut Environment<'ctx>,
     entry_point: FunctionValue,
     if_: &If,
 ) {
-    let result = get_result(generator, results, &if_.condition);
+    let result = get_result(generator, &env.results, &if_.condition);
 
     let condition = if generator.use_static_result_alloc {
         result::read_result(generator, result)
@@ -257,7 +245,7 @@ fn emit_if<'ctx>(
         generator.builder.position_at_end(block);
 
         for inst in insts {
-            emit(generator, inst, qubits, results, variables, entry_point);
+            emit(generator, env, inst, entry_point);
         }
 
         generator.builder.build_unconditional_branch(continue_block);
