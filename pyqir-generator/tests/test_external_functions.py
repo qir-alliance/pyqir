@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 from pyqir.generator import BasicQisBuilder, SimpleModule, Value, types
+import re
 from typing import Any, Callable, List, Tuple
 import unittest
 
@@ -201,7 +202,7 @@ class ExternalFunctionsTest(unittest.TestCase):
                 )
 
                 message = f"Expected {len(param_types)} arguments, got {len(args)}."
-                with self.assertRaisesRegex(ValueError, message):
+                with self.assertRaisesRegex(ValueError, "^" + re.escape(message) + "$"):
                     mod.builder.call(f, args)
 
     def test_variable(self) -> None:
@@ -226,7 +227,7 @@ class ExternalFunctionsTest(unittest.TestCase):
         x = mod.builder.call(foo, [])
         mod.builder.call(bar, [x])
 
-        with self.assertRaisesRegex(OSError, "Call parameter type does not match function signature!"):
+        with self.assertRaisesRegex(OSError, "^Call parameter type does not match function signature!"):
             mod.ir()
 
     def test_variable_wrong_angle_type(self) -> None:
@@ -237,7 +238,7 @@ class ExternalFunctionsTest(unittest.TestCase):
         x = mod.builder.call(foo, [])
         qis.rz(x, mod.qubits[0])
 
-        with self.assertRaisesRegex(OSError, "Call parameter type does not match function signature!"):
+        with self.assertRaisesRegex(OSError, "^Call parameter type does not match function signature!"):
             mod.ir()
 
     def test_two_variables(self) -> None:

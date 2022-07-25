@@ -279,7 +279,7 @@ impl Builder {
 
         let result = match ty.return_type {
             ReturnType::Void => None,
-            ReturnType::Value(_) => Some(self.next_variable),
+            ReturnType::Value(_) => Some(self.fresh_variable()),
         };
 
         self.push_inst(Instruction::Call(Call {
@@ -288,7 +288,6 @@ impl Builder {
             result,
         }));
 
-        self.next_variable = self.next_variable.next();
         Ok(result.map(|v| Value(interop::Value::Variable(v))))
     }
 }
@@ -304,6 +303,12 @@ impl Builder {
 
     fn pop_frame(&mut self) -> Option<Vec<Instruction>> {
         self.frames.pop()
+    }
+
+    fn fresh_variable(&mut self) -> Variable {
+        let v = self.next_variable;
+        self.next_variable = v.next();
+        v
     }
 }
 

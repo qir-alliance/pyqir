@@ -46,7 +46,8 @@ class Function:
 
 
 class Value:
-    """A value."""
+    """Any type of QIR value."""
+    ...
 
 
 class Builder:
