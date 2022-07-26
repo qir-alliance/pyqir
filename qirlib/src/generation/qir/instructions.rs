@@ -4,7 +4,7 @@
 use crate::{
     codegen::CodeGenerator,
     generation::{
-        emit::Environment,
+        env::Environment,
         interop::{Call, If, Instruction, Value},
         qir::result,
     },

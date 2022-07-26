@@ -4,7 +4,8 @@
 use crate::{
     codegen::CodeGenerator,
     generation::{
-        interop::{self, ReturnType, SemanticModel, ValueType, Variable},
+        env::Environment,
+        interop::{self, ReturnType, SemanticModel, ValueType},
         qir,
     },
     passes::run_basic_passes_on,
@@ -17,61 +18,7 @@ use inkwell::{
     values::{BasicValueEnum, FunctionValue, PointerValue},
     AddressSpace,
 };
-use std::{
-    collections::{
-        hash_map::Entry::{Occupied, Vacant},
-        HashMap,
-    },
-    convert::Into,
-};
-
-pub(crate) struct Environment<'ctx> {
-    qubits: HashMap<String, BasicValueEnum<'ctx>>,
-    results: HashMap<String, Option<PointerValue<'ctx>>>,
-    variables: HashMap<Variable, BasicValueEnum<'ctx>>,
-}
-
-impl<'ctx> Environment<'ctx> {
-    pub(crate) fn qubit(&self, name: &str) -> Option<BasicValueEnum<'ctx>> {
-        self.qubits.get(name).cloned()
-    }
-
-    pub(crate) fn result(&self, name: &str) -> Option<Option<PointerValue<'ctx>>> {
-        self.results.get(name).cloned()
-    }
-
-    pub(crate) fn set_result(
-        &mut self,
-        name: String,
-        value: PointerValue<'ctx>,
-    ) -> Result<(), String> {
-        match self.results.entry(name) {
-            Occupied(mut entry) => {
-                *entry.get_mut() = Some(value);
-                Ok(())
-            }
-            Vacant(_) => Err("Result not found. Results can only be updated, not created.".into()),
-        }
-    }
-
-    pub(crate) fn variable(&self, var: &Variable) -> Option<BasicValueEnum<'ctx>> {
-        self.variables.get(var).cloned()
-    }
-
-    pub(crate) fn set_variable(
-        &mut self,
-        var: Variable,
-        value: BasicValueEnum<'ctx>,
-    ) -> Result<(), String> {
-        match self.variables.entry(var) {
-            Occupied(_) => Err("Variable already exists. Variables cannot be reassigned.".into()),
-            Vacant(entry) => {
-                entry.insert(value);
-                Ok(())
-            }
-        }
-    }
-}
+use std::{collections::HashMap, convert::Into};
 
 /// # Errors
 ///
@@ -137,16 +84,18 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
     let entry = generator.context.append_basic_block(entry_point, "entry");
     generator.builder.position_at_end(entry);
 
-    let mut env = Environment {
-        qubits: write_qubits(model, generator),
-        results: write_registers(model, generator),
-        variables: HashMap::new(),
-    };
+    let mut env = Environment::new(
+        write_qubits(model, generator),
+        write_registers(model, generator),
+        HashMap::new(),
+    );
 
     write_instructions(model, generator, &mut env, entry_point);
 
     if !model.use_static_qubit_alloc {
-        free_qubits(generator, &env.qubits);
+        for (_, qubit) in env.iter_qubits() {
+            generator.emit_release_qubit(qubit);
+        }
     }
 
     generator.builder.build_return(None);
@@ -194,15 +143,6 @@ fn get_basic_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &ValueType) -> Basi
         ValueType::Result => {
             BasicTypeEnum::PointerType(generator.result_type().ptr_type(AddressSpace::Generic))
         }
-    }
-}
-
-fn free_qubits<'ctx>(
-    generator: &CodeGenerator<'ctx>,
-    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-) {
-    for (_, value) in qubits.iter() {
-        generator.emit_release_qubit(value);
     }
 }
 

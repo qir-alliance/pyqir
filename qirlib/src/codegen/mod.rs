@@ -194,7 +194,7 @@ impl<'ctx> CodeGenerator<'ctx> {
         emit_allocate_qubit(self.context, &self.builder, &self.module, result_name)
     }
 
-    pub fn emit_release_qubit(&self, qubit: &BasicValueEnum<'ctx>) -> InstructionValue<'ctx> {
+    pub fn emit_release_qubit(&self, qubit: BasicValueEnum<'ctx>) -> InstructionValue<'ctx> {
         emit_release_qubit(self.context, &self.builder, &self.module, qubit)
     }
 }

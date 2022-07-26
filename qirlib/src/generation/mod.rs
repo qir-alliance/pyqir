@@ -6,6 +6,7 @@ use inkwell::{context::Context, memory_buffer::MemoryBuffer};
 use crate::module;
 
 pub mod emit;
+mod env;
 pub mod interop;
 pub mod qir;
 
