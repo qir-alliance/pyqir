@@ -10,19 +10,14 @@ use crate::{
     },
 };
 use inkwell::values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, PointerValue};
-use std::collections::HashMap;
 
 /// # Panics
 ///
 /// Panics if the qubit name doesn't exist
-fn get_qubit<'ctx>(
-    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    name: &str,
-) -> BasicValueEnum<'ctx> {
+fn get_qubit<'ctx>(env: &Environment<'ctx>, name: &str) -> BasicValueEnum<'ctx> {
     // TODO: Panicking can be unfriendly to Python clients.
     // See: https://github.com/qir-alliance/pyqir/issues/31
-    *qubits
-        .get(name)
+    env.qubit(name)
         .unwrap_or_else(|| panic!("Qubit {} not found.", name))
 }
 
@@ -34,26 +29,20 @@ fn get_qubit<'ctx>(
 /// Panics if the result name has not been declared.
 fn get_result<'ctx>(
     generator: &CodeGenerator<'ctx>,
-    results: &HashMap<String, Option<PointerValue<'ctx>>>,
+    env: &Environment<'ctx>,
     name: &str,
 ) -> PointerValue<'ctx> {
     // TODO: Panicking can be unfriendly to Python clients.
     // See: https://github.com/qir-alliance/pyqir/issues/31
-    if generator.use_static_result_alloc {
-        // error if the key isn't found
-        // error if static result wasn't initialized
-        results
-            .get(name)
-            .unwrap_or_else(|| panic!("Result {} not found.", name))
-            .unwrap_or_else(|| panic!("Result {} not initialized.", name))
-    } else {
-        // error if the key isn't found
-        // return 0 if result is accessed prior to read.
-        results
-            .get(name)
-            .unwrap_or_else(|| panic!("Result {} not found.", name))
-            .unwrap_or_else(|| result::get_zero(generator))
-    }
+    env.result(name)
+        .unwrap_or_else(|| panic!("Result {} not found.", name))
+        .unwrap_or_else(|| {
+            if generator.use_static_result_alloc {
+                panic!("Result {} not initialized.", name)
+            } else {
+                result::get_zero(generator)
+            }
+        })
 }
 
 fn get_value<'ctx>(
@@ -68,13 +57,12 @@ fn get_value<'ctx>(
             .const_int(i.value(), false)
             .into(),
         Value::Double(d) => generator.f64_to_f64(*d),
-        Value::Qubit(q) => get_qubit(&env.qubits, q).into(),
-        Value::Result(r) => get_result(generator, &env.results, r).into(),
-        Value::Variable(v) => (*env
-            .variables
-            .get(v)
-            .unwrap_or_else(|| panic!("Variable {:?} not found.", v)))
-        .into(),
+        Value::Qubit(q) => get_qubit(env, q).into(),
+        Value::Result(r) => get_result(generator, env, r).into(),
+        Value::Variable(v) => env
+            .variable(v)
+            .unwrap_or_else(|| panic!("Variable {:?} not found.", v))
+            .into(),
     }
 }
 
@@ -89,19 +77,19 @@ fn measure<'ctx>(
         generator.emit_void_call(
             generator.qis_mz_body(),
             &[
-                get_qubit(&env.qubits, qubit).into(),
-                get_result(generator, &env.results, target).into(),
+                get_qubit(env, qubit).into(),
+                get_result(generator, env, target).into(),
             ],
         );
     } else {
         // measure the qubit and save the result to a temporary value
         let new_value = generator.emit_call_with_return(
             generator.qis_m_body(),
-            &[get_qubit(&env.qubits, qubit).into()],
+            &[get_qubit(env, qubit).into()],
             target,
         );
-        env.results
-            .insert(target.to_owned(), Some(new_value.into_pointer_value()));
+        env.set_result(target.to_owned(), new_value.into_pointer_value())
+            .unwrap();
     }
 }
 
@@ -120,7 +108,7 @@ pub(crate) fn emit<'ctx>(
     inst: &Instruction,
     entry_point: FunctionValue,
 ) {
-    let get_qubit = |name| get_qubit(&env.qubits, name);
+    let get_qubit = |name| get_qubit(env, name);
 
     match inst {
         Instruction::Cx(inst) => {
@@ -192,9 +180,9 @@ fn emit_call<'ctx>(generator: &CodeGenerator<'ctx>, env: &mut Environment<'ctx>,
                 .const_int(value.value(), false)
                 .into(),
             Value::Double(value) => generator.f64_to_f64(*value),
-            Value::Qubit(name) => get_qubit(&env.qubits, name).into(),
-            Value::Result(name) => get_result(generator, &env.results, name).into(),
-            Value::Variable(variable) => (*env.variables.get(variable).unwrap()).into(),
+            Value::Qubit(name) => get_qubit(env, name).into(),
+            Value::Result(name) => get_result(generator, env, name).into(),
+            Value::Variable(var) => env.variable(var).unwrap().into(),
         })
         .collect();
 
@@ -209,9 +197,9 @@ fn emit_call<'ctx>(generator: &CodeGenerator<'ctx>, env: &mut Environment<'ctx>,
         None => {
             generator.emit_void_call(function, args.as_slice());
         }
-        Some(variable) => {
+        Some(var) => {
             let value = generator.emit_call_with_return(function, args.as_slice(), "");
-            env.variables.insert(variable, value);
+            env.set_variable(var, value).unwrap();
         }
     }
 }
@@ -222,7 +210,7 @@ fn emit_if<'ctx>(
     entry_point: FunctionValue,
     if_: &If,
 ) {
-    let result = get_result(generator, &env.results, &if_.condition);
+    let result = get_result(generator, env, &if_.condition);
 
     let condition = if generator.use_static_result_alloc {
         result::read_result(generator, result)
