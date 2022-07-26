@@ -4,7 +4,7 @@
 use crate::{
     codegen::CodeGenerator,
     generation::{
-        env::Environment,
+        env::{Environment, ResultState},
         interop::{Call, If, Instruction, Value},
         qir::result,
     },
@@ -34,15 +34,17 @@ fn get_result<'ctx>(
 ) -> PointerValue<'ctx> {
     // TODO: Panicking can be unfriendly to Python clients.
     // See: https://github.com/qir-alliance/pyqir/issues/31
-    env.result(name)
-        .unwrap_or_else(|| panic!("Result {} not found.", name))
-        .unwrap_or_else(|| {
+    match env.result(name) {
+        ResultState::NotFound => panic!("Result {} not found.", name),
+        ResultState::Uninitialized => {
             if generator.use_static_result_alloc {
                 panic!("Result {} not initialized.", name)
             } else {
                 result::get_zero(generator)
             }
-        })
+        }
+        ResultState::Initialized(r) => r,
+    }
 }
 
 fn get_value<'ctx>(
@@ -56,10 +58,10 @@ fn get_value<'ctx>(
             .custom_width_int_type(i.width())
             .const_int(i.value(), false)
             .into(),
-        Value::Double(d) => generator.f64_to_f64(*d),
+        &Value::Double(d) => generator.f64_to_f64(d),
         Value::Qubit(q) => get_qubit(env, q).into(),
         Value::Result(r) => get_result(generator, env, r).into(),
-        Value::Variable(v) => env
+        &Value::Variable(v) => env
             .variable(v)
             .unwrap_or_else(|| panic!("Variable {:?} not found.", v))
             .into(),
@@ -174,15 +176,15 @@ fn emit_call<'ctx>(generator: &CodeGenerator<'ctx>, env: &mut Environment<'ctx>,
         .args
         .iter()
         .map(|value| match value {
-            Value::Integer(value) => generator
+            Value::Integer(i) => generator
                 .context
-                .custom_width_int_type(value.width())
-                .const_int(value.value(), false)
+                .custom_width_int_type(i.width())
+                .const_int(i.value(), false)
                 .into(),
-            Value::Double(value) => generator.f64_to_f64(*value),
-            Value::Qubit(name) => get_qubit(env, name).into(),
-            Value::Result(name) => get_result(generator, env, name).into(),
-            Value::Variable(var) => env.variable(var).unwrap().into(),
+            &Value::Double(d) => generator.f64_to_f64(d),
+            Value::Qubit(q) => get_qubit(env, q).into(),
+            Value::Result(r) => get_result(generator, env, r).into(),
+            &Value::Variable(v) => env.variable(v).unwrap().into(),
         })
         .collect();
 
