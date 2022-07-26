@@ -175,17 +175,7 @@ fn emit_call<'ctx>(generator: &CodeGenerator<'ctx>, env: &mut Environment<'ctx>,
     let args: Vec<_> = call
         .args
         .iter()
-        .map(|value| match value {
-            Value::Integer(i) => generator
-                .context
-                .custom_width_int_type(i.width())
-                .const_int(i.value(), false)
-                .into(),
-            &Value::Double(d) => generator.f64_to_f64(d),
-            Value::Qubit(q) => get_qubit(env, q).into(),
-            Value::Result(r) => get_result(generator, env, r).into(),
-            &Value::Variable(v) => env.variable(v).unwrap().into(),
-        })
+        .map(|value| get_value(generator, env, value))
         .collect();
 
     // TODO: Panicking can be unfriendly to Python clients.
