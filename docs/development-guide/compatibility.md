@@ -19,7 +19,7 @@ into tiers that represent the level of compatibility users can expect.
 - Windows Server 2019
 - [Ubuntu 20.04](https://wiki.ubuntu.com/FocalFossa/ReleaseNotes)
 - [Debian 9](https://www.debian.org/releases/stretch/)
-- macOS 10.15
+- macOS 11
 
 ### Tier 2
 
@@ -28,6 +28,5 @@ into tiers that represent the level of compatibility users can expect.
 - [Ubuntu 18.04](https://wiki.ubuntu.com/BionicBeaver/ReleaseNotes)
 - [Debian 10](https://www.debian.org/releases/buster/)
 - [Debian 11](https://www.debian.org/releases/bullseye/)
-- macOS 10.7-14
-- macOS 11
+- macOS 10.7 - 10.15
 - macOS 12

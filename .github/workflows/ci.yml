@@ -54,7 +54,7 @@ jobs:
               env: {},
             }
           - {
-              os: "macOS-10.15",
+              os: "macos-11",
               arch: "amd64",
               target: "default",
               env: {},
@@ -71,7 +71,7 @@ jobs:
         if: ${{ matrix.config.os == 'windows-2019' }}
       - name: MacOS - Install build dependencies, ccache, ninja
         run: brew install ccache ninja
-        if: ${{ matrix.config.os == 'macOS-10.15' }}
+        if: ${{ matrix.config.os == 'macos-11' }}
       - name: Windows - Install LLVM 11.1.0
         run: choco install llvm --version=11.1.0 --allow-downgrade
         if: ${{ matrix.config.os == 'windows-2019' }}
