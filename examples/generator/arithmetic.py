@@ -14,8 +14,7 @@ take_int = mod.add_external_function(
 
 # Do some integer arithmetic.
 n = mod.builder.call(get_int, [])
-negN = mod.builder.neg(n)
-result = mod.builder.mul(2, negN)
+result = mod.builder.mul(2, mod.builder.neg(n))
 
 # Consume the result.
 mod.builder.call(take_int, [result])
