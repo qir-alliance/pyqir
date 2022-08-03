@@ -2,12 +2,12 @@
 # Licensed under the MIT License.
 
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
-from pyqir.generator import BasicQisBuilder, Qubit, ResultRef, SimpleModule
+from pyqir.generator import BasicQisBuilder, ResultRef, SimpleModule, Value
 import tempfile
 from typing import List, Optional
 
 
-def teleport(qis: BasicQisBuilder, qubits: List[Qubit], results: List[ResultRef]) -> None:
+def teleport(qis: BasicQisBuilder, qubits: List[Value], results: List[ResultRef]) -> None:
     msg = qubits[0]
     target = qubits[1]
     register = qubits[2]
