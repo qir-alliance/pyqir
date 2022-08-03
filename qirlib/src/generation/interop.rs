@@ -190,10 +190,12 @@ impl Integer {
         }
     }
 
+    #[must_use]
     pub fn width(&self) -> u32 {
         self.width
     }
 
+    #[must_use]
     pub fn value(&self) -> u64 {
         self.value
     }

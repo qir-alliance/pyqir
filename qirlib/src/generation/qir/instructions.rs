@@ -88,15 +88,6 @@ fn measure<'ctx>(
     }
 }
 
-fn controlled<'ctx>(
-    generator: &CodeGenerator<'ctx>,
-    intrinsic: FunctionValue<'ctx>,
-    control: BasicMetadataValueEnum<'ctx>,
-    qubit: BasicMetadataValueEnum<'ctx>,
-) {
-    generator.emit_void_call(intrinsic, &[control.into(), qubit.into()]);
-}
-
 pub(crate) fn emit<'ctx>(
     generator: &CodeGenerator<'ctx>,
     env: &mut Environment<'ctx>,
@@ -107,12 +98,12 @@ pub(crate) fn emit<'ctx>(
         Instruction::Cx(inst) => {
             let control = get_value(generator, env, &inst.control);
             let qubit = get_value(generator, env, &inst.target);
-            controlled(generator, generator.qis_cnot_body(), control, qubit);
+            generator.emit_void_call(generator.qis_cnot_body(), &[control, qubit]);
         }
         Instruction::Cz(inst) => {
             let control = get_value(generator, env, &inst.control);
             let qubit = get_value(generator, env, &inst.target);
-            controlled(generator, generator.qis_cz_body(), control, qubit);
+            generator.emit_void_call(generator.qis_cz_body(), &[control, qubit]);
         }
         Instruction::H(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);

@@ -75,7 +75,7 @@ impl<'source> FromPyObject<'source> for PyVoidType {
     }
 }
 
-#[derive(FromPyObject)]
+#[derive(Clone, Copy, FromPyObject)]
 struct PyIntegerType {
     width: u32,
 }
@@ -231,10 +231,8 @@ impl PyObjectProtocol for Value {
 impl Value {
     #[staticmethod]
     fn integer(ty: PyIntegerType, value: u64) -> PyResult<Value> {
-        let integer =
-            interop::Integer::new(ty.width, value).ok_or(PyErr::new::<PyOverflowError, _>(
-                "Value is too large for the type.",
-            ))?;
+        let integer = interop::Integer::new(ty.width, value)
+            .ok_or_else(|| PyErr::new::<PyOverflowError, _>("Value is too large for the type."))?;
         Ok(Value(interop::Value::Integer(integer)))
     }
 
