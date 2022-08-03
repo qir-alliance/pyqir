@@ -50,7 +50,6 @@ fn bitcode_to_ir<'a>(
 #[pymodule]
 #[pyo3(name = "_native")]
 fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<Qubit>()?;
     m.add_class::<ResultRef>()?;
     m.add_class::<Function>()?;
     m.add_class::<Builder>()?;
@@ -167,38 +166,6 @@ impl From<PyFunctionType> for FunctionType {
 
 #[derive(Clone, Eq, Hash, PartialEq)]
 #[pyclass]
-struct Qubit {
-    index: u64,
-}
-
-impl Qubit {
-    fn id(&self) -> String {
-        format!("{}{}", QUBIT_NAME, self.index)
-    }
-}
-
-#[pyproto]
-impl PyObjectProtocol for Qubit {
-    fn __hash__(&self) -> u64 {
-        let mut hasher = DefaultHasher::new();
-        self.hash(&mut hasher);
-        hasher.finish()
-    }
-
-    fn __repr__(&self) -> String {
-        format!("<Qubit {}>", self.index)
-    }
-
-    fn __richcmp__(&self, other: Qubit, op: CompareOp) -> PyResult<bool> {
-        match op {
-            CompareOp::Eq => Ok(self == &other),
-            _ => Err(PyErr::new::<PyTypeError, _>("Only equality is supported.")),
-        }
-    }
-}
-
-#[derive(Clone, Eq, Hash, PartialEq)]
-#[pyclass]
 struct ResultRef {
     index: u64,
 }
@@ -233,16 +200,54 @@ impl PyObjectProtocol for ResultRef {
 #[pyclass]
 struct Function {
     name: String,
+    ty: FunctionType,
 }
 
 #[derive(Clone)]
 #[pyclass]
 struct Value(interop::Value);
 
+#[pyproto]
+impl PyObjectProtocol for Value {
+    fn __repr__(&self) -> String {
+        match &self.0 {
+            interop::Value::Integer(int) => {
+                format!(
+                    "Value.integer(types.Integer({}), {})",
+                    int.width(),
+                    int.value()
+                )
+            }
+            interop::Value::Double(value) => format!("Value.double({})", value),
+            interop::Value::Qubit(name) | interop::Value::Result(name) => {
+                format!("<Value {}>", name)
+            }
+            interop::Value::Variable(var) => format!("<Value {:?}>", var),
+        }
+    }
+}
+
+#[pymethods]
+impl Value {
+    #[staticmethod]
+    fn integer(ty: PyIntegerType, value: u64) -> PyResult<Value> {
+        let integer =
+            interop::Integer::new(ty.width, value).ok_or(PyErr::new::<PyOverflowError, _>(
+                "Value is too large for the type.",
+            ))?;
+        Ok(Value(interop::Value::Integer(integer)))
+    }
+
+    #[staticmethod]
+    fn double(value: f64) -> Value {
+        Value(interop::Value::Double(value))
+    }
+}
+
 #[pyclass]
 struct Builder {
     frames: Vec<Vec<Instruction>>,
-    external_functions: Vec<(String, FunctionType)>,
+    external_functions: Vec<Function>,
     next_variable: Variable,
 }
 
@@ -258,13 +263,7 @@ impl Builder {
     }
 
     fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Value>> {
-        let (_, ty) = self
-            .external_functions
-            .iter()
-            .find(|f| f.0 == function.name)
-            .expect("Function not found in module.");
-
-        let num_params = ty.param_types.len();
+        let num_params = function.ty.param_types.len();
         let num_args = args.len()?;
         if num_params != num_args {
             let message = format!("Expected {} arguments, got {}.", num_params, num_args);
@@ -273,11 +272,11 @@ impl Builder {
 
         let args = args
             .iter()?
-            .zip(&ty.param_types)
+            .zip(&function.ty.param_types)
             .map(|(arg, &ty)| extract_value(arg?, ty))
             .collect::<PyResult<_>>()?;
 
-        let result = match ty.return_type {
+        let result = match function.ty.return_type {
             ReturnType::Void => None,
             ReturnType::Value(_) => Some(self.fresh_variable()),
         };
@@ -343,11 +342,11 @@ impl SimpleModule {
     }
 
     #[getter]
-    fn qubits(&self) -> Vec<Qubit> {
+    fn qubits(&self) -> Vec<Value> {
         self.model
             .qubits
             .iter()
-            .map(|q| Qubit { index: q.index })
+            .map(|q| Value(interop::Value::Qubit(format!("qubit{}", q.index))))
             .collect()
     }
 
@@ -377,8 +376,10 @@ impl SimpleModule {
 
     fn add_external_function(&mut self, py: Python, name: String, ty: PyFunctionType) -> Function {
         let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.external_functions.push((name.clone(), ty.into()));
-        Function { name }
+        let ty = ty.into();
+        let function = Function { name, ty };
+        builder.external_functions.push(function.clone());
+        function
     }
 
     fn use_static_qubit_alloc(&mut self, value: bool) {
@@ -393,11 +394,16 @@ impl SimpleModule {
 impl SimpleModule {
     fn model_from_builder(&self, py: Python) -> SemanticModel {
         let builder = self.builder.as_ref(py).borrow();
+        let external_functions = builder
+            .external_functions
+            .iter()
+            .map(|f| (f.name.clone(), f.ty.clone()))
+            .collect();
 
         match builder.frames[..] {
             [ref instructions] => SemanticModel {
                 instructions: instructions.clone(),
-                external_functions: builder.external_functions.clone(),
+                external_functions,
                 ..self.model.clone()
             },
             _ => panic!("Builder does not contain exactly one stack frame."),
@@ -417,84 +423,84 @@ impl BasicQisBuilder {
         BasicQisBuilder { builder }
     }
 
-    fn cx(&self, py: Python, control: &Qubit, target: &Qubit) {
-        let controlled = Controlled::new(control.id(), target.id());
+    fn cx(&self, py: Python, control: Value, target: Value) {
+        let controlled = Controlled::new(control.0, target.0);
         self.push_inst(py, Instruction::Cx(controlled));
     }
 
-    fn cz(&self, py: Python, control: &Qubit, target: &Qubit) {
-        let controlled = Controlled::new(control.id(), target.id());
+    fn cz(&self, py: Python, control: Value, target: Value) {
+        let controlled = Controlled::new(control.0, target.0);
         self.push_inst(py, Instruction::Cz(controlled));
     }
 
-    fn h(&self, py: Python, qubit: &Qubit) {
-        let single = Single::new(qubit.id());
+    fn h(&self, py: Python, qubit: Value) {
+        let single = Single::new(qubit.0);
         self.push_inst(py, Instruction::H(single));
     }
 
-    fn m(&self, py: Python, qubit: &Qubit, result: &ResultRef) {
-        let measured = Measured::new(qubit.id(), result.id());
+    fn m(&self, py: Python, qubit: Value, result: &ResultRef) {
+        let measured = Measured::new(qubit.0, result.id());
         self.push_inst(py, Instruction::M(measured));
     }
 
-    fn reset(&self, py: Python, qubit: &Qubit) {
-        let single = Single::new(qubit.id());
+    fn reset(&self, py: Python, qubit: Value) {
+        let single = Single::new(qubit.0);
         self.push_inst(py, Instruction::Reset(single));
     }
 
-    fn rx(&self, py: Python, theta: &PyAny, qubit: &Qubit) -> PyResult<()> {
+    fn rx(&self, py: Python, theta: &PyAny, qubit: Value) -> PyResult<()> {
         let theta = extract_value(theta, ValueType::Double)?;
-        let rotated = Rotated::new(theta, qubit.id());
+        let rotated = Rotated::new(theta, qubit.0);
         self.push_inst(py, Instruction::Rx(rotated));
         Ok(())
     }
 
-    fn ry(&self, py: Python, theta: &PyAny, qubit: &Qubit) -> PyResult<()> {
+    fn ry(&self, py: Python, theta: &PyAny, qubit: Value) -> PyResult<()> {
         let theta = extract_value(theta, ValueType::Double)?;
-        let rotated = Rotated::new(theta, qubit.id());
+        let rotated = Rotated::new(theta, qubit.0);
         self.push_inst(py, Instruction::Ry(rotated));
         Ok(())
     }
 
-    fn rz(&self, py: Python, theta: &PyAny, qubit: &Qubit) -> PyResult<()> {
+    fn rz(&self, py: Python, theta: &PyAny, qubit: Value) -> PyResult<()> {
         let theta = extract_value(theta, ValueType::Double)?;
-        let rotated = Rotated::new(theta, qubit.id());
+        let rotated = Rotated::new(theta, qubit.0);
         self.push_inst(py, Instruction::Rz(rotated));
         Ok(())
     }
 
-    fn s(&self, py: Python, qubit: &Qubit) {
-        let single = Single::new(qubit.id());
+    fn s(&self, py: Python, qubit: Value) {
+        let single = Single::new(qubit.0);
         self.push_inst(py, Instruction::S(single));
     }
 
-    fn s_adj(&self, py: Python, qubit: &Qubit) {
-        let single = Single::new(qubit.id());
+    fn s_adj(&self, py: Python, qubit: Value) {
+        let single = Single::new(qubit.0);
         self.push_inst(py, Instruction::SAdj(single));
     }
 
-    fn t(&self, py: Python, qubit: &Qubit) {
-        let single = Single::new(qubit.id());
+    fn t(&self, py: Python, qubit: Value) {
+        let single = Single::new(qubit.0);
         self.push_inst(py, Instruction::T(single));
     }
 
-    fn t_adj(&self, py: Python, qubit: &Qubit) {
-        let single = Single::new(qubit.id());
+    fn t_adj(&self, py: Python, qubit: Value) {
+        let single = Single::new(qubit.0);
         self.push_inst(py, Instruction::TAdj(single));
     }
 
-    fn x(&self, py: Python, qubit: &Qubit) {
-        let single = Single::new(qubit.id());
+    fn x(&self, py: Python, qubit: Value) {
+        let single = Single::new(qubit.0);
         self.push_inst(py, Instruction::X(single));
     }
 
-    fn y(&self, py: Python, qubit: &Qubit) {
-        let single = Single::new(qubit.id());
+    fn y(&self, py: Python, qubit: Value) {
+        let single = Single::new(qubit.0);
         self.push_inst(py, Instruction::Y(single));
     }
 
-    fn z(&self, py: Python, qubit: &Qubit) {
-        let single = Single::new(qubit.id());
+    fn z(&self, py: Python, qubit: Value) {
+        let single = Single::new(qubit.0);
         self.push_inst(py, Instruction::Z(single));
     }
 
@@ -553,7 +559,7 @@ fn extract_value(ob: &PyAny, ty: ValueType) -> PyResult<interop::Value> {
                     PyErr::new::<PyOverflowError, _>(message)
                 }),
             ValueType::Double => Ok(interop::Value::Double(ob.extract()?)),
-            ValueType::Qubit => Ok(interop::Value::Qubit(ob.extract::<Qubit>()?.id())),
+            ValueType::Qubit => Err(PyErr::new::<PyTypeError, _>("Expected Qubit value.")),
             ValueType::Result => Ok(interop::Value::Result(ob.extract::<ResultRef>()?.id())),
         },
     }

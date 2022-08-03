@@ -36,39 +36,47 @@ class ExternalFunctionsTest(unittest.TestCase):
             mod.ir(),
         )
 
-    def test_call_float(self) -> None:
-        mod = SimpleModule("test", 0, 0)
-        f = mod.add_external_function(
-            "test_function", types.Function([types.DOUBLE], types.VOID)
-        )
-        mod.builder.call(f, [23.25])
-        self.assertIn(
-            "call void @test_function(double 2.325000e+01)", mod.ir()
-        )
+    def test_call_double(self) -> None:
+        for value in [Value.double(23.25), 23.25]:
+            with self.subTest(repr(value)):
+                mod = SimpleModule("test", 0, 0)
+                f = mod.add_external_function(
+                    "test_function", types.Function([types.DOUBLE], types.VOID)
+                )
+                mod.builder.call(f, [value])
+                self.assertIn(
+                    "call void @test_function(double 2.325000e+01)", mod.ir()
+                )
 
     def test_call_int(self) -> None:
-        mod = SimpleModule("test", 0, 0)
-        f = mod.add_external_function(
-            "test_function", types.Function([types.INT], types.VOID)
-        )
-        mod.builder.call(f, [42])
-        self.assertIn("call void @test_function(i64 42)", mod.ir())
+        for value in [Value.integer(types.INT, 42), 42]:
+            with self.subTest(repr(value)):
+                mod = SimpleModule("test", 0, 0)
+                f = mod.add_external_function(
+                    "test_function", types.Function([types.INT], types.VOID)
+                )
+                mod.builder.call(f, [value])
+                self.assertIn("call void @test_function(i64 42)", mod.ir())
 
     def test_call_bool_true(self) -> None:
-        mod = SimpleModule("test", 0, 0)
-        f = mod.add_external_function(
-            "test_function", types.Function([types.BOOL], types.VOID)
-        )
-        mod.builder.call(f, [True])
-        self.assertIn("call void @test_function(i1 true)", mod.ir())
+        for value in [Value.integer(types.BOOL, True), True]:
+            with self.subTest(repr(value)):
+                mod = SimpleModule("test", 0, 0)
+                f = mod.add_external_function(
+                    "test_function", types.Function([types.BOOL], types.VOID)
+                )
+                mod.builder.call(f, [value])
+                self.assertIn("call void @test_function(i1 true)", mod.ir())
 
     def test_call_bool_false(self) -> None:
-        mod = SimpleModule("test", 0, 0)
-        f = mod.add_external_function(
-            "test_function", types.Function([types.BOOL], types.VOID)
-        )
-        mod.builder.call(f, [False])
-        self.assertIn("call void @test_function(i1 false)", mod.ir())
+        for value in [Value.integer(types.BOOL, False), False]:
+            with self.subTest(repr(value)):
+                mod = SimpleModule("test", 0, 0)
+                f = mod.add_external_function(
+                    "test_function", types.Function([types.BOOL], types.VOID)
+                )
+                mod.builder.call(f, [value])
+                self.assertIn("call void @test_function(i1 false)", mod.ir())
 
     def test_call_single_static_result(self) -> None:
         mod = SimpleModule("test", 1, 1)
@@ -129,11 +137,11 @@ class ExternalFunctionsTest(unittest.TestCase):
         )
 
     def test_call_numbers(self) -> None:
-        b = True
+        b = Value.integer(types.BOOL, True)
         bool_rep = f"i1 true"
-        i = 42
+        i = Value.integer(types.INT, 42)
         int_rep = f"i64 42"
-        d = 42.42
+        d = Value.double(42.42)
         double_rep = "double 4.242000e+01"
 
         mod = SimpleModule("test", 0, 0)
@@ -147,7 +155,7 @@ class ExternalFunctionsTest(unittest.TestCase):
             mod.ir(),
         )
 
-    def test_wrong_type(self) -> None:
+    def test_wrong_type_conversion(self) -> None:
         cases: List[Tuple[List[types.Value], Callable[[SimpleModule], List[Any]]]] = [
             ([types.BOOL], lambda _: ["true"]),
             ([types.BOOL], lambda mod: [mod.results[0]]),
@@ -155,7 +163,6 @@ class ExternalFunctionsTest(unittest.TestCase):
             ([types.INT], lambda _: ["123"]),
             ([types.DOUBLE], lambda _: ["1.23"]),
             ([types.QUBIT], lambda mod: [mod.results[0]]),
-            ([types.RESULT], lambda mod: [mod.qubits[0]]),
         ]
 
         for param_types, get_args in cases:
@@ -170,27 +177,34 @@ class ExternalFunctionsTest(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     mod.builder.call(f, args)
 
-    def test_overflow(self) -> None:
-        cases = [
-            [123],
-            [2 ** 64],
-        ]
+    def test_overflow_bool_value(self) -> None:
+        with self.assertRaises(OverflowError):
+            Value.integer(types.BOOL, 123)
 
-        for args in cases:
-            with self.subTest(repr(args)):
+    def test_overflow_int_value(self) -> None:
+        with self.assertRaises(OverflowError):
+            Value.integer(types.INT, 2 ** 64)
+
+    def test_overflow_conversion(self) -> None:
+        for value in [123, 2 ** 64]:
+            with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
                 f = mod.add_external_function(
                     "test_function", types.Function([types.BOOL], types.VOID)
                 )
 
                 with self.assertRaises(OverflowError):
-                    mod.builder.call(f, args)
+                    mod.builder.call(f, [value])
 
     def test_wrong_number_of_args(self) -> None:
         cases: List[List[Value]] = [
             [],
-            [1.23],
-            [1.23, True, False],
+            [Value.double(1.23)],
+            [
+                Value.double(1.23),
+                Value.integer(types.BOOL, True),
+                Value.integer(types.BOOL, False),
+            ],
         ]
 
         for args in cases:

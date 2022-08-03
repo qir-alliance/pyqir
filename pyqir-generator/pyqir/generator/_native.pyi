@@ -2,8 +2,7 @@
 # Licensed under the MIT License.
 
 from pyqir.generator import types
-from pyqir.generator._values import Valuable
-from typing import Callable, Optional, Sequence, Tuple
+from typing import Callable, Optional, Sequence, Tuple, Union
 
 
 def ir_to_bitcode(ir: str, module_name: Optional[str], source_file_name: Optional[str]) -> bytes:
@@ -30,35 +29,55 @@ def bitcode_to_ir(bitcode: bytes, module_name: Optional[str], source_file_name: 
     ...
 
 
-class Qubit:
-    """A qubit identifier."""
-    ...
-
-
 class ResultRef:
     """A mutable reference cell that holds a measurement result."""
     ...
 
 
 class Function:
-    """A callable value for a module function."""
+    """A QIR function."""
     ...
 
 
 class Value:
-    """Any type of QIR value."""
-    ...
+    """A QIR value."""
+
+    @staticmethod
+    def integer(ty: types.Integer, value: int) -> Value:
+        """
+        Creates a constant integer value.
+
+        :param ty: The integer type.
+        :param value: The Python value.
+        :returns: The QIR value.
+        """
+        ...
+
+    @staticmethod
+    def double(value: float) -> Value:
+        """
+        Creates a constant double value.
+
+        :param value: The Python value.
+        :returns: The QIR value.
+        """
+        ...
 
 
 class Builder:
     """An instruction builder."""
 
-    def call(self, function: Function, args: Sequence[Valuable]) -> Optional[Value]:
+    def call(
+        self,
+        function: Function,
+        args: Sequence[Union[Value, ResultRef, bool, int, float]]
+    ) -> Optional[Value]:
         """
         Builds a call instruction.
 
         :param function: The function to call.
         :param args: The arguments to the function.
+        :returns: The return value, or None if the function has a void return type.
         """
         ...
 
@@ -91,15 +110,15 @@ class SimpleModule:
         ...
 
     @property
-    def qubits(self) -> Tuple[Qubit, ...]:
+    def qubits(self) -> Tuple[Value, ...]:
         """A sequence of qubits representing the global quantum register."""
         ...
 
     @property
     def results(self) -> Tuple[ResultRef, ...]:
         """
-        A sequence of result references representing the global
-        classical register.
+        A sequence of result references representing the global classical
+        register.
         """
         ...
 
@@ -160,7 +179,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def cx(self, control: Qubit, target: Qubit) -> None:
+    def cx(self, control: Value, target: Value) -> None:
         """
         Builds a controlled Pauli :math:`X` gate.
 
@@ -169,7 +188,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def cz(self, control: Qubit, target: Qubit) -> None:
+    def cz(self, control: Value, target: Value) -> None:
         """
         Builds a controlled Pauli :math:`Z` gate.
 
@@ -178,7 +197,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def h(self, qubit: Qubit) -> None:
+    def h(self, qubit: Value) -> None:
         """
         Builds a Hadamard gate.
 
@@ -186,7 +205,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def m(self, qubit: Qubit, result: ResultRef) -> None:
+    def m(self, qubit: Value, result: ResultRef) -> None:
         """
         Builds a measurement operation.
 
@@ -196,7 +215,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def reset(self, qubit: Qubit) -> None:
+    def reset(self, qubit: Value) -> None:
         """
         Builds a reset operation.
 
@@ -204,7 +223,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def rx(self, theta: Valuable, qubit: Qubit) -> None:
+    def rx(self, theta: Union[Value, float], qubit: Value) -> None:
         """
         Builds a rotation gate about the :math:`x` axis.
 
@@ -213,7 +232,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def ry(self, theta: Valuable, qubit: Qubit) -> None:
+    def ry(self, theta: Union[Value, float], qubit: Value) -> None:
         """
         Builds a rotation gate about the :math:`y` axis.
 
@@ -222,7 +241,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def rz(self, theta: Valuable, qubit: Qubit) -> None:
+    def rz(self, theta: Union[Value, float], qubit: Value) -> None:
         """
         Builds a rotation gate about the :math:`z` axis.
 
@@ -231,7 +250,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def s(self, qubit: Qubit) -> None:
+    def s(self, qubit: Value) -> None:
         """
         Builds an :math:`S` gate.
 
@@ -239,7 +258,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def s_adj(self, qubit: Qubit) -> None:
+    def s_adj(self, qubit: Value) -> None:
         """
         Builds an adjoint :math:`S` gate.
 
@@ -247,7 +266,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def t(self, qubit: Qubit) -> None:
+    def t(self, qubit: Value) -> None:
         """
         Builds a :math:`T` gate.
 
@@ -255,7 +274,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def t_adj(self, qubit: Qubit) -> None:
+    def t_adj(self, qubit: Value) -> None:
         """
         Builds an adjoint :math:`T` gate.
 
@@ -263,7 +282,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def x(self, qubit: Qubit) -> None:
+    def x(self, qubit: Value) -> None:
         """
         Builds a Pauli :math:`X` gate.
 
@@ -271,7 +290,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def y(self, qubit: Qubit) -> None:
+    def y(self, qubit: Value) -> None:
         """
         Builds a Pauli :math:`Y` gate.
 
@@ -279,7 +298,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def z(self, qubit: Qubit) -> None:
+    def z(self, qubit: Value) -> None:
         """
         Builds a Pauli :math:`Z` gate.
 

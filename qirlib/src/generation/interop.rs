@@ -43,28 +43,28 @@ pub enum Register {
     Classical(ClassicalRegister),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Controlled {
-    pub control: String,
-    pub target: String,
+    pub control: Value,
+    pub target: Value,
 }
 
 impl Controlled {
     #[must_use]
-    pub fn new(control: String, target: String) -> Self {
+    pub fn new(control: Value, target: Value) -> Self {
         Controlled { control, target }
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Measured {
-    pub qubit: String,
+    pub qubit: Value,
     pub target: String,
 }
 
 impl Measured {
     #[must_use]
-    pub fn new(qubit: String, target: String) -> Self {
+    pub fn new(qubit: Value, target: String) -> Self {
         Measured { qubit, target }
     }
 }
@@ -72,24 +72,24 @@ impl Measured {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rotated {
     pub theta: Value,
-    pub qubit: String,
+    pub qubit: Value,
 }
 
 impl Rotated {
     #[must_use]
-    pub fn new(theta: Value, qubit: String) -> Self {
+    pub fn new(theta: Value, qubit: Value) -> Self {
         Rotated { theta, qubit }
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Single {
-    pub qubit: String,
+    pub qubit: Value,
 }
 
 impl Single {
     #[must_use]
-    pub fn new(qubit: String) -> Self {
+    pub fn new(qubit: Value) -> Self {
         Single { qubit }
     }
 }
@@ -190,11 +190,11 @@ impl Integer {
         }
     }
 
-    pub(crate) fn width(&self) -> u32 {
+    pub fn width(&self) -> u32 {
         self.width
     }
 
-    pub(crate) fn value(&self) -> u64 {
+    pub fn value(&self) -> u64 {
         self.value
     }
 }

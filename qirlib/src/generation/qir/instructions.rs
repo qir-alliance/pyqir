@@ -71,25 +71,18 @@ fn get_value<'ctx>(
 fn measure<'ctx>(
     generator: &CodeGenerator<'ctx>,
     env: &mut Environment<'ctx>,
-    qubit: &str,
+    qubit: &Value,
     target: &str,
 ) {
+    let qubit = get_value(generator, env, qubit);
+
     if generator.use_static_result_alloc {
-        // measure the qubit and save the result to a temporary value
         generator.emit_void_call(
             generator.qis_mz_body(),
-            &[
-                get_qubit(env, qubit).into(),
-                get_result(generator, env, target).into(),
-            ],
+            &[qubit, get_result(generator, env, target).into()],
         );
     } else {
-        // measure the qubit and save the result to a temporary value
-        let new_value = generator.emit_call_with_return(
-            generator.qis_m_body(),
-            &[get_qubit(env, qubit).into()],
-            target,
-        );
+        let new_value = generator.emit_call_with_return(generator.qis_m_body(), &[qubit], target);
         env.set_result(target.to_owned(), new_value.into_pointer_value())
             .unwrap();
     }
@@ -98,8 +91,8 @@ fn measure<'ctx>(
 fn controlled<'ctx>(
     generator: &CodeGenerator<'ctx>,
     intrinsic: FunctionValue<'ctx>,
-    control: BasicValueEnum<'ctx>,
-    qubit: BasicValueEnum<'ctx>,
+    control: BasicMetadataValueEnum<'ctx>,
+    qubit: BasicMetadataValueEnum<'ctx>,
 ) {
     generator.emit_void_call(intrinsic, &[control.into(), qubit.into()]);
 }
@@ -110,61 +103,68 @@ pub(crate) fn emit<'ctx>(
     inst: &Instruction,
     entry_point: FunctionValue,
 ) {
-    let get_qubit = |name| get_qubit(env, name);
-
     match inst {
         Instruction::Cx(inst) => {
-            let control = get_qubit(&inst.control);
-            let qubit = get_qubit(&inst.target);
+            let control = get_value(generator, env, &inst.control);
+            let qubit = get_value(generator, env, &inst.target);
             controlled(generator, generator.qis_cnot_body(), control, qubit);
         }
         Instruction::Cz(inst) => {
-            let control = get_qubit(&inst.control);
-            let qubit = get_qubit(&inst.target);
+            let control = get_value(generator, env, &inst.control);
+            let qubit = get_value(generator, env, &inst.target);
             controlled(generator, generator.qis_cz_body(), control, qubit);
         }
         Instruction::H(inst) => {
-            generator.emit_void_call(generator.qis_h_body(), &[get_qubit(&inst.qubit).into()]);
+            let qubit = get_value(generator, env, &inst.qubit);
+            generator.emit_void_call(generator.qis_h_body(), &[qubit]);
         }
         Instruction::M(inst) => measure(generator, env, &inst.qubit, &inst.target),
         Instruction::Reset(inst) => {
-            generator.emit_void_call(generator.qis_reset_body(), &[get_qubit(&inst.qubit).into()]);
+            let qubit = get_value(generator, env, &inst.qubit);
+            generator.emit_void_call(generator.qis_reset_body(), &[qubit]);
         }
         Instruction::Rx(inst) => {
             let theta = get_value(generator, env, &inst.theta);
-            let qubit = get_qubit(&inst.qubit).into();
+            let qubit = get_value(generator, env, &inst.qubit);
             generator.emit_void_call(generator.qis_rx_body(), &[theta, qubit]);
         }
         Instruction::Ry(inst) => {
             let theta = get_value(generator, env, &inst.theta);
-            let qubit = get_qubit(&inst.qubit).into();
+            let qubit = get_value(generator, env, &inst.qubit);
             generator.emit_void_call(generator.qis_ry_body(), &[theta, qubit]);
         }
         Instruction::Rz(inst) => {
             let theta = get_value(generator, env, &inst.theta);
-            let qubit = get_qubit(&inst.qubit).into();
+            let qubit = get_value(generator, env, &inst.qubit);
             generator.emit_void_call(generator.qis_rz_body(), &[theta, qubit]);
         }
         Instruction::S(inst) => {
-            generator.emit_void_call(generator.qis_s_body(), &[get_qubit(&inst.qubit).into()]);
+            let qubit = get_value(generator, env, &inst.qubit);
+            generator.emit_void_call(generator.qis_s_body(), &[qubit]);
         }
         Instruction::SAdj(inst) => {
-            generator.emit_void_call(generator.qis_s_adj(), &[get_qubit(&inst.qubit).into()]);
+            let qubit = get_value(generator, env, &inst.qubit);
+            generator.emit_void_call(generator.qis_s_adj(), &[qubit]);
         }
         Instruction::T(inst) => {
-            generator.emit_void_call(generator.qis_t_body(), &[get_qubit(&inst.qubit).into()]);
+            let qubit = get_value(generator, env, &inst.qubit);
+            generator.emit_void_call(generator.qis_t_body(), &[qubit]);
         }
         Instruction::TAdj(inst) => {
-            generator.emit_void_call(generator.qis_t_adj(), &[get_qubit(&inst.qubit).into()]);
+            let qubit = get_value(generator, env, &inst.qubit);
+            generator.emit_void_call(generator.qis_t_adj(), &[qubit]);
         }
         Instruction::X(inst) => {
-            generator.emit_void_call(generator.qis_x_body(), &[get_qubit(&inst.qubit).into()]);
+            let qubit = get_value(generator, env, &inst.qubit);
+            generator.emit_void_call(generator.qis_x_body(), &[qubit]);
         }
         Instruction::Y(inst) => {
-            generator.emit_void_call(generator.qis_y_body(), &[get_qubit(&inst.qubit).into()]);
+            let qubit = get_value(generator, env, &inst.qubit);
+            generator.emit_void_call(generator.qis_y_body(), &[qubit]);
         }
         Instruction::Z(inst) => {
-            generator.emit_void_call(generator.qis_z_body(), &[get_qubit(&inst.qubit).into()]);
+            let qubit = get_value(generator, env, &inst.qubit);
+            generator.emit_void_call(generator.qis_z_body(), &[qubit]);
         }
         Instruction::Call(call) => emit_call(generator, env, call),
         Instruction::If(if_) => emit_if(generator, env, entry_point, if_),

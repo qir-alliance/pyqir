@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, SimpleModule, types
+from pyqir.generator import BasicQisBuilder, SimpleModule, Value, types
 
 mod = SimpleModule("external_functions", num_qubits=1, num_results=0)
 qis = BasicQisBuilder(mod.builder)
@@ -21,7 +21,7 @@ my_gate = mod.add_external_function(
 )
 
 # Call the functions with a list of arguments.
-mod.builder.call(my_gate, [123, mod.qubits[0]])
+mod.builder.call(my_gate, [Value.integer(types.INT, 123), mod.qubits[0]])
 
 # Declare a function that returns a double.
 get_angle = mod.add_external_function(
