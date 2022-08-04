@@ -111,7 +111,7 @@ fn extract_sentinel(module_name: &str, type_name: &str, ob: &PyAny) -> PyResult<
         Ok(())
     } else {
         let message = format!("Expected {}.{}.", module_name, type_name);
-        Err(PyErr::new::<PyTypeError, _>(message))
+        Err(PyTypeError::new_err(message))
     }
 }
 
@@ -191,7 +191,7 @@ impl PyObjectProtocol for ResultRef {
     fn __richcmp__(&self, other: ResultRef, op: CompareOp) -> PyResult<bool> {
         match op {
             CompareOp::Eq => Ok(self == &other),
-            _ => Err(PyErr::new::<PyTypeError, _>("Only equality is supported.")),
+            _ => Err(PyTypeError::new_err("Only equality is supported.")),
         }
     }
 }
@@ -232,7 +232,7 @@ impl Value {
     #[staticmethod]
     fn integer(ty: PyIntegerType, value: u64) -> PyResult<Value> {
         let integer = interop::Integer::new(ty.width, value)
-            .ok_or_else(|| PyErr::new::<PyOverflowError, _>("Value is too large for the type."))?;
+            .ok_or_else(|| PyOverflowError::new_err("Value is too large for the type."))?;
         Ok(Value(interop::Value::Integer(integer)))
     }
 
@@ -265,7 +265,7 @@ impl Builder {
         let num_args = args.len()?;
         if num_params != num_args {
             let message = format!("Expected {} arguments, got {}.", num_params, num_args);
-            return Err(PyErr::new::<PyValueError, _>(message));
+            return Err(PyValueError::new_err(message));
         }
 
         let args = args
@@ -554,10 +554,10 @@ fn extract_value(ob: &PyAny, ty: ValueType) -> PyResult<interop::Value> {
                 .map(interop::Value::Integer)
                 .ok_or_else(|| {
                     let message = format!("Value too big for {}-bit integer.", width);
-                    PyErr::new::<PyOverflowError, _>(message)
+                    PyOverflowError::new_err(message)
                 }),
             ValueType::Double => Ok(interop::Value::Double(ob.extract()?)),
-            ValueType::Qubit => Err(PyErr::new::<PyTypeError, _>("Expected Qubit value.")),
+            ValueType::Qubit => Err(PyTypeError::new_err("Expected Qubit value.")),
             ValueType::Result => Ok(interop::Value::Result(ob.extract::<ResultRef>()?.id())),
         },
     }
