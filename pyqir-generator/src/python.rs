@@ -264,41 +264,41 @@ impl Builder {
     }
 
     #[pyo3(name = "and_")]
-    fn and(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::And, lhs, rhs)
+    fn and(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::And, lhs.0, rhs.0)
     }
 
     #[pyo3(name = "or_")]
-    fn or(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::Or, lhs, rhs)
+    fn or(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Or, lhs.0, rhs.0)
     }
 
-    fn xor(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::Xor, lhs, rhs)
+    fn xor(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Xor, lhs.0, rhs.0)
     }
 
-    fn add(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::Add, lhs, rhs)
+    fn add(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Add, lhs.0, rhs.0)
     }
 
-    fn sub(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::Sub, lhs, rhs)
+    fn sub(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Sub, lhs.0, rhs.0)
     }
 
-    fn mul(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::Mul, lhs, rhs)
+    fn mul(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Mul, lhs.0, rhs.0)
     }
 
-    fn shl(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::Shl, lhs, rhs)
+    fn shl(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Shl, lhs.0, rhs.0)
     }
 
-    fn lshr(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::LShr, lhs, rhs)
+    fn lshr(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::LShr, lhs.0, rhs.0)
     }
 
-    fn icmp(&mut self, predicate: PyIPredicate, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::ICmp(predicate.0), lhs, rhs)
+    fn icmp(&mut self, predicate: PyIPredicate, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::ICmp(predicate.0), lhs.0, rhs.0)
     }
 
     fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Value>> {
@@ -355,16 +355,6 @@ impl Builder {
         };
         self.last_variable = Some(v.clone());
         v
-    }
-
-    fn push_binary_op_any(
-        &mut self,
-        kind: BinaryKind,
-        lhs: &PyAny,
-        rhs: &PyAny,
-    ) -> PyResult<Value> {
-        let (lhs, rhs) = extract_binary_operands(lhs, rhs)?;
-        Ok(self.push_binary_op(kind, lhs, rhs))
     }
 
     fn push_binary_op(
@@ -648,26 +638,6 @@ fn extract_value(ty: &Type, ob: &PyAny) -> PyResult<interop::Value> {
             Type::Result => Ok(interop::Value::Result(ob.extract::<ResultRef>()?.id())),
             Type::Void | Type::Qubit | Type::Function { .. } => Err(PyTypeError::new_err(
                 "Can't convert Python value into this type.",
-            )),
-        },
-    }
-}
-
-fn extract_binary_operands(lhs: &PyAny, rhs: &PyAny) -> PyResult<(interop::Value, interop::Value)> {
-    match lhs.extract::<Value>() {
-        Ok(Value(lhs)) => {
-            let ty = lhs.type_of();
-            let rhs = extract_value(&ty, rhs)?;
-            Ok((lhs, rhs))
-        }
-        Err(_) => match rhs.extract::<Value>() {
-            Ok(Value(rhs)) => {
-                let ty = rhs.type_of();
-                let lhs = extract_value(&ty, lhs)?;
-                Ok((lhs, rhs))
-            }
-            Err(_) => Err(PyErr::new::<PyTypeError, _>(
-                "At least one operand must be a Value.",
             )),
         },
     }

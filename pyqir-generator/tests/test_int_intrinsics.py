@@ -57,7 +57,7 @@ class IntIntrinsicsTest(unittest.TestCase):
                     "sink", types.Function([ty], types.VOID))
 
                 x = mod.builder.call(source, [])
-                y = build(mod.builder)(1, x)
+                y = build(mod.builder)(Value.integer(types.INT, 1), x)
                 mod.builder.call(sink, [y])
 
                 self.assertIn(f"%1 = {name} i64 1, %0", mod.ir())
