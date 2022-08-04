@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from functools import partial
-from pyqir.generator import Builder, IPredicate, SimpleModule, Value, types
+from pyqir.generator import Builder, IPredicate, SimpleModule, Value, const, types
 from typing import Callable, List, Tuple
 import unittest
 
@@ -57,7 +57,7 @@ class IntIntrinsicsTest(unittest.TestCase):
                     "sink", types.Function([ty], types.VOID))
 
                 x = mod.builder.call(source, [])
-                y = build(mod.builder)(Value.integer(types.INT, 1), x)
+                y = build(mod.builder)(const(types.Int(64), 1), x)
                 mod.builder.call(sink, [y])
 
                 self.assertIn(f"%1 = {name} i64 1, %0", mod.ir())
@@ -74,3 +74,8 @@ class IntIntrinsicsTest(unittest.TestCase):
         mod.builder.call(sink, [y])
 
         self.assertIn("%1 = sub i64 0, %0", mod.ir())
+
+    def test_type_mismatch(self) -> None:
+        mod = SimpleModule("test_type_mismatch", 0, 0)
+        with self.assertRaises(TypeError):
+            mod.builder.add(const(types.Int(16), 2), const(types.Int(18), 2))

@@ -257,47 +257,47 @@ impl Builder {
         match value.0.type_of() {
             Type::Int { width, .. } => {
                 let zero = interop::Value::Int(Int::new(width, 0).unwrap());
-                Ok(self.push_binary_op(BinaryKind::Sub, zero, value.0))
+                self.push_binary_op(BinaryKind::Sub, zero, value.0)
             }
             _ => Err(PyTypeError::new_err("Value must be an integer.")),
         }
     }
 
     #[pyo3(name = "and_")]
-    fn and(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn and(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
         self.push_binary_op(BinaryKind::And, lhs.0, rhs.0)
     }
 
     #[pyo3(name = "or_")]
-    fn or(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn or(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
         self.push_binary_op(BinaryKind::Or, lhs.0, rhs.0)
     }
 
-    fn xor(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn xor(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
         self.push_binary_op(BinaryKind::Xor, lhs.0, rhs.0)
     }
 
-    fn add(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn add(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
         self.push_binary_op(BinaryKind::Add, lhs.0, rhs.0)
     }
 
-    fn sub(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn sub(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
         self.push_binary_op(BinaryKind::Sub, lhs.0, rhs.0)
     }
 
-    fn mul(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn mul(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
         self.push_binary_op(BinaryKind::Mul, lhs.0, rhs.0)
     }
 
-    fn shl(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn shl(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
         self.push_binary_op(BinaryKind::Shl, lhs.0, rhs.0)
     }
 
-    fn lshr(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn lshr(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
         self.push_binary_op(BinaryKind::LShr, lhs.0, rhs.0)
     }
 
-    fn icmp(&mut self, predicate: PyIPredicate, lhs: Value, rhs: Value) -> Value {
+    fn icmp(&mut self, predicate: PyIPredicate, lhs: Value, rhs: Value) -> PyResult<Value> {
         self.push_binary_op(BinaryKind::ICmp(predicate.0), lhs.0, rhs.0)
     }
 
@@ -362,17 +362,19 @@ impl Builder {
         kind: BinaryKind,
         lhs: interop::Value,
         rhs: interop::Value,
-    ) -> Value {
-        // TODO: Check both types are equal.
-        let result = self.fresh_variable(lhs.type_of());
-        self.push_inst(Instruction::BinaryOp(BinaryOp {
-            kind,
-            lhs,
-            rhs,
-            result: result.clone(),
-        }));
-
-        Value(interop::Value::Variable(result))
+    ) -> PyResult<Value> {
+        if lhs.type_of() == rhs.type_of() {
+            let result = self.fresh_variable(lhs.type_of());
+            self.push_inst(Instruction::BinaryOp(BinaryOp {
+                kind,
+                lhs,
+                rhs,
+                result: result.clone(),
+            }));
+            Ok(Value(interop::Value::Variable(result)))
+        } else {
+            Err(PyTypeError::new_err("Operands are not the same type."))
+        }
     }
 }
 

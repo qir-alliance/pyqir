@@ -59,25 +59,105 @@ def const(ty: Type, value: Union[int, float]) -> Value:
 class Builder:
     """An instruction builder."""
 
-    def neg(self, value: Value) -> Value: ...
+    def neg(self, value: Value) -> Value:
+        """
+        Inserts a negation instruction (subtracting `value` from 0).
 
-    def and_(self, lhs: Value, rhs: Value) -> Value: ...
+        :param value: The value to negate.
+        :returns: The negated value.
+        """
+        ...
 
-    def or_(self, lhs: Value, rhs: Value) -> Value: ...
+    def and_(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a bitwise logical and instruction.
 
-    def xor(self, lhs: Value, rhs: Value) -> Value: ...
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :returns: The result.
+        """
+        ...
 
-    def add(self, lhs: Value, rhs: Value) -> Value: ...
+    def or_(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a bitwise logical or instruction.
 
-    def sub(self, lhs: Value, rhs: Value) -> Value: ...
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :returns: The result.
+        """
+        ...
 
-    def mul(self, lhs: Value, rhs: Value) -> Value: ...
+    def xor(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a bitwise logical exclusive or instruction.
 
-    def shl(self, lhs: Value, rhs: Value) -> Value: ...
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :returns: The result.
+        """
+        ...
 
-    def lshr(self, lhs: Value, rhs: Value) -> Value: ...
+    def add(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts an addition instruction.
 
-    def icmp(self, predicate: IPredicate, lhs: Value, rhs: Value) -> Value: ...
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :returns: The sum.
+        """
+        ...
+
+    def sub(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a subtraction instruction.
+
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :returns: The difference.
+        """
+        ...
+
+    def mul(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a multiplication instruction.
+
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :returns: The product.
+        """
+        ...
+
+    def shl(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a shift left instruction.
+
+        :param lhs: The value to shift.
+        :param rhs: The number of bits to shift by.
+        :returns: The result.
+        """
+        ...
+
+    def lshr(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a logical (zero fill) shift right instruction.
+
+        :param lhs: The value to shift.
+        :param rhs: The number of bits to shift by.
+        :returns: The result.
+        """
+        ...
+
+    def icmp(self, predicate: IPredicate, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts an integer comparison instruction.
+
+        :param predicate: The predicate to compare by.
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :return: The boolean result.
+        """
+        ...
 
     def call(
         self,
@@ -85,7 +165,7 @@ class Builder:
         args: Sequence[Union[Value, ResultRef, bool, int, float]]
     ) -> Optional[Value]:
         """
-        Adds a call instruction.
+        Inserts a call instruction.
 
         :param function: The function to call.
         :param args: The arguments to the function.

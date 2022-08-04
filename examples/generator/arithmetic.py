@@ -3,7 +3,7 @@
 
 from pyqir.generator import BasicQisBuilder, SimpleModule, Value, types
 
-mod = SimpleModule("external_functions", num_qubits=1, num_results=0)
+mod = SimpleModule("arithmetic", num_qubits=0, num_results=0)
 qis = BasicQisBuilder(mod.builder)
 
 # Declare functions that can produce and consume integers at runtime. See
