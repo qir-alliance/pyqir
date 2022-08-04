@@ -141,6 +141,28 @@ impl From<PyType> for Type {
     }
 }
 
+struct PyIPredicate(IntPredicate);
+
+impl<'source> FromPyObject<'source> for PyIPredicate {
+    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+        let predicate = match ob.getattr("name")?.extract()? {
+            "EQ" => Ok(IntPredicate::EQ),
+            "NE" => Ok(IntPredicate::NE),
+            "UGT" => Ok(IntPredicate::UGT),
+            "UGE" => Ok(IntPredicate::UGE),
+            "ULT" => Ok(IntPredicate::ULT),
+            "ULE" => Ok(IntPredicate::ULE),
+            "SGT" => Ok(IntPredicate::SGT),
+            "SGE" => Ok(IntPredicate::SGE),
+            "SLT" => Ok(IntPredicate::SLT),
+            "SLE" => Ok(IntPredicate::SLE),
+            _ => Err(PyValueError::new_err("Invalid predicate.")),
+        }?;
+
+        Ok(PyIPredicate(predicate))
+    }
+}
+
 #[derive(Clone, Eq, Hash, PartialEq)]
 #[pyclass]
 struct ResultRef {
@@ -275,44 +297,8 @@ impl Builder {
         self.push_binary_op_any(BinaryKind::LShr, lhs, rhs)
     }
 
-    fn icmp_eq(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::EQ), lhs, rhs)
-    }
-
-    fn icmp_neq(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::NE), lhs, rhs)
-    }
-
-    fn icmp_ugt(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::UGT), lhs, rhs)
-    }
-
-    fn icmp_uge(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::UGE), lhs, rhs)
-    }
-
-    fn icmp_ult(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::ULT), lhs, rhs)
-    }
-
-    fn icmp_ule(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::ULE), lhs, rhs)
-    }
-
-    fn icmp_sgt(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::SGT), lhs, rhs)
-    }
-
-    fn icmp_sge(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::SGE), lhs, rhs)
-    }
-
-    fn icmp_slt(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::SLT), lhs, rhs)
-    }
-
-    fn icmp_sle(&mut self, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
-        self.push_binary_op_any(BinaryKind::ICmp(IntPredicate::SLE), lhs, rhs)
+    fn icmp(&mut self, predicate: PyIPredicate, lhs: &PyAny, rhs: &PyAny) -> PyResult<Value> {
+        self.push_binary_op_any(BinaryKind::ICmp(predicate.0), lhs, rhs)
     }
 
     fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Value>> {

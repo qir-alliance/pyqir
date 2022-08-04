@@ -23,4 +23,5 @@ from pyqir.generator._native import (
     ir_to_bitcode as ir_to_bitcode,
 )
 
+from pyqir.generator._builder import IPredicate as IPredicate
 from pyqir.generator.types import Type as Type

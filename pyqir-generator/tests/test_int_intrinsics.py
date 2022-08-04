@@ -1,8 +1,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+from functools import partial
+from pyqir.generator import Builder, IPredicate, SimpleModule, Value, types
 from typing import Callable, List, Tuple
-from pyqir.generator import Builder, SimpleModule, Value, types
 import unittest
 
 _BINARY_INTRINSICS: List[Tuple[str, Callable[[Builder], Callable[[Value, Value], Value]]]] = [
@@ -14,15 +15,16 @@ _BINARY_INTRINSICS: List[Tuple[str, Callable[[Builder], Callable[[Value, Value],
     ("mul", lambda b: b.mul),
     ("shl", lambda b: b.shl),
     ("lshr", lambda b: b.lshr),
-    ("icmp eq", lambda b: b.icmp_eq),
-    ("icmp ne", lambda b: b.icmp_neq),
-    ("icmp ugt", lambda b: b.icmp_ugt),
-    ("icmp uge", lambda b: b.icmp_uge),
-    ("icmp ule", lambda b: b.icmp_ule),
-    ("icmp sgt", lambda b: b.icmp_sgt),
-    ("icmp sge", lambda b: b.icmp_sge),
-    ("icmp slt", lambda b: b.icmp_slt),
-    ("icmp sle", lambda b: b.icmp_sle)
+    ("icmp eq", lambda b: partial(b.icmp, IPredicate.EQ)),
+    ("icmp ne", lambda b: partial(b.icmp, IPredicate.NE)),
+    ("icmp ugt", lambda b: partial(b.icmp, IPredicate.UGT)),
+    ("icmp uge", lambda b: partial(b.icmp, IPredicate.UGE)),
+    ("icmp ult", lambda b: partial(b.icmp, IPredicate.ULT)),
+    ("icmp ule", lambda b: partial(b.icmp, IPredicate.ULE)),
+    ("icmp sgt", lambda b: partial(b.icmp, IPredicate.SGT)),
+    ("icmp sge", lambda b: partial(b.icmp, IPredicate.SGE)),
+    ("icmp slt", lambda b: partial(b.icmp, IPredicate.SLT)),
+    ("icmp sle", lambda b: partial(b.icmp, IPredicate.SLE))
 ]
 
 
@@ -32,8 +34,8 @@ class IntIntrinsicsTest(unittest.TestCase):
             with self.subTest(name):
                 mod = SimpleModule("test " + name, 0, 0)
                 source = mod.add_external_function(
-                    "source", types.Function([], types.INT))
-                ty = types.BOOL if name.startswith("icmp") else types.INT
+                    "source", types.Function([], types.Int(64)))
+                ty = types.BOOL if name.startswith("icmp") else types.Int(64)
                 sink = mod.add_external_function(
                     "sink", types.Function([ty], types.VOID))
 
@@ -49,8 +51,8 @@ class IntIntrinsicsTest(unittest.TestCase):
             with self.subTest(name):
                 mod = SimpleModule("test " + name, 0, 0)
                 source = mod.add_external_function(
-                    "source", types.Function([], types.INT))
-                ty = types.BOOL if name.startswith("icmp") else types.INT
+                    "source", types.Function([], types.Int(64)))
+                ty = types.BOOL if name.startswith("icmp") else types.Int(64)
                 sink = mod.add_external_function(
                     "sink", types.Function([ty], types.VOID))
 
@@ -63,9 +65,9 @@ class IntIntrinsicsTest(unittest.TestCase):
     def test_neg(self) -> None:
         mod = SimpleModule("test_neg", 0, 0)
         source = mod.add_external_function(
-            "source", types.Function([], types.INT))
+            "source", types.Function([], types.Int(64)))
         sink = mod.add_external_function(
-            "sink", types.Function([types.INT], types.VOID))
+            "sink", types.Function([types.Int(64)], types.VOID))
 
         x = mod.builder.call(source, [])
         y = mod.builder.neg(x)
