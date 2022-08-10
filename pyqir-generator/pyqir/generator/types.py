@@ -39,21 +39,18 @@ class Result(Enum):
     _RESULT = auto()
 
 
-Value = Union[Integer, Double, Qubit, Result]
-"""The set of types that can represent a value."""
-
-Return = Union[Void, Value]
-"""The set of types that can be used as the return type of a function."""
+Type = Union[Void, Integer, Double, Qubit, Result, Void]
+"""A QIR type."""
 
 
 @dataclass
 class Function:
     """The type of a function."""
 
-    param_types: Sequence[Value]
+    param_types: Sequence[Type]
     """The type of each parameter to the function."""
 
-    return_type: Return
+    return_type: Type
     """The return type of the function."""
 
 

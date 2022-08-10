@@ -21,3 +21,5 @@ from pyqir.generator._native import (
     ir_to_bitcode as ir_to_bitcode,
     bitcode_to_ir as bitcode_to_ir,
 )
+
+from pyqir.generator.types import Type as Type

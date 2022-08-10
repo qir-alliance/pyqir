@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, SimpleModule, Value, types
+from pyqir.generator import BasicQisBuilder, SimpleModule, Type, Value, types
 import re
 from typing import Any, Callable, List, Tuple
 import unittest
@@ -156,7 +156,7 @@ class ExternalFunctionsTest(unittest.TestCase):
         )
 
     def test_wrong_type_conversion(self) -> None:
-        cases: List[Tuple[List[types.Value], Callable[[SimpleModule], List[Any]]]] = [
+        cases: List[Tuple[List[Type], Callable[[SimpleModule], List[Any]]]] = [
             ([types.BOOL], lambda _: ["true"]),
             ([types.BOOL], lambda mod: [mod.results[0]]),
             ([types.INT], lambda _: [1.23]),
@@ -210,7 +210,7 @@ class ExternalFunctionsTest(unittest.TestCase):
         for args in cases:
             with self.subTest(repr(args)):
                 mod = SimpleModule("test", 0, 0)
-                param_types: List[types.Value] = [types.DOUBLE, types.BOOL]
+                param_types: List[Type] = [types.DOUBLE, types.BOOL]
                 f = mod.add_external_function(
                     "test_function", types.Function(param_types, types.VOID)
                 )
