@@ -5,7 +5,7 @@ use crate::{
     codegen::CodeGenerator,
     generation::{
         env::Environment,
-        interop::{self, ReturnType, SemanticModel, ValueType},
+        interop::{self, SemanticModel, Type},
         qir,
     },
     passes::run_basic_passes_on,
@@ -14,11 +14,14 @@ use inkwell::{
     attributes::AttributeLoc,
     context::Context,
     module::Linkage,
-    types::{BasicType, BasicTypeEnum, FunctionType},
+    types::{AnyTypeEnum, BasicType, BasicTypeEnum},
     values::{BasicValueEnum, FunctionValue, PointerValue},
     AddressSpace,
 };
-use std::{collections::HashMap, convert::Into};
+use std::{
+    collections::HashMap,
+    convert::{Into, TryFrom},
+};
 
 /// # Errors
 ///
@@ -104,44 +107,46 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
 
 fn add_external_functions<'a>(
     generator: &CodeGenerator,
-    functions: impl Iterator<Item = &'a (String, interop::FunctionType)>,
+    functions: impl Iterator<Item = &'a (String, interop::Type)>,
 ) {
     for (name, ty) in functions {
-        let ty = get_function_type(generator, ty);
+        let ty = get_type(generator, ty).into_function_type();
         generator
             .module
             .add_function(name, ty, Some(Linkage::External));
     }
 }
 
-fn get_function_type<'ctx>(
-    generator: &CodeGenerator<'ctx>,
-    ty: &interop::FunctionType,
-) -> FunctionType<'ctx> {
-    let param_types: Vec<_> = ty
-        .param_types
-        .iter()
-        .map(|ty| get_basic_type(generator, ty).into())
-        .collect();
-
-    let param_types = param_types.as_slice();
-    match ty.return_type {
-        ReturnType::Void => generator.context.void_type().fn_type(param_types, false),
-        ReturnType::Value(ty) => get_basic_type(generator, &ty).fn_type(param_types, false),
-    }
-}
-
-fn get_basic_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &ValueType) -> BasicTypeEnum<'ctx> {
+fn get_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &Type) -> AnyTypeEnum<'ctx> {
     match ty {
-        ValueType::Integer { width } => {
-            BasicTypeEnum::IntType(generator.context.custom_width_int_type(*width))
-        }
-        ValueType::Double => BasicTypeEnum::FloatType(generator.context.f64_type()),
-        ValueType::Qubit => {
-            BasicTypeEnum::PointerType(generator.qubit_type().ptr_type(AddressSpace::Generic))
-        }
-        ValueType::Result => {
-            BasicTypeEnum::PointerType(generator.result_type().ptr_type(AddressSpace::Generic))
+        Type::Void => generator.context.void_type().into(),
+        &Type::Int { width } => generator.context.custom_width_int_type(width).into(),
+        Type::Double => generator.context.f64_type().into(),
+        Type::Qubit => generator
+            .qubit_type()
+            .ptr_type(AddressSpace::Generic)
+            .into(),
+        Type::Result => generator
+            .result_type()
+            .ptr_type(AddressSpace::Generic)
+            .into(),
+        Type::Function { params, result } => {
+            let params = params
+                .iter()
+                .map(|ty| {
+                    BasicTypeEnum::try_from(get_type(generator, ty))
+                        .unwrap()
+                        .into()
+                })
+                .collect::<Vec<_>>();
+
+            match get_type(generator, result) {
+                AnyTypeEnum::VoidType(void) => void.fn_type(&params, false),
+                result => BasicTypeEnum::try_from(result)
+                    .expect("Invalid return type.")
+                    .fn_type(&params, false),
+            }
+            .into()
         }
     }
 }
@@ -369,8 +374,8 @@ mod result_alloc_tests {
 mod if_tests {
     use super::test_utils::check_or_save_reference_ir;
     use crate::generation::interop::{
-        Call, ClassicalRegister, FunctionType, If, Instruction, Measured, QuantumRegister,
-        ReturnType, SemanticModel, Single, Value, ValueType, Variable,
+        Call, ClassicalRegister, If, Instruction, Measured, QuantumRegister, SemanticModel, Single,
+        Type, Value, Variable,
     };
 
     #[test]
@@ -683,16 +688,16 @@ mod if_tests {
             external_functions: vec![
                 (
                     "foo".to_string(),
-                    FunctionType {
-                        param_types: vec![],
-                        return_type: ReturnType::Value(ValueType::Integer { width: 64 }),
+                    Type::Function {
+                        params: vec![],
+                        result: Box::new(Type::Int { width: 64 }),
                     },
                 ),
                 (
                     "bar".to_string(),
-                    FunctionType {
-                        param_types: vec![ValueType::Integer { width: 64 }],
-                        return_type: ReturnType::Void,
+                    Type::Function {
+                        params: vec![Type::Int { width: 64 }],
+                        result: Box::new(Type::Void),
                     },
                 ),
             ],

@@ -130,29 +130,24 @@ pub struct Call {
     pub result: Option<Variable>,
 }
 
-#[derive(Clone, Copy)]
-pub enum ValueType {
-    Integer { width: u32 },
+#[derive(Clone)]
+pub enum Type {
+    Void,
+    Int {
+        width: u32,
+    },
     Double,
     Qubit,
     Result,
-}
-
-#[derive(Clone)]
-pub enum ReturnType {
-    Void,
-    Value(ValueType),
-}
-
-#[derive(Clone)]
-pub struct FunctionType {
-    pub param_types: Vec<ValueType>,
-    pub return_type: ReturnType,
+    Function {
+        params: Vec<Type>,
+        result: Box<Type>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
-    Integer(Integer),
+    Int(Int),
     Double(f64),
     Qubit(String),
     Result(String),
@@ -172,14 +167,14 @@ impl Variable {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Integer {
+pub struct Int {
     width: u32,
     value: u64,
 }
 
-impl Integer {
-    /// Creates a new integer, returning `None` if the number of bits required to represent `value`
-    /// is greater than `width`.
+impl Int {
+    /// Creates a new constant integer, returning `None` if the number of bits required to represent
+    /// `value` is greater than `width`.
     #[must_use]
     pub fn new(width: u32, value: u64) -> Option<Self> {
         let value_width = u64::BITS - u64::leading_zeros(value);
@@ -209,7 +204,7 @@ pub struct SemanticModel {
     pub instructions: Vec<Instruction>,
     pub use_static_qubit_alloc: bool,
     pub use_static_result_alloc: bool,
-    pub external_functions: Vec<(String, FunctionType)>,
+    pub external_functions: Vec<(String, Type)>,
 }
 
 impl SemanticModel {

@@ -43,10 +43,10 @@ class Result(Enum):
 class Function:
     """The type of a function."""
 
-    param_types: Sequence["Type"]
+    params: Sequence["Type"]
     """The type of each parameter to the function."""
 
-    return_type: "Type"
+    result: "Type"
     """The return type of the function."""
 
 

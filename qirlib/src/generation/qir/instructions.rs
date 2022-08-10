@@ -53,7 +53,7 @@ fn get_value<'ctx>(
     value: &Value,
 ) -> BasicMetadataValueEnum<'ctx> {
     match value {
-        Value::Integer(i) => generator
+        Value::Int(i) => generator
             .context
             .custom_width_int_type(i.width())
             .const_int(i.value(), false)
