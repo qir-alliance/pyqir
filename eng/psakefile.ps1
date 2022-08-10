@@ -464,6 +464,7 @@ task run-examples {
         & $python -m pip install -U pip wheel
         & $python -m pip install -r requirements.txt
         & $python -m pip install -U --no-index --find-links (Join-Path $repo.root "target" "wheels") pyqir-generator
+
         & $python "bell_pair.py" | Tee-Object -Variable bell_pair_output
         $bell_first_line = $($bell_pair_output | Select-Object -first 1)
         $bell_expected = "; ModuleID = 'Bell'"
@@ -474,6 +475,12 @@ task run-examples {
         $bz_first_line = Get-Content $bz_output | Select-Object -first 1
         $bz_expected = "; ModuleID = 'bernstein_vazirani'"
         Assert ($bz_first_line -eq $bz_expected) "Expected $bz_expected found $bz_first_line"
+
+        $if_first_line = & $python "if.py" | Select-Object -First 1
+        Assert ($if_first_line -eq "; ModuleID = 'if'") "if.py"
+
+        $ef_first_line = & $python "external_functions.py" | Select-Object -First 1
+        Assert ($ef_first_line -eq "; ModuleID = 'external_functions'") "external_functions.py"
     }
 
     exec -workingDirectory $pyqir.evaluator.examples_dir {
