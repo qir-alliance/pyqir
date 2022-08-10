@@ -17,7 +17,7 @@ class Void(Enum):
 
 
 @dataclass
-class Integer:
+class Int:
     """The integer type."""
 
     width: int
@@ -39,29 +39,25 @@ class Result(Enum):
     _RESULT = auto()
 
 
-Type = Union[Void, Integer, Double, Qubit, Result, Void]
-"""A QIR type."""
-
-
 @dataclass
 class Function:
     """The type of a function."""
 
-    param_types: Sequence[Type]
+    param_types: Sequence["Type"]
     """The type of each parameter to the function."""
 
-    return_type: Type
+    return_type: "Type"
     """The return type of the function."""
 
+
+Type = Union[Void, Int, Double, Qubit, Result, Function]
+"""A QIR type."""
 
 VOID: Void = Void._VOID
 """The void type."""
 
-BOOL: Integer = Integer(1)
-"""The QIR `Bool` type, represented by the LLVM type `i1`."""
-
-INT: Integer = Integer(64)
-"""The QIR `Int` type, represented by the LLVM type `i64`."""
+BOOL: Int = Int(1)
+"""The boolean type, represented by a 1-bit integer."""
 
 DOUBLE: Double = Double._DOUBLE
 """The 64-bit floating-point type."""

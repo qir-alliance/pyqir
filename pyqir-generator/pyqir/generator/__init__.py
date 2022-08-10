@@ -18,8 +18,9 @@ from pyqir.generator._native import (
     ResultRef as ResultRef,
     SimpleModule as SimpleModule,
     Value as Value,
-    ir_to_bitcode as ir_to_bitcode,
+    const as const,
     bitcode_to_ir as bitcode_to_ir,
+    ir_to_bitcode as ir_to_bitcode,
 )
 
 from pyqir.generator.types import Type as Type

@@ -50,17 +50,15 @@ fn bitcode_to_ir<'a>(
 #[pymodule]
 #[pyo3(name = "_native")]
 fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
+    m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
     m.add_class::<ResultRef>()?;
     m.add_class::<Function>()?;
     m.add_class::<Builder>()?;
     m.add_class::<Value>()?;
+    m.add("const", wrap_pyfunction!(constant, m)?)?;
     m.add_class::<SimpleModule>()?;
-    m.add_class::<BasicQisBuilder>()?;
-
-    m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
-    m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
-
-    Ok(())
+    m.add_class::<BasicQisBuilder>()
 }
 
 const TYPES_MODULE_NAME: &str = "pyqir.generator.types";
@@ -76,7 +74,7 @@ impl<'source> FromPyObject<'source> for PyVoidType {
 }
 
 #[derive(Clone, Copy, FromPyObject)]
-struct PyIntegerType {
+struct PyIntType {
     width: u32,
 }
 
@@ -117,7 +115,7 @@ fn extract_sentinel(module_name: &str, type_name: &str, ob: &PyAny) -> PyResult<
 
 #[derive(FromPyObject)]
 enum PyValueType {
-    Integer(PyIntegerType),
+    Int(PyIntType),
     Double(PyDoubleType),
     Qubit(PyQubitType),
     Result(PyResultType),
@@ -126,7 +124,7 @@ enum PyValueType {
 impl From<PyValueType> for ValueType {
     fn from(ty: PyValueType) -> Self {
         match ty {
-            PyValueType::Integer(PyIntegerType { width }) => ValueType::Integer { width },
+            PyValueType::Int(PyIntType { width }) => ValueType::Integer { width },
             PyValueType::Double(PyDoubleType) => ValueType::Double,
             PyValueType::Qubit(PyQubitType) => ValueType::Qubit,
             PyValueType::Result(PyResultType) => ValueType::Result,
@@ -212,13 +210,9 @@ impl PyObjectProtocol for Value {
     fn __repr__(&self) -> String {
         match &self.0 {
             interop::Value::Integer(int) => {
-                format!(
-                    "Value.integer(types.Integer({}), {})",
-                    int.width(),
-                    int.value()
-                )
+                format!("const(types.Int({}), {})", int.width(), int.value())
             }
-            interop::Value::Double(value) => format!("Value.double({})", value),
+            interop::Value::Double(value) => format!("const(types.DOUBLE, {})", value),
             interop::Value::Qubit(name) | interop::Value::Result(name) => {
                 format!("<Value {}>", name)
             }
@@ -227,19 +221,16 @@ impl PyObjectProtocol for Value {
     }
 }
 
-#[pymethods]
-impl Value {
-    #[staticmethod]
-    fn integer(ty: PyIntegerType, value: u64) -> PyResult<Value> {
-        let integer = interop::Integer::new(ty.width, value)
-            .ok_or_else(|| PyOverflowError::new_err("Value is too large for the type."))?;
-        Ok(Value(interop::Value::Integer(integer)))
+#[pyfunction]
+fn constant(ty: PyValueType, value: &PyAny) -> PyResult<Value> {
+    match ty {
+        PyValueType::Int(int) => extract_value(value, ValueType::Integer { width: int.width }),
+        PyValueType::Double(PyDoubleType) => extract_value(value, ValueType::Double),
+        _ => Err(PyTypeError::new_err(
+            "Constant values are not supported for this type.",
+        )),
     }
-
-    #[staticmethod]
-    fn double(value: f64) -> Value {
-        Value(interop::Value::Double(value))
-    }
+    .map(Value)
 }
 
 #[pyclass]

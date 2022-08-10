@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import types
+from pyqir.generator.types import Type
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 
@@ -41,27 +41,18 @@ class Function:
 
 class Value:
     """A QIR value."""
+    ...
 
-    @staticmethod
-    def integer(ty: types.Integer, value: int) -> Value:
-        """
-        Creates a constant integer value.
 
-        :param ty: The integer type.
-        :param value: The Python value.
-        :returns: The QIR value.
-        """
-        ...
+def const(ty: Type, value: Union[int, float]) -> Value:
+    """
+    Creates a constant QIR value.
 
-    @staticmethod
-    def double(value: float) -> Value:
-        """
-        Creates a constant double value.
-
-        :param value: The Python value.
-        :returns: The QIR value.
-        """
-        ...
+    :param ty: The type of the value.
+    :param value: A Python value that will be converted into a QIR value.
+    :returns: The constant QIR value.
+    """
+    ...
 
 
 class Builder:
@@ -135,7 +126,7 @@ class SimpleModule:
         """Emits the LLVM bitcode for the module as a sequence of bytes."""
         ...
 
-    def add_external_function(self, name: str, ty: types.Function) -> Function:
+    def add_external_function(self, name: str, ty: Type) -> Function:
         """
         Adds a declaration for an externally linked function to the module.
 
