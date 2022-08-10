@@ -201,6 +201,7 @@ impl PyObjectProtocol for Value {
 }
 
 #[pyfunction]
+#[allow(clippy::needless_pass_by_value)]
 fn constant(ty: PyType, value: &PyAny) -> PyResult<Value> {
     match ty {
         PyType::Int(PyIntType { width }) => extract_value(&Type::Int { width }, value),
