@@ -212,7 +212,7 @@ task metawheel {
         New-Item -Path $wheelDir -ItemType Directory | Out-Null
     }
     Invoke-LoggedCommand {
-        & $python -m pip wheel --wheel-dir $wheelDir "$($pyqir.meta.dir)"
+        & $python -m pip wheel --no-deps --wheel-dir $wheelDir "$($pyqir.meta.dir)"
     }
 }
 
