@@ -2,9 +2,8 @@
 name = "pyqir-generator"
 version = "0.5.0a1"
 requires-python = ">=3.6"
-
 dependencies = [
-    'dataclasses ~= 0.8; python_version < "3.7"'
+    "dataclasses; python_version < '3.7'"
 ]
 
 [build-system]
