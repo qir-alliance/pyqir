@@ -6,4 +6,4 @@ if ($null -ne (Get-Command python -ErrorAction SilentlyContinue)) {
         $python = "python"
     }
 }
-& $python -m pip install -r requirements.txt --no-index --find-links=wheelhouse -v
+& $python -m pip install -r requirements.txt --find-links=wheelhouse -v

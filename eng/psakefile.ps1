@@ -463,7 +463,7 @@ task run-examples {
     exec -workingDirectory $pyqir.generator.examples_dir {
         & $python -m pip install -U pip wheel
         & $python -m pip install -r requirements.txt
-        & $python -m pip install -U --no-index --find-links (Join-Path $repo.root "target" "wheels") pyqir-generator
+        & $python -m pip install -U --find-links (Join-Path $repo.root "target" "wheels") pyqir-generator
 
         & $python "bell_pair.py" | Tee-Object -Variable bell_pair_output
         $bell_first_line = $($bell_pair_output | Select-Object -first 1)
@@ -484,7 +484,7 @@ task run-examples {
     }
 
     exec -workingDirectory $pyqir.evaluator.examples_dir {
-        & $python -m pip install -U --no-index --find-links (Join-Path $repo.root "target" "wheels") pyqir-evaluator
+        & $python -m pip install -U --find-links (Join-Path $repo.root "target" "wheels") pyqir-evaluator
         & $python "bernstein_vazirani.py" | Tee-Object -Variable bz_output
         $bz_first_lines = @($bz_output | Select-Object -first 5)
         $bz_expected = @(
