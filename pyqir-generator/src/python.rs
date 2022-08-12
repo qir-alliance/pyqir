@@ -297,6 +297,7 @@ impl Builder {
         self.push_binary_op(BinaryKind::LShr, lhs.0, rhs.0)
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     fn icmp(&mut self, predicate: PyIPredicate, lhs: Value, rhs: Value) -> PyResult<Value> {
         self.push_binary_op(BinaryKind::ICmp(predicate.0), lhs.0, rhs.0)
     }
