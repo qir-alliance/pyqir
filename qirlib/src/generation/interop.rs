@@ -134,7 +134,7 @@ pub struct BinaryOp {
     pub result: Variable,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BinaryKind {
     And,
     Or,
@@ -179,6 +179,7 @@ pub enum Value {
 }
 
 impl Value {
+    #[must_use]
     pub fn type_of(&self) -> Type {
         match self {
             &Self::Int(Int { width, .. }) => Type::Int { width },
@@ -197,6 +198,7 @@ pub struct Variable {
 }
 
 impl Variable {
+    #[must_use]
     pub fn new(ty: Type) -> Self {
         Self { ty, id: 0 }
     }
@@ -210,7 +212,7 @@ impl Variable {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Int {
     width: u32,
     value: u64,
