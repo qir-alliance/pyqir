@@ -481,6 +481,9 @@ task run-examples {
 
         $ef_first_line = & $python "external_functions.py" | Select-Object -First 1
         Assert ($ef_first_line -eq "; ModuleID = 'external_functions'") "external_functions.py"
+
+        $arithmetic_first_line = & $python "arithmetic.py" | Select-Object -First 1
+        Assert ($ef_first_line -eq "; ModuleID = 'arithmetic'") "arithmetic.py"
     }
 
     exec -workingDirectory $pyqir.evaluator.examples_dir {
