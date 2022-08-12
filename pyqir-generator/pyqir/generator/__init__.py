@@ -15,11 +15,12 @@ from pyqir.generator._native import (
     BasicQisBuilder as BasicQisBuilder,
     Builder as Builder,
     Function as Function,
-    Qubit as Qubit,
     ResultRef as ResultRef,
     SimpleModule as SimpleModule,
-    ir_to_bitcode as ir_to_bitcode,
+    Value as Value,
+    const as const,
     bitcode_to_ir as bitcode_to_ir,
+    ir_to_bitcode as ir_to_bitcode,
 )
 
-from pyqir.generator._values import Value as Value
+from pyqir.generator.types import Type as Type

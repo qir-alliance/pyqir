@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use std::collections::HashMap;
-
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct QuantumRegister {
     pub name: String,
@@ -45,53 +43,53 @@ pub enum Register {
     Classical(ClassicalRegister),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Controlled {
-    pub control: String,
-    pub target: String,
+    pub control: Value,
+    pub target: Value,
 }
 
 impl Controlled {
     #[must_use]
-    pub fn new(control: String, target: String) -> Self {
+    pub fn new(control: Value, target: Value) -> Self {
         Controlled { control, target }
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Measured {
-    pub qubit: String,
+    pub qubit: Value,
     pub target: String,
 }
 
 impl Measured {
     #[must_use]
-    pub fn new(qubit: String, target: String) -> Self {
+    pub fn new(qubit: Value, target: String) -> Self {
         Measured { qubit, target }
     }
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rotated {
-    pub theta: f64,
-    pub qubit: String,
+    pub theta: Value,
+    pub qubit: Value,
 }
 
 impl Rotated {
     #[must_use]
-    pub fn new(theta: f64, qubit: String) -> Self {
+    pub fn new(theta: Value, qubit: Value) -> Self {
         Rotated { theta, qubit }
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Single {
-    pub qubit: String,
+    pub qubit: Value,
 }
 
 impl Single {
     #[must_use]
-    pub fn new(qubit: String) -> Self {
+    pub fn new(qubit: Value) -> Self {
         Single { qubit }
     }
 }
@@ -129,60 +127,71 @@ pub enum Instruction {
 pub struct Call {
     pub name: String,
     pub args: Vec<Value>,
+    pub result: Option<Variable>,
 }
 
-#[derive(Clone, Copy)]
-pub enum ValueType {
-    Integer { width: u32 },
+#[derive(Clone)]
+pub enum Type {
+    Void,
+    Int {
+        width: u32,
+    },
     Double,
     Qubit,
     Result,
-}
-
-#[derive(Clone)]
-pub enum ReturnType {
-    Void,
-    Value(ValueType),
-}
-
-#[derive(Clone)]
-pub struct FunctionType {
-    pub param_types: Vec<ValueType>,
-    pub return_type: ReturnType,
+    Function {
+        params: Vec<Type>,
+        result: Box<Type>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
-    Integer(IntegerValue),
+    Int(Int),
     Double(f64),
     Qubit(String),
     Result(String),
+    Variable(Variable),
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub struct Variable {
+    id: i64,
+}
+
+impl Variable {
+    #[must_use]
+    pub fn next(&self) -> Self {
+        Self { id: self.id + 1 }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct IntegerValue {
+pub struct Int {
     width: u32,
     value: u64,
 }
 
-impl IntegerValue {
-    /// Creates a new `IntegerValue`, returning `None` if the number of bits required to represent
+impl Int {
+    /// Creates a new constant integer, returning `None` if the number of bits required to represent
     /// `value` is greater than `width`.
     #[must_use]
-    pub fn new(width: u32, value: u64) -> Option<IntegerValue> {
+    pub fn new(width: u32, value: u64) -> Option<Self> {
         let value_width = u64::BITS - u64::leading_zeros(value);
         if value_width > width {
             None
         } else {
-            Some(IntegerValue { width, value })
+            Some(Self { width, value })
         }
     }
 
-    pub(crate) fn width(&self) -> u32 {
+    #[must_use]
+    pub fn width(&self) -> u32 {
         self.width
     }
 
-    pub(crate) fn value(&self) -> u64 {
+    #[must_use]
+    pub fn value(&self) -> u64 {
         self.value
     }
 }
@@ -195,7 +204,7 @@ pub struct SemanticModel {
     pub instructions: Vec<Instruction>,
     pub use_static_qubit_alloc: bool,
     pub use_static_result_alloc: bool,
-    pub external_functions: HashMap<String, FunctionType>,
+    pub external_functions: Vec<(String, Type)>,
 }
 
 impl SemanticModel {
@@ -208,7 +217,7 @@ impl SemanticModel {
             instructions: vec![],
             use_static_qubit_alloc: false,
             use_static_result_alloc: true,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         }
     }
 

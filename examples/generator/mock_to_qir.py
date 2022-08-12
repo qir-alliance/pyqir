@@ -9,7 +9,7 @@ from mock_language.MockLanguageLexer import MockLanguageLexer
 from mock_language.MockLanguageParser import MockLanguageParser
 from mock_language.MockLanguageListener import MockLanguageListener
 from pathlib import Path
-from pyqir.generator import BasicQisBuilder, Qubit, ResultRef, SimpleModule
+from pyqir.generator import BasicQisBuilder, ResultRef, SimpleModule, Value
 
 
 class QirGenerator(MockLanguageListener):
@@ -31,7 +31,7 @@ class QirGenerator(MockLanguageListener):
     def ir(self) -> str:
         return self.module.ir()
 
-    def parse_qubit(self, id: str) -> Qubit:
+    def parse_qubit(self, id: str) -> Value:
         try:
             return self.module.qubits[int(id)]
         except IndexError as e:

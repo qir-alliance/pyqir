@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, SimpleModule
+from pyqir.generator import BasicQisBuilder, SimpleModule, const, types
 import unittest
 
 
@@ -61,12 +61,13 @@ class QisTest(unittest.TestCase):
         ]
 
         for name, gate in cases:
-            with self.subTest(name):
-                mod = SimpleModule("test_rotated", 1, 0)
-                qis = BasicQisBuilder(mod.builder)
-                gate(qis)(0.0, mod.qubits[0])
-                call = f"call void @__quantum__qis__{name}__body(double 0.000000e+00, %Qubit* null)"
-                self.assertIn(call, mod.ir())
+            for value in [const(types.DOUBLE, 1.0), 1.0]:
+                with self.subTest(f"{name} ({value})"):
+                    mod = SimpleModule("test_rotated", 1, 0)
+                    qis = BasicQisBuilder(mod.builder)
+                    gate(qis)(value, mod.qubits[0])
+                    call = f"call void @__quantum__qis__{name}__body(double 1.000000e+00, %Qubit* null)"
+                    self.assertIn(call, mod.ir())
 
     def test_m(self) -> None:
         mod = SimpleModule("test_m", 1, 1)

@@ -4,7 +4,8 @@
 use crate::{
     codegen::CodeGenerator,
     generation::{
-        interop::{self, ReturnType, SemanticModel, ValueType},
+        env::Environment,
+        interop::{self, SemanticModel, Type},
         qir,
     },
     passes::run_basic_passes_on,
@@ -13,11 +14,14 @@ use inkwell::{
     attributes::AttributeLoc,
     context::Context,
     module::Linkage,
-    types::{BasicType, BasicTypeEnum, FunctionType},
+    types::{AnyTypeEnum, BasicType, BasicTypeEnum},
     values::{BasicValueEnum, FunctionValue, PointerValue},
     AddressSpace,
 };
-use std::{collections::HashMap, convert::Into};
+use std::{
+    collections::HashMap,
+    convert::{Into, TryFrom},
+};
 
 /// # Errors
 ///
@@ -83,12 +87,18 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
     let entry = generator.context.append_basic_block(entry_point, "entry");
     generator.builder.position_at_end(entry);
 
-    let qubits = write_qubits(model, generator);
-    let mut registers = write_registers(model, generator);
-    write_instructions(model, generator, &qubits, &mut registers, entry_point);
+    let mut env = Environment::new(
+        write_qubits(model, generator),
+        write_registers(model, generator),
+        HashMap::new(),
+    );
+
+    write_instructions(model, generator, &mut env, entry_point);
 
     if !model.use_static_qubit_alloc {
-        free_qubits(generator, &qubits);
+        for (_, qubit) in env.iter_qubits() {
+            generator.emit_release_qubit(qubit);
+        }
     }
 
     generator.builder.build_return(None);
@@ -97,54 +107,47 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
 
 fn add_external_functions<'a>(
     generator: &CodeGenerator,
-    functions: impl Iterator<Item = (&'a String, &'a interop::FunctionType)>,
+    functions: impl Iterator<Item = &'a (String, interop::Type)>,
 ) {
     for (name, ty) in functions {
-        let ty = get_function_type(generator, ty);
+        let ty = get_type(generator, ty).into_function_type();
         generator
             .module
             .add_function(name, ty, Some(Linkage::External));
     }
 }
 
-fn get_function_type<'ctx>(
-    generator: &CodeGenerator<'ctx>,
-    ty: &interop::FunctionType,
-) -> FunctionType<'ctx> {
-    let param_types: Vec<_> = ty
-        .param_types
-        .iter()
-        .map(|ty| get_basic_type(generator, ty).into())
-        .collect();
-
-    let param_types = param_types.as_slice();
-    match ty.return_type {
-        ReturnType::Void => generator.context.void_type().fn_type(param_types, false),
-        ReturnType::Value(ty) => get_basic_type(generator, &ty).fn_type(param_types, false),
-    }
-}
-
-fn get_basic_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &ValueType) -> BasicTypeEnum<'ctx> {
+fn get_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &Type) -> AnyTypeEnum<'ctx> {
     match ty {
-        ValueType::Integer { width } => {
-            BasicTypeEnum::IntType(generator.context.custom_width_int_type(*width))
-        }
-        ValueType::Double => BasicTypeEnum::FloatType(generator.context.f64_type()),
-        ValueType::Qubit => {
-            BasicTypeEnum::PointerType(generator.qubit_type().ptr_type(AddressSpace::Generic))
-        }
-        ValueType::Result => {
-            BasicTypeEnum::PointerType(generator.result_type().ptr_type(AddressSpace::Generic))
-        }
-    }
-}
+        Type::Void => generator.context.void_type().into(),
+        &Type::Int { width } => generator.context.custom_width_int_type(width).into(),
+        Type::Double => generator.context.f64_type().into(),
+        Type::Qubit => generator
+            .qubit_type()
+            .ptr_type(AddressSpace::Generic)
+            .into(),
+        Type::Result => generator
+            .result_type()
+            .ptr_type(AddressSpace::Generic)
+            .into(),
+        Type::Function { params, result } => {
+            let params = params
+                .iter()
+                .map(|ty| {
+                    BasicTypeEnum::try_from(get_type(generator, ty))
+                        .unwrap()
+                        .into()
+                })
+                .collect::<Vec<_>>();
 
-fn free_qubits<'ctx>(
-    generator: &CodeGenerator<'ctx>,
-    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-) {
-    for (_, value) in qubits.iter() {
-        generator.emit_release_qubit(value);
+            match get_type(generator, result) {
+                AnyTypeEnum::VoidType(void) => void.fn_type(&params, false),
+                result => BasicTypeEnum::try_from(result)
+                    .expect("Invalid return type.")
+                    .fn_type(&params, false),
+            }
+            .into()
+        }
     }
 }
 
@@ -185,8 +188,9 @@ fn write_registers<'ctx>(
     model: &SemanticModel,
     generator: &CodeGenerator<'ctx>,
 ) -> HashMap<String, Option<PointerValue<'ctx>>> {
+    let mut registers = HashMap::new();
+
     if generator.use_static_result_alloc {
-        let mut registers: HashMap<String, Option<PointerValue<'ctx>>> = HashMap::new();
         let mut id = 0;
         let number_of_registers = model.registers.len() as u64;
         if number_of_registers > 0 {
@@ -199,10 +203,7 @@ fn write_registers<'ctx>(
                 }
             }
         }
-
-        registers
     } else {
-        let mut registers: HashMap<String, Option<PointerValue<'ctx>>> = HashMap::new();
         let number_of_registers = model.registers.len() as u64;
         if number_of_registers > 0 {
             for register in &model.registers {
@@ -212,8 +213,9 @@ fn write_registers<'ctx>(
                 }
             }
         }
-        registers
     }
+
+    registers
 }
 
 fn create_result_static_ptr<'ctx>(
@@ -231,12 +233,11 @@ fn create_result_static_ptr<'ctx>(
 fn write_instructions<'ctx>(
     model: &SemanticModel,
     generator: &CodeGenerator<'ctx>,
-    qubits: &HashMap<String, BasicValueEnum<'ctx>>,
-    registers: &mut HashMap<String, Option<PointerValue<'ctx>>>,
+    env: &mut Environment<'ctx>,
     entry_point: FunctionValue,
 ) {
     for inst in &model.instructions {
-        qir::instructions::emit(generator, inst, qubits, registers, entry_point);
+        qir::instructions::emit(generator, env, inst, entry_point);
     }
 }
 
@@ -245,10 +246,9 @@ mod result_alloc_tests {
     use crate::generation::{
         emit,
         interop::{
-            ClassicalRegister, Instruction, Measured, QuantumRegister, SemanticModel, Single,
+            ClassicalRegister, Instruction, Measured, QuantumRegister, SemanticModel, Single, Value,
         },
     };
-    use std::collections::HashMap;
 
     fn get_model(
         name: String,
@@ -260,12 +260,12 @@ mod result_alloc_tests {
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![Instruction::M(Measured::new(
-                "q0".to_string(),
+                Value::Qubit("q0".to_string()),
                 "r0".to_string(),
             ))],
             use_static_qubit_alloc,
             use_static_result_alloc,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         }
     }
 
@@ -317,12 +317,12 @@ mod result_alloc_tests {
             ],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![Instruction::M(Measured::new(
-                "q0".to_string(),
+                Value::Qubit("q0".to_string()),
                 "r0".to_string(),
             ))],
             use_static_qubit_alloc: false,
             use_static_result_alloc: true,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
         let actual_ir: String = emit::ir(&model)?;
         assert!(actual_ir.contains("attributes #0 = { \"EntryPoint\" \"requiredResults\"=\"8\" }"));
@@ -336,10 +336,10 @@ mod result_alloc_tests {
             name: "test".to_owned(),
             registers: vec![],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
-            instructions: vec![Instruction::H(Single::new("q0".to_string()))],
+            instructions: vec![Instruction::H(Single::new(Value::Qubit("q0".to_string())))],
             use_static_qubit_alloc: false,
             use_static_result_alloc: true,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
         let actual_ir: String = emit::ir(&model)?;
         assert!(actual_ir.contains("attributes #0 = { \"EntryPoint\" \"requiredResults\"=\"0\" }"));
@@ -372,16 +372,11 @@ mod result_alloc_tests {
 /// 3. Unset the environment variable and run the tests again to confirm that they pass.
 #[cfg(test)]
 mod if_tests {
-    use crate::generation::{
-        emit,
-        interop::{
-            ClassicalRegister, If, Instruction, Measured, QuantumRegister, SemanticModel, Single,
-        },
+    use super::test_utils::check_or_save_reference_ir;
+    use crate::generation::interop::{
+        Call, ClassicalRegister, If, Instruction, Measured, QuantumRegister, SemanticModel, Single,
+        Type, Value, Variable,
     };
-    use normalize_line_endings::normalized;
-    use std::{collections::HashMap, env, fs, path::PathBuf};
-
-    const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
 
     #[test]
     fn test_if_then() -> Result<(), String> {
@@ -390,16 +385,19 @@ mod if_tests {
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
-                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r0".to_string(),
+                )),
                 Instruction::If(If {
                     condition: "r0".to_string(),
-                    then_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                    then_insts: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
                     else_insts: vec![],
                 }),
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -412,16 +410,19 @@ mod if_tests {
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
-                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r0".to_string(),
+                )),
                 Instruction::If(If {
                     condition: "r0".to_string(),
                     then_insts: vec![],
-                    else_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                    else_insts: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
                 }),
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -434,17 +435,20 @@ mod if_tests {
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
-                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r0".to_string(),
+                )),
                 Instruction::If(If {
                     condition: "r0".to_string(),
-                    then_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                    then_insts: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
                     else_insts: vec![],
                 }),
-                Instruction::H(Single::new("q0".to_string())),
+                Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -457,17 +461,20 @@ mod if_tests {
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
-                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r0".to_string(),
+                )),
                 Instruction::If(If {
                     condition: "r0".to_string(),
                     then_insts: vec![],
-                    else_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                    else_insts: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
                 }),
-                Instruction::H(Single::new("q0".to_string())),
+                Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -480,17 +487,20 @@ mod if_tests {
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
-                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r0".to_string(),
+                )),
                 Instruction::If(If {
                     condition: "r0".to_string(),
-                    then_insts: vec![Instruction::X(Single::new("q0".to_string()))],
-                    else_insts: vec![Instruction::Y(Single::new("q0".to_string()))],
+                    then_insts: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                    else_insts: vec![Instruction::Y(Single::new(Value::Qubit("q0".to_string())))],
                 }),
-                Instruction::H(Single::new("q0".to_string())),
+                Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -503,13 +513,21 @@ mod if_tests {
             registers: vec![ClassicalRegister::new("r".to_string(), 2)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
-                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
-                Instruction::M(Measured::new("q0".to_string(), "r1".to_string())),
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r0".to_string(),
+                )),
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r1".to_string(),
+                )),
                 Instruction::If(If {
                     condition: "r0".to_string(),
                     then_insts: vec![Instruction::If(If {
                         condition: "r1".to_string(),
-                        then_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                        then_insts: vec![Instruction::X(Single::new(Value::Qubit(
+                            "q0".to_string(),
+                        )))],
                         else_insts: vec![],
                     })],
                     else_insts: vec![],
@@ -517,7 +535,7 @@ mod if_tests {
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -530,21 +548,29 @@ mod if_tests {
             registers: vec![ClassicalRegister::new("r".to_string(), 2)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
-                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
-                Instruction::M(Measured::new("q0".to_string(), "r1".to_string())),
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r0".to_string(),
+                )),
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r1".to_string(),
+                )),
                 Instruction::If(If {
                     condition: "r0".to_string(),
                     then_insts: vec![],
                     else_insts: vec![Instruction::If(If {
                         condition: "r1".to_string(),
                         then_insts: vec![],
-                        else_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                        else_insts: vec![Instruction::X(Single::new(Value::Qubit(
+                            "q0".to_string(),
+                        )))],
                     })],
                 }),
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -557,21 +583,29 @@ mod if_tests {
             registers: vec![ClassicalRegister::new("r".to_string(), 2)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
-                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
-                Instruction::M(Measured::new("q0".to_string(), "r1".to_string())),
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r0".to_string(),
+                )),
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r1".to_string(),
+                )),
                 Instruction::If(If {
                     condition: "r0".to_string(),
                     then_insts: vec![Instruction::If(If {
                         condition: "r1".to_string(),
                         then_insts: vec![],
-                        else_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                        else_insts: vec![Instruction::X(Single::new(Value::Qubit(
+                            "q0".to_string(),
+                        )))],
                     })],
                     else_insts: vec![],
                 }),
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -584,21 +618,29 @@ mod if_tests {
             registers: vec![ClassicalRegister::new("r".to_string(), 2)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![
-                Instruction::M(Measured::new("q0".to_string(), "r0".to_string())),
-                Instruction::M(Measured::new("q0".to_string(), "r1".to_string())),
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r0".to_string(),
+                )),
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r1".to_string(),
+                )),
                 Instruction::If(If {
                     condition: "r0".to_string(),
                     then_insts: vec![],
                     else_insts: vec![Instruction::If(If {
                         condition: "r1".to_string(),
-                        then_insts: vec![Instruction::X(Single::new("q0".to_string()))],
+                        then_insts: vec![Instruction::X(Single::new(Value::Qubit(
+                            "q0".to_string(),
+                        )))],
                         else_insts: vec![],
                     })],
                 }),
             ],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -612,18 +654,66 @@ mod if_tests {
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![Instruction::If(If {
                 condition: "r0".to_string(),
-                then_insts: vec![Instruction::X(Single::new("q0".to_string()))],
-                else_insts: vec![Instruction::H(Single::new("q0".to_string()))],
+                then_insts: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                else_insts: vec![Instruction::H(Single::new(Value::Qubit("q0".to_string())))],
             })],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
     }
 
-    fn check_or_save_reference_ir(model: &SemanticModel) -> Result<(), String> {
+    #[test]
+    fn test_call_variable() -> Result<(), String> {
+        check_or_save_reference_ir(&SemanticModel {
+            name: "test_call_variable".to_string(),
+            registers: vec![],
+            qubits: vec![],
+            instructions: vec![
+                Instruction::Call(Call {
+                    result: Some(Variable::default()),
+                    name: "foo".to_string(),
+                    args: vec![],
+                }),
+                Instruction::Call(Call {
+                    result: None,
+                    name: "bar".to_string(),
+                    args: vec![Value::Variable(Variable::default())],
+                }),
+            ],
+            use_static_qubit_alloc: true,
+            use_static_result_alloc: false,
+            external_functions: vec![
+                (
+                    "foo".to_string(),
+                    Type::Function {
+                        params: vec![],
+                        result: Box::new(Type::Int { width: 64 }),
+                    },
+                ),
+                (
+                    "bar".to_string(),
+                    Type::Function {
+                        params: vec![Type::Int { width: 64 }],
+                        result: Box::new(Type::Void),
+                    },
+                ),
+            ],
+        })
+    }
+}
+
+#[cfg(test)]
+mod test_utils {
+    use crate::generation::{emit, interop::SemanticModel};
+    use normalize_line_endings::normalized;
+    use std::{env, fs, path::PathBuf};
+
+    const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
+
+    pub(crate) fn check_or_save_reference_ir(model: &SemanticModel) -> Result<(), String> {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("resources");
         path.push("tests");

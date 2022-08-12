@@ -27,7 +27,7 @@ pub(crate) fn emit_release_qubit<'ctx>(
     context: &'ctx inkwell::context::Context,
     builder: &Builder<'ctx>,
     module: &Module<'ctx>,
-    qubit: &BasicValueEnum<'ctx>,
+    qubit: BasicValueEnum<'ctx>,
 ) -> InstructionValue<'ctx> {
     let args = [qubit.as_basic_value_enum().into()];
     let function = qubit_release(context, module);

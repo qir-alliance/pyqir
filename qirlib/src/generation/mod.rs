@@ -6,6 +6,7 @@ use inkwell::{context::Context, memory_buffer::MemoryBuffer};
 use crate::module;
 
 pub mod emit;
+mod env;
 pub mod interop;
 pub mod qir;
 
@@ -62,15 +63,13 @@ pub fn bitcode_to_ir(
 
 #[cfg(test)]
 mod module_conversion_tests {
-    use std::collections::HashMap;
-
-    use crate::generation::emit;
-
-    use super::interop::{
-        ClassicalRegister, Instruction, Measured, QuantumRegister, SemanticModel,
+    use super::{
+        interop::{
+            ClassicalRegister, Instruction, Measured, QuantumRegister, SemanticModel, Value,
+        },
+        *,
     };
-
-    use super::*;
+    use crate::generation::emit;
 
     fn get_model(
         name: String,
@@ -82,12 +81,12 @@ mod module_conversion_tests {
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![Instruction::M(Measured::new(
-                "q0".to_string(),
+                Value::Qubit("q0".to_string()),
                 "r0".to_string(),
             ))],
             use_static_qubit_alloc,
             use_static_result_alloc,
-            external_functions: HashMap::new(),
+            external_functions: vec![],
         }
     }
 
