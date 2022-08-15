@@ -669,7 +669,7 @@ mod if_tests {
     #[test]
     fn test_call_variable() -> Result<(), String> {
         let i64 = Type::Int { width: 64 };
-        let x = Variable::new(i64.clone());
+        let x = Variable::new();
 
         check_or_save_reference_ir(&SemanticModel {
             name: "test_call_variable".to_string(),
@@ -679,7 +679,7 @@ mod if_tests {
                 Instruction::Call(Call {
                     name: "foo".to_string(),
                     args: vec![],
-                    result: Some(x.clone()),
+                    result: Some(x),
                 }),
                 Instruction::Call(Call {
                     name: "bar".to_string(),
@@ -710,11 +710,9 @@ mod if_tests {
 
     #[test]
     fn test_int_binop_intrinsics() -> Result<(), String> {
-        let i1 = Type::Int { width: 1 };
-        let i32 = Type::Int { width: 32 };
         let mut instructions = vec![];
-        let lhs = Variable::new(i32.clone());
-        let rhs = lhs.next(i32.clone());
+        let lhs = Variable::new();
+        let rhs = lhs.next();
 
         for result in [lhs.clone(), rhs.clone()] {
             instructions.push(Instruction::Call(Call {
@@ -749,11 +747,11 @@ mod if_tests {
         for kind in kinds {
             let sink = match kind {
                 BinaryKind::ICmp(_) => {
-                    result = result.next(i1.clone());
+                    result = result.next();
                     "sink_i1".to_string()
                 }
                 _ => {
-                    result = result.next(i32.clone());
+                    result = result.next();
                     "sink_i32".to_string()
                 }
             };

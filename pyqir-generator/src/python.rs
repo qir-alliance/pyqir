@@ -253,52 +253,42 @@ impl Builder {
         }
     }
 
-    fn neg(&mut self, value: Value) -> PyResult<Value> {
-        match value.0.type_of() {
-            Type::Int { width, .. } => {
-                let zero = interop::Value::Int(Int::new(width, 0).unwrap());
-                self.push_binary_op(BinaryKind::Sub, zero, value.0)
-            }
-            _ => Err(PyTypeError::new_err("Value must be an integer.")),
-        }
-    }
-
     #[pyo3(name = "and_")]
-    fn and(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
+    fn and(&mut self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::And, lhs.0, rhs.0)
     }
 
     #[pyo3(name = "or_")]
-    fn or(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
+    fn or(&mut self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Or, lhs.0, rhs.0)
     }
 
-    fn xor(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
+    fn xor(&mut self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Xor, lhs.0, rhs.0)
     }
 
-    fn add(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
+    fn add(&mut self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Add, lhs.0, rhs.0)
     }
 
-    fn sub(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
+    fn sub(&mut self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Sub, lhs.0, rhs.0)
     }
 
-    fn mul(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
+    fn mul(&mut self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Mul, lhs.0, rhs.0)
     }
 
-    fn shl(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
+    fn shl(&mut self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Shl, lhs.0, rhs.0)
     }
 
-    fn lshr(&mut self, lhs: Value, rhs: Value) -> PyResult<Value> {
+    fn lshr(&mut self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::LShr, lhs.0, rhs.0)
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    fn icmp(&mut self, pred: PyIntPredicate, lhs: Value, rhs: Value) -> PyResult<Value> {
+    fn icmp(&mut self, pred: PyIntPredicate, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::ICmp(pred.0), lhs.0, rhs.0)
     }
 
@@ -323,13 +313,13 @@ impl Builder {
 
         let result = match *return_type {
             Type::Void => None,
-            _ => Some(self.fresh_variable(*return_type)),
+            _ => Some(self.fresh_variable()),
         };
 
         self.push_inst(Instruction::Call(Call {
             name: function.name,
             args,
-            result: result.clone(),
+            result,
         }));
 
         Ok(result.map(|v| Value(interop::Value::Variable(v))))
@@ -349,12 +339,12 @@ impl Builder {
         self.frames.pop()
     }
 
-    fn fresh_variable(&mut self, ty: Type) -> Variable {
+    fn fresh_variable(&mut self) -> Variable {
         let v = match &self.last_variable {
-            None => Variable::new(ty),
-            Some(v) => v.next(ty),
+            None => Variable::new(),
+            Some(v) => v.next(),
         };
-        self.last_variable = Some(v.clone());
+        self.last_variable = Some(v);
         v
     }
 
@@ -363,19 +353,15 @@ impl Builder {
         kind: BinaryKind,
         lhs: interop::Value,
         rhs: interop::Value,
-    ) -> PyResult<Value> {
-        if lhs.type_of() == rhs.type_of() {
-            let result = self.fresh_variable(lhs.type_of());
-            self.push_inst(Instruction::BinaryOp(BinaryOp {
-                kind,
-                lhs,
-                rhs,
-                result: result.clone(),
-            }));
-            Ok(Value(interop::Value::Variable(result)))
-        } else {
-            Err(PyTypeError::new_err("Operands are not the same type."))
-        }
+    ) -> Value {
+        let result = self.fresh_variable();
+        self.push_inst(Instruction::BinaryOp(BinaryOp {
+            kind,
+            lhs,
+            rhs,
+            result,
+        }));
+        Value(interop::Value::Variable(result))
     }
 }
 

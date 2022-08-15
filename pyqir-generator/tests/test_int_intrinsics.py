@@ -62,20 +62,16 @@ class IntIntrinsicsTest(unittest.TestCase):
 
                 self.assertIn(f"%1 = {name} i64 1, %0", mod.ir())
 
-    def test_neg(self) -> None:
-        mod = SimpleModule("test_neg", 0, 0)
-        source = mod.add_external_function(
-            "source", types.Function([], types.Int(64)))
-        sink = mod.add_external_function(
-            "sink", types.Function([types.Int(64)], types.VOID))
-
-        x = mod.builder.call(source, [])
-        y = mod.builder.neg(x)
-        mod.builder.call(sink, [y])
-
-        self.assertIn("%1 = sub i64 0, %0", mod.ir())
-
     def test_type_mismatch(self) -> None:
         mod = SimpleModule("test_type_mismatch", 0, 0)
-        with self.assertRaises(TypeError):
-            mod.builder.add(const(types.Int(16), 2), const(types.Int(18), 2))
+        source = mod.add_external_function(
+            "source", types.Function([], types.Int(16)))
+        sink = mod.add_external_function(
+            "sink", types.Function([types.Int(16)], types.VOID))
+
+        x = mod.builder.call(source, [])
+        y = mod.builder.add(x, const(types.Int(18), 2))
+        mod.builder.call(sink, [y])
+
+        with self.assertRaises(OSError):
+            mod.ir()

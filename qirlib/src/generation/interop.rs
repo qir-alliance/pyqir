@@ -178,37 +178,19 @@ pub enum Value {
     Variable(Variable),
 }
 
-impl Value {
-    #[must_use]
-    pub fn type_of(&self) -> Type {
-        match self {
-            &Self::Int(Int { width, .. }) => Type::Int { width },
-            Self::Double(_) => Type::Double,
-            Self::Qubit(_) => Type::Qubit,
-            Self::Result(_) => Type::Result,
-            Self::Variable(v) => v.ty.clone(),
-        }
-    }
-}
-
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 pub struct Variable {
-    ty: Type,
     id: i64,
 }
 
 impl Variable {
-    #[must_use]
-    pub fn new(ty: Type) -> Self {
-        Self { ty, id: 0 }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     #[must_use]
-    pub fn next(&self, ty: Type) -> Self {
-        Self {
-            ty,
-            id: self.id + 1,
-        }
+    pub fn next(&self) -> Self {
+        Self { id: self.id + 1 }
     }
 }
 

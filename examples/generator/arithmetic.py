@@ -15,7 +15,7 @@ take_int = mod.add_external_function(
 
 # Do some integer arithmetic.
 n = mod.builder.call(get_int, [])
-result = mod.builder.mul(const(i32, 2), mod.builder.neg(n))
+result = mod.builder.mul(const(i32, 2), mod.builder.add(const(i32, 3), n))
 
 # Consume the result.
 mod.builder.call(take_int, [result])
