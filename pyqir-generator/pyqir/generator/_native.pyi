@@ -59,15 +59,6 @@ def const(ty: Type, value: Union[int, float]) -> Value:
 class Builder:
     """An instruction builder."""
 
-    def neg(self, value: Value) -> Value:
-        """
-        Inserts a negation instruction (subtracting `value` from 0).
-
-        :param value: The value to negate.
-        :returns: The negated value.
-        """
-        ...
-
     def and_(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a bitwise logical and instruction.
