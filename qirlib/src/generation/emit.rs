@@ -745,15 +745,12 @@ mod if_tests {
 
         let mut result = rhs.clone();
         for kind in kinds {
-            let sink = match kind {
-                BinaryKind::ICmp(_) => {
-                    result = result.next();
-                    "sink_i1".to_string()
-                }
-                _ => {
-                    result = result.next();
-                    "sink_i32".to_string()
-                }
+            let sink = if matches!(kind, BinaryKind::ICmp(_)) {
+                result = result.next();
+                "sink_i1".to_string()
+            } else {
+                result = result.next();
+                "sink_i32".to_string()
             };
 
             instructions.push(Instruction::BinaryOp(BinaryOp {
