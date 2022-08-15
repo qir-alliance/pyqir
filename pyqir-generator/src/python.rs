@@ -141,9 +141,9 @@ impl From<PyType> for Type {
     }
 }
 
-struct PyIPredicate(IntPredicate);
+struct PyIntPredicate(IntPredicate);
 
-impl<'source> FromPyObject<'source> for PyIPredicate {
+impl<'source> FromPyObject<'source> for PyIntPredicate {
     fn extract(ob: &'source PyAny) -> PyResult<Self> {
         let predicate = match ob.getattr("name")?.extract()? {
             "EQ" => Ok(IntPredicate::EQ),
@@ -159,7 +159,7 @@ impl<'source> FromPyObject<'source> for PyIPredicate {
             _ => Err(PyValueError::new_err("Invalid predicate.")),
         }?;
 
-        Ok(PyIPredicate(predicate))
+        Ok(Self(predicate))
     }
 }
 
@@ -298,8 +298,8 @@ impl Builder {
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    fn icmp(&mut self, predicate: PyIPredicate, lhs: Value, rhs: Value) -> PyResult<Value> {
-        self.push_binary_op(BinaryKind::ICmp(predicate.0), lhs.0, rhs.0)
+    fn icmp(&mut self, pred: PyIntPredicate, lhs: Value, rhs: Value) -> PyResult<Value> {
+        self.push_binary_op(BinaryKind::ICmp(pred.0), lhs.0, rhs.0)
     }
 
     fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Value>> {

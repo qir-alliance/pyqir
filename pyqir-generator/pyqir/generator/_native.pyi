@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator._builder import IPredicate
+from pyqir.generator._builder import IntPredicate
 from pyqir.generator.types import Type
 from typing import Callable, Optional, Sequence, Tuple, Union
 
@@ -148,11 +148,11 @@ class Builder:
         """
         ...
 
-    def icmp(self, predicate: IPredicate, lhs: Value, rhs: Value) -> Value:
+    def icmp(self, pred: IntPredicate, lhs: Value, rhs: Value) -> Value:
         """
         Inserts an integer comparison instruction.
 
-        :param predicate: The predicate to compare by.
+        :param pred: The predicate to compare by.
         :param lhs: The left-hand side.
         :param rhs: The right-hand side.
         :return: The boolean result.

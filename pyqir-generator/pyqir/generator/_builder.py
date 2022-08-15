@@ -4,7 +4,7 @@
 from enum import Enum, auto
 
 
-class IPredicate(Enum):
+class IntPredicate(Enum):
     """An integer comparison predicate."""
 
     EQ = auto()

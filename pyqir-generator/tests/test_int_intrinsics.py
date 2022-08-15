@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from functools import partial
-from pyqir.generator import Builder, IPredicate, SimpleModule, Value, const, types
+from pyqir.generator import Builder, IntPredicate, SimpleModule, Value, const, types
 from typing import Callable, List, Tuple
 import unittest
 
@@ -15,16 +15,16 @@ _BINARY_INTRINSICS: List[Tuple[str, Callable[[Builder], Callable[[Value, Value],
     ("mul", lambda b: b.mul),
     ("shl", lambda b: b.shl),
     ("lshr", lambda b: b.lshr),
-    ("icmp eq", lambda b: partial(b.icmp, IPredicate.EQ)),
-    ("icmp ne", lambda b: partial(b.icmp, IPredicate.NE)),
-    ("icmp ugt", lambda b: partial(b.icmp, IPredicate.UGT)),
-    ("icmp uge", lambda b: partial(b.icmp, IPredicate.UGE)),
-    ("icmp ult", lambda b: partial(b.icmp, IPredicate.ULT)),
-    ("icmp ule", lambda b: partial(b.icmp, IPredicate.ULE)),
-    ("icmp sgt", lambda b: partial(b.icmp, IPredicate.SGT)),
-    ("icmp sge", lambda b: partial(b.icmp, IPredicate.SGE)),
-    ("icmp slt", lambda b: partial(b.icmp, IPredicate.SLT)),
-    ("icmp sle", lambda b: partial(b.icmp, IPredicate.SLE))
+    ("icmp eq", lambda b: partial(b.icmp, IntPredicate.EQ)),
+    ("icmp ne", lambda b: partial(b.icmp, IntPredicate.NE)),
+    ("icmp ugt", lambda b: partial(b.icmp, IntPredicate.UGT)),
+    ("icmp uge", lambda b: partial(b.icmp, IntPredicate.UGE)),
+    ("icmp ult", lambda b: partial(b.icmp, IntPredicate.ULT)),
+    ("icmp ule", lambda b: partial(b.icmp, IntPredicate.ULE)),
+    ("icmp sgt", lambda b: partial(b.icmp, IntPredicate.SGT)),
+    ("icmp sge", lambda b: partial(b.icmp, IntPredicate.SGE)),
+    ("icmp slt", lambda b: partial(b.icmp, IntPredicate.SLT)),
+    ("icmp sle", lambda b: partial(b.icmp, IntPredicate.SLE))
 ]
 
 
