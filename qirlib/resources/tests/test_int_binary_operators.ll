@@ -1,5 +1,5 @@
-; ModuleID = 'test_int_binop_intrinsics'
-source_filename = "test_int_binop_intrinsics"
+; ModuleID = 'test_int_binary_operators'
+source_filename = "test_int_binary_operators"
 
 declare i32 @source()
 

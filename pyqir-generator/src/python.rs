@@ -145,7 +145,7 @@ struct PyIntPredicate(IntPredicate);
 
 impl<'source> FromPyObject<'source> for PyIntPredicate {
     fn extract(ob: &'source PyAny) -> PyResult<Self> {
-        let predicate = match ob.getattr("name")?.extract()? {
+        match ob.getattr("name")?.extract()? {
             "EQ" => Ok(IntPredicate::EQ),
             "NE" => Ok(IntPredicate::NE),
             "UGT" => Ok(IntPredicate::UGT),
@@ -157,9 +157,8 @@ impl<'source> FromPyObject<'source> for PyIntPredicate {
             "SLT" => Ok(IntPredicate::SLT),
             "SLE" => Ok(IntPredicate::SLE),
             _ => Err(PyValueError::new_err("Invalid predicate.")),
-        }?;
-
-        Ok(Self(predicate))
+        }
+        .map(Self)
     }
 }
 
@@ -239,7 +238,7 @@ fn constant(ty: PyType, value: &PyAny) -> PyResult<Value> {
 struct Builder {
     frames: Vec<Vec<Instruction>>,
     external_functions: Vec<Function>,
-    last_variable: Option<Variable>,
+    next_variable: Variable,
 }
 
 #[pymethods]
@@ -249,7 +248,7 @@ impl Builder {
         Builder {
             frames: vec![vec![]],
             external_functions: vec![],
-            last_variable: None,
+            next_variable: Variable::new(),
         }
     }
 
@@ -340,11 +339,8 @@ impl Builder {
     }
 
     fn fresh_variable(&mut self) -> Variable {
-        let v = match &self.last_variable {
-            None => Variable::new(),
-            Some(v) => v.next(),
-        };
-        self.last_variable = Some(v);
+        let v = self.next_variable;
+        self.next_variable = v.next();
         v
     }
 

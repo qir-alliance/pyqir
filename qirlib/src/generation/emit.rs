@@ -709,7 +709,7 @@ mod if_tests {
     }
 
     #[test]
-    fn test_int_binop_intrinsics() -> Result<(), String> {
+    fn test_int_binary_operators() -> Result<(), String> {
         let mut instructions = vec![];
         let lhs = Variable::new();
         let rhs = lhs.next();
@@ -768,7 +768,7 @@ mod if_tests {
         }
 
         check_or_save_reference_ir(&SemanticModel {
-            name: "test_int_binop_intrinsics".to_string(),
+            name: "test_int_binary_operators".to_string(),
             registers: vec![],
             qubits: vec![],
             instructions,

@@ -6,7 +6,7 @@ from pyqir.generator import Builder, IntPredicate, SimpleModule, Value, const, t
 from typing import Callable, List, Tuple
 import unittest
 
-_BINARY_INTRINSICS: List[Tuple[str, Callable[[Builder], Callable[[Value, Value], Value]]]] = [
+_OPERATORS: List[Tuple[str, Callable[[Builder], Callable[[Value, Value], Value]]]] = [
     ("and", lambda b: b.and_),
     ("or", lambda b: b.or_),
     ("xor", lambda b: b.xor),
@@ -28,9 +28,9 @@ _BINARY_INTRINSICS: List[Tuple[str, Callable[[Builder], Callable[[Value, Value],
 ]
 
 
-class IntIntrinsicsTest(unittest.TestCase):
+class IntOperatorsTest(unittest.TestCase):
     def test_variable_variable(self) -> None:
-        for (name, build) in _BINARY_INTRINSICS:
+        for (name, build) in _OPERATORS:
             with self.subTest(name):
                 mod = SimpleModule("test " + name, 0, 0)
                 source = mod.add_external_function(
@@ -47,7 +47,7 @@ class IntIntrinsicsTest(unittest.TestCase):
                 self.assertIn(f"%2 = {name} i64 %0, %1", mod.ir())
 
     def test_constant_variable(self) -> None:
-        for (name, build) in _BINARY_INTRINSICS:
+        for (name, build) in _OPERATORS:
             with self.subTest(name):
                 mod = SimpleModule("test " + name, 0, 0)
                 source = mod.add_external_function(
