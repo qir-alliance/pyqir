@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-pub use inkwell::IntPredicate;
-
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct QuantumRegister {
     pub name: String,
@@ -134,7 +132,7 @@ pub struct BinaryOp {
     pub result: Variable,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum BinaryKind {
     And,
     Or,
@@ -145,6 +143,31 @@ pub enum BinaryKind {
     Shl,
     LShr,
     ICmp(IntPredicate),
+}
+
+/// An integer comparison predicate.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum IntPredicate {
+    /// Equal.
+    EQ,
+    /// Not equal.
+    NE,
+    /// Unsigned greater than.
+    UGT,
+    /// Unsigned greater than or equal.
+    UGE,
+    /// Unsigned less than.
+    ULT,
+    /// Unsigned less than or equal.
+    ULE,
+    /// Signed greater than.
+    SGT,
+    /// Signed greater than or equal.
+    SGE,
+    /// Signed less than.
+    SLT,
+    /// Signed less than or equal.
+    SLE,
 }
 
 #[derive(Clone, Debug, PartialEq)]

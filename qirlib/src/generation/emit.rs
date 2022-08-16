@@ -374,10 +374,9 @@ mod result_alloc_tests {
 mod if_tests {
     use super::test_utils::check_or_save_reference_ir;
     use crate::generation::interop::{
-        BinaryKind, BinaryOp, Call, ClassicalRegister, If, Instruction, Measured, QuantumRegister,
-        SemanticModel, Single, Type, Value, Variable,
+        BinaryKind, BinaryOp, Call, ClassicalRegister, If, Instruction, IntPredicate, Measured,
+        QuantumRegister, SemanticModel, Single, Type, Value, Variable,
     };
-    use inkwell::IntPredicate;
 
     #[test]
     fn test_if_then() -> Result<(), String> {

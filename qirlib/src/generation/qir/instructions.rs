@@ -5,7 +5,7 @@ use crate::{
     codegen::CodeGenerator,
     generation::{
         env::{Environment, ResultState},
-        interop::{BinaryKind, BinaryOp, Call, If, Instruction, Value},
+        interop::{BinaryKind, BinaryOp, Call, If, Instruction, IntPredicate, Value},
         qir::result,
     },
 };
@@ -179,9 +179,28 @@ fn emit_binary_op<'ctx>(
         BinaryKind::Mul => generator.builder.build_int_mul(lhs, rhs, ""),
         BinaryKind::Shl => generator.builder.build_left_shift(lhs, rhs, ""),
         BinaryKind::LShr => generator.builder.build_right_shift(lhs, rhs, false, ""),
-        BinaryKind::ICmp(pred) => generator.builder.build_int_compare(pred, lhs, rhs, ""),
+        BinaryKind::ICmp(pred) => {
+            generator
+                .builder
+                .build_int_compare(to_inkwell(pred), lhs, rhs, "")
+        }
     };
     env.set_variable(op.result, result.into()).unwrap();
+}
+
+fn to_inkwell(pred: IntPredicate) -> inkwell::IntPredicate {
+    match pred {
+        IntPredicate::EQ => inkwell::IntPredicate::EQ,
+        IntPredicate::NE => inkwell::IntPredicate::NE,
+        IntPredicate::UGT => inkwell::IntPredicate::UGT,
+        IntPredicate::UGE => inkwell::IntPredicate::UGE,
+        IntPredicate::ULT => inkwell::IntPredicate::ULT,
+        IntPredicate::ULE => inkwell::IntPredicate::ULE,
+        IntPredicate::SGT => inkwell::IntPredicate::SGT,
+        IntPredicate::SGE => inkwell::IntPredicate::SGE,
+        IntPredicate::SLT => inkwell::IntPredicate::SLT,
+        IntPredicate::SLE => inkwell::IntPredicate::SLE,
+    }
 }
 
 fn emit_call<'ctx>(generator: &CodeGenerator<'ctx>, env: &mut Environment<'ctx>, call: &Call) {
