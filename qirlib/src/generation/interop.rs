@@ -184,6 +184,7 @@ pub struct Variable {
 }
 
 impl Variable {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }

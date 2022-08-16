@@ -714,7 +714,7 @@ mod if_tests {
         let lhs = Variable::new();
         let rhs = lhs.next();
 
-        for result in [lhs.clone(), rhs.clone()] {
+        for result in [lhs, rhs] {
             instructions.push(Instruction::Call(Call {
                 name: "source".to_string(),
                 args: vec![],
@@ -743,7 +743,7 @@ mod if_tests {
             BinaryKind::ICmp(IntPredicate::SLE),
         ];
 
-        let mut result = rhs.clone();
+        let mut result = rhs;
         for kind in kinds {
             let sink = if matches!(kind, BinaryKind::ICmp(_)) {
                 result = result.next();
@@ -755,14 +755,14 @@ mod if_tests {
 
             instructions.push(Instruction::BinaryOp(BinaryOp {
                 kind,
-                lhs: Value::Variable(lhs.clone()),
-                rhs: Value::Variable(rhs.clone()),
-                result: result.clone(),
+                lhs: Value::Variable(lhs),
+                rhs: Value::Variable(rhs),
+                result,
             }));
 
             instructions.push(Instruction::Call(Call {
                 name: sink,
-                args: vec![Value::Variable(result.clone())],
+                args: vec![Value::Variable(result)],
                 result: None,
             }));
         }
