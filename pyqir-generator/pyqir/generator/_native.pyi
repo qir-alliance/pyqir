@@ -264,7 +264,7 @@ class BasicQisBuilder:
 
     def cx(self, control: Value, target: Value) -> None:
         """
-        Builds a controlled Pauli :math:`X` gate.
+        Inserts a controlled Pauli :math:`X` gate.
 
         :param control: The control qubit.
         :param target: The target qubit.
@@ -273,7 +273,7 @@ class BasicQisBuilder:
 
     def cz(self, control: Value, target: Value) -> None:
         """
-        Builds a controlled Pauli :math:`Z` gate.
+        Inserts a controlled Pauli :math:`Z` gate.
 
         :param control: The control qubit.
         :param target: The target qubit.
@@ -282,7 +282,7 @@ class BasicQisBuilder:
 
     def h(self, qubit: Value) -> None:
         """
-        Builds a Hadamard gate.
+        Inserts a Hadamard gate.
 
         :param qubit: The target qubit.
         """
@@ -290,7 +290,7 @@ class BasicQisBuilder:
 
     def m(self, qubit: Value, result: ResultRef) -> None:
         """
-        Builds a measurement operation.
+        Inserts a measurement operation.
 
         :param qubit: The qubit to measure.
         :param result: A result reference where the measurement result will be
@@ -300,7 +300,7 @@ class BasicQisBuilder:
 
     def reset(self, qubit: Value) -> None:
         """
-        Builds a reset operation.
+        Inserts a reset operation.
 
         :param qubit: The qubit to reset.
         """
@@ -308,7 +308,7 @@ class BasicQisBuilder:
 
     def rx(self, theta: Union[Value, float], qubit: Value) -> None:
         """
-        Builds a rotation gate about the :math:`x` axis.
+        Inserts a rotation gate about the :math:`x` axis.
 
         :param theta: The angle to rotate by.
         :param qubit: The qubit to rotate.
@@ -317,7 +317,7 @@ class BasicQisBuilder:
 
     def ry(self, theta: Union[Value, float], qubit: Value) -> None:
         """
-        Builds a rotation gate about the :math:`y` axis.
+        Inserts a rotation gate about the :math:`y` axis.
 
         :param theta: The angle to rotate by.
         :param qubit: The qubit to rotate.
@@ -326,7 +326,7 @@ class BasicQisBuilder:
 
     def rz(self, theta: Union[Value, float], qubit: Value) -> None:
         """
-        Builds a rotation gate about the :math:`z` axis.
+        Inserts a rotation gate about the :math:`z` axis.
 
         :param theta: The angle to rotate by.
         :param qubit: The qubit to rotate.
@@ -335,7 +335,7 @@ class BasicQisBuilder:
 
     def s(self, qubit: Value) -> None:
         """
-        Builds an :math:`S` gate.
+        Inserts an :math:`S` gate.
 
         :param qubit: The target qubit.
         """
@@ -343,7 +343,7 @@ class BasicQisBuilder:
 
     def s_adj(self, qubit: Value) -> None:
         """
-        Builds an adjoint :math:`S` gate.
+        Inserts an adjoint :math:`S` gate.
 
         :param qubit: The target qubit.
         """
@@ -351,7 +351,7 @@ class BasicQisBuilder:
 
     def t(self, qubit: Value) -> None:
         """
-        Builds a :math:`T` gate.
+        Inserts a :math:`T` gate.
 
         :param qubit: The target qubit.
         """
@@ -359,7 +359,7 @@ class BasicQisBuilder:
 
     def t_adj(self, qubit: Value) -> None:
         """
-        Builds an adjoint :math:`T` gate.
+        Inserts an adjoint :math:`T` gate.
 
         :param qubit: The target qubit.
         """
@@ -367,7 +367,7 @@ class BasicQisBuilder:
 
     def x(self, qubit: Value) -> None:
         """
-        Builds a Pauli :math:`X` gate.
+        Inserts a Pauli :math:`X` gate.
 
         :param qubit: The target qubit.
         """
@@ -375,7 +375,7 @@ class BasicQisBuilder:
 
     def y(self, qubit: Value) -> None:
         """
-        Builds a Pauli :math:`Y` gate.
+        Inserts a Pauli :math:`Y` gate.
 
         :param qubit: The target qubit.
         """
@@ -383,7 +383,7 @@ class BasicQisBuilder:
 
     def z(self, qubit: Value) -> None:
         """
-        Builds a Pauli :math:`Z` gate.
+        Inserts a Pauli :math:`Z` gate.
 
         :param qubit: The target qubit.
         """
@@ -396,7 +396,7 @@ class BasicQisBuilder:
         zero: Callable[[], None] = ...,
     ) -> None:
         """
-        Builds a conditional branch on the result of a measurement.
+        Inserts a branch conditioned on the result of a measurement.
 
         Dereferences the result reference, then evaluates the instructions
         built by ``one`` if the result is one, or the instructions built by
@@ -404,9 +404,9 @@ class BasicQisBuilder:
         use this builder to build instructions.
 
         :param result: The result to branch on.
-        :param one: A callable that builds instructions for the branch where
+        :param one: A callable that inserts instructions for the branch where
                     the result is one.
-        :param zero: A callable that builds instructions for the branch where
+        :param zero: A callable that inserts instructions for the branch where
                      the result is zero.
         """
         ...
