@@ -32,8 +32,6 @@ pub struct CodeGenerator<'ctx> {
     pub context: &'ctx inkwell::context::Context,
     pub module: inkwell::module::Module<'ctx>,
     pub builder: inkwell::builder::Builder<'ctx>,
-    pub use_static_qubit_alloc: bool,
-    pub use_static_result_alloc: bool,
 }
 
 impl<'ctx> CodeGenerator<'ctx> {
@@ -43,16 +41,12 @@ impl<'ctx> CodeGenerator<'ctx> {
     pub fn new(
         context: &'ctx inkwell::context::Context,
         module: Module<'ctx>,
-        use_static_qubit_alloc: bool,
-        use_static_result_alloc: bool,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
         Ok(CodeGenerator {
             context,
             module,
             builder,
-            use_static_qubit_alloc,
-            use_static_result_alloc,
         })
     }
 }
@@ -272,7 +266,7 @@ mod core_tests {
 
         let context = Context::create();
         let module = context.create_module(name);
-        let generator = CodeGenerator::new(&context, module, false, false).unwrap();
+        let generator = CodeGenerator::new(&context, module).unwrap();
         generator.emit_bitcode(file_path_string.as_str());
 
         let mut emitted_bitcode_file =
@@ -301,7 +295,7 @@ mod types_tests {
     fn qubit_can_be_declared() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module, false, false).unwrap();
+        let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Qubit", generator.qubit_type());
     }
@@ -310,7 +304,7 @@ mod types_tests {
     fn result_can_be_declared() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module, false, false).unwrap();
+        let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Result", generator.result_type());
     }

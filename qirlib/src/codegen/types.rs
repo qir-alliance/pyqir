@@ -83,7 +83,7 @@ mod tests {
     fn qubit_can_be_declared() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module, false, false).unwrap();
+        let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Qubit", qubit(generator.context, &generator.module));
     }
@@ -92,7 +92,7 @@ mod tests {
     fn result_can_be_declared() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module, false, false).unwrap();
+        let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Result", result(generator.context, &generator.module));
     }

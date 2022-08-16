@@ -262,8 +262,6 @@ pub struct SemanticModel {
     pub registers: Vec<ClassicalRegister>,
     pub qubits: Vec<QuantumRegister>,
     pub instructions: Vec<Instruction>,
-    pub use_static_qubit_alloc: bool,
-    pub use_static_result_alloc: bool,
     pub external_functions: Vec<(String, Type)>,
 }
 
@@ -275,8 +273,6 @@ impl SemanticModel {
             registers: vec![],
             qubits: vec![],
             instructions: vec![],
-            use_static_qubit_alloc: false,
-            use_static_result_alloc: true,
             external_functions: vec![],
         }
     }

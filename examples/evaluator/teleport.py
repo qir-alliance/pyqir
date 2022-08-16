@@ -23,11 +23,11 @@ def teleport(module: SimpleModule, qubits: List[Value], results: List[ResultRef]
 
     # Measure the qubits to extract the classical data we need to decode the
     # message by applying the corrections on the target qubit accordingly.
-    qis.m(msg, results[0])
+    qis.mz(msg, results[0])
     qis.reset(msg)
     module.if_result(results[0], one=lambda: qis.z(target))
 
-    qis.m(register, results[1])
+    qis.mz(register, results[1])
     qis.reset(register)
     module.if_result(results[1], one=lambda: qis.x(target))
 

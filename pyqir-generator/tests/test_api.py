@@ -15,8 +15,8 @@ def test_bell() -> None:
     qis = BasicQisBuilder(module.builder)
     qis.h(module.qubits[0])
     qis.cx(module.qubits[0], module.qubits[1])
-    qis.m(module.qubits[0], module.results[0])
-    qis.m(module.qubits[1], module.results[1])
+    qis.mz(module.qubits[0], module.results[0])
+    qis.mz(module.qubits[1], module.results[1])
 
     ir = module.ir()
     assert ir.startswith("; ModuleID = 'Bell circuit'")
@@ -59,11 +59,11 @@ def test_bernstein_vazirani() -> None:
     qis.h(inputs[3])
     qis.h(inputs[4])
 
-    qis.m(inputs[0], outputs[0])
-    qis.m(inputs[1], outputs[1])
-    qis.m(inputs[2], outputs[2])
-    qis.m(inputs[3], outputs[3])
-    qis.m(inputs[4], outputs[4])
+    qis.mz(inputs[0], outputs[0])
+    qis.mz(inputs[1], outputs[1])
+    qis.mz(inputs[2], outputs[2])
+    qis.mz(inputs[3], outputs[3])
+    qis.mz(inputs[4], outputs[4])
 
     ir = module.ir()
     assert ir.startswith("; ModuleID = 'Bernstein-Vazirani'")
@@ -91,10 +91,10 @@ def test_all_gates() -> None:
     qis.y(q[1])
     qis.z(q[2])
 
-    qis.m(q[0], c[0])
-    qis.m(q[1], c[1])
-    qis.m(q[2], c[2])
-    qis.m(q[3], c[3])
+    qis.mz(q[0], c[0])
+    qis.mz(q[1], c[1])
+    qis.mz(q[2], c[2])
+    qis.mz(q[3], c[3])
 
     ir = module.ir()
     assert ir.startswith("; ModuleID = 'All Gates'")

@@ -389,9 +389,7 @@ impl SimpleModule {
             external_functions: vec![],
             registers,
             qubits,
-            instructions: Vec::new(),
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: true,
+            instructions: vec![],
         };
 
         let builder = Py::new(py, Builder::new())?;
@@ -437,14 +435,6 @@ impl SimpleModule {
         let function = Function { name, ty };
         builder.external_functions.push(function.clone());
         function
-    }
-
-    fn use_static_qubit_alloc(&mut self, value: bool) {
-        self.model.use_static_qubit_alloc = value;
-    }
-
-    fn use_static_result_alloc(&mut self, value: bool) {
-        self.model.use_static_result_alloc = value;
     }
 
     fn if_(
@@ -547,7 +537,7 @@ impl BasicQisBuilder {
         self.push_inst(py, Instruction::H(single));
     }
 
-    fn m(&self, py: Python, qubit: Value, result: &ResultRef) {
+    fn mz(&self, py: Python, qubit: Value, result: &ResultRef) {
         let measured = Measured::new(qubit.0, result.id());
         self.push_inst(py, Instruction::M(measured));
     }

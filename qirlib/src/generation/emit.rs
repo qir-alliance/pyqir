@@ -53,12 +53,7 @@ pub fn populate_context<'a>(
     model: &'a SemanticModel,
 ) -> Result<CodeGenerator<'a>, String> {
     let module = ctx.create_module(&model.name);
-    let generator = CodeGenerator::new(
-        ctx,
-        module,
-        model.use_static_qubit_alloc,
-        model.use_static_result_alloc,
-    )?;
+    let generator = CodeGenerator::new(ctx, module)?;
     build_entry_function(&generator, model)?;
     Ok(generator)
 }
@@ -67,20 +62,18 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
     add_external_functions(generator, model.external_functions.iter());
     let entry_point = qir::create_entry_point(generator.context, &generator.module);
 
-    if generator.use_static_qubit_alloc {
-        let num_qubits = format!("{}", model.qubits.len());
+    if model.qubits.len() > 0 {
         let required_qubits = generator
             .context
-            .create_string_attribute("requiredQubits", &num_qubits);
+            .create_string_attribute("requiredQubits", &model.qubits.len().to_string());
         entry_point.add_attribute(AttributeLoc::Function, required_qubits);
     }
 
-    if generator.use_static_result_alloc {
-        let num_results: u64 = model.registers.iter().map(|f| f.size).sum();
-        let num_result_string = format!("{}", num_results);
+    let num_results: u64 = model.registers.iter().map(|f| f.size).sum();
+    if num_results > 0 {
         let required_results = generator
             .context
-            .create_string_attribute("requiredResults", &num_result_string);
+            .create_string_attribute("requiredResults", &num_results.to_string());
         entry_point.add_attribute(AttributeLoc::Function, required_results);
     }
 
@@ -94,13 +87,6 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
     );
 
     write_instructions(model, generator, &mut env, entry_point);
-
-    if !model.use_static_qubit_alloc {
-        for (_, qubit) in env.iter_qubits() {
-            generator.emit_release_qubit(qubit);
-        }
-    }
-
     generator.builder.build_return(None);
     generator.module.verify().map_err(|e| e.to_string())
 }
@@ -155,62 +141,35 @@ fn write_qubits<'ctx>(
     model: &SemanticModel,
     generator: &CodeGenerator<'ctx>,
 ) -> HashMap<String, BasicValueEnum<'ctx>> {
-    if generator.use_static_qubit_alloc {
-        let mut qubits: HashMap<String, BasicValueEnum<'ctx>> = HashMap::new();
-        for (id, qubit) in model.qubits.iter().enumerate() {
-            let indexed_name = format!("{}{}", &qubit.name[..], qubit.index);
-            let int_value = generator.usize_to_i64(id).into_int_value();
-            let qubit_ptr_type = generator.qubit_type().ptr_type(AddressSpace::Generic);
+    let mut qubits = HashMap::new();
+    for (id, qubit) in model.qubits.iter().enumerate() {
+        let indexed_name = format!("{}{}", &qubit.name[..], qubit.index);
+        let int_value = generator.usize_to_i64(id).into_int_value();
+        let qubit_ptr_type = generator.qubit_type().ptr_type(AddressSpace::Generic);
 
-            let intptr =
-                generator
-                    .builder
-                    .build_int_to_ptr(int_value, qubit_ptr_type, &indexed_name);
-            qubits.insert(indexed_name, intptr.into());
-        }
-        qubits
-    } else {
-        let qubits = model
-            .qubits
-            .iter()
-            .map(|reg| {
-                let indexed_name = format!("{}{}", &reg.name[..], reg.index);
-                let value = generator.emit_allocate_qubit(indexed_name.as_str());
-                (indexed_name, value)
-            })
-            .collect();
-
-        qubits
+        let intptr = generator
+            .builder
+            .build_int_to_ptr(int_value, qubit_ptr_type, &indexed_name);
+        qubits.insert(indexed_name, intptr.into());
     }
+
+    qubits
 }
 
 fn write_registers<'ctx>(
     model: &SemanticModel,
     generator: &CodeGenerator<'ctx>,
-) -> HashMap<String, Option<PointerValue<'ctx>>> {
+) -> HashMap<String, BasicValueEnum<'ctx>> {
     let mut registers = HashMap::new();
-
-    if generator.use_static_result_alloc {
-        let mut id = 0;
-        let number_of_registers = model.registers.len() as u64;
-        if number_of_registers > 0 {
-            for register in &model.registers {
-                for index in 0..register.size {
-                    let indexed_name = format!("{}{}", register.name, index);
-                    let intptr = create_result_static_ptr(&indexed_name, generator, id);
-                    registers.insert(indexed_name, intptr.into());
-                    id += 1;
-                }
-            }
-        }
-    } else {
-        let number_of_registers = model.registers.len() as u64;
-        if number_of_registers > 0 {
-            for register in &model.registers {
-                for index in 0..register.size {
-                    let name = format!("{}{}", register.name, index);
-                    registers.insert(name, None);
-                }
+    let mut id = 0;
+    let number_of_registers = model.registers.len() as u64;
+    if number_of_registers > 0 {
+        for register in &model.registers {
+            for index in 0..register.size {
+                let indexed_name = format!("{}{}", register.name, index);
+                let intptr = create_result_static_ptr(&indexed_name, generator, id);
+                registers.insert(indexed_name, intptr.into());
+                id += 1;
             }
         }
     }
@@ -242,7 +201,7 @@ fn write_instructions<'ctx>(
 }
 
 #[cfg(test)]
-mod result_alloc_tests {
+mod allocation_tests {
     use crate::generation::{
         emit,
         interop::{
@@ -250,54 +209,62 @@ mod result_alloc_tests {
         },
     };
 
-    fn get_model(
-        name: String,
-        use_static_qubit_alloc: bool,
-        use_static_result_alloc: bool,
-    ) -> SemanticModel {
-        SemanticModel {
-            name,
-            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
-            instructions: vec![Instruction::M(Measured::new(
-                Value::Qubit("q0".to_string()),
-                "r0".to_string(),
-            ))],
-            use_static_qubit_alloc,
-            use_static_result_alloc,
-            external_functions: vec![],
-        }
-    }
-
     #[test]
-    fn when_dynamic_qubit_and_dynamic_result_alloc_is_used_then_only_entypoint_attribute_is_emitted(
+    fn when_no_qubits_or_registers_declared_then_only_entypoint_attribute_is_emitted(
     ) -> Result<(), String> {
-        let model = get_model("test".to_owned(), false, false);
+        let model = SemanticModel {
+            name: "test".to_owned(),
+            registers: vec![],
+            qubits: vec![],
+            instructions: vec![],
+            external_functions: vec![],
+        };
         let actual_ir: String = emit::ir(&model)?;
         assert!(actual_ir.contains("attributes #0 = { \"EntryPoint\" }"));
         Ok(())
     }
 
     #[test]
-    fn when_static_qubit_alloc_is_used_then_required_attribute_is_emitted() -> Result<(), String> {
-        let model = get_model("test".to_owned(), true, false);
+    fn when_no_registers_declared_then_attribute_is_omitted() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test".to_owned(),
+            registers: vec![],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![Instruction::H(Single::new(Value::Qubit("q0".to_string())))],
+            external_functions: vec![],
+        };
         let actual_ir: String = emit::ir(&model)?;
         assert!(actual_ir.contains("attributes #0 = { \"EntryPoint\" \"requiredQubits\"=\"1\" }"));
         Ok(())
     }
 
     #[test]
-    fn when_static_result_alloc_is_used_then_required_attribute_is_emitted() -> Result<(), String> {
-        let model = get_model("test".to_owned(), false, true);
+    fn when_no_qubits_declared_then_attribute_is_omitted() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test".to_owned(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
+            qubits: vec![],
+            instructions: vec![],
+            external_functions: vec![],
+        };
         let actual_ir: String = emit::ir(&model)?;
         assert!(actual_ir.contains("attributes #0 = { \"EntryPoint\" \"requiredResults\"=\"1\" }"));
         Ok(())
     }
 
     #[test]
-    fn when_static_qubit_and_static_result_alloc_is_used_then_both_required_attribute_are_emitted(
-    ) -> Result<(), String> {
-        let model = get_model("test".to_owned(), true, true);
+    fn when_qubits_and_registers_declared_then_required_attribute_are_emitted() -> Result<(), String>
+    {
+        let model = SemanticModel {
+            name: "test".to_owned(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![Instruction::M(Measured::new(
+                Value::Qubit("q0".to_string()),
+                "r0".to_string(),
+            ))],
+            external_functions: vec![],
+        };
         let actual_ir: String = emit::ir(&model)?;
         assert!(actual_ir.contains(
             "attributes #0 = { \"EntryPoint\" \"requiredQubits\"=\"1\" \"requiredResults\"=\"1\" }"
@@ -306,8 +273,7 @@ mod result_alloc_tests {
     }
 
     #[test]
-    fn when_static_result_alloc_is_used_then_emitted_attribute_sums_registers_correctly(
-    ) -> Result<(), String> {
+    fn required_results_attribute_sums_registers_correctly() -> Result<(), String> {
         let model = SemanticModel {
             name: "test".to_owned(),
             registers: vec![
@@ -320,45 +286,12 @@ mod result_alloc_tests {
                 Value::Qubit("q0".to_string()),
                 "r0".to_string(),
             ))],
-            use_static_qubit_alloc: false,
-            use_static_result_alloc: true,
             external_functions: vec![],
         };
         let actual_ir: String = emit::ir(&model)?;
-        assert!(actual_ir.contains("attributes #0 = { \"EntryPoint\" \"requiredResults\"=\"8\" }"));
-        Ok(())
-    }
-
-    #[test]
-    fn when_static_result_alloc_is_used_and_no_registers_declared_then_emitted_attribute_sums_correctly(
-    ) -> Result<(), String> {
-        let model = SemanticModel {
-            name: "test".to_owned(),
-            registers: vec![],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
-            instructions: vec![Instruction::H(Single::new(Value::Qubit("q0".to_string())))],
-            use_static_qubit_alloc: false,
-            use_static_result_alloc: true,
-            external_functions: vec![],
-        };
-        let actual_ir: String = emit::ir(&model)?;
-        assert!(actual_ir.contains("attributes #0 = { \"EntryPoint\" \"requiredResults\"=\"0\" }"));
-        Ok(())
-    }
-
-    #[test]
-    fn when_dynamic_result_alloc_is_used_then_m_body_is_emitted() -> Result<(), String> {
-        let model = get_model("test".to_owned(), false, false);
-        let actual_ir: String = emit::ir(&model)?;
-        assert!(actual_ir.contains("declare %Result* @__quantum__qis__m__body(%Qubit*)"));
-        Ok(())
-    }
-
-    #[test]
-    fn when_static_result_alloc_is_used_then_mz_body_is_emitted() -> Result<(), String> {
-        let model = get_model("test".to_owned(), false, true);
-        let actual_ir: String = emit::ir(&model)?;
-        assert!(actual_ir.contains("declare void @__quantum__qis__mz__body(%Qubit*, %Result*)"));
+        assert!(actual_ir.contains(
+            "attributes #0 = { \"EntryPoint\" \"requiredQubits\"=\"1\" \"requiredResults\"=\"8\" }"
+        ));
         Ok(())
     }
 }
@@ -371,7 +304,7 @@ mod result_alloc_tests {
 /// 2. Review the changes and make sure they look reasonable.
 /// 3. Unset the environment variable and run the tests again to confirm that they pass.
 #[cfg(test)]
-mod if_tests {
+mod ir_tests {
     use super::test_utils::check_or_save_reference_ir;
     use crate::generation::interop::{
         BinaryKind, BinaryOp, Call, ClassicalRegister, IfResult, Instruction, IntPredicate,
@@ -395,8 +328,6 @@ mod if_tests {
                     if_zero: vec![],
                 }),
             ],
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
             external_functions: vec![],
         };
 
@@ -420,8 +351,6 @@ mod if_tests {
                     if_zero: vec![],
                 }),
             ],
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
             external_functions: vec![],
         };
 
@@ -445,8 +374,6 @@ mod if_tests {
                     if_zero: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
                 }),
             ],
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
             external_functions: vec![],
         };
 
@@ -471,8 +398,6 @@ mod if_tests {
                 }),
                 Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
             ],
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
             external_functions: vec![],
         };
 
@@ -497,8 +422,6 @@ mod if_tests {
                 }),
                 Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
             ],
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
             external_functions: vec![],
         };
 
@@ -523,8 +446,6 @@ mod if_tests {
                 }),
                 Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
             ],
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
             external_functions: vec![],
         };
 
@@ -556,8 +477,6 @@ mod if_tests {
                     if_zero: vec![],
                 }),
             ],
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
             external_functions: vec![],
         };
 
@@ -589,8 +508,6 @@ mod if_tests {
                     })],
                 }),
             ],
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
             external_functions: vec![],
         };
 
@@ -622,8 +539,6 @@ mod if_tests {
                     if_zero: vec![],
                 }),
             ],
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
             external_functions: vec![],
         };
 
@@ -655,8 +570,6 @@ mod if_tests {
                     })],
                 }),
             ],
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
             external_functions: vec![],
         };
 
@@ -664,9 +577,9 @@ mod if_tests {
     }
 
     #[test]
-    fn test_results_default_to_zero_if_not_measured() -> Result<(), String> {
+    fn test_allows_unmeasured_result_condition() -> Result<(), String> {
         let model = SemanticModel {
-            name: "test_results_default_to_zero_if_not_measured".to_string(),
+            name: "test_allows_unmeasured_result_condition".to_string(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![Instruction::IfResult(IfResult {
@@ -674,12 +587,28 @@ mod if_tests {
                 if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
                 if_zero: vec![Instruction::H(Single::new(Value::Qubit("q0".to_string())))],
             })],
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
             external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
+    }
+
+    #[test]
+    #[should_panic(expected = "Result r1 not found.")]
+    fn test_panics_if_result_not_found() {
+        let model = SemanticModel {
+            name: "test_panics_if_result_not_found".to_string(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![Instruction::IfResult(IfResult {
+                cond: "r1".to_string(),
+                if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                if_zero: vec![Instruction::H(Single::new(Value::Qubit("q0".to_string())))],
+            })],
+            external_functions: vec![],
+        };
+
+        check_or_save_reference_ir(&model).unwrap();
     }
 
     #[test]
@@ -703,8 +632,6 @@ mod if_tests {
                     result: None,
                 }),
             ],
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
             external_functions: vec![
                 (
                     "foo".to_string(),
@@ -788,8 +715,6 @@ mod if_tests {
             registers: vec![],
             qubits: vec![],
             instructions,
-            use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
             external_functions: vec![
                 (
                     "source".to_string(),

@@ -63,7 +63,7 @@ class QirGenerator(MockLanguageListener):
     def enterMzGate(self, ctx: MockLanguageParser.MzGateContext) -> None:
         qubit = self.parse_qubit(ctx.target.text)
         result = self.parse_result(ctx.target.text)
-        self.qis.m(qubit, result)
+        self.qis.mz(qubit, result)
 
 
 def mock_program_to_qir(num_qubits: int, input_file: str) -> str:

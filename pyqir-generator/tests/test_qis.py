@@ -69,17 +69,9 @@ class QisTest(unittest.TestCase):
                     call = f"call void @__quantum__qis__{name}__body(double 1.000000e+00, %Qubit* null)"
                     self.assertIn(call, mod.ir())
 
-    def test_m(self) -> None:
-        mod = SimpleModule("test_m", 1, 1)
-        mod.use_static_result_alloc(False)
-        qis = BasicQisBuilder(mod.builder)
-        qis.m(mod.qubits[0], mod.results[0])
-        call = f"call %Result* @__quantum__qis__m__body(%Qubit* null)"
-        self.assertIn(call, mod.ir())
-
     def test_mz(self) -> None:
         mod = SimpleModule("test_mz", 1, 1)
         qis = BasicQisBuilder(mod.builder)
-        qis.m(mod.qubits[0], mod.results[0])
+        qis.mz(mod.qubits[0], mod.results[0])
         call = f"call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)"
         self.assertIn(call, mod.ir())

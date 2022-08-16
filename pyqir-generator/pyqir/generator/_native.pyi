@@ -170,9 +170,8 @@ class SimpleModule:
     A simple module represents an executable QIR program with these
     restrictions:
 
-    - There is one global quantum register and one global classical register.
-      Both are allocated automatically with a fixed size before the program
-      starts.
+    - There is one global qubit register and one global result register. Both
+      are statically allocated with a fixed size.
     - There is only a single function that runs as the entry point.
     """
 
@@ -183,26 +182,22 @@ class SimpleModule:
         num_results: int,
     ) -> None:
         """
-        Initializes the module with a name and the number of qubits and results
-        in the quantum and classical registers.
+        Initializes the module.
 
         :param name: The name of the module.
-        :param num_qubits: The size of the global quantum register.
-        :param num_results: The size of the global classical register.
+        :param num_qubits: The number of statically allocated qubits.
+        :param num_results: The number of statically allocated results.
         """
         ...
 
     @property
     def qubits(self) -> Tuple[Value, ...]:
-        """A sequence of qubits representing the global quantum register."""
+        """The global qubit register."""
         ...
 
     @property
     def results(self) -> Tuple[ResultRef, ...]:
-        """
-        A sequence of result references representing the global classical
-        register.
-        """
+        """The global result register."""
         ...
 
     @property
@@ -228,26 +223,6 @@ class SimpleModule:
         """
         ...
 
-    def use_static_qubit_alloc(self, value: bool):
-        """
-        Configures code generation to use static or dynamic qubit allocation
-        based on the provided value. Default is `True`.
-
-        :param name: The value indicating to use static qubit
-                     allocation (`True`) or dynamic allocation (`False`)
-        """
-        ...
-
-    def use_static_result_alloc(self, value: bool):
-        """
-        Configures code generation to use static or dynamic result allocation
-        based on the provided value. Default is `True`.
-
-        :param name: The value indicating to use static result
-                     allocation (`True`) or dynamic allocation (`False`)
-        """
-        ...
-
     def if_(self, cond: Value, true: Callable[[], None] = ..., false: Callable[[], None] = ...) -> None:
         """
         Inserts a branch conditioned on a boolean.
@@ -259,9 +234,9 @@ class SimpleModule:
 
         :param cond: The boolean condition to branch on.
         :param true: A callable that inserts instructions for the branch where
-                    the condition is true.
+                     the condition is true.
         :param false: A callable that inserts instructions for the branch where
-                     the condition is false.
+                      the condition is false.
         """
         ...
 
@@ -322,13 +297,12 @@ class BasicQisBuilder:
         """
         ...
 
-    def m(self, qubit: Value, result: ResultRef) -> None:
+    def mz(self, qubit: Value, result: ResultRef) -> None:
         """
-        Inserts a measurement operation.
+        Inserts a Z-basis measurement operation.
 
         :param qubit: The qubit to measure.
-        :param result: A result reference where the measurement result will be
-                       written to.
+        :param result: A result where the measurement result will be written to.
         """
         ...
 

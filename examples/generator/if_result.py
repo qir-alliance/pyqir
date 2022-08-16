@@ -9,14 +9,14 @@ qis = BasicQisBuilder(mod.builder)
 # Manually reset a qubit by measuring it and applying the X gate if the result
 # is one.
 qis.h(mod.qubits[0])
-qis.m(mod.qubits[0], mod.results[0])
+qis.mz(mod.qubits[0], mod.results[0])
 mod.if_result(mod.results[0], lambda: qis.x(mod.qubits[0]))
 
 # Branches can be nested, for example, to execute an instruction only if both
 # results are one.
 for i in range(2):
     qis.h(mod.qubits[i])
-    qis.m(mod.qubits[i], mod.results[i])
+    qis.mz(mod.qubits[i], mod.results[i])
 
 
 def x_both():
