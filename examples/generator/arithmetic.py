@@ -13,12 +13,18 @@ get_int = mod.add_external_function("get_int", types.Function([], i32))
 take_int = mod.add_external_function(
     "take_int", types.Function([i32], types.VOID))
 
-# Do some integer arithmetic.
-n = mod.builder.call(get_int, [])
-result = mod.builder.mul(const(i32, 2), mod.builder.add(const(i32, 3), n))
+# Add 3 to a number and multiply the result by 2.
+a = mod.builder.call(get_int, [])
+b = mod.builder.add(const(i32, 3), a)
+c = mod.builder.mul(const(i32, 2), b)
 
-# Consume the result.
-mod.builder.call(take_int, [result])
+# Negation can be done by subtracting an integer from zero.
+x = mod.builder.call(get_int, [])
+negative_x = mod.builder.sub(const(i32, 0), x)
+
+# Consume the results.
+mod.builder.call(take_int, [c])
+mod.builder.call(take_int, [negative_x])
 
 if __name__ == "__main__":
     print(mod.ir())
