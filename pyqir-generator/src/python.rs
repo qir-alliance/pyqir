@@ -19,8 +19,9 @@ use pyo3::{
 use qirlib::generation::{
     emit,
     interop::{
-        self, BinaryKind, BinaryOp, Call, ClassicalRegister, Controlled, If, Instruction, Int,
-        IntPredicate, Measured, QuantumRegister, Rotated, SemanticModel, Single, Type, Variable,
+        self, BinaryKind, BinaryOp, Call, ClassicalRegister, Controlled, IfResult, Instruction,
+        Int, IntPredicate, Measured, QuantumRegister, Rotated, SemanticModel, Single, Type,
+        Variable,
     },
 };
 use std::{
@@ -578,13 +579,13 @@ impl BasicQisBuilder {
             Ok(self.pop_frame(py).unwrap())
         };
 
-        let if_inst = If {
-            condition: result.id(),
+        let if_result = IfResult {
+            cond: result.id(),
             then_insts: build_frame(one)?,
             else_insts: build_frame(zero)?,
         };
 
-        self.push_inst(py, Instruction::If(if_inst));
+        self.push_inst(py, Instruction::IfResult(if_result));
         Ok(())
     }
 }
