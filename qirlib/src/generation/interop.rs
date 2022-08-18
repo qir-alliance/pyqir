@@ -115,7 +115,6 @@ pub enum Instruction {
     BinaryOp(BinaryOp),
     Call(Call),
     If(If),
-    // TODO: Add tests for IfResult.
     IfResult(IfResult),
 }
 
