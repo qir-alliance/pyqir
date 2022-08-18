@@ -182,13 +182,13 @@ fn emit_binary_op<'ctx>(
         BinaryKind::ICmp(pred) => {
             generator
                 .builder
-                .build_int_compare(to_inkwell(pred), lhs, rhs, "")
+                .build_int_compare(to_inkwell_predicate(pred), lhs, rhs, "")
         }
     };
     env.set_variable(op.result, result.into()).unwrap();
 }
 
-fn to_inkwell(pred: IntPredicate) -> inkwell::IntPredicate {
+fn to_inkwell_predicate(pred: IntPredicate) -> inkwell::IntPredicate {
     match pred {
         IntPredicate::EQ => inkwell::IntPredicate::EQ,
         IntPredicate::NE => inkwell::IntPredicate::NE,
