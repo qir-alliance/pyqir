@@ -345,6 +345,14 @@ impl Builder {
         self.frames.pop()
     }
 
+    fn build_frame(&mut self, callback: Option<&PyAny>) -> PyResult<Vec<Instruction>> {
+        self.push_frame();
+        if let Some(callback) = callback {
+            callback.call0()?;
+        }
+        Ok(self.pop_frame().unwrap())
+    }
+
     fn fresh_variable(&mut self) -> Variable {
         let v = self.next_variable;
         self.next_variable = v.next();
@@ -454,12 +462,12 @@ impl SimpleModule {
         r#true: Option<&PyAny>,
         r#false: Option<&PyAny>,
     ) -> PyResult<()> {
+        let mut builder = self.builder.as_ref(py).borrow_mut();
         let if_ = If {
             cond: cond.0,
-            then_insts: self.build_frame(py, r#true)?,
-            else_insts: self.build_frame(py, r#false)?,
+            then_insts: builder.build_frame(r#true)?,
+            else_insts: builder.build_frame(r#false)?,
         };
-        let mut builder = self.builder.as_ref(py).borrow_mut();
         builder.push_inst(Instruction::If(if_));
         Ok(())
     }
@@ -471,12 +479,12 @@ impl SimpleModule {
         one: Option<&PyAny>,
         zero: Option<&PyAny>,
     ) -> PyResult<()> {
+        let mut builder = self.builder.as_ref(py).borrow_mut();
         let if_result = IfResult {
             cond: result.id(),
-            then_insts: self.build_frame(py, one)?,
-            else_insts: self.build_frame(py, zero)?,
+            then_insts: builder.build_frame(one)?,
+            else_insts: builder.build_frame(zero)?,
         };
-        let mut builder = self.builder.as_ref(py).borrow_mut();
         builder.push_inst(Instruction::IfResult(if_result));
         Ok(())
     }
@@ -499,20 +507,6 @@ impl SimpleModule {
             },
             _ => panic!("Builder does not contain exactly one stack frame."),
         }
-    }
-
-    fn build_frame(&self, py: Python, callback: Option<&PyAny>) -> PyResult<Vec<Instruction>> {
-        {
-            let mut builder = self.builder.as_ref(py).borrow_mut();
-            builder.push_frame();
-        }
-
-        if let Some(callback) = callback {
-            callback.call0()?;
-        }
-
-        let mut builder = self.builder.as_ref(py).borrow_mut();
-        Ok(builder.pop_frame().unwrap())
     }
 }
 

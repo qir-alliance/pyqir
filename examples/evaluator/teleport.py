@@ -7,7 +7,7 @@ import tempfile
 from typing import List, Optional
 
 
-def teleport(module: SimpleModule, qis: BasicQisBuilder, qubits: List[Value], results: List[ResultRef]) -> None:
+def teleport(qis: BasicQisBuilder, qubits: List[Value], results: List[ResultRef]) -> None:
     msg = qubits[0]
     target = qubits[1]
     register = qubits[2]
@@ -24,11 +24,11 @@ def teleport(module: SimpleModule, qis: BasicQisBuilder, qubits: List[Value], re
     # message by applying the corrections on the target qubit accordingly.
     qis.m(msg, results[0])
     qis.reset(msg)
-    module.if_result(results[0], one=lambda: qis.z(target))
+    qis.if_result(results[0], one=lambda: qis.z(target))
 
     qis.m(register, results[1])
     qis.reset(register)
-    module.if_result(results[1], one=lambda: qis.x(target))
+    qis.if_result(results[1], one=lambda: qis.x(target))
 
 
 def _eval(module: SimpleModule,
@@ -43,7 +43,7 @@ def _eval(module: SimpleModule,
 module = SimpleModule("teleport-example", num_qubits=3, num_results=2)
 qis = BasicQisBuilder(module.builder)
 
-teleport(module, qis, module.qubits, module.results)
+teleport(qis, module.qubits, module.results)
 
 print("# Evaluating both results as 0's", flush=True)
 logger = GateLogger()
