@@ -19,7 +19,7 @@ use pyo3::{
 use qirlib::generation::{
     emit,
     interop::{
-        self, BinaryKind, BinaryOp, Call, ClassicalRegister, Controlled, IfResult, Instruction,
+        self, BinaryKind, BinaryOp, Call, ClassicalRegister, Controlled, If, IfResult, Instruction,
         Int, IntPredicate, Measured, QuantumRegister, Rotated, SemanticModel, Single, Type,
         Variable,
     },
@@ -261,13 +261,11 @@ impl Builder {
         }
     }
 
-    #[pyo3(name = "and_")]
-    fn and(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn and_(&mut self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::And, lhs.0, rhs.0)
     }
 
-    #[pyo3(name = "or_")]
-    fn or(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn or_(&mut self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Or, lhs.0, rhs.0)
     }
 
@@ -345,6 +343,14 @@ impl Builder {
 
     fn pop_frame(&mut self) -> Option<Vec<Instruction>> {
         self.frames.pop()
+    }
+
+    fn build_frame(&mut self, callback: Option<&PyAny>) -> PyResult<Vec<Instruction>> {
+        self.push_frame();
+        if let Some(callback) = callback {
+            callback.call0()?;
+        }
+        Ok(self.pop_frame().unwrap())
     }
 
     fn fresh_variable(&mut self) -> Variable {
@@ -447,6 +453,40 @@ impl SimpleModule {
 
     fn use_static_result_alloc(&mut self, value: bool) {
         self.model.use_static_result_alloc = value;
+    }
+
+    fn if_(
+        &self,
+        py: Python,
+        cond: Value,
+        r#true: Option<&PyAny>,
+        r#false: Option<&PyAny>,
+    ) -> PyResult<()> {
+        let mut builder = self.builder.as_ref(py).borrow_mut();
+        let if_ = If {
+            cond: cond.0,
+            then_insts: builder.build_frame(r#true)?,
+            else_insts: builder.build_frame(r#false)?,
+        };
+        builder.push_inst(Instruction::If(if_));
+        Ok(())
+    }
+
+    fn if_result(
+        &self,
+        py: Python,
+        result: &ResultRef,
+        one: Option<&PyAny>,
+        zero: Option<&PyAny>,
+    ) -> PyResult<()> {
+        let mut builder = self.builder.as_ref(py).borrow_mut();
+        let if_result = IfResult {
+            cond: result.id(),
+            then_insts: builder.build_frame(one)?,
+            else_insts: builder.build_frame(zero)?,
+        };
+        builder.push_inst(Instruction::IfResult(if_result));
+        Ok(())
     }
 }
 
@@ -562,48 +602,12 @@ impl BasicQisBuilder {
         let single = Single::new(qubit.0);
         self.push_inst(py, Instruction::Z(single));
     }
-
-    fn if_result(
-        &self,
-        py: Python,
-        result: &ResultRef,
-        one: Option<&PyAny>,
-        zero: Option<&PyAny>,
-    ) -> PyResult<()> {
-        let build_frame = |callback: Option<&PyAny>| -> PyResult<_> {
-            self.push_frame(py);
-            if let Some(callback) = callback {
-                callback.call0()?;
-            }
-
-            Ok(self.pop_frame(py).unwrap())
-        };
-
-        let if_result = IfResult {
-            cond: result.id(),
-            then_insts: build_frame(one)?,
-            else_insts: build_frame(zero)?,
-        };
-
-        self.push_inst(py, Instruction::IfResult(if_result));
-        Ok(())
-    }
 }
 
 impl BasicQisBuilder {
     fn push_inst(&self, py: Python, inst: Instruction) {
         let mut builder = self.builder.as_ref(py).borrow_mut();
         builder.push_inst(inst);
-    }
-
-    fn push_frame(&self, py: Python) {
-        let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.push_frame();
-    }
-
-    fn pop_frame(&self, py: Python) -> Option<Vec<Instruction>> {
-        let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.pop_frame()
     }
 }
 
