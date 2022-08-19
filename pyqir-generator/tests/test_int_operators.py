@@ -1,0 +1,77 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+from functools import partial
+from pyqir.generator import Builder, IntPredicate, SimpleModule, Value, const, types
+from typing import Callable, List, Tuple
+import unittest
+
+_OPERATORS: List[Tuple[str, Callable[[Builder], Callable[[Value, Value], Value]]]] = [
+    ("and", lambda b: b.and_),
+    ("or", lambda b: b.or_),
+    ("xor", lambda b: b.xor),
+    ("add", lambda b: b.add),
+    ("sub", lambda b: b.sub),
+    ("mul", lambda b: b.mul),
+    ("shl", lambda b: b.shl),
+    ("lshr", lambda b: b.lshr),
+    ("icmp eq", lambda b: partial(b.icmp, IntPredicate.EQ)),
+    ("icmp ne", lambda b: partial(b.icmp, IntPredicate.NE)),
+    ("icmp ugt", lambda b: partial(b.icmp, IntPredicate.UGT)),
+    ("icmp uge", lambda b: partial(b.icmp, IntPredicate.UGE)),
+    ("icmp ult", lambda b: partial(b.icmp, IntPredicate.ULT)),
+    ("icmp ule", lambda b: partial(b.icmp, IntPredicate.ULE)),
+    ("icmp sgt", lambda b: partial(b.icmp, IntPredicate.SGT)),
+    ("icmp sge", lambda b: partial(b.icmp, IntPredicate.SGE)),
+    ("icmp slt", lambda b: partial(b.icmp, IntPredicate.SLT)),
+    ("icmp sle", lambda b: partial(b.icmp, IntPredicate.SLE))
+]
+
+
+class IntOperatorsTest(unittest.TestCase):
+    def test_variable_variable(self) -> None:
+        for (name, build) in _OPERATORS:
+            with self.subTest(name):
+                mod = SimpleModule("test " + name, 0, 0)
+                source = mod.add_external_function(
+                    "source", types.Function([], types.Int(64)))
+                ty = types.BOOL if name.startswith("icmp") else types.Int(64)
+                sink = mod.add_external_function(
+                    "sink", types.Function([ty], types.VOID))
+
+                x = mod.builder.call(source, [])
+                y = mod.builder.call(source, [])
+                z = build(mod.builder)(x, y)
+                mod.builder.call(sink, [z])
+
+                self.assertIn(f"%2 = {name} i64 %0, %1", mod.ir())
+
+    def test_constant_variable(self) -> None:
+        for (name, build) in _OPERATORS:
+            with self.subTest(name):
+                mod = SimpleModule("test " + name, 0, 0)
+                source = mod.add_external_function(
+                    "source", types.Function([], types.Int(64)))
+                ty = types.BOOL if name.startswith("icmp") else types.Int(64)
+                sink = mod.add_external_function(
+                    "sink", types.Function([ty], types.VOID))
+
+                x = mod.builder.call(source, [])
+                y = build(mod.builder)(const(types.Int(64), 1), x)
+                mod.builder.call(sink, [y])
+
+                self.assertIn(f"%1 = {name} i64 1, %0", mod.ir())
+
+    def test_type_mismatch(self) -> None:
+        mod = SimpleModule("test_type_mismatch", 0, 0)
+        source = mod.add_external_function(
+            "source", types.Function([], types.Int(16)))
+        sink = mod.add_external_function(
+            "sink", types.Function([types.Int(16)], types.VOID))
+
+        x = mod.builder.call(source, [])
+        y = mod.builder.add(x, const(types.Int(18), 2))
+        mod.builder.call(sink, [y])
+
+        with self.assertRaises(OSError):
+            mod.ir()

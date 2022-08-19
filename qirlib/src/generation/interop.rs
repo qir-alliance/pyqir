@@ -119,8 +119,55 @@ pub enum Instruction {
     Rz(Rotated),
     Reset(Single),
     M(Measured),
+    BinaryOp(BinaryOp),
     Call(Call),
     If(If),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct BinaryOp {
+    pub kind: BinaryKind,
+    pub lhs: Value,
+    pub rhs: Value,
+    pub result: Variable,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum BinaryKind {
+    And,
+    Or,
+    Xor,
+    Add,
+    Sub,
+    Mul,
+    Shl,
+    LShr,
+    ICmp(IntPredicate),
+}
+
+/// An integer comparison predicate.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum IntPredicate {
+    /// Equal.
+    EQ,
+    /// Not equal.
+    NE,
+    /// Unsigned greater than.
+    UGT,
+    /// Unsigned greater than or equal.
+    UGE,
+    /// Unsigned less than.
+    ULT,
+    /// Unsigned less than or equal.
+    ULE,
+    /// Signed greater than.
+    SGT,
+    /// Signed greater than or equal.
+    SGE,
+    /// Signed less than.
+    SLT,
+    /// Signed less than or equal.
+    SLE,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -130,7 +177,7 @@ pub struct Call {
     pub result: Option<Variable>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Type {
     Void,
     Int {
@@ -161,12 +208,17 @@ pub struct Variable {
 
 impl Variable {
     #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    #[must_use]
     pub fn next(&self) -> Self {
         Self { id: self.id + 1 }
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Int {
     width: u32,
     value: u64,

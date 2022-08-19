@@ -1,6 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+// pyo3 generates errors with _obj and _tmp values
+#![allow(clippy::used_underscore_binding)]
+// Some arguments get turned into Deref by PyO3 macros, which we can't control.
+#![allow(clippy::borrow_deref_ref, clippy::needless_option_as_deref)]
+// This was introduced in 1.62, but we can't update the dependency to
+// to resolve it until we move to a newer version of python.
+#![allow(clippy::format_push_string)]
+
 use pyo3::{
     basic::CompareOp,
     exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
@@ -11,8 +19,8 @@ use pyo3::{
 use qirlib::generation::{
     emit,
     interop::{
-        self, Call, ClassicalRegister, Controlled, If, Instruction, Int, Measured, QuantumRegister,
-        Rotated, SemanticModel, Single, Type, Variable,
+        self, BinaryKind, BinaryOp, Call, ClassicalRegister, Controlled, If, Instruction, Int,
+        IntPredicate, Measured, QuantumRegister, Rotated, SemanticModel, Single, Type, Variable,
     },
 };
 use std::{
@@ -141,6 +149,27 @@ impl From<PyType> for Type {
     }
 }
 
+struct PyIntPredicate(IntPredicate);
+
+impl<'source> FromPyObject<'source> for PyIntPredicate {
+    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+        match ob.getattr("name")?.extract()? {
+            "EQ" => Ok(IntPredicate::EQ),
+            "NE" => Ok(IntPredicate::NE),
+            "UGT" => Ok(IntPredicate::UGT),
+            "UGE" => Ok(IntPredicate::UGE),
+            "ULT" => Ok(IntPredicate::ULT),
+            "ULE" => Ok(IntPredicate::ULE),
+            "SGT" => Ok(IntPredicate::SGT),
+            "SGE" => Ok(IntPredicate::SGE),
+            "SLT" => Ok(IntPredicate::SLT),
+            "SLE" => Ok(IntPredicate::SLE),
+            _ => Err(PyValueError::new_err("Invalid predicate.")),
+        }
+        .map(Self)
+    }
+}
+
 #[derive(Clone, Eq, Hash, PartialEq)]
 #[pyclass]
 struct ResultRef {
@@ -227,8 +256,47 @@ impl Builder {
         Builder {
             frames: vec![vec![]],
             external_functions: vec![],
-            next_variable: Variable::default(),
+            next_variable: Variable::new(),
         }
+    }
+
+    #[pyo3(name = "and_")]
+    fn and(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::And, lhs.0, rhs.0)
+    }
+
+    #[pyo3(name = "or_")]
+    fn or(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Or, lhs.0, rhs.0)
+    }
+
+    fn xor(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Xor, lhs.0, rhs.0)
+    }
+
+    fn add(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Add, lhs.0, rhs.0)
+    }
+
+    fn sub(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Sub, lhs.0, rhs.0)
+    }
+
+    fn mul(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Mul, lhs.0, rhs.0)
+    }
+
+    fn shl(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::Shl, lhs.0, rhs.0)
+    }
+
+    fn lshr(&mut self, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::LShr, lhs.0, rhs.0)
+    }
+
+    #[allow(clippy::needless_pass_by_value)]
+    fn icmp(&mut self, pred: PyIntPredicate, lhs: Value, rhs: Value) -> Value {
+        self.push_binary_op(BinaryKind::ICmp(pred.0), lhs.0, rhs.0)
     }
 
     fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Value>> {
@@ -282,6 +350,22 @@ impl Builder {
         let v = self.next_variable;
         self.next_variable = v.next();
         v
+    }
+
+    fn push_binary_op(
+        &mut self,
+        kind: BinaryKind,
+        lhs: interop::Value,
+        rhs: interop::Value,
+    ) -> Value {
+        let result = self.fresh_variable();
+        self.push_inst(Instruction::BinaryOp(BinaryOp {
+            kind,
+            lhs,
+            rhs,
+            result,
+        }));
+        Value(interop::Value::Variable(result))
     }
 }
 
