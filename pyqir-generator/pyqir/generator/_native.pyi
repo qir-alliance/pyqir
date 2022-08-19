@@ -422,3 +422,5 @@ class BasicQisBuilder:
         :param qubit: The target qubit.
         """
         ...
+
+    # TODO: Add backwards compatible shim for if_result.

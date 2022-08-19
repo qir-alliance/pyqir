@@ -114,8 +114,8 @@ pub enum Instruction {
     M(Measured),
     BinaryOp(BinaryOp),
     Call(Call),
+    // TODO: Add tests for If.
     If(If),
-    // TODO: Add tests for IfResult.
     IfResult(IfResult),
 }
 
