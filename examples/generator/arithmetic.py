@@ -15,7 +15,10 @@ take_int = mod.add_external_function(
 
 # Add 3 to a number and multiply the result by 2.
 a = mod.builder.call(get_int, [])
-b = mod.builder.add(const(i32, 3), a)
+# Python numbers need to be converted into QIR constant values. Since it's being
+# added to a 32-bit integer returned by get_int, its type needs to be the same.
+three = const(i32, 3)
+b = mod.builder.add(three, a)
 c = mod.builder.mul(const(i32, 2), b)
 
 # Negation can be done by subtracting an integer from zero.
