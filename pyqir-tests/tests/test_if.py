@@ -1,12 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+from functools import partial
 from pyqir.generator import BasicQisBuilder, SimpleModule
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
+import pytest
 import tempfile
 from typing import List, Optional
-import unittest
-import pytest
 
 # Combinations of static qubit and result code generation
 # first element => use_static_qubit_alloc
@@ -19,14 +19,26 @@ static_generator_variations = [
 ]
 
 
+def _deprecated_if_result(if_result, *args, **kwargs):
+    with pytest.deprecated_call():
+        if_result(*args, **kwargs)
+
+
+ifs = [
+    lambda mod, _: mod.if_result,
+    lambda _, qis: partial(_deprecated_if_result, qis.if_result),
+]
+
+
 @pytest.mark.parametrize("matrix", static_generator_variations)
-def test_one_block_executes_on_one(matrix) -> None:
+@pytest.mark.parametrize("if_", ifs)
+def test_one_block_executes_on_one(matrix, if_) -> None:
     module = SimpleModule("test_if", num_qubits=1, num_results=1)
     module.use_static_qubit_alloc(matrix[0])
     module.use_static_result_alloc(matrix[1])
     qis = BasicQisBuilder(module.builder)
     qis.m(module.qubits[0], module.results[0])
-    module.if_result(module.results[0], lambda: qis.x(module.qubits[0]))
+    if_(module, qis)(module.results[0], lambda: qis.x(module.qubits[0]))
     print(module.ir())
     logger = GateLogger()
     _eval(module, logger, [True])
@@ -34,13 +46,14 @@ def test_one_block_executes_on_one(matrix) -> None:
 
 
 @pytest.mark.parametrize("matrix", static_generator_variations)
-def test_zero_block_executes_on_zero(matrix) -> None:
+@pytest.mark.parametrize("if_", ifs)
+def test_zero_block_executes_on_zero(matrix, if_) -> None:
     module = SimpleModule("test_if_not", num_qubits=1, num_results=1)
     module.use_static_qubit_alloc(matrix[0])
     module.use_static_result_alloc(matrix[1])
     qis = BasicQisBuilder(module.builder)
     qis.m(module.qubits[0], module.results[0])
-    module.if_result(module.results[0], zero=lambda: qis.x(module.qubits[0]))
+    if_(module, qis)(module.results[0], zero=lambda: qis.x(module.qubits[0]))
 
     logger = GateLogger()
     _eval(module, logger)
@@ -48,13 +61,14 @@ def test_zero_block_executes_on_zero(matrix) -> None:
 
 
 @pytest.mark.parametrize("matrix", static_generator_variations)
-def test_execution_continues_after_hit_conditional_one(matrix) -> None:
+@pytest.mark.parametrize("if_", ifs)
+def test_execution_continues_after_hit_conditional_one(matrix, if_) -> None:
     module = SimpleModule("test_if", num_qubits=1, num_results=1)
     module.use_static_qubit_alloc(matrix[0])
     module.use_static_result_alloc(matrix[1])
     qis = BasicQisBuilder(module.builder)
     qis.m(module.qubits[0], module.results[0])
-    module.if_result(module.results[0], lambda: qis.x(module.qubits[0]))
+    if_(module, qis)(module.results[0], lambda: qis.x(module.qubits[0]))
     qis.h(module.qubits[0])
 
     logger = GateLogger()
@@ -64,13 +78,14 @@ def test_execution_continues_after_hit_conditional_one(matrix) -> None:
 
 
 @pytest.mark.parametrize("matrix", static_generator_variations)
-def test_execution_continues_after_missed_conditional_one(matrix) -> None:
+@pytest.mark.parametrize("if_", ifs)
+def test_execution_continues_after_missed_conditional_one(matrix, if_) -> None:
     module = SimpleModule("test_if", num_qubits=1, num_results=1)
     module.use_static_qubit_alloc(matrix[0])
     module.use_static_result_alloc(matrix[1])
     qis = BasicQisBuilder(module.builder)
     qis.m(module.qubits[0], module.results[0])
-    module.if_result(module.results[0], lambda: qis.x(module.qubits[0]))
+    if_(module, qis)(module.results[0], lambda: qis.x(module.qubits[0]))
     qis.h(module.qubits[0])
 
     logger = GateLogger()
@@ -79,13 +94,14 @@ def test_execution_continues_after_missed_conditional_one(matrix) -> None:
 
 
 @pytest.mark.parametrize("matrix", static_generator_variations)
-def test_execution_continues_after_hit_conditional_zero(matrix) -> None:
+@pytest.mark.parametrize("if_", ifs)
+def test_execution_continues_after_hit_conditional_zero(matrix, if_) -> None:
     module = SimpleModule("test_if_not", num_qubits=1, num_results=1)
     module.use_static_qubit_alloc(matrix[0])
     module.use_static_result_alloc(matrix[1])
     qis = BasicQisBuilder(module.builder)
     qis.m(module.qubits[0], module.results[0])
-    module.if_result(module.results[0], zero=lambda: qis.x(module.qubits[0]))
+    if_(module, qis)(module.results[0], zero=lambda: qis.x(module.qubits[0]))
     qis.h(module.qubits[0])
 
     logger = GateLogger()
@@ -95,13 +111,14 @@ def test_execution_continues_after_hit_conditional_zero(matrix) -> None:
 
 
 @pytest.mark.parametrize("matrix", static_generator_variations)
-def test_execution_continues_after_missed_conditional_zero(matrix) -> None:
+@pytest.mark.parametrize("if_", ifs)
+def test_execution_continues_after_missed_conditional_zero(matrix, if_) -> None:
     module = SimpleModule("test_if_not", num_qubits=1, num_results=1)
     module.use_static_qubit_alloc(matrix[0])
     module.use_static_result_alloc(matrix[1])
     qis = BasicQisBuilder(module.builder)
     qis.m(module.qubits[0], module.results[0])
-    module.if_result(module.results[0], zero=lambda: qis.x(module.qubits[0]))
+    if_(module, qis)(module.results[0], zero=lambda: qis.x(module.qubits[0]))
     qis.h(module.qubits[0])
 
     logger = GateLogger()
@@ -110,13 +127,14 @@ def test_execution_continues_after_missed_conditional_zero(matrix) -> None:
 
 
 @pytest.mark.parametrize("matrix", static_generator_variations)
-def test_execution_continues_after_conditional_if_else(matrix) -> None:
+@pytest.mark.parametrize("if_", ifs)
+def test_execution_continues_after_conditional_if_else(matrix, if_) -> None:
     module = SimpleModule("test_if_not", num_qubits=1, num_results=1)
     module.use_static_qubit_alloc(matrix[0])
     module.use_static_result_alloc(matrix[1])
     qis = BasicQisBuilder(module.builder)
     qis.m(module.qubits[0], module.results[0])
-    module.if_result(module.results[0],
+    if_(module, qis)(module.results[0],
                      lambda: qis.x(module.qubits[0]),
                      lambda: qis.y(module.qubits[0]))
     qis.h(module.qubits[0])
@@ -128,7 +146,8 @@ def test_execution_continues_after_conditional_if_else(matrix) -> None:
 
 
 @pytest.mark.parametrize("matrix", static_generator_variations)
-def test_nested_if(matrix) -> None:
+@pytest.mark.parametrize("if_", ifs)
+def test_nested_if(matrix, if_) -> None:
     module = SimpleModule("test_if", num_qubits=1, num_results=2)
     module.use_static_qubit_alloc(matrix[0])
     module.use_static_result_alloc(matrix[1])
@@ -136,7 +155,7 @@ def test_nested_if(matrix) -> None:
     qis.m(module.qubits[0], module.results[0])
     qis.m(module.qubits[0], module.results[1])
 
-    module.if_result(
+    if_(module, qis)(
         module.results[0],
         lambda: module.if_result(
             module.results[1],
@@ -151,7 +170,8 @@ def test_nested_if(matrix) -> None:
 
 
 @pytest.mark.parametrize("matrix", static_generator_variations)
-def test_nested_if_not(matrix) -> None:
+@pytest.mark.parametrize("if_", ifs)
+def test_nested_if_not(matrix, if_) -> None:
     module = SimpleModule("test_if", num_qubits=1, num_results=2)
     module.use_static_qubit_alloc(matrix[0])
     module.use_static_result_alloc(matrix[1])
@@ -159,7 +179,7 @@ def test_nested_if_not(matrix) -> None:
     qis.m(module.qubits[0], module.results[0])
     qis.m(module.qubits[0], module.results[1])
 
-    module.if_result(
+    if_(module, qis)(
         module.results[0],
         zero=lambda: module.if_result(
             module.results[1],
@@ -174,7 +194,8 @@ def test_nested_if_not(matrix) -> None:
 
 
 @pytest.mark.parametrize("matrix", static_generator_variations)
-def test_nested_if_then_else(matrix) -> None:
+@pytest.mark.parametrize("if_", ifs)
+def test_nested_if_then_else(matrix, if_) -> None:
     module = SimpleModule("test_if_then_else", num_qubits=1, num_results=2)
     module.use_static_qubit_alloc(matrix[0])
     module.use_static_result_alloc(matrix[1])
@@ -182,7 +203,7 @@ def test_nested_if_then_else(matrix) -> None:
     qis.m(module.qubits[0], module.results[0])
     qis.m(module.qubits[0], module.results[1])
 
-    module.if_result(
+    if_(module, qis)(
         module.results[0],
         one=lambda: module.if_result(
             module.results[1],
@@ -197,7 +218,8 @@ def test_nested_if_then_else(matrix) -> None:
 
 
 @pytest.mark.parametrize("matrix", static_generator_variations)
-def test_nested_else_then_if(matrix) -> None:
+@pytest.mark.parametrize("if_", ifs)
+def test_nested_else_then_if(matrix, if_) -> None:
     module = SimpleModule("test_else_then_if", num_qubits=1, num_results=2)
     module.use_static_qubit_alloc(matrix[0])
     module.use_static_result_alloc(matrix[1])
@@ -205,7 +227,7 @@ def test_nested_else_then_if(matrix) -> None:
     qis.m(module.qubits[0], module.results[0])
     qis.m(module.qubits[0], module.results[1])
 
-    module.if_result(
+    if_(module, qis)(
         module.results[0],
         zero=lambda: module.if_result(
             module.results[1],
@@ -220,7 +242,8 @@ def test_nested_else_then_if(matrix) -> None:
 
 
 @pytest.mark.parametrize("matrix", static_generator_variations)
-def test_results_default_to_zero_if_not_measured(matrix) -> None:
+@pytest.mark.parametrize("if_", ifs)
+def test_results_default_to_zero_if_not_measured(matrix, if_) -> None:
     module = SimpleModule(
         "test_if_not_measured", num_qubits=1, num_results=1
     )
@@ -228,7 +251,7 @@ def test_results_default_to_zero_if_not_measured(matrix) -> None:
     module.use_static_result_alloc(matrix[1])
     qis = BasicQisBuilder(module.builder)
 
-    module.if_result(
+    if_(module, qis)(
         module.results[0],
         one=lambda: qis.x(module.qubits[0]),
         zero=lambda: qis.h(module.qubits[0])

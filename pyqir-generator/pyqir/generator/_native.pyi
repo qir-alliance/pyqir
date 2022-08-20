@@ -423,4 +423,22 @@ class BasicQisBuilder:
         """
         ...
 
-    # TODO: Add backwards compatible shim for if_result.
+    def if_result(self, result: ResultRef, one: Callable[[], None] = ..., zero: Callable[[], None] = ...) -> None:
+        """
+        Inserts a branch conditioned on a measurement result.
+
+        Instructions inserted when ``one`` is called will be inserted into the
+        one branch. Instructions inserted when ``zero`` is called will be
+        inserted into the zero branch. The one and zero callables should use
+        this module's builder to build instructions.
+
+        :param result: The result to branch on.
+        :param one: A callable that inserts instructions for the branch where
+                    the result is one.
+        :param zero: A callable that inserts instructions for the branch where
+                     the result is zero.
+
+        .. deprecated:: 0.6.0a1
+           Use :meth:`SimpleModule.if_result` instead.
+        """
+        ...

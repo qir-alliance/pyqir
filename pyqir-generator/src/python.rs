@@ -456,8 +456,8 @@ impl SimpleModule {
     ) -> PyResult<()> {
         let if_ = If {
             cond: cond.0,
-            then_insts: self.build_frame(py, r#true)?,
-            else_insts: self.build_frame(py, r#false)?,
+            then_insts: build_frame(py, &self.builder, r#true)?,
+            else_insts: build_frame(py, &self.builder, r#false)?,
         };
         let mut builder = self.builder.as_ref(py).borrow_mut();
         builder.push_inst(Instruction::If(if_));
@@ -473,8 +473,8 @@ impl SimpleModule {
     ) -> PyResult<()> {
         let if_result = IfResult {
             cond: result.id(),
-            then_insts: self.build_frame(py, one)?,
-            else_insts: self.build_frame(py, zero)?,
+            then_insts: build_frame(py, &self.builder, one)?,
+            else_insts: build_frame(py, &self.builder, zero)?,
         };
         let mut builder = self.builder.as_ref(py).borrow_mut();
         builder.push_inst(Instruction::IfResult(if_result));
@@ -500,20 +500,24 @@ impl SimpleModule {
             _ => panic!("Builder does not contain exactly one stack frame."),
         }
     }
+}
 
-    fn build_frame(&self, py: Python, callback: Option<&PyAny>) -> PyResult<Vec<Instruction>> {
-        {
-            let mut builder = self.builder.as_ref(py).borrow_mut();
-            builder.push_frame();
-        }
-
-        if let Some(callback) = callback {
-            callback.call0()?;
-        }
-
-        let mut builder = self.builder.as_ref(py).borrow_mut();
-        Ok(builder.pop_frame().unwrap())
+fn build_frame(
+    py: Python,
+    builder: &Py<Builder>,
+    callback: Option<&PyAny>,
+) -> PyResult<Vec<Instruction>> {
+    {
+        let mut builder = builder.as_ref(py).borrow_mut();
+        builder.push_frame();
     }
+
+    if let Some(callback) = callback {
+        callback.call0()?;
+    }
+
+    let mut builder = builder.as_ref(py).borrow_mut();
+    Ok(builder.pop_frame().unwrap())
 }
 
 #[pyclass]
@@ -607,6 +611,29 @@ impl BasicQisBuilder {
     fn z(&self, py: Python, qubit: Value) {
         let single = Single::new(qubit.0);
         self.push_inst(py, Instruction::Z(single));
+    }
+
+    fn if_result(
+        &self,
+        py: Python,
+        result: &ResultRef,
+        one: Option<&PyAny>,
+        zero: Option<&PyAny>,
+    ) -> PyResult<()> {
+        let builtins = PyModule::import(py, "builtins")?;
+        let deprecation_warning = builtins.getattr("DeprecationWarning")?;
+        let warnings = PyModule::import(py, "warnings")?;
+        warnings
+            .getattr("warn")?
+            .call1(("Use SimpleModule.if_result instead.", deprecation_warning))?;
+
+        let if_result = IfResult {
+            cond: result.id(),
+            then_insts: build_frame(py, &self.builder, one)?,
+            else_insts: build_frame(py, &self.builder, zero)?,
+        };
+        self.push_inst(py, Instruction::IfResult(if_result));
+        Ok(())
     }
 }
 
