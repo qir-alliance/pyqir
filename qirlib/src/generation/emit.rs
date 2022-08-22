@@ -396,7 +396,7 @@ mod if_tests {
                 }),
             ],
             use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
+            use_static_result_alloc: true,
             external_functions: vec![],
         };
 
@@ -421,7 +421,7 @@ mod if_tests {
                 }),
             ],
             use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
+            use_static_result_alloc: true,
             external_functions: vec![],
         };
 
@@ -447,7 +447,7 @@ mod if_tests {
                 Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
             ],
             use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
+            use_static_result_alloc: true,
             external_functions: vec![],
         };
 
@@ -473,7 +473,7 @@ mod if_tests {
                 Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
             ],
             use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
+            use_static_result_alloc: true,
             external_functions: vec![],
         };
 
@@ -499,7 +499,7 @@ mod if_tests {
                 Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
             ],
             use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
+            use_static_result_alloc: true,
             external_functions: vec![],
         };
 
@@ -534,7 +534,7 @@ mod if_tests {
                 }),
             ],
             use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
+            use_static_result_alloc: true,
             external_functions: vec![],
         };
 
@@ -569,7 +569,7 @@ mod if_tests {
                 }),
             ],
             use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
+            use_static_result_alloc: true,
             external_functions: vec![],
         };
 
@@ -604,7 +604,7 @@ mod if_tests {
                 }),
             ],
             use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
+            use_static_result_alloc: true,
             external_functions: vec![],
         };
 
@@ -639,7 +639,7 @@ mod if_tests {
                 }),
             ],
             use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
+            use_static_result_alloc: true,
             external_functions: vec![],
         };
 
@@ -658,7 +658,7 @@ mod if_tests {
                 else_insts: vec![Instruction::H(Single::new(Value::Qubit("q0".to_string())))],
             })],
             use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
+            use_static_result_alloc: true,
             external_functions: vec![],
         };
 
@@ -687,7 +687,7 @@ mod if_tests {
                 }),
             ],
             use_static_qubit_alloc: true,
-            use_static_result_alloc: false,
+            use_static_result_alloc: true,
             external_functions: vec![
                 (
                     "foo".to_string(),
@@ -771,8 +771,8 @@ mod if_tests {
             registers: vec![],
             qubits: vec![],
             instructions,
-            use_static_qubit_alloc: false,
-            use_static_result_alloc: false,
+            use_static_qubit_alloc: true,
+            use_static_result_alloc: true,
             external_functions: vec![
                 (
                     "source".to_string(),

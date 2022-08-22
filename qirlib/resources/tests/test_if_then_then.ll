@@ -1,45 +1,41 @@
 ; ModuleID = 'test_if_then_then'
 source_filename = "test_if_then_then"
 
-%Result = type opaque
 %Qubit = type opaque
+%Result = type opaque
 
 define void @main() #0 {
 entry:
-  %r0 = call %Result* @__quantum__qis__m__body(%Qubit* null)
-  %r1 = call %Result* @__quantum__qis__m__body(%Qubit* null)
-  %one = call %Result* @__quantum__rt__result_get_one()
-  %equal = call i1 @__quantum__rt__result_equal(%Result* %r0, %Result* %one)
+  call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
+  call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 1 to %Result*))
+  %equal = call i1 @__quantum__qis__read_result__body(%Result* null)
   br i1 %equal, label %then, label %else
 
 then:                                             ; preds = %entry
-  %one1 = call %Result* @__quantum__rt__result_get_one()
-  %equal2 = call i1 @__quantum__rt__result_equal(%Result* %r1, %Result* %one1)
-  br i1 %equal2, label %then3, label %else4
+  %equal1 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 1 to %Result*))
+  br i1 %equal1, label %then2, label %else3
 
 else:                                             ; preds = %entry
   br label %continue
 
-continue:                                         ; preds = %else, %continue5
+continue:                                         ; preds = %else, %continue4
   ret void
 
-then3:                                            ; preds = %then
+then2:                                            ; preds = %then
   call void @__quantum__qis__x__body(%Qubit* null)
-  br label %continue5
+  br label %continue4
 
-else4:                                            ; preds = %then
-  br label %continue5
+else3:                                            ; preds = %then
+  br label %continue4
 
-continue5:                                        ; preds = %else4, %then3
+continue4:                                        ; preds = %else3, %then2
   br label %continue
 }
 
-declare %Result* @__quantum__qis__m__body(%Qubit*)
+declare void @__quantum__qis__mz__body(%Qubit*, %Result*)
 
-declare %Result* @__quantum__rt__result_get_one()
-
-declare i1 @__quantum__rt__result_equal(%Result*, %Result*)
+declare i1 @__quantum__qis__read_result__body(%Result*)
 
 declare void @__quantum__qis__x__body(%Qubit*)
 
-attributes #0 = { "EntryPoint" "requiredQubits"="1" }
+attributes #0 = { "EntryPoint" "requiredQubits"="1" "requiredResults"="2" }
