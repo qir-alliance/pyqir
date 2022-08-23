@@ -10,12 +10,24 @@ from typing import Any, Callable, List, Optional
 
 
 class _Brancher(metaclass=ABCMeta):
+    """
+    An abstraction that allows a single test case to test both boolean and
+    result conditional branching.
+    """
+
     @property
     @abstractmethod
-    def module(self) -> SimpleModule: pass
+    def module(self) -> SimpleModule:
+        """The underlying module."""
+        pass
 
     @abstractmethod
-    def oracle(self) -> Any: pass
+    def oracle(self) -> Any:
+        """
+        Queries an oracle to produce a nondeterminstic condition in the type
+        that this brancher supports.
+        """
+        pass
 
     @abstractmethod
     def if_(
@@ -24,6 +36,10 @@ class _Brancher(metaclass=ABCMeta):
         true: Callable[[], None] = lambda: None,
         false: Callable[[], None] = lambda: None,
     ) -> None:
+        """
+        Branches on a condition, which must be the type that this brancher
+        supports.
+        """
         pass
 
 
