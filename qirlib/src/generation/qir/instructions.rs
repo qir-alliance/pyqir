@@ -161,7 +161,7 @@ pub(crate) fn emit<'ctx>(
         }
         Instruction::BinaryOp(op) => emit_binary_op(generator, env, op),
         Instruction::Call(call) => emit_call(generator, env, call),
-        Instruction::If(if_) => emit_if(generator, env, entry_point, if_),
+        Instruction::If(if_) => emit_if_bool(generator, env, entry_point, if_),
         Instruction::IfResult(if_result) => emit_if_result(generator, env, entry_point, if_result),
     }
 }
@@ -231,13 +231,13 @@ fn emit_call<'ctx>(generator: &CodeGenerator<'ctx>, env: &mut Environment<'ctx>,
     }
 }
 
-fn emit_if<'ctx>(
+fn emit_if_bool<'ctx>(
     generator: &CodeGenerator<'ctx>,
     env: &mut Environment<'ctx>,
     entry_point: FunctionValue,
     if_: &If,
 ) {
-    emit_if_inkwell(
+    emit_if(
         generator,
         env,
         entry_point,
@@ -260,7 +260,7 @@ fn emit_if_result<'ctx>(
         result::equal(generator, result, result::get_one(generator))
     };
 
-    emit_if_inkwell(
+    emit_if(
         generator,
         env,
         entry_point,
@@ -270,7 +270,7 @@ fn emit_if_result<'ctx>(
     );
 }
 
-fn emit_if_inkwell<'ctx>(
+fn emit_if<'ctx>(
     generator: &CodeGenerator<'ctx>,
     env: &mut Environment<'ctx>,
     entry_point: FunctionValue,
