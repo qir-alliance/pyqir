@@ -479,6 +479,9 @@ task run-examples {
         $if_first_line = & $python "if_result.py" | Select-Object -First 1
         Assert ($if_first_line -eq "; ModuleID = 'if_result'") "if_result.py"
 
+        $if_first_line = & $python "if_bool.py" | Select-Object -First 1
+        Assert ($if_first_line -eq "; ModuleID = 'if_bool'") "if_bool.py"
+
         $ef_first_line = & $python "external_functions.py" | Select-Object -First 1
         Assert ($ef_first_line -eq "; ModuleID = 'external_functions'") "external_functions.py"
 
