@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from abc import ABCMeta, abstractmethod
-from pyqir.generator import BasicQisBuilder, SimpleModule, types
+from pyqir.generator import BasicQisBuilder, IntPredicate, SimpleModule, const, types
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
 import pytest
 import tempfile
@@ -113,17 +113,21 @@ def _result_branchers(num_queries: int) -> List[_Brancher]:
     ]
 
 
-def _branchers(num_queries: int) -> List[_Brancher]:
-    return _result_branchers(num_queries) + [
+def _bool_branchers(num_queries: int) -> List[_Brancher]:
+    return [
         _BoolBrancher(num_queries, False),
         _BoolBrancher(num_queries, True),
     ]
 
 
+def _branchers(num_queries: int) -> List[_Brancher]:
+    return _result_branchers(num_queries) + _bool_branchers(num_queries)
+
+
 def _eval(
     module: SimpleModule,
     gates: GateSet,
-    result_stream: Optional[List[bool]] = None
+    result_stream: Optional[List[bool]] = None,
 ) -> None:
     with tempfile.NamedTemporaryFile(suffix=".ll") as f:
         f.write(module.ir().encode("utf-8"))
@@ -337,3 +341,39 @@ def test_results_default_to_zero_if_not_measured(brancher: _Brancher) -> None:
     logger = GateLogger()
     _eval(brancher.module, logger)
     assert logger.instructions == ["h qubit[0]"]
+
+
+@pytest.mark.parametrize("brancher", _bool_branchers(1))
+def test_icmp_if_true(brancher: _Brancher) -> None:
+    x = brancher.oracle()
+    module = brancher.module
+    cond = module.builder.icmp(IntPredicate.EQ, x, const(types.Int(1), 0))
+
+    qis = BasicQisBuilder(module.builder)
+    brancher.if_(
+        cond,
+        lambda: qis.x(module.qubits[0]),
+        lambda: qis.h(module.qubits[0]),
+    )
+
+    logger = GateLogger()
+    _eval(brancher.module, logger, [False])
+    assert logger.instructions == ["m qubit[0] => out[0]", "x qubit[0]"]
+
+
+@pytest.mark.parametrize("brancher", _bool_branchers(1))
+def test_icmp_if_false(brancher: _Brancher) -> None:
+    x = brancher.oracle()
+    module = brancher.module
+    cond = module.builder.icmp(IntPredicate.EQ, x, const(types.Int(1), 0))
+
+    qis = BasicQisBuilder(brancher.module.builder)
+    brancher.if_(
+        cond,
+        lambda: qis.x(module.qubits[0]),
+        lambda: qis.h(module.qubits[0]),
+    )
+
+    logger = GateLogger()
+    _eval(brancher.module, logger, [True])
+    assert logger.instructions == ["m qubit[0] => out[0]", "h qubit[0]"]
