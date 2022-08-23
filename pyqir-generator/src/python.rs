@@ -456,8 +456,8 @@ impl SimpleModule {
     ) -> PyResult<()> {
         let if_ = If {
             cond: cond.0,
-            then_insts: build_frame(py, &self.builder, r#true)?,
-            else_insts: build_frame(py, &self.builder, r#false)?,
+            if_true: build_frame(py, &self.builder, r#true)?,
+            if_false: build_frame(py, &self.builder, r#false)?,
         };
         let mut builder = self.builder.as_ref(py).borrow_mut();
         builder.push_inst(Instruction::If(if_));
@@ -473,8 +473,8 @@ impl SimpleModule {
     ) -> PyResult<()> {
         let if_result = IfResult {
             cond: result.id(),
-            then_insts: build_frame(py, &self.builder, one)?,
-            else_insts: build_frame(py, &self.builder, zero)?,
+            if_one: build_frame(py, &self.builder, one)?,
+            if_zero: build_frame(py, &self.builder, zero)?,
         };
         let mut builder = self.builder.as_ref(py).borrow_mut();
         builder.push_inst(Instruction::IfResult(if_result));
@@ -629,8 +629,8 @@ impl BasicQisBuilder {
 
         let if_result = IfResult {
             cond: result.id(),
-            then_insts: build_frame(py, &self.builder, one)?,
-            else_insts: build_frame(py, &self.builder, zero)?,
+            if_one: build_frame(py, &self.builder, one)?,
+            if_zero: build_frame(py, &self.builder, zero)?,
         };
         self.push_inst(py, Instruction::IfResult(if_result));
         Ok(())

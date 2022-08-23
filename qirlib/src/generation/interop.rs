@@ -174,15 +174,15 @@ pub struct Call {
 #[derive(Clone, Debug, PartialEq)]
 pub struct If {
     pub cond: Value,
-    pub then_insts: Vec<Instruction>,
-    pub else_insts: Vec<Instruction>,
+    pub if_true: Vec<Instruction>,
+    pub if_false: Vec<Instruction>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct IfResult {
     pub cond: String,
-    pub then_insts: Vec<Instruction>,
-    pub else_insts: Vec<Instruction>,
+    pub if_one: Vec<Instruction>,
+    pub if_zero: Vec<Instruction>,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

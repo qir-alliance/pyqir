@@ -242,8 +242,8 @@ fn emit_if_bool<'ctx>(
         env,
         entry_point,
         get_value(generator, env, &if_.cond).into_int_value(),
-        &if_.then_insts,
-        &if_.else_insts,
+        &if_.if_true,
+        &if_.if_false,
     );
 }
 
@@ -265,8 +265,8 @@ fn emit_if_result<'ctx>(
         env,
         entry_point,
         cond,
-        &if_result.then_insts,
-        &if_result.else_insts,
+        &if_result.if_one,
+        &if_result.if_zero,
     );
 }
 
