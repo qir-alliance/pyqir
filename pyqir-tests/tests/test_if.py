@@ -116,28 +116,37 @@ class _BoolBrancher(_Brancher):
         self._brancher.module.if_(cond, true, false)
 
 
-def _result_branchers(num_queries: int) -> List[_Brancher]:
+def _result_branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
     return [
-        _ResultBrancher(num_queries, False, False),
-        _ResultBrancher(num_queries, False, True),
-        _ResultBrancher(num_queries, True, False),
-        _ResultBrancher(num_queries, True, True),
-        _QisResultBrancher(num_queries, False, False),
-        _QisResultBrancher(num_queries, False, True),
-        _QisResultBrancher(num_queries, True, False),
-        _QisResultBrancher(num_queries, True, True),
+        lambda: _ResultBrancher(num_queries, False, False),
+        lambda: _ResultBrancher(num_queries, False, True),
+        lambda: _ResultBrancher(num_queries, True, False),
+        lambda: _ResultBrancher(num_queries, True, True),
+        lambda: _QisResultBrancher(num_queries, False, False),
+        lambda: _QisResultBrancher(num_queries, False, True),
+        lambda: _QisResultBrancher(num_queries, True, False),
+        lambda: _QisResultBrancher(num_queries, True, True),
     ]
 
 
-def _bool_branchers(num_queries: int) -> List[_Brancher]:
+def _bool_branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
     return [
-        _BoolBrancher(num_queries, False),
-        _BoolBrancher(num_queries, True),
+        lambda: _BoolBrancher(num_queries, False),
+        lambda: _BoolBrancher(num_queries, True),
     ]
 
 
-def _branchers(num_queries: int) -> List[_Brancher]:
+def _branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
     return _result_branchers(num_queries) + _bool_branchers(num_queries)
+
+
+@pytest.fixture
+def brancher(request: pytest.FixtureRequest) -> _Brancher:
+    brancher = request.param()
+    if isinstance(brancher, _Brancher):
+        return brancher
+    else:
+        raise TypeError("Brancher factory didn't produce a brancher.")
 
 
 def _eval(
@@ -151,7 +160,18 @@ def _eval(
         NonadaptiveEvaluator().eval(f.name, gates, None, result_stream)
 
 
-@pytest.mark.parametrize("brancher", _branchers(1))
+@pytest.mark.parametrize("brancher", _branchers(1), indirect=True)
+@pytest.mark.parametrize("result", [True, False])
+def test_empty_blocks(brancher: _Brancher, result: bool) -> None:
+    cond = brancher.oracle()
+    brancher.if_(cond)
+
+    logger = GateLogger()
+    _eval(brancher.module, logger, [result])
+    assert logger.instructions == ["m qubit[0] => out[0]"]
+
+
+@pytest.mark.parametrize("brancher", _branchers(1), indirect=True)
 def test_one_block_executes_on_one(brancher: _Brancher) -> None:
     cond = brancher.oracle()
     qis = BasicQisBuilder(brancher.module.builder)
@@ -162,7 +182,7 @@ def test_one_block_executes_on_one(brancher: _Brancher) -> None:
     assert logger.instructions == ["m qubit[0] => out[0]", "x qubit[0]"]
 
 
-@pytest.mark.parametrize("brancher", _branchers(1))
+@pytest.mark.parametrize("brancher", _branchers(1), indirect=True)
 def test_zero_block_executes_on_zero(brancher: _Brancher) -> None:
     cond = brancher.oracle()
     qis = BasicQisBuilder(brancher.module.builder)
@@ -173,7 +193,7 @@ def test_zero_block_executes_on_zero(brancher: _Brancher) -> None:
     assert logger.instructions == ["m qubit[0] => out[0]", "x qubit[0]"]
 
 
-@pytest.mark.parametrize("brancher", _branchers(1))
+@pytest.mark.parametrize("brancher", _branchers(1), indirect=True)
 def test_execution_continues_after_hit_conditional_one(brancher: _Brancher) -> None:
     cond = brancher.oracle()
     qis = BasicQisBuilder(brancher.module.builder)
@@ -189,7 +209,7 @@ def test_execution_continues_after_hit_conditional_one(brancher: _Brancher) -> N
     ]
 
 
-@pytest.mark.parametrize("brancher", _branchers(1))
+@pytest.mark.parametrize("brancher", _branchers(1), indirect=True)
 def test_execution_continues_after_missed_conditional_one(brancher: _Brancher) -> None:
     cond = brancher.oracle()
     qis = BasicQisBuilder(brancher.module.builder)
@@ -201,7 +221,7 @@ def test_execution_continues_after_missed_conditional_one(brancher: _Brancher) -
     assert logger.instructions == ["m qubit[0] => out[0]", "h qubit[0]"]
 
 
-@pytest.mark.parametrize("brancher", _branchers(1))
+@pytest.mark.parametrize("brancher", _branchers(1), indirect=True)
 def test_execution_continues_after_hit_conditional_zero(brancher: _Brancher) -> None:
     cond = brancher.oracle()
     qis = BasicQisBuilder(brancher.module.builder)
@@ -217,7 +237,7 @@ def test_execution_continues_after_hit_conditional_zero(brancher: _Brancher) -> 
     ]
 
 
-@pytest.mark.parametrize("brancher", _branchers(1))
+@pytest.mark.parametrize("brancher", _branchers(1), indirect=True)
 def test_execution_continues_after_missed_conditional_zero(brancher: _Brancher) -> None:
     cond = brancher.oracle()
     qis = BasicQisBuilder(brancher.module.builder)
@@ -229,7 +249,7 @@ def test_execution_continues_after_missed_conditional_zero(brancher: _Brancher) 
     assert logger.instructions == ["m qubit[0] => out[0]", "h qubit[0]"]
 
 
-@pytest.mark.parametrize("brancher", _branchers(1))
+@pytest.mark.parametrize("brancher", _branchers(1), indirect=True)
 def test_execution_continues_after_conditional_if_else(brancher: _Brancher) -> None:
     cond = brancher.oracle()
     qis = BasicQisBuilder(brancher.module.builder)
@@ -247,11 +267,11 @@ def test_execution_continues_after_conditional_if_else(brancher: _Brancher) -> N
     assert logger.instructions == [
         "m qubit[0] => out[0]",
         "y qubit[0]",
-        "h qubit[0]"
+        "h qubit[0]",
     ]
 
 
-@pytest.mark.parametrize("brancher", _branchers(2))
+@pytest.mark.parametrize("brancher", _branchers(2), indirect=True)
 def test_nested_if(brancher: _Brancher) -> None:
     cond0 = brancher.oracle()
     cond1 = brancher.oracle()
@@ -274,7 +294,7 @@ def test_nested_if(brancher: _Brancher) -> None:
     ]
 
 
-@pytest.mark.parametrize("brancher", _branchers(2))
+@pytest.mark.parametrize("brancher", _branchers(2), indirect=True)
 def test_nested_if_not(brancher: _Brancher) -> None:
     cond0 = brancher.oracle()
     cond1 = brancher.oracle()
@@ -297,7 +317,7 @@ def test_nested_if_not(brancher: _Brancher) -> None:
     ]
 
 
-@pytest.mark.parametrize("brancher", _branchers(2))
+@pytest.mark.parametrize("brancher", _branchers(2), indirect=True)
 def test_nested_if_then_else(brancher: _Brancher) -> None:
     cond0 = brancher.oracle()
     cond1 = brancher.oracle()
@@ -320,7 +340,7 @@ def test_nested_if_then_else(brancher: _Brancher) -> None:
     ]
 
 
-@pytest.mark.parametrize("brancher", _branchers(2))
+@pytest.mark.parametrize("brancher", _branchers(2), indirect=True)
 def test_nested_else_then_if(brancher: _Brancher) -> None:
     cond0 = brancher.oracle()
     cond1 = brancher.oracle()
@@ -344,7 +364,7 @@ def test_nested_else_then_if(brancher: _Brancher) -> None:
     ]
 
 
-@pytest.mark.parametrize("brancher", _result_branchers(1))
+@pytest.mark.parametrize("brancher", _result_branchers(1), indirect=True)
 def test_results_default_to_zero_if_not_measured(brancher: _Brancher) -> None:
     qis = BasicQisBuilder(brancher.module.builder)
 
@@ -359,7 +379,7 @@ def test_results_default_to_zero_if_not_measured(brancher: _Brancher) -> None:
     assert logger.instructions == ["h qubit[0]"]
 
 
-@pytest.mark.parametrize("brancher", _bool_branchers(1))
+@pytest.mark.parametrize("brancher", _bool_branchers(1), indirect=True)
 def test_icmp_if_true(brancher: _Brancher) -> None:
     x = brancher.oracle()
     module = brancher.module
@@ -377,7 +397,7 @@ def test_icmp_if_true(brancher: _Brancher) -> None:
     assert logger.instructions == ["m qubit[0] => out[0]", "x qubit[0]"]
 
 
-@pytest.mark.parametrize("brancher", _bool_branchers(1))
+@pytest.mark.parametrize("brancher", _bool_branchers(1), indirect=True)
 def test_icmp_if_false(brancher: _Brancher) -> None:
     x = brancher.oracle()
     module = brancher.module
