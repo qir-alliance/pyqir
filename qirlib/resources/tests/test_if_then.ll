@@ -1,13 +1,14 @@
 ; ModuleID = 'test_if_then'
 source_filename = "test_if_then"
 
-%Qubit = type opaque
 %Result = type opaque
+%Qubit = type opaque
 
 define void @main() #0 {
 entry:
-  call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
-  %equal = call i1 @__quantum__qis__read_result__body(%Result* null)
+  %r0 = call %Result* @__quantum__qis__m__body(%Qubit* null)
+  %one = call %Result* @__quantum__rt__result_get_one()
+  %equal = call i1 @__quantum__rt__result_equal(%Result* %r0, %Result* %one)
   br i1 %equal, label %then, label %else
 
 then:                                             ; preds = %entry
@@ -21,10 +22,12 @@ continue:                                         ; preds = %else, %then
   ret void
 }
 
-declare void @__quantum__qis__mz__body(%Qubit*, %Result*)
+declare %Result* @__quantum__qis__m__body(%Qubit*)
 
-declare i1 @__quantum__qis__read_result__body(%Result*)
+declare %Result* @__quantum__rt__result_get_one()
+
+declare i1 @__quantum__rt__result_equal(%Result*, %Result*)
 
 declare void @__quantum__qis__x__body(%Qubit*)
 
-attributes #0 = { "EntryPoint" "requiredQubits"="1" "requiredResults"="1" }
+attributes #0 = { "EntryPoint" "requiredQubits"="1" }
