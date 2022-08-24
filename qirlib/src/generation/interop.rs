@@ -59,12 +59,12 @@ impl Controlled {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Measured {
     pub qubit: Value,
-    pub target: String,
+    pub target: Value,
 }
 
 impl Measured {
     #[must_use]
-    pub fn new(qubit: Value, target: String) -> Self {
+    pub fn new(qubit: Value, target: Value) -> Self {
         Measured { qubit, target }
     }
 }
@@ -180,7 +180,7 @@ pub struct If {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct IfResult {
-    pub cond: String,
+    pub cond: Value,
     pub if_one: Vec<Instruction>,
     pub if_zero: Vec<Instruction>,
 }

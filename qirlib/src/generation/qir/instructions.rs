@@ -94,10 +94,8 @@ fn emit_measured<'ctx>(
     measured: &Measured,
 ) {
     let qubit = get_value(generator, env, &measured.qubit);
-    generator.emit_void_call(
-        generator.qis_mz_body(),
-        &[qubit, get_result(env, &measured.target).into()],
-    );
+    let target = get_value(generator, env, &measured.target);
+    generator.emit_void_call(generator.qis_mz_body(), &[qubit, target]);
 }
 
 fn emit_binary_op<'ctx>(
@@ -187,7 +185,7 @@ fn emit_if_result<'ctx>(
     entry_point: FunctionValue,
     if_result: &IfResult,
 ) {
-    let result = get_result(env, &if_result.cond);
+    let result = get_value(generator, env, &if_result.cond);
     let cond = read_result(generator, result.into());
 
     emit_if(

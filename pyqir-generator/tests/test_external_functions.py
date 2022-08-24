@@ -129,11 +129,9 @@ class ExternalFunctionsTest(unittest.TestCase):
     def test_wrong_type_conversion(self) -> None:
         cases: List[Tuple[List[Type], Callable[[SimpleModule], List[Any]]]] = [
             ([types.BOOL], lambda _: ["true"]),
-            ([types.BOOL], lambda mod: [mod.results[0]]),
             ([types.Int(64)], lambda _: [1.23]),
             ([types.Int(64)], lambda _: ["123"]),
             ([types.DOUBLE], lambda _: ["1.23"]),
-            ([types.QUBIT], lambda mod: [mod.results[0]]),
         ]
 
         for param_types, get_args in cases:

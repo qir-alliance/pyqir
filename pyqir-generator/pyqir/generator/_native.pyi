@@ -30,11 +30,6 @@ def bitcode_to_ir(bitcode: bytes, module_name: Optional[str], source_file_name: 
     ...
 
 
-class ResultRef:
-    """A mutable reference cell that holds a measurement result."""
-    ...
-
-
 class Function:
     """A QIR function."""
     ...
@@ -153,7 +148,7 @@ class Builder:
     def call(
         self,
         function: Function,
-        args: Sequence[Union[Value, ResultRef, bool, int, float]]
+        args: Sequence[Union[Value, bool, int, float]]
     ) -> Optional[Value]:
         """
         Inserts a call instruction.
@@ -196,7 +191,7 @@ class SimpleModule:
         ...
 
     @property
-    def results(self) -> Tuple[ResultRef, ...]:
+    def results(self) -> Tuple[Value, ...]:
         """The global result register."""
         ...
 
@@ -240,7 +235,7 @@ class SimpleModule:
         """
         ...
 
-    def if_result(self, result: ResultRef, one: Callable[[], None] = ..., zero: Callable[[], None] = ...) -> None:
+    def if_result(self, cond: Value, one: Callable[[], None] = ..., zero: Callable[[], None] = ...) -> None:
         """
         Inserts a branch conditioned on a measurement result.
 
@@ -297,7 +292,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def mz(self, qubit: Value, result: ResultRef) -> None:
+    def mz(self, qubit: Value, result: Value) -> None:
         """
         Inserts a Z-basis measurement operation.
 
@@ -397,7 +392,7 @@ class BasicQisBuilder:
         """
         ...
 
-    def if_result(self, result: ResultRef, one: Callable[[], None] = ..., zero: Callable[[], None] = ...) -> None:
+    def if_result(self, result: Value, one: Callable[[], None] = ..., zero: Callable[[], None] = ...) -> None:
         """
         Inserts a branch conditioned on a measurement result.
 

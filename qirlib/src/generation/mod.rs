@@ -78,7 +78,7 @@ mod module_conversion_tests {
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
             instructions: vec![Instruction::M(Measured::new(
                 Value::Qubit("q0".to_string()),
-                "r0".to_string(),
+                Value::Result("r0".to_string()),
             ))],
             external_functions: vec![],
         }

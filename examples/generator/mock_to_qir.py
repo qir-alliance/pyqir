@@ -9,7 +9,7 @@ from mock_language.MockLanguageLexer import MockLanguageLexer
 from mock_language.MockLanguageParser import MockLanguageParser
 from mock_language.MockLanguageListener import MockLanguageListener
 from pathlib import Path
-from pyqir.generator import BasicQisBuilder, ResultRef, SimpleModule, Value
+from pyqir.generator import BasicQisBuilder, SimpleModule, Value
 
 
 class QirGenerator(MockLanguageListener):
@@ -39,7 +39,7 @@ class QirGenerator(MockLanguageListener):
                 "Parsed progam uses more qubits than allocated"
             ) from e
 
-    def parse_result(self, id: str) -> ResultRef:
+    def parse_result(self, id: str) -> Value:
         try:
             return self.module.results[int(id)]
         except IndexError as e:

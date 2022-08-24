@@ -10,7 +10,6 @@
 #![allow(clippy::format_push_string)]
 
 use pyo3::{
-    basic::CompareOp,
     exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
     prelude::*,
     types::{PyBytes, PySequence, PyString, PyUnicode},
@@ -24,11 +23,7 @@ use qirlib::generation::{
         Variable,
     },
 };
-use std::{
-    collections::hash_map::DefaultHasher,
-    hash::{Hash, Hasher},
-    vec,
-};
+use std::vec;
 
 #[pyfunction]
 #[allow(clippy::needless_pass_by_value)]
@@ -61,7 +56,6 @@ fn bitcode_to_ir<'a>(
 fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
     m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
-    m.add_class::<ResultRef>()?;
     m.add_class::<Function>()?;
     m.add_class::<Builder>()?;
     m.add_class::<Value>()?;
@@ -168,38 +162,6 @@ impl<'source> FromPyObject<'source> for PyIntPredicate {
             _ => Err(PyValueError::new_err("Invalid predicate.")),
         }
         .map(Self)
-    }
-}
-
-#[derive(Clone, Eq, Hash, PartialEq)]
-#[pyclass]
-struct ResultRef {
-    index: u64,
-}
-
-impl ResultRef {
-    fn id(&self) -> String {
-        format!("{}{}", RESULT_NAME, self.index)
-    }
-}
-
-#[pyproto]
-impl PyObjectProtocol for ResultRef {
-    fn __hash__(&self) -> u64 {
-        let mut hasher = DefaultHasher::new();
-        self.hash(&mut hasher);
-        hasher.finish()
-    }
-
-    fn __repr__(&self) -> String {
-        format!("<ResultRef {}>", self.index)
-    }
-
-    fn __richcmp__(&self, other: ResultRef, op: CompareOp) -> PyResult<bool> {
-        match op {
-            CompareOp::Eq => Ok(self == &other),
-            _ => Err(PyTypeError::new_err("Only equality is supported.")),
-        }
     }
 }
 
@@ -406,9 +368,11 @@ impl SimpleModule {
     }
 
     #[getter]
-    fn results(&self) -> Vec<ResultRef> {
+    fn results(&self) -> Vec<Value> {
         let size = self.model.registers.first().unwrap().size;
-        (0..size).map(|index| ResultRef { index }).collect()
+        (0..size)
+            .map(|index| Value(interop::Value::Result(format!("result{}", index))))
+            .collect()
     }
 
     #[getter]
@@ -457,12 +421,12 @@ impl SimpleModule {
     fn if_result(
         &self,
         py: Python,
-        result: &ResultRef,
+        cond: Value,
         one: Option<&PyAny>,
         zero: Option<&PyAny>,
     ) -> PyResult<()> {
         let if_result = IfResult {
-            cond: result.id(),
+            cond: cond.0,
             if_one: build_frame(py, &self.builder, one)?,
             if_zero: build_frame(py, &self.builder, zero)?,
         };
@@ -537,8 +501,8 @@ impl BasicQisBuilder {
         self.push_inst(py, Instruction::H(single));
     }
 
-    fn mz(&self, py: Python, qubit: Value, result: &ResultRef) {
-        let measured = Measured::new(qubit.0, result.id());
+    fn mz(&self, py: Python, qubit: Value, result: Value) {
+        let measured = Measured::new(qubit.0, result.0);
         self.push_inst(py, Instruction::M(measured));
     }
 
@@ -606,7 +570,7 @@ impl BasicQisBuilder {
     fn if_result(
         &self,
         py: Python,
-        result: &ResultRef,
+        result: Value,
         one: Option<&PyAny>,
         zero: Option<&PyAny>,
     ) -> PyResult<()> {
@@ -618,7 +582,7 @@ impl BasicQisBuilder {
             .call1(("Use SimpleModule.if_result instead.", deprecation_warning))?;
 
         let if_result = IfResult {
-            cond: result.id(),
+            cond: result.0,
             if_one: build_frame(py, &self.builder, one)?,
             if_zero: build_frame(py, &self.builder, zero)?,
         };
@@ -656,10 +620,9 @@ fn extract_value(ty: &Type, ob: &PyAny) -> PyResult<interop::Value> {
                     PyOverflowError::new_err(message)
                 }),
             Type::Double => Ok(interop::Value::Double(ob.extract()?)),
-            Type::Result => Ok(interop::Value::Result(ob.extract::<ResultRef>()?.id())),
-            Type::Void | Type::Qubit | Type::Function { .. } => Err(PyTypeError::new_err(
-                "Can't convert Python value into this type.",
-            )),
+            Type::Void | Type::Qubit | Type::Result | Type::Function { .. } => Err(
+                PyTypeError::new_err("Can't convert Python value into this type."),
+            ),
         },
     }
 }
