@@ -62,7 +62,7 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
     add_external_functions(generator, model.external_functions.iter());
     let entry_point = qir::create_entry_point(generator.context, &generator.module);
 
-    if model.qubits.len() > 0 {
+    if !model.qubits.is_empty() {
         let required_qubits = generator
             .context
             .create_string_attribute("requiredQubits", &model.qubits.len().to_string());
