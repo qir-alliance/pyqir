@@ -4,15 +4,16 @@
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
 from pyqir.generator import BasicQisBuilder, ResultRef, SimpleModule, Value
 import tempfile
-from typing import List, Optional
+from typing import List
 
 
-def teleport(qis: BasicQisBuilder, qubits: List[Value], results: List[ResultRef]) -> None:
+def teleport(module: SimpleModule, qubits: List[Value], results: List[ResultRef]) -> None:
     msg = qubits[0]
     target = qubits[1]
     register = qubits[2]
 
     # Create some entanglement that we can use to send our message.
+    qis = BasicQisBuilder(module.builder)
     qis.h(register)
     qis.cx(register, target)
 
@@ -24,43 +25,39 @@ def teleport(qis: BasicQisBuilder, qubits: List[Value], results: List[ResultRef]
     # message by applying the corrections on the target qubit accordingly.
     qis.m(msg, results[0])
     qis.reset(msg)
-    qis.if_result(results[0], one=lambda: qis.z(target))
+    module.if_result(results[0], one=lambda: qis.z(target))
 
     qis.m(register, results[1])
     qis.reset(register)
-    qis.if_result(results[1], one=lambda: qis.x(target))
+    module.if_result(results[1], one=lambda: qis.x(target))
 
 
-def _eval(module: SimpleModule,
-          gates: GateSet,
-          result_stream: Optional[List[bool]] = None) -> None:
+def eval(module: SimpleModule, gates: GateSet, results: List[bool]) -> None:
     with tempfile.NamedTemporaryFile(suffix=".ll") as f:
         f.write(module.ir().encode("utf-8"))
         f.flush()
-        NonadaptiveEvaluator().eval(f.name, gates, None, result_stream)
+        NonadaptiveEvaluator().eval(f.name, gates, None, results)
 
 
 module = SimpleModule("teleport-example", num_qubits=3, num_results=2)
-qis = BasicQisBuilder(module.builder)
-
-teleport(qis, module.qubits, module.results)
+teleport(module, module.qubits, module.results)
 
 print("# Evaluating both results as 0's", flush=True)
 logger = GateLogger()
-_eval(module, logger, [False, False])
+eval(module, logger, [False, False])
 logger.print()
 
 print("# Evaluating first result as 0, second as 1", flush=True)
 logger = GateLogger()
-_eval(module, logger, [False, True])
+eval(module, logger, [False, True])
 logger.print()
 
 print("# Evaluating first result as 1, second as 0", flush=True)
 logger = GateLogger()
-_eval(module, logger, [True, False])
+eval(module, logger, [True, False])
 logger.print()
 
 print("# Evaluating both results as 1's", flush=True)
 logger = GateLogger()
-_eval(module, logger, [True, True])
+eval(module, logger, [True, True])
 logger.print()

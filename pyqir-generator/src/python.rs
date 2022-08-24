@@ -19,8 +19,9 @@ use pyo3::{
 use qirlib::generation::{
     emit,
     interop::{
-        self, BinaryKind, BinaryOp, Call, ClassicalRegister, Controlled, If, Instruction, Int,
-        IntPredicate, Measured, QuantumRegister, Rotated, SemanticModel, Single, Type, Variable,
+        self, BinaryKind, BinaryOp, Call, ClassicalRegister, Controlled, If, IfResult, Instruction,
+        Int, IntPredicate, Measured, QuantumRegister, Rotated, SemanticModel, Single, Type,
+        Variable,
     },
 };
 use std::{
@@ -260,13 +261,11 @@ impl Builder {
         }
     }
 
-    #[pyo3(name = "and_")]
-    fn and(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn and_(&mut self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::And, lhs.0, rhs.0)
     }
 
-    #[pyo3(name = "or_")]
-    fn or(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn or_(&mut self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Or, lhs.0, rhs.0)
     }
 
@@ -447,6 +446,40 @@ impl SimpleModule {
     fn use_static_result_alloc(&mut self, value: bool) {
         self.model.use_static_result_alloc = value;
     }
+
+    fn if_(
+        &self,
+        py: Python,
+        cond: Value,
+        r#true: Option<&PyAny>,
+        r#false: Option<&PyAny>,
+    ) -> PyResult<()> {
+        let if_ = If {
+            cond: cond.0,
+            if_true: build_frame(py, &self.builder, r#true)?,
+            if_false: build_frame(py, &self.builder, r#false)?,
+        };
+        let mut builder = self.builder.as_ref(py).borrow_mut();
+        builder.push_inst(Instruction::If(if_));
+        Ok(())
+    }
+
+    fn if_result(
+        &self,
+        py: Python,
+        result: &ResultRef,
+        one: Option<&PyAny>,
+        zero: Option<&PyAny>,
+    ) -> PyResult<()> {
+        let if_result = IfResult {
+            cond: result.id(),
+            if_one: build_frame(py, &self.builder, one)?,
+            if_zero: build_frame(py, &self.builder, zero)?,
+        };
+        let mut builder = self.builder.as_ref(py).borrow_mut();
+        builder.push_inst(Instruction::IfResult(if_result));
+        Ok(())
+    }
 }
 
 impl SimpleModule {
@@ -467,6 +500,24 @@ impl SimpleModule {
             _ => panic!("Builder does not contain exactly one stack frame."),
         }
     }
+}
+
+fn build_frame(
+    py: Python,
+    builder: &Py<Builder>,
+    callback: Option<&PyAny>,
+) -> PyResult<Vec<Instruction>> {
+    {
+        let mut builder = builder.as_ref(py).borrow_mut();
+        builder.push_frame();
+    }
+
+    if let Some(callback) = callback {
+        callback.call0()?;
+    }
+
+    let mut builder = builder.as_ref(py).borrow_mut();
+    Ok(builder.pop_frame().unwrap())
 }
 
 #[pyclass]
@@ -569,22 +620,19 @@ impl BasicQisBuilder {
         one: Option<&PyAny>,
         zero: Option<&PyAny>,
     ) -> PyResult<()> {
-        let build_frame = |callback: Option<&PyAny>| -> PyResult<_> {
-            self.push_frame(py);
-            if let Some(callback) = callback {
-                callback.call0()?;
-            }
+        let builtins = PyModule::import(py, "builtins")?;
+        let deprecation_warning = builtins.getattr("DeprecationWarning")?;
+        let warnings = PyModule::import(py, "warnings")?;
+        warnings
+            .getattr("warn")?
+            .call1(("Use SimpleModule.if_result instead.", deprecation_warning))?;
 
-            Ok(self.pop_frame(py).unwrap())
+        let if_result = IfResult {
+            cond: result.id(),
+            if_one: build_frame(py, &self.builder, one)?,
+            if_zero: build_frame(py, &self.builder, zero)?,
         };
-
-        let if_inst = If {
-            condition: result.id(),
-            then_insts: build_frame(one)?,
-            else_insts: build_frame(zero)?,
-        };
-
-        self.push_inst(py, Instruction::If(if_inst));
+        self.push_inst(py, Instruction::IfResult(if_result));
         Ok(())
     }
 }
@@ -593,16 +641,6 @@ impl BasicQisBuilder {
     fn push_inst(&self, py: Python, inst: Instruction) {
         let mut builder = self.builder.as_ref(py).borrow_mut();
         builder.push_inst(inst);
-    }
-
-    fn push_frame(&self, py: Python) {
-        let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.push_frame();
-    }
-
-    fn pop_frame(&self, py: Python) -> Option<Vec<Instruction>> {
-        let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.pop_frame()
     }
 }
 

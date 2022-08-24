@@ -94,13 +94,6 @@ impl Single {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct If {
-    pub condition: String,
-    pub then_insts: Vec<Instruction>,
-    pub else_insts: Vec<Instruction>,
-}
-
 // https://github.com/microsoft/qsharp-language/blob/ageller/profile/Specifications/QIR/Base-Profile.md
 #[derive(Clone, Debug, PartialEq)]
 pub enum Instruction {
@@ -122,6 +115,7 @@ pub enum Instruction {
     BinaryOp(BinaryOp),
     Call(Call),
     If(If),
+    IfResult(IfResult),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -175,6 +169,20 @@ pub struct Call {
     pub name: String,
     pub args: Vec<Value>,
     pub result: Option<Variable>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct If {
+    pub cond: Value,
+    pub if_true: Vec<Instruction>,
+    pub if_false: Vec<Instruction>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct IfResult {
+    pub cond: String,
+    pub if_one: Vec<Instruction>,
+    pub if_zero: Vec<Instruction>,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

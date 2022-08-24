@@ -5,11 +5,13 @@ use crate::{
     codegen::CodeGenerator,
     generation::{
         env::{Environment, ResultState},
-        interop::{BinaryKind, BinaryOp, Call, If, Instruction, IntPredicate, Value},
+        interop::{BinaryKind, BinaryOp, Call, If, IfResult, Instruction, IntPredicate, Value},
         qir::result,
     },
 };
-use inkwell::values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, PointerValue};
+use inkwell::values::{
+    BasicMetadataValueEnum, BasicValueEnum, FunctionValue, IntValue, PointerValue,
+};
 
 /// # Panics
 ///
@@ -159,7 +161,8 @@ pub(crate) fn emit<'ctx>(
         }
         Instruction::BinaryOp(op) => emit_binary_op(generator, env, op),
         Instruction::Call(call) => emit_call(generator, env, call),
-        Instruction::If(if_) => emit_if(generator, env, entry_point, if_),
+        Instruction::If(if_) => emit_if_bool(generator, env, entry_point, if_),
+        Instruction::IfResult(if_result) => emit_if_result(generator, env, entry_point, if_result),
     }
 }
 
@@ -228,26 +231,59 @@ fn emit_call<'ctx>(generator: &CodeGenerator<'ctx>, env: &mut Environment<'ctx>,
     }
 }
 
-fn emit_if<'ctx>(
+fn emit_if_bool<'ctx>(
     generator: &CodeGenerator<'ctx>,
     env: &mut Environment<'ctx>,
     entry_point: FunctionValue,
     if_: &If,
 ) {
-    let result = get_result(generator, env, &if_.condition);
+    emit_if(
+        generator,
+        env,
+        entry_point,
+        get_value(generator, env, &if_.cond).into_int_value(),
+        &if_.if_true,
+        &if_.if_false,
+    );
+}
 
-    let condition = if generator.use_static_result_alloc {
+fn emit_if_result<'ctx>(
+    generator: &CodeGenerator<'ctx>,
+    env: &mut Environment<'ctx>,
+    entry_point: FunctionValue,
+    if_result: &IfResult,
+) {
+    let result = get_result(generator, env, &if_result.cond);
+    let cond = if generator.use_static_result_alloc {
         result::read_result(generator, result)
     } else {
         result::equal(generator, result, result::get_one(generator))
     };
 
+    emit_if(
+        generator,
+        env,
+        entry_point,
+        cond,
+        &if_result.if_one,
+        &if_result.if_zero,
+    );
+}
+
+fn emit_if<'ctx>(
+    generator: &CodeGenerator<'ctx>,
+    env: &mut Environment<'ctx>,
+    entry_point: FunctionValue,
+    cond: IntValue<'ctx>,
+    then_insts: &[Instruction],
+    else_insts: &[Instruction],
+) {
     let then_block = generator.context.append_basic_block(entry_point, "then");
     let else_block = generator.context.append_basic_block(entry_point, "else");
 
     generator
         .builder
-        .build_conditional_branch(condition, then_block, else_block);
+        .build_conditional_branch(cond, then_block, else_block);
 
     let continue_block = generator
         .context
@@ -263,7 +299,7 @@ fn emit_if<'ctx>(
         generator.builder.build_unconditional_branch(continue_block);
     };
 
-    emit_block(then_block, &if_.then_insts);
-    emit_block(else_block, &if_.else_insts);
+    emit_block(then_block, then_insts);
+    emit_block(else_block, else_insts);
     generator.builder.position_at_end(continue_block);
 }

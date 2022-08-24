@@ -476,8 +476,11 @@ task run-examples {
         $bz_expected = "; ModuleID = 'bernstein_vazirani'"
         Assert ($bz_first_line -eq $bz_expected) "Expected $bz_expected found $bz_first_line"
 
-        $if_first_line = & $python "if.py" | Select-Object -First 1
-        Assert ($if_first_line -eq "; ModuleID = 'if'") "if.py"
+        $ifr_first_line = & $python "if_result.py" | Select-Object -First 1
+        Assert ($ifr_first_line -eq "; ModuleID = 'if_result'") "if_result.py"
+
+        $ifb_first_line = & $python "if_bool.py" | Select-Object -First 1
+        Assert ($ifb_first_line -eq "; ModuleID = 'if_bool'") "if_bool.py"
 
         $ef_first_line = & $python "external_functions.py" | Select-Object -First 1
         Assert ($ef_first_line -eq "; ModuleID = 'external_functions'") "external_functions.py"

@@ -374,9 +374,34 @@ mod result_alloc_tests {
 mod if_tests {
     use super::test_utils::check_or_save_reference_ir;
     use crate::generation::interop::{
-        BinaryKind, BinaryOp, Call, ClassicalRegister, If, Instruction, IntPredicate, Measured,
-        QuantumRegister, SemanticModel, Single, Type, Value, Variable,
+        BinaryKind, BinaryOp, Call, ClassicalRegister, IfResult, Instruction, IntPredicate,
+        Measured, QuantumRegister, SemanticModel, Single, Type, Value, Variable,
     };
+
+    #[test]
+    fn test_empty_if() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test_empty_if".to_string(),
+            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
+            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            instructions: vec![
+                Instruction::M(Measured::new(
+                    Value::Qubit("q0".to_string()),
+                    "r0".to_string(),
+                )),
+                Instruction::IfResult(IfResult {
+                    cond: "r0".to_string(),
+                    if_one: vec![],
+                    if_zero: vec![],
+                }),
+            ],
+            use_static_qubit_alloc: true,
+            use_static_result_alloc: false,
+            external_functions: vec![],
+        };
+
+        check_or_save_reference_ir(&model)
+    }
 
     #[test]
     fn test_if_then() -> Result<(), String> {
@@ -389,10 +414,10 @@ mod if_tests {
                     Value::Qubit("q0".to_string()),
                     "r0".to_string(),
                 )),
-                Instruction::If(If {
-                    condition: "r0".to_string(),
-                    then_insts: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
-                    else_insts: vec![],
+                Instruction::IfResult(IfResult {
+                    cond: "r0".to_string(),
+                    if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                    if_zero: vec![],
                 }),
             ],
             use_static_qubit_alloc: true,
@@ -414,10 +439,10 @@ mod if_tests {
                     Value::Qubit("q0".to_string()),
                     "r0".to_string(),
                 )),
-                Instruction::If(If {
-                    condition: "r0".to_string(),
-                    then_insts: vec![],
-                    else_insts: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                Instruction::IfResult(IfResult {
+                    cond: "r0".to_string(),
+                    if_one: vec![],
+                    if_zero: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
                 }),
             ],
             use_static_qubit_alloc: true,
@@ -439,10 +464,10 @@ mod if_tests {
                     Value::Qubit("q0".to_string()),
                     "r0".to_string(),
                 )),
-                Instruction::If(If {
-                    condition: "r0".to_string(),
-                    then_insts: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
-                    else_insts: vec![],
+                Instruction::IfResult(IfResult {
+                    cond: "r0".to_string(),
+                    if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                    if_zero: vec![],
                 }),
                 Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
             ],
@@ -465,10 +490,10 @@ mod if_tests {
                     Value::Qubit("q0".to_string()),
                     "r0".to_string(),
                 )),
-                Instruction::If(If {
-                    condition: "r0".to_string(),
-                    then_insts: vec![],
-                    else_insts: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                Instruction::IfResult(IfResult {
+                    cond: "r0".to_string(),
+                    if_one: vec![],
+                    if_zero: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
                 }),
                 Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
             ],
@@ -491,10 +516,10 @@ mod if_tests {
                     Value::Qubit("q0".to_string()),
                     "r0".to_string(),
                 )),
-                Instruction::If(If {
-                    condition: "r0".to_string(),
-                    then_insts: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
-                    else_insts: vec![Instruction::Y(Single::new(Value::Qubit("q0".to_string())))],
+                Instruction::IfResult(IfResult {
+                    cond: "r0".to_string(),
+                    if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                    if_zero: vec![Instruction::Y(Single::new(Value::Qubit("q0".to_string())))],
                 }),
                 Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
             ],
@@ -521,16 +546,14 @@ mod if_tests {
                     Value::Qubit("q0".to_string()),
                     "r1".to_string(),
                 )),
-                Instruction::If(If {
-                    condition: "r0".to_string(),
-                    then_insts: vec![Instruction::If(If {
-                        condition: "r1".to_string(),
-                        then_insts: vec![Instruction::X(Single::new(Value::Qubit(
-                            "q0".to_string(),
-                        )))],
-                        else_insts: vec![],
+                Instruction::IfResult(IfResult {
+                    cond: "r0".to_string(),
+                    if_one: vec![Instruction::IfResult(IfResult {
+                        cond: "r1".to_string(),
+                        if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                        if_zero: vec![],
                     })],
-                    else_insts: vec![],
+                    if_zero: vec![],
                 }),
             ],
             use_static_qubit_alloc: true,
@@ -556,15 +579,13 @@ mod if_tests {
                     Value::Qubit("q0".to_string()),
                     "r1".to_string(),
                 )),
-                Instruction::If(If {
-                    condition: "r0".to_string(),
-                    then_insts: vec![],
-                    else_insts: vec![Instruction::If(If {
-                        condition: "r1".to_string(),
-                        then_insts: vec![],
-                        else_insts: vec![Instruction::X(Single::new(Value::Qubit(
-                            "q0".to_string(),
-                        )))],
+                Instruction::IfResult(IfResult {
+                    cond: "r0".to_string(),
+                    if_one: vec![],
+                    if_zero: vec![Instruction::IfResult(IfResult {
+                        cond: "r1".to_string(),
+                        if_one: vec![],
+                        if_zero: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
                     })],
                 }),
             ],
@@ -591,16 +612,14 @@ mod if_tests {
                     Value::Qubit("q0".to_string()),
                     "r1".to_string(),
                 )),
-                Instruction::If(If {
-                    condition: "r0".to_string(),
-                    then_insts: vec![Instruction::If(If {
-                        condition: "r1".to_string(),
-                        then_insts: vec![],
-                        else_insts: vec![Instruction::X(Single::new(Value::Qubit(
-                            "q0".to_string(),
-                        )))],
+                Instruction::IfResult(IfResult {
+                    cond: "r0".to_string(),
+                    if_one: vec![Instruction::IfResult(IfResult {
+                        cond: "r1".to_string(),
+                        if_one: vec![],
+                        if_zero: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
                     })],
-                    else_insts: vec![],
+                    if_zero: vec![],
                 }),
             ],
             use_static_qubit_alloc: true,
@@ -626,15 +645,13 @@ mod if_tests {
                     Value::Qubit("q0".to_string()),
                     "r1".to_string(),
                 )),
-                Instruction::If(If {
-                    condition: "r0".to_string(),
-                    then_insts: vec![],
-                    else_insts: vec![Instruction::If(If {
-                        condition: "r1".to_string(),
-                        then_insts: vec![Instruction::X(Single::new(Value::Qubit(
-                            "q0".to_string(),
-                        )))],
-                        else_insts: vec![],
+                Instruction::IfResult(IfResult {
+                    cond: "r0".to_string(),
+                    if_one: vec![],
+                    if_zero: vec![Instruction::IfResult(IfResult {
+                        cond: "r1".to_string(),
+                        if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                        if_zero: vec![],
                     })],
                 }),
             ],
@@ -652,10 +669,10 @@ mod if_tests {
             name: "test_results_default_to_zero_if_not_measured".to_string(),
             registers: vec![ClassicalRegister::new("r".to_string(), 1)],
             qubits: vec![QuantumRegister::new("q".to_string(), 0)],
-            instructions: vec![Instruction::If(If {
-                condition: "r0".to_string(),
-                then_insts: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
-                else_insts: vec![Instruction::H(Single::new(Value::Qubit("q0".to_string())))],
+            instructions: vec![Instruction::IfResult(IfResult {
+                cond: "r0".to_string(),
+                if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                if_zero: vec![Instruction::H(Single::new(Value::Qubit("q0".to_string())))],
             })],
             use_static_qubit_alloc: true,
             use_static_result_alloc: false,
@@ -771,7 +788,7 @@ mod if_tests {
             registers: vec![],
             qubits: vec![],
             instructions,
-            use_static_qubit_alloc: false,
+            use_static_qubit_alloc: true,
             use_static_result_alloc: false,
             external_functions: vec![
                 (
