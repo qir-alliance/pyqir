@@ -465,28 +465,34 @@ task run-examples {
         & $python -m pip install -r requirements.txt
         & $python -m pip install -U --find-links (Join-Path $repo.root "target" "wheels") pyqir-generator
 
-        & $python "bell_pair.py" | Tee-Object -Variable bell_pair_output
-        $bell_first_line = $($bell_pair_output | Select-Object -first 1)
-        $bell_expected = "; ModuleID = 'Bell'"
-        Assert ($bell_first_line -eq $bell_expected) "Expected $bell_expected found $bell_first_line"
+        & $python "bell_pair.py" | Tee-Object -Variable output
+        $head = $output | Select-Object -First 1
+        Assert ($head -eq "; ModuleID = 'Bell'") "bell_pair.py doesn't print expected module ID."
 
-        $bz_output = (Join-Path $($env:TEMP) "bz.ll")
-        & $python "mock_to_qir.py" -o $bz_output "bernstein_vazirani.txt" 7
-        $bz_first_line = Get-Content $bz_output | Select-Object -first 1
-        $bz_expected = "; ModuleID = 'bernstein_vazirani'"
-        Assert ($bz_first_line -eq $bz_expected) "Expected $bz_expected found $bz_first_line"
+        $output = Join-Path $($env:TEMP) "bz.ll"
+        & $python "mock_to_qir.py" -o $output "bernstein_vazirani.txt" 7
+        $head = Get-Content $output | Select-Object -First 1
+        Assert ($head -eq "; ModuleID = 'bernstein_vazirani'") "mock_to_qir.py doesn't print expected module ID."
 
-        $ifr_first_line = & $python "if_result.py" | Select-Object -First 1
-        Assert ($ifr_first_line -eq "; ModuleID = 'if_result'") "if_result.py"
+        & $python "if_result.py" | Tee-Object -Variable output
+        $head = $output | Select-Object -First 1
+        Assert ($head -eq "; ModuleID = 'if_result'") "if_result.py doesn't print expected module ID."
 
-        $ifb_first_line = & $python "if_bool.py" | Select-Object -First 1
-        Assert ($ifb_first_line -eq "; ModuleID = 'if_bool'") "if_bool.py"
+        & $python "if_bool.py" | Tee-Object -Variable output
+        $head = $output | Select-Object -First 1
+        Assert ($head -eq "; ModuleID = 'if_bool'") "if_bool.py doesn't print expected module ID."
 
-        $ef_first_line = & $python "external_functions.py" | Select-Object -First 1
-        Assert ($ef_first_line -eq "; ModuleID = 'external_functions'") "external_functions.py"
+        & $python "external_functions.py" | Tee-Object -Variable output
+        $head = $output | Select-Object -First 1
+        Assert ($head -eq "; ModuleID = 'external_functions'") "external_functions.py doesn't print expected module ID."
 
-        $arithmetic_first_line = & $python "arithmetic.py" | Select-Object -First 1
-        Assert ($arithmetic_first_line -eq "; ModuleID = 'arithmetic'") "arithmetic.py"
+        & $python "arithmetic.py" | Tee-Object -Variable output
+        $head = $output | Select-Object -First 1
+        Assert ($head -eq "; ModuleID = 'arithmetic'") "arithmetic.py doesn't print expected module ID."
+
+        & $python "dynamic_allocation.py" | Tee-Object -Variable output
+        $head = $output | Select-Object -First 1
+        Assert ($head -eq "; ModuleID = 'dynamic_allocation'") "dynamic_allocation.py doesn't print expected module ID."
     }
 
     exec -workingDirectory $pyqir.evaluator.examples_dir {
