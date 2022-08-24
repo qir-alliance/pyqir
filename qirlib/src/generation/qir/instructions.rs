@@ -11,7 +11,7 @@ use crate::{
     },
 };
 use inkwell::{
-    values::{BasicMetadataValueEnum, FunctionValue, IntValue, PointerValue},
+    values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, IntValue, PointerValue},
     AddressSpace,
 };
 
@@ -189,13 +189,11 @@ fn emit_if_result<'ctx>(
     if_result: &IfResult,
 ) {
     let result = get_value(generator, env, &if_result.cond);
-    let cond = read_result(generator, result.into());
-
     emit_if(
         generator,
         env,
         entry_point,
-        cond,
+        read_result(generator, result).into_int_value(),
         &if_result.if_one,
         &if_result.if_zero,
     );
@@ -271,8 +269,6 @@ fn get_result<'ctx>(generator: &CodeGenerator<'ctx>, id: u64) -> PointerValue<'c
 fn read_result<'ctx>(
     generator: &CodeGenerator<'ctx>,
     result: BasicMetadataValueEnum<'ctx>,
-) -> IntValue<'ctx> {
-    generator
-        .emit_call_with_return(generator.qis_read_result(), &[result], "equal")
-        .into_int_value()
+) -> BasicValueEnum<'ctx> {
+    generator.emit_call_with_return(generator.qis_read_result(), &[result], "equal")
 }
