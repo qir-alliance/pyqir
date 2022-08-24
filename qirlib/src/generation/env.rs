@@ -6,30 +6,14 @@ use std::collections::{
 };
 
 pub(crate) struct Environment<'ctx> {
-    qubits: HashMap<String, BasicValueEnum<'ctx>>,
-    results: HashMap<String, BasicValueEnum<'ctx>>,
     variables: HashMap<Variable, BasicValueEnum<'ctx>>,
 }
 
 impl<'ctx> Environment<'ctx> {
-    pub(crate) fn new(
-        qubits: HashMap<String, BasicValueEnum<'ctx>>,
-        results: HashMap<String, BasicValueEnum<'ctx>>,
-        variables: HashMap<Variable, BasicValueEnum<'ctx>>,
-    ) -> Self {
+    pub(crate) fn new() -> Self {
         Self {
-            qubits,
-            results,
-            variables,
+            variables: HashMap::new(),
         }
-    }
-
-    pub(crate) fn qubit(&self, name: &str) -> Option<BasicValueEnum<'ctx>> {
-        self.qubits.get(name).copied()
-    }
-
-    pub(crate) fn result(&self, name: &str) -> Option<BasicValueEnum<'ctx>> {
-        self.results.get(name).copied()
     }
 
     pub(crate) fn variable(&self, var: Variable) -> Option<BasicValueEnum<'ctx>> {

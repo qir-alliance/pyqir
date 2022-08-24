@@ -18,9 +18,8 @@ use pyo3::{
 use qirlib::generation::{
     emit,
     interop::{
-        self, BinaryKind, BinaryOp, Call, ClassicalRegister, Controlled, If, IfResult, Instruction,
-        Int, IntPredicate, Measured, QuantumRegister, Rotated, SemanticModel, Single, Type,
-        Variable,
+        self, BinaryKind, BinaryOp, Call, Controlled, If, IfResult, Instruction, Int, IntPredicate,
+        Measured, Rotated, SemanticModel, Single, Type, Variable,
     },
 };
 use std::vec;
@@ -65,8 +64,6 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
 }
 
 const TYPES_MODULE_NAME: &str = "pyqir.generator.types";
-const RESULT_NAME: &str = "result";
-const QUBIT_NAME: &str = "qubit";
 
 struct PyVoidType;
 
@@ -340,17 +337,11 @@ struct SimpleModule {
 impl SimpleModule {
     #[new]
     fn new(py: Python, name: String, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
-        let registers = vec![ClassicalRegister::new(RESULT_NAME.to_string(), num_results)];
-
-        let qubits = (0..num_qubits)
-            .map(|i| QuantumRegister::new(QUBIT_NAME.to_string(), i))
-            .collect();
-
         let model = SemanticModel {
             name,
+            num_qubits,
+            num_results,
             external_functions: vec![],
-            registers,
-            qubits,
             instructions: vec![],
         };
 
@@ -360,18 +351,15 @@ impl SimpleModule {
 
     #[getter]
     fn qubits(&self) -> Vec<Value> {
-        self.model
-            .qubits
-            .iter()
-            .map(|q| Value(interop::Value::Qubit(format!("qubit{}", q.index))))
+        (0..self.model.num_qubits)
+            .map(|id| Value(interop::Value::Qubit(id)))
             .collect()
     }
 
     #[getter]
     fn results(&self) -> Vec<Value> {
-        let size = self.model.registers.first().unwrap().size;
-        (0..size)
-            .map(|index| Value(interop::Value::Result(format!("result{}", index))))
+        (0..self.model.num_results)
+            .map(|id| Value(interop::Value::Result(id)))
             .collect()
     }
 
@@ -447,8 +435,8 @@ impl SimpleModule {
 
         match builder.frames[..] {
             [ref instructions] => SemanticModel {
-                instructions: instructions.clone(),
                 external_functions,
+                instructions: instructions.clone(),
                 ..self.model.clone()
             },
             _ => panic!("Builder does not contain exactly one stack frame."),

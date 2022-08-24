@@ -6,7 +6,7 @@ use crate::{
     generation::{
         env::Environment,
         interop::{self, SemanticModel, Type},
-        qir,
+        qir::{self, instructions},
     },
     passes::run_basic_passes_on,
 };
@@ -15,13 +15,10 @@ use inkwell::{
     context::Context,
     module::Linkage,
     types::{AnyTypeEnum, BasicType, BasicTypeEnum},
-    values::{BasicValueEnum, FunctionValue, PointerValue},
+    values::FunctionValue,
     AddressSpace,
 };
-use std::{
-    collections::HashMap,
-    convert::{Into, TryFrom},
-};
+use std::convert::{Into, TryFrom};
 
 /// # Errors
 ///
@@ -62,31 +59,24 @@ fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Res
     add_external_functions(generator, model.external_functions.iter());
     let entry_point = qir::create_entry_point(generator.context, &generator.module);
 
-    if !model.qubits.is_empty() {
+    if model.num_qubits > 0 {
         let required_qubits = generator
             .context
-            .create_string_attribute("requiredQubits", &model.qubits.len().to_string());
+            .create_string_attribute("requiredQubits", &model.num_qubits.to_string());
         entry_point.add_attribute(AttributeLoc::Function, required_qubits);
     }
 
-    let num_results: u64 = model.registers.iter().map(|f| f.size).sum();
-    if num_results > 0 {
+    if model.num_results > 0 {
         let required_results = generator
             .context
-            .create_string_attribute("requiredResults", &num_results.to_string());
+            .create_string_attribute("requiredResults", &model.num_results.to_string());
         entry_point.add_attribute(AttributeLoc::Function, required_results);
     }
 
     let entry = generator.context.append_basic_block(entry_point, "entry");
     generator.builder.position_at_end(entry);
 
-    let mut env = Environment::new(
-        write_qubits(model, generator),
-        write_registers(model, generator),
-        HashMap::new(),
-    );
-
-    write_instructions(model, generator, &mut env, entry_point);
+    write_instructions(model, generator, entry_point);
     generator.builder.build_return(None);
     generator.module.verify().map_err(|e| e.to_string())
 }
@@ -137,66 +127,14 @@ fn get_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &Type) -> AnyTypeEnum<'ct
     }
 }
 
-fn write_qubits<'ctx>(
-    model: &SemanticModel,
-    generator: &CodeGenerator<'ctx>,
-) -> HashMap<String, BasicValueEnum<'ctx>> {
-    let mut qubits = HashMap::new();
-    for (id, qubit) in model.qubits.iter().enumerate() {
-        let indexed_name = format!("{}{}", &qubit.name[..], qubit.index);
-        let int_value = generator.usize_to_i64(id).into_int_value();
-        let qubit_ptr_type = generator.qubit_type().ptr_type(AddressSpace::Generic);
-
-        let intptr = generator
-            .builder
-            .build_int_to_ptr(int_value, qubit_ptr_type, &indexed_name);
-        qubits.insert(indexed_name, intptr.into());
-    }
-
-    qubits
-}
-
-fn write_registers<'ctx>(
-    model: &SemanticModel,
-    generator: &CodeGenerator<'ctx>,
-) -> HashMap<String, BasicValueEnum<'ctx>> {
-    let mut registers = HashMap::new();
-    let mut id = 0;
-    let number_of_registers = model.registers.len() as u64;
-    if number_of_registers > 0 {
-        for register in &model.registers {
-            for index in 0..register.size {
-                let indexed_name = format!("{}{}", register.name, index);
-                let intptr = create_result_static_ptr(&indexed_name, generator, id);
-                registers.insert(indexed_name, intptr.into());
-                id += 1;
-            }
-        }
-    }
-
-    registers
-}
-
-fn create_result_static_ptr<'ctx>(
-    indexed_name: &str,
-    generator: &CodeGenerator<'ctx>,
-    id: usize,
-) -> PointerValue<'ctx> {
-    let int_value = generator.usize_to_i64(id).into_int_value();
-    let result_ptr_type = generator.result_type().ptr_type(AddressSpace::Generic);
-    generator
-        .builder
-        .build_int_to_ptr(int_value, result_ptr_type, indexed_name)
-}
-
 fn write_instructions<'ctx>(
     model: &SemanticModel,
     generator: &CodeGenerator<'ctx>,
-    env: &mut Environment<'ctx>,
     entry_point: FunctionValue,
 ) {
+    let mut env = Environment::new();
     for inst in &model.instructions {
-        qir::instructions::emit(generator, env, inst, entry_point);
+        instructions::emit(generator, &mut env, inst, entry_point);
     }
 }
 
@@ -204,9 +142,7 @@ fn write_instructions<'ctx>(
 mod allocation_tests {
     use crate::generation::{
         emit,
-        interop::{
-            ClassicalRegister, Instruction, Measured, QuantumRegister, SemanticModel, Single, Value,
-        },
+        interop::{Instruction, Measured, SemanticModel, Single, Value},
     };
 
     #[test]
@@ -214,10 +150,10 @@ mod allocation_tests {
     ) -> Result<(), String> {
         let model = SemanticModel {
             name: "test".to_owned(),
-            registers: vec![],
-            qubits: vec![],
-            instructions: vec![],
+            num_qubits: 0,
+            num_results: 0,
             external_functions: vec![],
+            instructions: vec![],
         };
         let actual_ir: String = emit::ir(&model)?;
         assert!(actual_ir.contains("attributes #0 = { \"EntryPoint\" }"));
@@ -228,10 +164,10 @@ mod allocation_tests {
     fn when_no_registers_declared_then_attribute_is_omitted() -> Result<(), String> {
         let model = SemanticModel {
             name: "test".to_owned(),
-            registers: vec![],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
-            instructions: vec![Instruction::H(Single::new(Value::Qubit("q0".to_string())))],
+            num_qubits: 1,
+            num_results: 0,
             external_functions: vec![],
+            instructions: vec![Instruction::H(Single::new(Value::Qubit(0)))],
         };
         let actual_ir: String = emit::ir(&model)?;
         assert!(actual_ir.contains("attributes #0 = { \"EntryPoint\" \"requiredQubits\"=\"1\" }"));
@@ -242,10 +178,10 @@ mod allocation_tests {
     fn when_no_qubits_declared_then_attribute_is_omitted() -> Result<(), String> {
         let model = SemanticModel {
             name: "test".to_owned(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
-            qubits: vec![],
-            instructions: vec![],
+            num_qubits: 0,
+            num_results: 1,
             external_functions: vec![],
+            instructions: vec![],
         };
         let actual_ir: String = emit::ir(&model)?;
         assert!(actual_ir.contains("attributes #0 = { \"EntryPoint\" \"requiredResults\"=\"1\" }"));
@@ -257,40 +193,17 @@ mod allocation_tests {
     {
         let model = SemanticModel {
             name: "test".to_owned(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
-            instructions: vec![Instruction::M(Measured::new(
-                Value::Qubit("q0".to_string()),
-                Value::Result("r0".to_string()),
-            ))],
+            num_qubits: 1,
+            num_results: 1,
             external_functions: vec![],
+            instructions: vec![Instruction::M(Measured::new(
+                Value::Qubit(0),
+                Value::Result(0),
+            ))],
         };
         let actual_ir: String = emit::ir(&model)?;
         assert!(actual_ir.contains(
             "attributes #0 = { \"EntryPoint\" \"requiredQubits\"=\"1\" \"requiredResults\"=\"1\" }"
-        ));
-        Ok(())
-    }
-
-    #[test]
-    fn required_results_attribute_sums_registers_correctly() -> Result<(), String> {
-        let model = SemanticModel {
-            name: "test".to_owned(),
-            registers: vec![
-                ClassicalRegister::new("r".to_string(), 1),
-                ClassicalRegister::new("r".to_string(), 3),
-                ClassicalRegister::new("r".to_string(), 4),
-            ],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
-            instructions: vec![Instruction::M(Measured::new(
-                Value::Qubit("q0".to_string()),
-                Value::Result("r0".to_string()),
-            ))],
-            external_functions: vec![],
-        };
-        let actual_ir: String = emit::ir(&model)?;
-        assert!(actual_ir.contains(
-            "attributes #0 = { \"EntryPoint\" \"requiredQubits\"=\"1\" \"requiredResults\"=\"8\" }"
         ));
         Ok(())
     }
@@ -307,28 +220,25 @@ mod allocation_tests {
 mod ir_tests {
     use super::test_utils::check_or_save_reference_ir;
     use crate::generation::interop::{
-        BinaryKind, BinaryOp, Call, ClassicalRegister, IfResult, Instruction, IntPredicate,
-        Measured, QuantumRegister, SemanticModel, Single, Type, Value, Variable,
+        BinaryKind, BinaryOp, Call, IfResult, Instruction, IntPredicate, Measured, SemanticModel,
+        Single, Type, Value, Variable,
     };
 
     #[test]
     fn test_empty_if() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_empty_if".to_string(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            num_qubits: 1,
+            num_results: 1,
+            external_functions: vec![],
             instructions: vec![
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r0".to_string()),
-                )),
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
                 Instruction::IfResult(IfResult {
-                    cond: Value::Result("r0".to_string()),
+                    cond: Value::Result(0),
                     if_one: vec![],
                     if_zero: vec![],
                 }),
             ],
-            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -338,20 +248,17 @@ mod ir_tests {
     fn test_if_then() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then".to_string(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            num_qubits: 1,
+            num_results: 1,
+            external_functions: vec![],
             instructions: vec![
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r0".to_string()),
-                )),
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
                 Instruction::IfResult(IfResult {
-                    cond: Value::Result("r0".to_string()),
-                    if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                    cond: Value::Result(0),
+                    if_one: vec![Instruction::X(Single::new(Value::Qubit(0)))],
                     if_zero: vec![],
                 }),
             ],
-            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -361,20 +268,17 @@ mod ir_tests {
     fn test_if_else() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else".to_string(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            num_qubits: 1,
+            num_results: 1,
+            external_functions: vec![],
             instructions: vec![
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r0".to_string()),
-                )),
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
                 Instruction::IfResult(IfResult {
-                    cond: Value::Result("r0".to_string()),
+                    cond: Value::Result(0),
                     if_one: vec![],
-                    if_zero: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                    if_zero: vec![Instruction::X(Single::new(Value::Qubit(0)))],
                 }),
             ],
-            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -384,21 +288,18 @@ mod ir_tests {
     fn test_if_then_continue() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_continue".to_string(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            num_qubits: 1,
+            num_results: 1,
+            external_functions: vec![],
             instructions: vec![
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r0".to_string()),
-                )),
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
                 Instruction::IfResult(IfResult {
-                    cond: Value::Result("r0".to_string()),
-                    if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                    cond: Value::Result(0),
+                    if_one: vec![Instruction::X(Single::new(Value::Qubit(0)))],
                     if_zero: vec![],
                 }),
-                Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
+                Instruction::H(Single::new(Value::Qubit(0))),
             ],
-            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -408,21 +309,18 @@ mod ir_tests {
     fn test_if_else_continue() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else_continue".to_string(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
-            instructions: vec![
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r0".to_string()),
-                )),
-                Instruction::IfResult(IfResult {
-                    cond: Value::Result("r0".to_string()),
-                    if_one: vec![],
-                    if_zero: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
-                }),
-                Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
-            ],
+            num_qubits: 1,
+            num_results: 1,
             external_functions: vec![],
+            instructions: vec![
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
+                Instruction::IfResult(IfResult {
+                    cond: Value::Result(0),
+                    if_one: vec![],
+                    if_zero: vec![Instruction::X(Single::new(Value::Qubit(0)))],
+                }),
+                Instruction::H(Single::new(Value::Qubit(0))),
+            ],
         };
 
         check_or_save_reference_ir(&model)
@@ -432,21 +330,18 @@ mod ir_tests {
     fn test_if_then_else_continue() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_else_continue".to_string(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
-            instructions: vec![
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r0".to_string()),
-                )),
-                Instruction::IfResult(IfResult {
-                    cond: Value::Result("r0".to_string()),
-                    if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
-                    if_zero: vec![Instruction::Y(Single::new(Value::Qubit("q0".to_string())))],
-                }),
-                Instruction::H(Single::new(Value::Qubit("q0".to_string()))),
-            ],
+            num_qubits: 1,
+            num_results: 1,
             external_functions: vec![],
+            instructions: vec![
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
+                Instruction::IfResult(IfResult {
+                    cond: Value::Result(0),
+                    if_one: vec![Instruction::X(Single::new(Value::Qubit(0)))],
+                    if_zero: vec![Instruction::Y(Single::new(Value::Qubit(0)))],
+                }),
+                Instruction::H(Single::new(Value::Qubit(0))),
+            ],
         };
 
         check_or_save_reference_ir(&model)
@@ -456,28 +351,22 @@ mod ir_tests {
     fn test_if_then_then() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_then".to_string(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 2)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            num_qubits: 1,
+            num_results: 2,
+            external_functions: vec![],
             instructions: vec![
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r0".to_string()),
-                )),
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r1".to_string()),
-                )),
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(1))),
                 Instruction::IfResult(IfResult {
-                    cond: Value::Result("r0".to_string()),
+                    cond: Value::Result(0),
                     if_one: vec![Instruction::IfResult(IfResult {
-                        cond: Value::Result("r1".to_string()),
-                        if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                        cond: Value::Result(1),
+                        if_one: vec![Instruction::X(Single::new(Value::Qubit(0)))],
                         if_zero: vec![],
                     })],
                     if_zero: vec![],
                 }),
             ],
-            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -487,28 +376,22 @@ mod ir_tests {
     fn test_if_else_else() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else_else".to_string(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 2)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            num_qubits: 1,
+            num_results: 2,
+            external_functions: vec![],
             instructions: vec![
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r0".to_string()),
-                )),
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r1".to_string()),
-                )),
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(1))),
                 Instruction::IfResult(IfResult {
-                    cond: Value::Result("r0".to_string()),
+                    cond: Value::Result(0),
                     if_one: vec![],
                     if_zero: vec![Instruction::IfResult(IfResult {
-                        cond: Value::Result("r1".to_string()),
+                        cond: Value::Result(1),
                         if_one: vec![],
-                        if_zero: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                        if_zero: vec![Instruction::X(Single::new(Value::Qubit(0)))],
                     })],
                 }),
             ],
-            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -518,28 +401,22 @@ mod ir_tests {
     fn test_if_then_else() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_else".to_string(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 2)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            num_qubits: 1,
+            num_results: 2,
+            external_functions: vec![],
             instructions: vec![
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r0".to_string()),
-                )),
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r1".to_string()),
-                )),
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(1))),
                 Instruction::IfResult(IfResult {
-                    cond: Value::Result("r0".to_string()),
+                    cond: Value::Result(0),
                     if_one: vec![Instruction::IfResult(IfResult {
-                        cond: Value::Result("r1".to_string()),
+                        cond: Value::Result(1),
                         if_one: vec![],
-                        if_zero: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                        if_zero: vec![Instruction::X(Single::new(Value::Qubit(0)))],
                     })],
                     if_zero: vec![],
                 }),
             ],
-            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -549,28 +426,22 @@ mod ir_tests {
     fn test_if_else_then() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else_then".to_string(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 2)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
+            num_qubits: 1,
+            num_results: 2,
+            external_functions: vec![],
             instructions: vec![
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r0".to_string()),
-                )),
-                Instruction::M(Measured::new(
-                    Value::Qubit("q0".to_string()),
-                    Value::Result("r1".to_string()),
-                )),
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
+                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(1))),
                 Instruction::IfResult(IfResult {
-                    cond: Value::Result("r0".to_string()),
+                    cond: Value::Result(0),
                     if_one: vec![],
                     if_zero: vec![Instruction::IfResult(IfResult {
-                        cond: Value::Result("r1".to_string()),
-                        if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
+                        cond: Value::Result(1),
+                        if_one: vec![Instruction::X(Single::new(Value::Qubit(0)))],
                         if_zero: vec![],
                     })],
                 }),
             ],
-            external_functions: vec![],
         };
 
         check_or_save_reference_ir(&model)
@@ -580,35 +451,47 @@ mod ir_tests {
     fn test_allows_unmeasured_result_condition() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_allows_unmeasured_result_condition".to_string(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
-            instructions: vec![Instruction::IfResult(IfResult {
-                cond: Value::Result("r0".to_string()),
-                if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
-                if_zero: vec![Instruction::H(Single::new(Value::Qubit("q0".to_string())))],
-            })],
+            num_qubits: 1,
+            num_results: 1,
             external_functions: vec![],
+            instructions: vec![Instruction::IfResult(IfResult {
+                cond: Value::Result(0),
+                if_one: vec![Instruction::X(Single::new(Value::Qubit(0)))],
+                if_zero: vec![Instruction::H(Single::new(Value::Qubit(0)))],
+            })],
         };
 
         check_or_save_reference_ir(&model)
     }
 
     #[test]
-    #[should_panic(expected = "Result r1 not found.")]
-    fn test_panics_if_result_not_found() {
+    fn test_allows_result_out_of_range() -> Result<(), String> {
         let model = SemanticModel {
-            name: "test_panics_if_result_not_found".to_string(),
-            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
-            instructions: vec![Instruction::IfResult(IfResult {
-                cond: Value::Result("r1".to_string()),
-                if_one: vec![Instruction::X(Single::new(Value::Qubit("q0".to_string())))],
-                if_zero: vec![Instruction::H(Single::new(Value::Qubit("q0".to_string())))],
-            })],
+            name: "test_allows_result_out_of_range".to_string(),
+            num_qubits: 1,
+            num_results: 1,
             external_functions: vec![],
+            instructions: vec![Instruction::IfResult(IfResult {
+                cond: Value::Result(1),
+                if_one: vec![Instruction::X(Single::new(Value::Qubit(0)))],
+                if_zero: vec![Instruction::H(Single::new(Value::Qubit(0)))],
+            })],
         };
 
-        check_or_save_reference_ir(&model).unwrap();
+        check_or_save_reference_ir(&model)
+    }
+
+    #[test]
+    fn test_allows_qubit_out_of_range() -> Result<(), String> {
+        let model = SemanticModel {
+            name: "test_allows_qubit_out_of_range".to_string(),
+            num_qubits: 1,
+            num_results: 0,
+            external_functions: vec![],
+            instructions: vec![Instruction::X(Single::new(Value::Qubit(1)))],
+        };
+
+        check_or_save_reference_ir(&model)
     }
 
     #[test]
@@ -618,20 +501,8 @@ mod ir_tests {
 
         check_or_save_reference_ir(&SemanticModel {
             name: "test_call_variable".to_string(),
-            registers: vec![],
-            qubits: vec![],
-            instructions: vec![
-                Instruction::Call(Call {
-                    name: "foo".to_string(),
-                    args: vec![],
-                    result: Some(x),
-                }),
-                Instruction::Call(Call {
-                    name: "bar".to_string(),
-                    args: vec![Value::Variable(x)],
-                    result: None,
-                }),
-            ],
+            num_qubits: 0,
+            num_results: 0,
             external_functions: vec![
                 (
                     "foo".to_string(),
@@ -647,6 +518,18 @@ mod ir_tests {
                         result: Box::new(Type::Void),
                     },
                 ),
+            ],
+            instructions: vec![
+                Instruction::Call(Call {
+                    name: "foo".to_string(),
+                    args: vec![],
+                    result: Some(x),
+                }),
+                Instruction::Call(Call {
+                    name: "bar".to_string(),
+                    args: vec![Value::Variable(x)],
+                    result: None,
+                }),
             ],
         })
     }
@@ -712,9 +595,8 @@ mod ir_tests {
 
         check_or_save_reference_ir(&SemanticModel {
             name: "test_int_binary_operators".to_string(),
-            registers: vec![],
-            qubits: vec![],
-            instructions,
+            num_qubits: 0,
+            num_results: 0,
             external_functions: vec![
                 (
                     "source".to_string(),
@@ -738,6 +620,7 @@ mod ir_tests {
                     },
                 ),
             ],
+            instructions,
         })
     }
 }

@@ -64,9 +64,7 @@ pub fn bitcode_to_ir(
 #[cfg(test)]
 mod module_conversion_tests {
     use super::{
-        interop::{
-            ClassicalRegister, Instruction, Measured, QuantumRegister, SemanticModel, Value,
-        },
+        interop::{Instruction, Measured, SemanticModel, Value},
         *,
     };
     use crate::generation::emit;
@@ -74,13 +72,13 @@ mod module_conversion_tests {
     fn get_model(name: String) -> SemanticModel {
         SemanticModel {
             name,
-            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
-            instructions: vec![Instruction::M(Measured::new(
-                Value::Qubit("q0".to_string()),
-                Value::Result("r0".to_string()),
-            ))],
+            num_qubits: 1,
+            num_results: 1,
             external_functions: vec![],
+            instructions: vec![Instruction::M(Measured::new(
+                Value::Qubit(0),
+                Value::Result(0),
+            ))],
         }
     }
 

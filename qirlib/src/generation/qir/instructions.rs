@@ -10,7 +10,10 @@ use crate::{
         },
     },
 };
-use inkwell::values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, IntValue};
+use inkwell::{
+    values::{BasicMetadataValueEnum, FunctionValue, IntValue, PointerValue},
+    AddressSpace,
+};
 
 pub(crate) fn emit<'ctx>(
     generator: &CodeGenerator<'ctx>,
@@ -83,7 +86,7 @@ pub(crate) fn emit<'ctx>(
         }
         Instruction::BinaryOp(op) => emit_binary_op(generator, env, op),
         Instruction::Call(call) => emit_call(generator, env, call),
-        Instruction::If(if_) => emit_if_bool(generator, env, entry_point, if_),
+        Instruction::If(if_bool) => emit_if_bool(generator, env, entry_point, if_bool),
         Instruction::IfResult(if_result) => emit_if_result(generator, env, entry_point, if_result),
     }
 }
@@ -167,15 +170,15 @@ fn emit_if_bool<'ctx>(
     generator: &CodeGenerator<'ctx>,
     env: &mut Environment<'ctx>,
     entry_point: FunctionValue,
-    if_: &If,
+    if_bool: &If,
 ) {
     emit_if(
         generator,
         env,
         entry_point,
-        get_value(generator, env, &if_.cond).into_int_value(),
-        &if_.if_true,
-        &if_.if_false,
+        get_value(generator, env, &if_bool.cond).into_int_value(),
+        &if_bool.if_true,
+        &if_bool.if_false,
     );
 }
 
@@ -244,8 +247,8 @@ fn get_value<'ctx>(
             .const_int(i.value(), false)
             .into(),
         &Value::Double(d) => generator.f64_to_f64(d),
-        Value::Qubit(q) => get_qubit(env, q).into(),
-        Value::Result(r) => get_result(env, r).into(),
+        &Value::Qubit(id) => get_qubit(generator, id).into(),
+        &Value::Result(id) => get_result(generator, id).into(),
         &Value::Variable(v) => env
             .variable(v)
             .unwrap_or_else(|| panic!("Variable {:?} not found.", v))
@@ -253,27 +256,16 @@ fn get_value<'ctx>(
     }
 }
 
-/// # Panics
-///
-/// Panics if the qubit name doesn't exist
-fn get_qubit<'ctx>(env: &Environment<'ctx>, name: &str) -> BasicValueEnum<'ctx> {
-    // TODO: Panicking can be unfriendly to Python clients.
-    // See: https://github.com/qir-alliance/pyqir/issues/31
-    env.qubit(name)
-        .unwrap_or_else(|| panic!("Qubit {} not found.", name))
+fn get_qubit<'ctx>(generator: &CodeGenerator<'ctx>, id: u64) -> PointerValue<'ctx> {
+    let value = generator.u64_to_i64(id).into_int_value();
+    let ty = generator.qubit_type().ptr_type(AddressSpace::Generic);
+    generator.builder.build_int_to_ptr(value, ty, "")
 }
 
-/// Gets the most recent value of a result name. Defaults to zero if the result has been declared
-/// but not yet measured.
-///
-/// # Panics
-///
-/// Panics if the result name has not been declared.
-fn get_result<'ctx>(env: &Environment<'ctx>, name: &str) -> BasicValueEnum<'ctx> {
-    // TODO: Panicking can be unfriendly to Python clients.
-    // See: https://github.com/qir-alliance/pyqir/issues/31
-    env.result(name)
-        .unwrap_or_else(|| panic!("Result {} not found.", name))
+fn get_result<'ctx>(generator: &CodeGenerator<'ctx>, id: u64) -> PointerValue<'ctx> {
+    let value = generator.u64_to_i64(id).into_int_value();
+    let ty = generator.result_type().ptr_type(AddressSpace::Generic);
+    generator.builder.build_int_to_ptr(value, ty, "")
 }
 
 fn read_result<'ctx>(
