@@ -139,14 +139,19 @@ fn write_instructions<'ctx>(
 }
 
 #[cfg(test)]
-mod allocation_tests {
+mod tests {
     use crate::generation::{
         emit,
-        interop::{Instruction, Measured, SemanticModel, Single, Value},
+        interop::{
+            BinaryKind, BinaryOp, Call, IfResult, Instruction, IntPredicate, Measured,
+            SemanticModel, Single, Type, Value, Variable,
+        },
     };
+    use normalize_line_endings::normalized;
+    use std::{env, fs, path::PathBuf};
 
     #[test]
-    fn when_no_qubits_or_registers_declared_then_only_entypoint_attribute_is_emitted(
+    fn when_no_qubits_or_results_declared_then_only_entypoint_attribute_is_emitted(
     ) -> Result<(), String> {
         let model = SemanticModel {
             name: "test".to_owned(),
@@ -161,7 +166,7 @@ mod allocation_tests {
     }
 
     #[test]
-    fn when_no_registers_declared_then_attribute_is_omitted() -> Result<(), String> {
+    fn when_no_results_declared_then_attribute_is_omitted() -> Result<(), String> {
         let model = SemanticModel {
             name: "test".to_owned(),
             num_qubits: 1,
@@ -189,7 +194,7 @@ mod allocation_tests {
     }
 
     #[test]
-    fn when_qubits_and_registers_declared_then_required_attribute_are_emitted() -> Result<(), String>
+    fn when_qubits_and_results_declared_then_required_attribute_are_emitted() -> Result<(), String>
     {
         let model = SemanticModel {
             name: "test".to_owned(),
@@ -207,22 +212,6 @@ mod allocation_tests {
         ));
         Ok(())
     }
-}
-
-/// These tests compare generated IR against reference files in the "resources/tests" folder. If
-/// changes to code generation break the tests:
-///
-/// 1. Run the tests with the `PYQIR_TEST_SAVE_REFERENCES` environment variable set to regenerate
-///    the reference files.
-/// 2. Review the changes and make sure they look reasonable.
-/// 3. Unset the environment variable and run the tests again to confirm that they pass.
-#[cfg(test)]
-mod ir_tests {
-    use super::test_utils::check_or_save_reference_ir;
-    use crate::generation::interop::{
-        BinaryKind, BinaryOp, Call, IfResult, Instruction, IntPredicate, Measured, SemanticModel,
-        Single, Type, Value, Variable,
-    };
 
     #[test]
     fn test_empty_if() -> Result<(), String> {
@@ -623,17 +612,17 @@ mod ir_tests {
             instructions,
         })
     }
-}
 
-#[cfg(test)]
-mod test_utils {
-    use crate::generation::{emit, interop::SemanticModel};
-    use normalize_line_endings::normalized;
-    use std::{env, fs, path::PathBuf};
+    /// Compares generated IR against reference files in the "resources/tests" folder. If changes
+    /// to code generation break the tests:
+    ///
+    /// 1. Run the tests with the `PYQIR_TEST_SAVE_REFERENCES` environment variable set to
+    ///    regenerate the reference files.
+    /// 2. Review the changes and make sure they look reasonable.
+    /// 3. Unset the environment variable and run the tests again to confirm that they pass.
+    fn check_or_save_reference_ir(model: &SemanticModel) -> Result<(), String> {
+        const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
 
-    const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
-
-    pub(crate) fn check_or_save_reference_ir(model: &SemanticModel) -> Result<(), String> {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("resources");
         path.push("tests");
