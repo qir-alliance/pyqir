@@ -11,7 +11,7 @@ use crate::{
     },
 };
 use inkwell::{
-    values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, IntValue, PointerValue},
+    values::{BasicMetadataValueEnum, FunctionValue, IntValue},
     AddressSpace,
 };
 
@@ -189,11 +189,12 @@ fn emit_if_result<'ctx>(
     if_result: &IfResult,
 ) {
     let result = get_value(generator, env, &if_result.cond);
+    let cond = generator.emit_call_with_return(generator.qis_read_result(), &[result], "");
     emit_if(
         generator,
         env,
         entry_point,
-        read_result(generator, result).into_int_value(),
+        cond.into_int_value(),
         &if_result.if_one,
         &if_result.if_zero,
     );
@@ -245,30 +246,19 @@ fn get_value<'ctx>(
             .const_int(i.value(), false)
             .into(),
         &Value::Double(d) => generator.f64_to_f64(d),
-        &Value::Qubit(id) => get_qubit(generator, id).into(),
-        &Value::Result(id) => get_result(generator, id).into(),
+        &Value::Qubit(id) => {
+            let value = generator.u64_to_i64(id).into_int_value();
+            let ty = generator.qubit_type().ptr_type(AddressSpace::Generic);
+            generator.builder.build_int_to_ptr(value, ty, "").into()
+        }
+        &Value::Result(id) => {
+            let value = generator.u64_to_i64(id).into_int_value();
+            let ty = generator.result_type().ptr_type(AddressSpace::Generic);
+            generator.builder.build_int_to_ptr(value, ty, "").into()
+        }
         &Value::Variable(v) => env
             .variable(v)
             .unwrap_or_else(|| panic!("Variable {:?} not found.", v))
             .into(),
     }
-}
-
-fn get_qubit<'ctx>(generator: &CodeGenerator<'ctx>, id: u64) -> PointerValue<'ctx> {
-    let value = generator.u64_to_i64(id).into_int_value();
-    let ty = generator.qubit_type().ptr_type(AddressSpace::Generic);
-    generator.builder.build_int_to_ptr(value, ty, "")
-}
-
-fn get_result<'ctx>(generator: &CodeGenerator<'ctx>, id: u64) -> PointerValue<'ctx> {
-    let value = generator.u64_to_i64(id).into_int_value();
-    let ty = generator.result_type().ptr_type(AddressSpace::Generic);
-    generator.builder.build_int_to_ptr(value, ty, "")
-}
-
-fn read_result<'ctx>(
-    generator: &CodeGenerator<'ctx>,
-    result: BasicMetadataValueEnum<'ctx>,
-) -> BasicValueEnum<'ctx> {
-    generator.emit_call_with_return(generator.qis_read_result(), &[result], "equal")
 }
