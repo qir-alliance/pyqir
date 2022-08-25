@@ -8,27 +8,27 @@ define void @main() #0 {
 entry:
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 1 to %Result*))
-  %equal = call i1 @__quantum__qis__read_result__body(%Result* null)
-  br i1 %equal, label %then, label %else
+  %0 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  br i1 %0, label %then, label %else
 
 then:                                             ; preds = %entry
   br label %continue
 
 else:                                             ; preds = %entry
-  %equal1 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 1 to %Result*))
-  br i1 %equal1, label %then2, label %else3
+  %1 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 1 to %Result*))
+  br i1 %1, label %then1, label %else2
 
-continue:                                         ; preds = %continue4, %then
+continue:                                         ; preds = %continue3, %then
   ret void
 
-then2:                                            ; preds = %else
-  br label %continue4
+then1:                                            ; preds = %else
+  br label %continue3
 
-else3:                                            ; preds = %else
+else2:                                            ; preds = %else
   call void @__quantum__qis__x__body(%Qubit* null)
-  br label %continue4
+  br label %continue3
 
-continue4:                                        ; preds = %else3, %then2
+continue3:                                        ; preds = %else2, %then1
   br label %continue
 }
 

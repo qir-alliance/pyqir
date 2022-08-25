@@ -7,8 +7,8 @@ source_filename = "test_if_else"
 define void @main() #0 {
 entry:
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
-  %equal = call i1 @__quantum__qis__read_result__body(%Result* null)
-  br i1 %equal, label %then, label %else
+  %0 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  br i1 %0, label %then, label %else
 
 then:                                             ; preds = %entry
   br label %continue

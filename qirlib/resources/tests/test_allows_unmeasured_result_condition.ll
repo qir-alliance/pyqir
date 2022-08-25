@@ -6,8 +6,8 @@ source_filename = "test_allows_unmeasured_result_condition"
 
 define void @main() #0 {
 entry:
-  %equal = call i1 @__quantum__qis__read_result__body(%Result* null)
-  br i1 %equal, label %then, label %else
+  %0 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  br i1 %0, label %then, label %else
 
 then:                                             ; preds = %entry
   call void @__quantum__qis__x__body(%Qubit* null)
