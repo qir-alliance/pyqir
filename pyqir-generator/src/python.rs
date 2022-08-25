@@ -331,6 +331,8 @@ impl Builder {
 struct SimpleModule {
     model: SemanticModel,
     builder: Py<Builder>,
+    num_qubits: u64,
+    num_results: u64,
 }
 
 #[pymethods]
@@ -339,26 +341,28 @@ impl SimpleModule {
     fn new(py: Python, name: String, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
         let model = SemanticModel {
             name,
-            num_qubits,
-            num_results,
             external_functions: vec![],
             instructions: vec![],
         };
 
-        let builder = Py::new(py, Builder::new())?;
-        Ok(SimpleModule { model, builder })
+        Ok(SimpleModule {
+            model,
+            builder: Py::new(py, Builder::new())?,
+            num_qubits,
+            num_results,
+        })
     }
 
     #[getter]
     fn qubits(&self) -> Vec<Value> {
-        (0..self.model.num_qubits)
+        (0..self.num_qubits)
             .map(|id| Value(interop::Value::Qubit(id)))
             .collect()
     }
 
     #[getter]
     fn results(&self) -> Vec<Value> {
-        (0..self.model.num_results)
+        (0..self.num_results)
             .map(|id| Value(interop::Value::Result(id)))
             .collect()
     }

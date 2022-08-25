@@ -72,8 +72,6 @@ mod module_conversion_tests {
     fn get_model(name: String) -> SemanticModel {
         SemanticModel {
             name,
-            num_qubits: 1,
-            num_results: 1,
             external_functions: vec![],
             instructions: vec![Instruction::M(Measured::new(
                 Value::Qubit(0),

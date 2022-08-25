@@ -24,4 +24,4 @@ declare void @__quantum__qis__mz__body(%Qubit*, %Result*)
 
 declare i1 @__quantum__qis__read_result__body(%Result*)
 
-attributes #0 = { "EntryPoint" "requiredQubits"="1" "requiredResults"="1" }
+attributes #0 = { "EntryPoint" }
