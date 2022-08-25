@@ -269,16 +269,16 @@ function Build-PyQIR([string]$project) {
         }
         Invoke-LoggedCommand {
             exec {
-                maturin build --release $build_extra_args --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
-            }
-            exec {
-                maturin develop --release --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
-            }
-            exec {
                 & $python -m pip install -r requirements-dev.txt
             }
             exec {
-                & $python -m pytest
+                maturin build --release $build_extra_args --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
+            }
+            exec {
+                & $python -m pip install --force-reinstall --find-links (Join-Path $repo.root "target" "wheels") $project
+            }
+            exec {
+                pytest
             }
         }
     }
