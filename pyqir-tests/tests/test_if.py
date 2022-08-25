@@ -120,12 +120,8 @@ def _result_branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
     ]
 
 
-def _bool_branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
-    return [lambda: _BoolBrancher(num_queries)]
-
-
 def _branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
-    return _result_branchers(num_queries) + _bool_branchers(num_queries)
+    return _result_branchers(num_queries) + [lambda: _BoolBrancher(num_queries)]
 
 
 @pytest.fixture
@@ -367,8 +363,8 @@ def test_results_default_to_zero_if_not_measured(brancher: _Brancher) -> None:
     assert logger.instructions == ["h qubit[0]"]
 
 
-@pytest.mark.parametrize("brancher", _bool_branchers(1), indirect=True)
-def test_icmp_if_true(brancher: _Brancher) -> None:
+def test_icmp_if_true() -> None:
+    brancher = _BoolBrancher(1)
     x = brancher.oracle()
     module = brancher.module
     cond = module.builder.icmp(IntPredicate.EQ, x, const(types.Int(1), 0))
@@ -385,8 +381,8 @@ def test_icmp_if_true(brancher: _Brancher) -> None:
     assert logger.instructions == ["m qubit[0] => out[0]", "x qubit[0]"]
 
 
-@pytest.mark.parametrize("brancher", _bool_branchers(1), indirect=True)
-def test_icmp_if_false(brancher: _Brancher) -> None:
+def test_icmp_if_false() -> None:
+    brancher = _BoolBrancher(1)
     x = brancher.oracle()
     module = brancher.module
     cond = module.builder.icmp(IntPredicate.EQ, x, const(types.Int(1), 0))
