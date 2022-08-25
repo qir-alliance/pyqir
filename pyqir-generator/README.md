@@ -36,8 +36,8 @@ qis = BasicQisBuilder(module.builder)
 qis.h(module.qubits[0])
 qis.cx(module.qubits[0], module.qubits[1])
 
-qis.m(module.qubits[0], module.results[0])
-qis.m(module.qubits[1], module.results[1])
+qis.mz(module.qubits[0], module.results[0])
+qis.mz(module.qubits[1], module.results[1])
 
 print(module.ir())
 ```
@@ -55,8 +55,8 @@ define void @main() #0 {
 entry:
   call void @__quantum__qis__h__body(%Qubit* null)
   call void @__quantum__qis__cnot__body(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*))
-  %result0 = call %Result* @__quantum__qis__m__body(%Qubit* null)
-  %result1 = call %Result* @__quantum__qis__m__body(%Qubit* inttoptr (i64 1 to %Qubit*))
+  call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
+  call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 1 to %Qubit*), %Result* inttoptr (i64 1 to %Result*))
   ret void
 }
 
@@ -64,9 +64,9 @@ declare void @__quantum__qis__h__body(%Qubit*)
 
 declare void @__quantum__qis__cnot__body(%Qubit*, %Qubit*)
 
-declare %Result* @__quantum__qis__m__body(%Qubit*)
+declare void @__quantum__qis__mz__body(%Qubit*, %Result*)
 
-attributes #0 = { "EntryPoint" "requiredQubits"="2" }
+attributes #0 = { "EntryPoint" "requiredQubits"="2" "requiredResults"="2" }
 ```
 
 ## Contributing
@@ -90,6 +90,4 @@ See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.h
 
 ## Current Limitations
 
-- Classical computation and control flow are not yet fully supported.
-- Only branching based on measurement results is currently possible.
-- See [issue #2: Support control flow and classical computation in PyQIR Generator](https://github.com/qir-alliance/pyqir/issues/2).
+[Loops are not supported.](https://github.com/qir-alliance/pyqir/issues/2)
