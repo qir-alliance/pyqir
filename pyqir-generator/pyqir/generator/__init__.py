@@ -15,7 +15,6 @@ from pyqir.generator._native import (
     BasicQisBuilder as BasicQisBuilder,
     Builder as Builder,
     Function as Function,
-    ResultRef as ResultRef,
     SimpleModule as SimpleModule,
     Value as Value,
     const as const,

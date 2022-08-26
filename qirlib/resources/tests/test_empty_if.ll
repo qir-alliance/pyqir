@@ -1,15 +1,14 @@
 ; ModuleID = 'test_empty_if'
 source_filename = "test_empty_if"
 
-%Result = type opaque
 %Qubit = type opaque
+%Result = type opaque
 
 define void @main() #0 {
 entry:
-  %r0 = call %Result* @__quantum__qis__m__body(%Qubit* null)
-  %one = call %Result* @__quantum__rt__result_get_one()
-  %equal = call i1 @__quantum__rt__result_equal(%Result* %r0, %Result* %one)
-  br i1 %equal, label %then, label %else
+  call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
+  %0 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  br i1 %0, label %then, label %else
 
 then:                                             ; preds = %entry
   br label %continue
@@ -21,10 +20,8 @@ continue:                                         ; preds = %else, %then
   ret void
 }
 
-declare %Result* @__quantum__qis__m__body(%Qubit*)
+declare void @__quantum__qis__mz__body(%Qubit*, %Result*)
 
-declare %Result* @__quantum__rt__result_get_one()
+declare i1 @__quantum__qis__read_result__body(%Result*)
 
-declare i1 @__quantum__rt__result_equal(%Result*, %Result*)
-
-attributes #0 = { "EntryPoint" "requiredQubits"="1" }
+attributes #0 = { "EntryPoint" }

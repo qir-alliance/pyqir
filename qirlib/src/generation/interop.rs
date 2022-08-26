@@ -1,48 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct QuantumRegister {
-    pub name: String,
-    pub index: u64,
-}
-
-impl QuantumRegister {
-    #[must_use]
-    pub fn new(name: String, index: u64) -> Self {
-        QuantumRegister { name, index }
-    }
-
-    #[must_use]
-    pub fn as_register(&self) -> Register {
-        Register::Quantum(self.clone())
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct ClassicalRegister {
-    pub name: String,
-    pub size: u64,
-}
-
-impl ClassicalRegister {
-    #[must_use]
-    pub fn new(name: String, size: u64) -> Self {
-        ClassicalRegister { name, size }
-    }
-
-    #[must_use]
-    pub fn as_register(&self) -> Register {
-        Register::Classical(self.clone())
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Register {
-    Quantum(QuantumRegister),
-    Classical(ClassicalRegister),
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Controlled {
     pub control: Value,
@@ -59,12 +17,12 @@ impl Controlled {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Measured {
     pub qubit: Value,
-    pub target: String,
+    pub target: Value,
 }
 
 impl Measured {
     #[must_use]
-    pub fn new(qubit: Value, target: String) -> Self {
+    pub fn new(qubit: Value, target: Value) -> Self {
         Measured { qubit, target }
     }
 }
@@ -180,7 +138,7 @@ pub struct If {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct IfResult {
-    pub cond: String,
+    pub cond: Value,
     pub if_one: Vec<Instruction>,
     pub if_zero: Vec<Instruction>,
 }
@@ -204,8 +162,8 @@ pub enum Type {
 pub enum Value {
     Int(Int),
     Double(f64),
-    Qubit(String),
-    Result(String),
+    Qubit(u64),
+    Result(u64),
     Variable(Variable),
 }
 
@@ -259,36 +217,6 @@ impl Int {
 #[derive(Clone)]
 pub struct SemanticModel {
     pub name: String,
-    pub registers: Vec<ClassicalRegister>,
-    pub qubits: Vec<QuantumRegister>,
-    pub instructions: Vec<Instruction>,
-    pub use_static_qubit_alloc: bool,
-    pub use_static_result_alloc: bool,
     pub external_functions: Vec<(String, Type)>,
-}
-
-impl SemanticModel {
-    #[must_use]
-    pub fn new(name: String) -> Self {
-        SemanticModel {
-            name,
-            registers: vec![],
-            qubits: vec![],
-            instructions: vec![],
-            use_static_qubit_alloc: false,
-            use_static_result_alloc: true,
-            external_functions: vec![],
-        }
-    }
-
-    pub fn add_reg(&mut self, reg: &Register) {
-        match reg {
-            Register::Classical(classical) => self.registers.push(classical.clone()),
-            Register::Quantum(quantum) => self.qubits.push(quantum.clone()),
-        }
-    }
-
-    pub fn add_inst(&mut self, inst: Instruction) {
-        self.instructions.push(inst);
-    }
+    pub instructions: Vec<Instruction>,
 }

@@ -44,10 +44,8 @@ class _Brancher(metaclass=ABCMeta):
 
 
 class _ResultBrancher(_Brancher):
-    def __init__(self, num_queries: int, static_qubits: bool, static_results: bool) -> None:
+    def __init__(self, num_queries: int) -> None:
         self._module = SimpleModule("test_if", num_queries, num_queries)
-        self._module.use_static_qubit_alloc(static_qubits)
-        self._module.use_static_result_alloc(static_results)
         self._index = 0
 
     @property
@@ -58,7 +56,7 @@ class _ResultBrancher(_Brancher):
         i = self._index
         self._index += 1
         qis = BasicQisBuilder(self._module.builder)
-        qis.m(self._module.qubits[i], self._module.results[i])
+        qis.mz(self._module.qubits[i], self._module.results[i])
         return self._module.results[i]
 
     def if_(
@@ -71,9 +69,8 @@ class _ResultBrancher(_Brancher):
 
 
 class _QisResultBrancher(_Brancher):
-    def __init__(self, num_queries: int, static_qubits: bool, static_results: bool) -> None:
-        self._brancher = _ResultBrancher(
-            num_queries, static_qubits, static_results)
+    def __init__(self, num_queries: int) -> None:
+        self._brancher = _ResultBrancher(num_queries)
 
     @property
     def module(self) -> SimpleModule:
@@ -94,8 +91,8 @@ class _QisResultBrancher(_Brancher):
 
 
 class _BoolBrancher(_Brancher):
-    def __init__(self, num_queries: int, static_qubits: bool) -> None:
-        self._brancher = _ResultBrancher(num_queries, static_qubits, True)
+    def __init__(self, num_queries: int) -> None:
+        self._brancher = _ResultBrancher(num_queries)
         self._read_result = self._brancher.module.add_external_function(
             "__quantum__qis__read_result__body", types.Function([types.RESULT], types.BOOL))
 
@@ -118,26 +115,13 @@ class _BoolBrancher(_Brancher):
 
 def _result_branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
     return [
-        lambda: _ResultBrancher(num_queries, False, False),
-        lambda: _ResultBrancher(num_queries, False, True),
-        lambda: _ResultBrancher(num_queries, True, False),
-        lambda: _ResultBrancher(num_queries, True, True),
-        lambda: _QisResultBrancher(num_queries, False, False),
-        lambda: _QisResultBrancher(num_queries, False, True),
-        lambda: _QisResultBrancher(num_queries, True, False),
-        lambda: _QisResultBrancher(num_queries, True, True),
-    ]
-
-
-def _bool_branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
-    return [
-        lambda: _BoolBrancher(num_queries, False),
-        lambda: _BoolBrancher(num_queries, True),
+        lambda: _ResultBrancher(num_queries),
+        lambda: _QisResultBrancher(num_queries),
     ]
 
 
 def _branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
-    return _result_branchers(num_queries) + _bool_branchers(num_queries)
+    return _result_branchers(num_queries) + [lambda: _BoolBrancher(num_queries)]
 
 
 @pytest.fixture
@@ -379,8 +363,8 @@ def test_results_default_to_zero_if_not_measured(brancher: _Brancher) -> None:
     assert logger.instructions == ["h qubit[0]"]
 
 
-@pytest.mark.parametrize("brancher", _bool_branchers(1), indirect=True)
-def test_icmp_if_true(brancher: _Brancher) -> None:
+def test_icmp_if_true() -> None:
+    brancher = _BoolBrancher(1)
     x = brancher.oracle()
     module = brancher.module
     cond = module.builder.icmp(IntPredicate.EQ, x, const(types.Int(1), 0))
@@ -397,8 +381,8 @@ def test_icmp_if_true(brancher: _Brancher) -> None:
     assert logger.instructions == ["m qubit[0] => out[0]", "x qubit[0]"]
 
 
-@pytest.mark.parametrize("brancher", _bool_branchers(1), indirect=True)
-def test_icmp_if_false(brancher: _Brancher) -> None:
+def test_icmp_if_false() -> None:
+    brancher = _BoolBrancher(1)
     x = brancher.oracle()
     module = brancher.module
     cond = module.builder.icmp(IntPredicate.EQ, x, const(types.Int(1), 0))

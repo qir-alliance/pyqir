@@ -79,10 +79,10 @@ class ExternalFunctionsTest(unittest.TestCase):
                 mod.builder.call(f, [value])
                 self.assertIn("call void @test_function(i1 false)", mod.ir())
 
-    def test_call_single_static_result(self) -> None:
+    def test_call_single_result(self) -> None:
         mod = SimpleModule("test", 1, 1)
         qis = BasicQisBuilder(mod.builder)
-        qis.m(mod.qubits[0], mod.results[0])
+        qis.mz(mod.qubits[0], mod.results[0])
 
         f = mod.add_external_function(
             "test_function", types.Function([types.RESULT], types.VOID)
@@ -90,23 +90,11 @@ class ExternalFunctionsTest(unittest.TestCase):
         mod.builder.call(f, [mod.results[0]])
         self.assertIn("call void @test_function(%Result* null)", mod.ir())
 
-    def test_call_single_dynamic_result(self) -> None:
-        mod = SimpleModule("test", 1, 1)
-        mod.use_static_result_alloc(False)
-        qis = BasicQisBuilder(mod.builder)
-        qis.m(mod.qubits[0], mod.results[0])
-
-        f = mod.add_external_function(
-            "test_function", types.Function([types.RESULT], types.VOID)
-        )
-        mod.builder.call(f, [mod.results[0]])
-        self.assertIn("call void @test_function(%Result* %result0)", mod.ir())
-
-    def test_call_two_static_results(self) -> None:
+    def test_call_two_results(self) -> None:
         mod = SimpleModule("test", 1, 2)
         qis = BasicQisBuilder(mod.builder)
-        qis.m(mod.qubits[0], mod.results[0])
-        qis.m(mod.qubits[0], mod.results[1])
+        qis.mz(mod.qubits[0], mod.results[0])
+        qis.mz(mod.qubits[0], mod.results[1])
 
         f = mod.add_external_function(
             "test_function",
@@ -116,24 +104,6 @@ class ExternalFunctionsTest(unittest.TestCase):
 
         self.assertIn(
             "call void @test_function(%Result* inttoptr (i64 1 to %Result*), %Result* null)",
-            mod.ir(),
-        )
-
-    def test_call_two_dynamic_results(self) -> None:
-        mod = SimpleModule("test", 1, 2)
-        mod.use_static_result_alloc(False)
-        qis = BasicQisBuilder(mod.builder)
-        qis.m(mod.qubits[0], mod.results[0])
-        qis.m(mod.qubits[0], mod.results[1])
-
-        f = mod.add_external_function(
-            "test_function",
-            types.Function([types.RESULT, types.RESULT], types.VOID)
-        )
-        mod.builder.call(f, [mod.results[0], mod.results[1]])
-
-        self.assertIn(
-            "call void @test_function(%Result* %result0, %Result* %result1)",
             mod.ir(),
         )
 
@@ -159,11 +129,9 @@ class ExternalFunctionsTest(unittest.TestCase):
     def test_wrong_type_conversion(self) -> None:
         cases: List[Tuple[List[Type], Callable[[SimpleModule], List[Any]]]] = [
             ([types.BOOL], lambda _: ["true"]),
-            ([types.BOOL], lambda mod: [mod.results[0]]),
             ([types.Int(64)], lambda _: [1.23]),
             ([types.Int(64)], lambda _: ["123"]),
             ([types.DOUBLE], lambda _: ["1.23"]),
-            ([types.QUBIT], lambda mod: [mod.results[0]]),
         ]
 
         for param_types, get_args in cases:

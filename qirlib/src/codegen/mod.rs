@@ -16,24 +16,18 @@ use self::{
         cnot_body, cz_body, h_body, m_body, mz_body, reset_body, rx_body, ry_body, rz_body, s_adj,
         s_body, t_adj, t_body, x_body, y_body, z_body,
     },
-    qubits::{emit_allocate_qubit, emit_release_qubit},
-    rt::{qubit_allocate, qubit_release, result_equal, result_get_one, result_get_zero},
     types::{int32, int64, int8, qubit, result},
 };
 
 pub mod basicvalues;
 pub mod calls;
 pub mod qis;
-pub mod qubits;
-pub mod rt;
 pub mod types;
 
 pub struct CodeGenerator<'ctx> {
     pub context: &'ctx inkwell::context::Context,
     pub module: inkwell::module::Module<'ctx>,
     pub builder: inkwell::builder::Builder<'ctx>,
-    pub use_static_qubit_alloc: bool,
-    pub use_static_result_alloc: bool,
 }
 
 impl<'ctx> CodeGenerator<'ctx> {
@@ -43,16 +37,12 @@ impl<'ctx> CodeGenerator<'ctx> {
     pub fn new(
         context: &'ctx inkwell::context::Context,
         module: Module<'ctx>,
-        use_static_qubit_alloc: bool,
-        use_static_result_alloc: bool,
     ) -> Result<Self, String> {
         let builder = context.create_builder();
         Ok(CodeGenerator {
             context,
             module,
             builder,
-            use_static_qubit_alloc,
-            use_static_result_alloc,
         })
     }
 }
@@ -190,38 +180,8 @@ impl<'ctx> CodeGenerator<'ctx> {
 }
 
 impl<'ctx> CodeGenerator<'ctx> {
-    pub fn emit_allocate_qubit(&self, result_name: &str) -> BasicValueEnum<'ctx> {
-        emit_allocate_qubit(self.context, &self.builder, &self.module, result_name)
-    }
-
-    pub fn emit_release_qubit(&self, qubit: BasicValueEnum<'ctx>) -> InstructionValue<'ctx> {
-        emit_release_qubit(self.context, &self.builder, &self.module, qubit)
-    }
-}
-
-impl<'ctx> CodeGenerator<'ctx> {
-    pub fn rt_result_get_zero(&self) -> FunctionValue<'ctx> {
-        result_get_zero(self.context, &self.module)
-    }
-
-    pub fn rt_result_get_one(&self) -> FunctionValue<'ctx> {
-        result_get_one(self.context, &self.module)
-    }
-
-    pub fn rt_result_equal(&self) -> FunctionValue<'ctx> {
-        result_equal(self.context, &self.module)
-    }
-
     pub fn qis_read_result(&self) -> FunctionValue<'ctx> {
         qis::read_result(self.context, &self.module)
-    }
-
-    pub fn rt_qubit_allocate(&self) -> FunctionValue<'ctx> {
-        qubit_allocate(self.context, &self.module)
-    }
-
-    pub fn rt_qubit_release(&self) -> FunctionValue<'ctx> {
-        qubit_release(self.context, &self.module)
     }
 }
 
@@ -272,7 +232,7 @@ mod core_tests {
 
         let context = Context::create();
         let module = context.create_module(name);
-        let generator = CodeGenerator::new(&context, module, false, false).unwrap();
+        let generator = CodeGenerator::new(&context, module).unwrap();
         generator.emit_bitcode(file_path_string.as_str());
 
         let mut emitted_bitcode_file =
@@ -301,7 +261,7 @@ mod types_tests {
     fn qubit_can_be_declared() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module, false, false).unwrap();
+        let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Qubit", generator.qubit_type());
     }
@@ -310,7 +270,7 @@ mod types_tests {
     fn result_can_be_declared() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module, false, false).unwrap();
+        let generator = CodeGenerator::new(&context, module).unwrap();
 
         verify_opaque_struct("Result", generator.result_type());
     }

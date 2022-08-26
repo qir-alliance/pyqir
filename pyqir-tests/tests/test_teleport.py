@@ -2,24 +2,12 @@
 # Licensed under the MIT License.
 
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
-from pyqir.generator import BasicQisBuilder, ResultRef, SimpleModule, Value
-import pytest
+from pyqir.generator import BasicQisBuilder, SimpleModule, Value
 import tempfile
 from typing import List
 
 
-# Combinations of static qubit and result code generation
-# first element => use_static_qubit_alloc
-# second element => use_static_result_alloc
-_STATIC_GENERATOR_VARIATIONS = [
-    [False, False],
-    [False, True],
-    [True, False],
-    [True, True],
-]
-
-
-def _teleport(module: SimpleModule, qubits: List[Value], results: List[ResultRef]) -> None:
+def _teleport(module: SimpleModule, qubits: List[Value], results: List[Value]) -> None:
     msg = qubits[0]
     target = qubits[1]
     register = qubits[2]
@@ -35,11 +23,11 @@ def _teleport(module: SimpleModule, qubits: List[Value], results: List[ResultRef
 
     # Measure the qubits to extract the classical data we need to decode the
     # message by applying the corrections on the target qubit accordingly.
-    qis.m(msg, results[0])
+    qis.mz(msg, results[0])
     qis.reset(msg)
     module.if_result(results[0], one=lambda: qis.z(target))
 
-    qis.m(register, results[1])
+    qis.mz(register, results[1])
     qis.reset(register)
     module.if_result(results[1], one=lambda: qis.x(target))
 
@@ -51,11 +39,8 @@ def _eval(module: SimpleModule, gates: GateSet, results: List[bool]) -> None:
         NonadaptiveEvaluator().eval(f.name, gates, None, results)
 
 
-@pytest.mark.parametrize("matrix", _STATIC_GENERATOR_VARIATIONS)
-def test_teleport_measures_zero_zero(matrix) -> None:
+def test_teleport_measures_zero_zero() -> None:
     module = SimpleModule("teleport00", num_qubits=3, num_results=2)
-    module.use_static_qubit_alloc(matrix[0])
-    module.use_static_result_alloc(matrix[1])
     _teleport(module, module.qubits, module.results)
 
     logger = GateLogger()
@@ -72,11 +57,8 @@ def test_teleport_measures_zero_zero(matrix) -> None:
     ]
 
 
-@pytest.mark.parametrize("matrix", _STATIC_GENERATOR_VARIATIONS)
-def test_teleport_measures_zero_one(matrix) -> None:
+def test_teleport_measures_zero_one() -> None:
     module = SimpleModule("teleport01", num_qubits=3, num_results=2)
-    module.use_static_qubit_alloc(matrix[0])
-    module.use_static_result_alloc(matrix[1])
     _teleport(module, module.qubits, module.results)
 
     logger = GateLogger()
@@ -94,11 +76,8 @@ def test_teleport_measures_zero_one(matrix) -> None:
     ]
 
 
-@pytest.mark.parametrize("matrix", _STATIC_GENERATOR_VARIATIONS)
-def test_teleport_measures_one_zero(matrix) -> None:
+def test_teleport_measures_one_zero() -> None:
     module = SimpleModule("teleport10", num_qubits=3, num_results=2)
-    module.use_static_qubit_alloc(matrix[0])
-    module.use_static_result_alloc(matrix[1])
     _teleport(module, module.qubits, module.results)
 
     logger = GateLogger()
@@ -116,11 +95,8 @@ def test_teleport_measures_one_zero(matrix) -> None:
     ]
 
 
-@pytest.mark.parametrize("matrix", _STATIC_GENERATOR_VARIATIONS)
-def test_teleport_measures_one_one(matrix) -> None:
+def test_teleport_measures_one_one() -> None:
     module = SimpleModule("teleport11", num_qubits=3, num_results=2)
-    module.use_static_qubit_alloc(matrix[0])
-    module.use_static_result_alloc(matrix[1])
     _teleport(module, module.qubits, module.results)
 
     logger = GateLogger()

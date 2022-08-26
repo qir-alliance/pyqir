@@ -4,7 +4,6 @@
 use inkwell::{attributes::AttributeLoc, context::Context, module::Module, values::FunctionValue};
 
 pub mod instructions;
-mod result;
 
 pub(crate) fn create_entry_point<'ctx>(
     context: &'ctx Context,
@@ -28,7 +27,7 @@ mod tests {
     fn entry_point_function_has_correct_signature_and_default_attribute() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module, false, false).unwrap();
+        let generator = CodeGenerator::new(&context, module).unwrap();
 
         let entry_point = create_entry_point(generator.context, &generator.module);
         let entry = generator.context.append_basic_block(entry_point, "entry");

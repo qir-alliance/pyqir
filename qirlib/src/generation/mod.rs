@@ -64,35 +64,25 @@ pub fn bitcode_to_ir(
 #[cfg(test)]
 mod module_conversion_tests {
     use super::{
-        interop::{
-            ClassicalRegister, Instruction, Measured, QuantumRegister, SemanticModel, Value,
-        },
+        interop::{Instruction, Measured, SemanticModel, Value},
         *,
     };
     use crate::generation::emit;
 
-    fn get_model(
-        name: String,
-        use_static_qubit_alloc: bool,
-        use_static_result_alloc: bool,
-    ) -> SemanticModel {
+    fn get_model(name: String) -> SemanticModel {
         SemanticModel {
             name,
-            registers: vec![ClassicalRegister::new("r".to_string(), 1)],
-            qubits: vec![QuantumRegister::new("q".to_string(), 0)],
-            instructions: vec![Instruction::M(Measured::new(
-                Value::Qubit("q0".to_string()),
-                "r0".to_string(),
-            ))],
-            use_static_qubit_alloc,
-            use_static_result_alloc,
             external_functions: vec![],
+            instructions: vec![Instruction::M(Measured::new(
+                Value::Qubit(0),
+                Value::Result(0),
+            ))],
         }
     }
 
     #[test]
     fn ir_round_trip_is_identical() -> Result<(), String> {
-        let model = get_model("test".to_owned(), false, false);
+        let model = get_model("test".to_owned());
         let actual_ir: String = emit::ir(&model)?;
         let bitcode = ir_to_bitcode(actual_ir.as_str(), &None, &None)?;
         let converted_ir = bitcode_to_ir(
@@ -106,7 +96,7 @@ mod module_conversion_tests {
 
     #[test]
     fn module_name_is_normalized() -> Result<(), String> {
-        let model = get_model("tests".to_owned(), false, false);
+        let model = get_model("tests".to_owned());
         let actual_ir: String = emit::ir(&model)?;
         let bitcode = ir_to_bitcode(actual_ir.as_str(), &None, &None)?;
         let converted_ir = bitcode_to_ir(
