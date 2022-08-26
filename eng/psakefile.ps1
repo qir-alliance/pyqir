@@ -258,8 +258,8 @@ task check-environment {
 }
 
 task init -depends check-environment {
-    if ((Test-CI)) {
-        cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12
+    if (Test-CI) {
+        & $python -m pip install maturin==0.12.12
     }
 
     $env:CARGO_EXTRA_ARGS = "-vv --features `"$(Get-LLVMFeatureVersion)`""

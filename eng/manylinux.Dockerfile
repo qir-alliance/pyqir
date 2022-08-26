@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-FROM quay.io/pypa/manylinux2014_x86_64 as base-with-rust
+FROM quay.io/pypa/manylinux2014_x86_64
 
 ARG USERNAME=runner
 ARG USER_UID=1000
@@ -29,23 +29,6 @@ RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME}; \
 WORKDIR /io
 RUN chown ${USER_UID}:${USER_GID} /io
 
-FROM base-with-rust as builder
-
-ARG USERNAME=runner
-ARG USER_UID=1000
-ARG USER_GID=${USER_UID}
-
-USER $USERNAME
-
-# Temporary workaround installing beta for license/notice support
-RUN cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12
-
-FROM base-with-rust
-
-ARG USERNAME=runner
-ARG USER_UID=1000
-ARG USER_GID=${USER_UID}
-
 USER $USERNAME
 
 # Add all supported python versions
@@ -57,7 +40,7 @@ RUN python3.6 -m pip install --no-cache-dir cffi \
     && python3.9 -m pip install --no-cache-dir cffi \
     && python3.10 -m pip install --no-cache-dir cffi
 
-COPY --from=builder ${CARGO_HOME}/bin/maturin /usr/bin/maturin
+RUN python3.10 -m pip install --no-cache-dir maturin==0.12.12
 
 USER root
 
