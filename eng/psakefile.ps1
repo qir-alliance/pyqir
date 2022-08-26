@@ -52,6 +52,7 @@ properties {
     $linux.musllinux_tag = "musllinux_1_2_x86_64_maturin"
     $linux.musllinux_root = "/oi"
 
+    [Diagnostics.CodeAnalysis.SuppressMessage("PSUseDeclaredVarsMoreThanAssignments", "")]
     $wheelhouse = Join-Path $repo.root "target" "wheels" "*.whl"
 }
 
