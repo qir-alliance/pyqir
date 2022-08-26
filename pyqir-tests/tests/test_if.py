@@ -65,29 +65,8 @@ class _ResultBrancher(_Brancher):
         true: Callable[[], None] = lambda: None,
         false: Callable[[], None] = lambda: None,
     ) -> None:
-        self._module.if_result(cond, true, false)
-
-
-class _QisResultBrancher(_Brancher):
-    def __init__(self, num_queries: int) -> None:
-        self._brancher = _ResultBrancher(num_queries)
-
-    @property
-    def module(self) -> SimpleModule:
-        return self._brancher.module
-
-    def oracle(self) -> Any:
-        return self._brancher.oracle()
-
-    def if_(
-        self,
-        cond: Any,
-        true: Callable[[], None] = lambda: None,
-        false: Callable[[], None] = lambda: None,
-    ) -> None:
-        qis = BasicQisBuilder(self._brancher.module.builder)
-        with pytest.deprecated_call():
-            qis.if_result(cond, true, false)
+        qis = BasicQisBuilder(self._module.builder)
+        qis.if_result(cond, true, false)
 
 
 class _BoolBrancher(_Brancher):
@@ -110,18 +89,11 @@ class _BoolBrancher(_Brancher):
         true: Callable[[], None] = lambda: None,
         false: Callable[[], None] = lambda: None,
     ) -> None:
-        self._brancher.module.if_(cond, true, false)
-
-
-def _result_branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
-    return [
-        lambda: _ResultBrancher(num_queries),
-        lambda: _QisResultBrancher(num_queries),
-    ]
+        self._brancher.module.builder.if_(cond, true, false)
 
 
 def _branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
-    return _result_branchers(num_queries) + [lambda: _BoolBrancher(num_queries)]
+    return [lambda: _ResultBrancher(num_queries), lambda: _BoolBrancher(num_queries)]
 
 
 @pytest.fixture
@@ -348,8 +320,8 @@ def test_nested_else_then_if(brancher: _Brancher) -> None:
     ]
 
 
-@pytest.mark.parametrize("brancher", _result_branchers(1), indirect=True)
-def test_results_default_to_zero_if_not_measured(brancher: _Brancher) -> None:
+def test_results_default_to_zero_if_not_measured() -> None:
+    brancher = _ResultBrancher(1)
     qis = BasicQisBuilder(brancher.module.builder)
 
     brancher.if_(
@@ -397,3 +369,39 @@ def test_icmp_if_false() -> None:
     logger = GateLogger()
     _eval(brancher.module, logger, [True])
     assert logger.instructions == ["m qubit[0] => out[0]", "h qubit[0]"]
+
+
+@pytest.mark.parametrize("result", [True, False])
+def test_arithmetic_in_branch(result: bool) -> None:
+    brancher = _BoolBrancher(1)
+    cond = brancher.oracle()
+    module = brancher.module
+    qis = BasicQisBuilder(module.builder)
+    i32 = types.Int(32)
+
+    def true():
+        four = module.builder.add(const(i32, 2), const(i32, 2))
+        cond = module.builder.icmp(IntPredicate.EQ, four, const(i32, 4))
+        module.builder.if_(cond, lambda: qis.x(module.qubits[0]))
+
+    brancher.if_(cond, true)
+
+    logger = GateLogger()
+    _eval(brancher.module, logger, [result])
+    expected = ["m qubit[0] => out[0]"] + (["x qubit[0]"] if result else [])
+    assert logger.instructions == expected
+
+
+@pytest.mark.parametrize("result", [True, False])
+def test_call_in_branch(result: bool) -> None:
+    brancher = _BoolBrancher(1)
+    module = brancher.module
+    x = module.add_external_function(
+        "__quantum__qis__x__body", types.Function([types.QUBIT], types.VOID))
+    cond = brancher.oracle()
+    brancher.if_(cond, lambda: module.builder.call(x, [module.qubits[0]]))
+
+    logger = GateLogger()
+    _eval(brancher.module, logger, [result])
+    expected = ["m qubit[0] => out[0]"] + (["x qubit[0]"] if result else [])
+    assert logger.instructions == expected

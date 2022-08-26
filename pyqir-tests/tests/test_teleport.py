@@ -7,13 +7,12 @@ import tempfile
 from typing import List
 
 
-def _teleport(module: SimpleModule, qubits: List[Value], results: List[Value]) -> None:
+def _teleport(qis: BasicQisBuilder, qubits: List[Value], results: List[Value]) -> None:
     msg = qubits[0]
     target = qubits[1]
     register = qubits[2]
 
     # Create some entanglement that we can use to send our message.
-    qis = BasicQisBuilder(module.builder)
     qis.h(register)
     qis.cx(register, target)
 
@@ -25,11 +24,11 @@ def _teleport(module: SimpleModule, qubits: List[Value], results: List[Value]) -
     # message by applying the corrections on the target qubit accordingly.
     qis.mz(msg, results[0])
     qis.reset(msg)
-    module.if_result(results[0], one=lambda: qis.z(target))
+    qis.if_result(results[0], one=lambda: qis.z(target))
 
     qis.mz(register, results[1])
     qis.reset(register)
-    module.if_result(results[1], one=lambda: qis.x(target))
+    qis.if_result(results[1], one=lambda: qis.x(target))
 
 
 def _eval(module: SimpleModule, gates: GateSet, results: List[bool]) -> None:
@@ -41,7 +40,8 @@ def _eval(module: SimpleModule, gates: GateSet, results: List[bool]) -> None:
 
 def test_teleport_measures_zero_zero() -> None:
     module = SimpleModule("teleport00", num_qubits=3, num_results=2)
-    _teleport(module, module.qubits, module.results)
+    qis = BasicQisBuilder(module.builder)
+    _teleport(qis, module.qubits, module.results)
 
     logger = GateLogger()
     _eval(module, logger, [False, False])
@@ -59,7 +59,8 @@ def test_teleport_measures_zero_zero() -> None:
 
 def test_teleport_measures_zero_one() -> None:
     module = SimpleModule("teleport01", num_qubits=3, num_results=2)
-    _teleport(module, module.qubits, module.results)
+    qis = BasicQisBuilder(module.builder)
+    _teleport(qis, module.qubits, module.results)
 
     logger = GateLogger()
     _eval(module, logger, [False, True])
@@ -78,7 +79,8 @@ def test_teleport_measures_zero_one() -> None:
 
 def test_teleport_measures_one_zero() -> None:
     module = SimpleModule("teleport10", num_qubits=3, num_results=2)
-    _teleport(module, module.qubits, module.results)
+    qis = BasicQisBuilder(module.builder)
+    _teleport(qis, module.qubits, module.results)
 
     logger = GateLogger()
     _eval(module, logger, [True, False])
@@ -97,7 +99,8 @@ def test_teleport_measures_one_zero() -> None:
 
 def test_teleport_measures_one_one() -> None:
     module = SimpleModule("teleport11", num_qubits=3, num_results=2)
-    _teleport(module, module.qubits, module.results)
+    qis = BasicQisBuilder(module.builder)
+    _teleport(qis, module.qubits, module.results)
 
     logger = GateLogger()
     _eval(module, logger, [True, True])
