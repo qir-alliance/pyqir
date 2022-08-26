@@ -98,7 +98,7 @@ def _branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
 
 @pytest.fixture
 def brancher(request: pytest.FixtureRequest) -> _Brancher:
-    brancher = request.param()
+    brancher = request.param()  # type: ignore[attr-defined]
     if isinstance(brancher, _Brancher):
         return brancher
     else:
@@ -398,8 +398,10 @@ def test_call_in_branch(result: bool) -> None:
     module = brancher.module
     x = module.add_external_function(
         "__quantum__qis__x__body", types.Function([types.QUBIT], types.VOID))
+
     cond = brancher.oracle()
-    brancher.if_(cond, lambda: module.builder.call(x, [module.qubits[0]]))
+    def apply_x_qubit0(): module.builder.call(x, [module.qubits[0]])
+    brancher.if_(cond, apply_x_qubit0)
 
     logger = GateLogger()
     _eval(brancher.module, logger, [result])

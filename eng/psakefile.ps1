@@ -128,15 +128,8 @@ task cargo-clippy -depends init {
 task mypy {
     pip install mypy
 
-    Invoke-LoggedCommand -errorMessage "Please fix the above mypy errors" {
-        mypy `
-            --exclude "pyqir/__init__.py" `
-            "$($pyqir.parser.dir)" `
-            "$($pyqir.generator.dir)" `
-            "$($pyqir.generator.examples_dir)" `
-            "$($pyqir.evaluator.dir)" `
-            "$($pyqir.evaluator.examples_dir)" `
-            "$($pyqir.tests.dir)"
+    Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above mypy errors" {
+        mypy
     }
 }
 

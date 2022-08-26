@@ -30,6 +30,7 @@ get_angle = mod.add_external_function(
 
 # Use the return value of the function as the input to a rotation gate.
 angle = mod.builder.call(get_angle, [])
+assert angle is not None
 qis.rz(angle, mod.qubits[0])
 
 if __name__ == "__main__":

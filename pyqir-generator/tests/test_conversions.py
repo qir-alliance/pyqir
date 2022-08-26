@@ -13,22 +13,22 @@ def get_module() -> SimpleModule:
 
 def test_ir_round_trip_is_identical() -> None:
     expected_ir = get_module().ir()
-    bitcode = ir_to_bitcode(expected_ir, "test")
-    converted_ir = bitcode_to_ir(bitcode, "test")
+    bitcode = ir_to_bitcode(expected_ir, "test", None)
+    converted_ir = bitcode_to_ir(bitcode, "test", None)
     assert expected_ir == converted_ir
 
 
 def test_ir_round_trip_is_not_identical_when_module_name_isnot_supplied() -> None:
     expected_ir = get_module().ir()
-    bitcode = ir_to_bitcode(expected_ir)
-    converted_ir = bitcode_to_ir(bitcode)
+    bitcode = ir_to_bitcode(expected_ir, None, None)
+    converted_ir = bitcode_to_ir(bitcode, None, None)
     assert expected_ir != converted_ir
 
 
 def test_module_name_persists_in_conversion() -> None:
     expected_ir = get_module().ir()
-    bitcode = ir_to_bitcode(expected_ir, "test")
-    converted_ir = bitcode_to_ir(bitcode, "test2")
+    bitcode = ir_to_bitcode(expected_ir, "test", None)
+    converted_ir = bitcode_to_ir(bitcode, "test2", None)
     assert expected_ir != converted_ir
     assert "; ModuleID = 'test2'" in converted_ir
 
@@ -43,14 +43,14 @@ def test_file_name_persists_in_conversion() -> None:
 
 def test_ir_to_bitcode_returns_bytes_type() -> None:
     expected_ir = get_module().ir()
-    bitcode = ir_to_bitcode(expected_ir, "test")
+    bitcode = ir_to_bitcode(expected_ir, "test", None)
     assert isinstance(bitcode, bytes)
 
 
 def test_bitcode_to_ir_returns_str_type() -> None:
     expected_ir = get_module().ir()
-    bitcode = ir_to_bitcode(expected_ir, "test")
-    converted_ir = bitcode_to_ir(bitcode, "test")
+    bitcode = ir_to_bitcode(expected_ir, "test", None)
+    converted_ir = bitcode_to_ir(bitcode, "test", None)
     assert isinstance(converted_ir, str)
 
 

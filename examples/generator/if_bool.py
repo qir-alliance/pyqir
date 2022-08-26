@@ -12,11 +12,13 @@ get_int = mod.add_external_function("get_int", types.Function([], i32))
 
 # Apply X to the qubit if 'a' is 7.
 a = mod.builder.call(get_int, [])
+assert a is not None
 a_eq_7 = mod.builder.icmp(IntPredicate.EQ, a, const(i32, 7))
 mod.builder.if_(a_eq_7, lambda: qis.x(mod.qubits[0]))
 
 # Multiple conditions can be combined with 'and' and 'or'.
 b = mod.builder.call(get_int, [])
+assert b is not None
 b_sgt_a = mod.builder.icmp(IntPredicate.SGT, b, a)
 or_cond = mod.builder.or_(a_eq_7, b_sgt_a)
 
