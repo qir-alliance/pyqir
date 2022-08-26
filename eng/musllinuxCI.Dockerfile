@@ -6,15 +6,11 @@
 # 3.15 has llvm/clang 12.0.1
 # edge has llvm/13.0.1
 
-FROM python:3.6-alpine3.14 as base
+FROM python:3.6-alpine3.14
 
 ARG RUST_VERSION=1.57.0
 
 WORKDIR /oi
-
-FROM base as base-with-rust
-
-ARG RUST_VERSION=1.57.0
 
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
@@ -35,13 +31,6 @@ RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME}; \
     rustup --version; \
     cargo --version; \
     rustc --version;
-
-FROM base-with-rust as builder
-
-# Temporary workaround installing beta for license/notice support
-RUN cargo install maturin --git https://github.com/PyO3/maturin --tag v0.12.12
-
-FROM base-with-rust
 
 RUN apk add samurai
 
@@ -84,9 +73,7 @@ RUN ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh
 RUN apk add patchelf
 
 RUN python -m pip install -U pip
-RUN python -m pip install --no-cache-dir cffi
-
-COPY --from=builder ${CARGO_HOME}/bin/maturin /usr/bin/maturin
+RUN python -m pip install --no-cache-dir cffi maturin==0.12.12
 
 ENV VIRTUAL_ENV=/opt/venv
 RUN python -m venv $VIRTUAL_ENV
