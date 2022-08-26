@@ -170,9 +170,9 @@ class Builder:
 
         :param cond: The boolean condition to branch on.
         :param true: A callable that inserts instructions for the branch where
-                    the condition is true.
+                     the condition is true.
         :param false: A callable that inserts instructions for the branch where
-                     the condition is false.
+                      the condition is false.
         """
         ...
 
