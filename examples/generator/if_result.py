@@ -10,7 +10,7 @@ qis = BasicQisBuilder(mod.builder)
 # is one.
 qis.h(mod.qubits[0])
 qis.mz(mod.qubits[0], mod.results[0])
-mod.if_result(mod.results[0], lambda: qis.x(mod.qubits[0]))
+qis.if_result(mod.results[0], lambda: qis.x(mod.qubits[0]))
 
 # Branches can be nested, for example, to execute an instruction only if both
 # results are one.
@@ -24,13 +24,13 @@ def x_both():
     qis.x(mod.qubits[1])
 
 
-mod.if_result(mod.results[0], lambda: mod.if_result(mod.results[1], x_both))
+qis.if_result(mod.results[0], lambda: qis.if_result(mod.results[1], x_both))
 
 # You can also add instructions that will execeute only when the result is zero.
-mod.if_result(mod.results[0], zero=lambda: qis.x(mod.qubits[0]))
+qis.if_result(mod.results[0], zero=lambda: qis.x(mod.qubits[0]))
 
 # In general, you can provide both the one and zero branches at the same time.
-mod.if_result(
+qis.if_result(
     mod.results[0],
     one=lambda: qis.z(mod.qubits[0]),
     zero=lambda: qis.y(mod.qubits[0]),

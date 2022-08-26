@@ -159,6 +159,23 @@ class Builder:
         """
         ...
 
+    def if_(self, cond: Value, true: Callable[[], None] = ..., false: Callable[[], None] = ...) -> None:
+        """
+        Inserts a branch conditioned on a boolean.
+
+        Instructions inserted when ``true`` is called will be inserted into the
+        true branch. Instructions inserted when ``false`` is called will be
+        inserted into the false branch. The true and false callables should use
+        this module's builder to build instructions.
+
+        :param cond: The boolean condition to branch on.
+        :param true: A callable that inserts instructions for the branch where
+                    the condition is true.
+        :param false: A callable that inserts instructions for the branch where
+                     the condition is false.
+        """
+        ...
+
 
 class SimpleModule:
     """
@@ -215,40 +232,6 @@ class SimpleModule:
         :param name: The name of the function.
         :param ty: The type of the function.
         :return: The function value.
-        """
-        ...
-
-    def if_(self, cond: Value, true: Callable[[], None] = ..., false: Callable[[], None] = ...) -> None:
-        """
-        Inserts a branch conditioned on a boolean.
-
-        Instructions inserted when ``true`` is called will be inserted into the
-        true branch. Instructions inserted when ``false`` is called will be
-        inserted into the false branch. The true and false callables should use
-        this module's builder to build instructions.
-
-        :param cond: The boolean condition to branch on.
-        :param true: A callable that inserts instructions for the branch where
-                     the condition is true.
-        :param false: A callable that inserts instructions for the branch where
-                      the condition is false.
-        """
-        ...
-
-    def if_result(self, cond: Value, one: Callable[[], None] = ..., zero: Callable[[], None] = ...) -> None:
-        """
-        Inserts a branch conditioned on a measurement result.
-
-        Instructions inserted when ``one`` is called will be inserted into the
-        one branch. Instructions inserted when ``zero`` is called will be
-        inserted into the zero branch. The one and zero callables should use
-        this module's builder to build instructions.
-
-        :param result: The result to branch on.
-        :param one: A callable that inserts instructions for the branch where
-                    the result is one.
-        :param zero: A callable that inserts instructions for the branch where
-                     the result is zero.
         """
         ...
 
@@ -401,13 +384,10 @@ class BasicQisBuilder:
         inserted into the zero branch. The one and zero callables should use
         this module's builder to build instructions.
 
-        :param result: The result to branch on.
+        :param cond: The result condition to branch on.
         :param one: A callable that inserts instructions for the branch where
                     the result is one.
         :param zero: A callable that inserts instructions for the branch where
                      the result is zero.
-
-        .. deprecated:: 0.6.0a1
-           Use :meth:`SimpleModule.if_result` instead.
         """
         ...

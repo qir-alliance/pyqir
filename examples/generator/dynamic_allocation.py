@@ -40,7 +40,7 @@ result = mod.builder.call(m, [qubit])
 # Instead of mod.if_result, use __quantum__rt__result_equal and mod.if_.
 one = mod.builder.call(result_get_one, [])
 result_is_one = mod.builder.call(result_equal, [result, one])
-mod.if_(result_is_one, lambda: qis.reset(qubit))
+mod.builder.if_(result_is_one, lambda: qis.reset(qubit))
 
 # Be sure to release any allocated qubits when you're done with them.
 mod.builder.call(qubit_release, [qubit])

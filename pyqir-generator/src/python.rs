@@ -22,7 +22,7 @@ use qirlib::generation::{
         Measured, Rotated, SemanticModel, Single, Type, Variable,
     },
 };
-use std::vec;
+use std::{cell::RefCell, vec};
 
 #[pyfunction]
 #[allow(clippy::needless_pass_by_value)]
@@ -204,9 +204,9 @@ fn constant(ty: PyType, value: &PyAny) -> PyResult<Value> {
 
 #[pyclass]
 struct Builder {
-    frames: Vec<Vec<Instruction>>,
     external_functions: Vec<Function>,
-    next_variable: Variable,
+    next_variable: RefCell<Variable>,
+    frames: RefCell<Vec<Vec<Instruction>>>,
 }
 
 #[pymethods]
@@ -214,50 +214,50 @@ impl Builder {
     #[new]
     fn new() -> Builder {
         Builder {
-            frames: vec![vec![]],
             external_functions: vec![],
-            next_variable: Variable::new(),
+            next_variable: RefCell::new(Variable::new()),
+            frames: RefCell::new(vec![vec![]]),
         }
     }
 
-    fn and_(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn and_(&self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::And, lhs.0, rhs.0)
     }
 
-    fn or_(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn or_(&self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Or, lhs.0, rhs.0)
     }
 
-    fn xor(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn xor(&self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Xor, lhs.0, rhs.0)
     }
 
-    fn add(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn add(&self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Add, lhs.0, rhs.0)
     }
 
-    fn sub(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn sub(&self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Sub, lhs.0, rhs.0)
     }
 
-    fn mul(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn mul(&self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Mul, lhs.0, rhs.0)
     }
 
-    fn shl(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn shl(&self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::Shl, lhs.0, rhs.0)
     }
 
-    fn lshr(&mut self, lhs: Value, rhs: Value) -> Value {
+    fn lshr(&self, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::LShr, lhs.0, rhs.0)
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    fn icmp(&mut self, pred: PyIntPredicate, lhs: Value, rhs: Value) -> Value {
+    fn icmp(&self, pred: PyIntPredicate, lhs: Value, rhs: Value) -> Value {
         self.push_binary_op(BinaryKind::ICmp(pred.0), lhs.0, rhs.0)
     }
 
-    fn call(&mut self, function: Function, args: &PySequence) -> PyResult<Option<Value>> {
+    fn call(&self, function: Function, args: &PySequence) -> PyResult<Option<Value>> {
         let (param_types, return_type) = match function.ty {
             Type::Function { params, result } => (params, result),
             _ => panic!("Invalid function type."),
@@ -289,33 +289,39 @@ impl Builder {
 
         Ok(result.map(|v| Value(interop::Value::Variable(v))))
     }
+
+    fn if_(&self, cond: Value, r#true: Option<&PyAny>, r#false: Option<&PyAny>) -> PyResult<()> {
+        let if_ = If {
+            cond: cond.0,
+            if_true: build_frame(self, r#true)?,
+            if_false: build_frame(self, r#false)?,
+        };
+        self.push_inst(Instruction::If(if_));
+        Ok(())
+    }
 }
 
 impl Builder {
-    fn push_inst(&mut self, inst: Instruction) {
-        self.frames.last_mut().unwrap().push(inst);
+    fn push_inst(&self, inst: Instruction) {
+        self.frames.borrow_mut().last_mut().unwrap().push(inst);
     }
 
-    fn push_frame(&mut self) {
-        self.frames.push(vec![]);
+    fn push_frame(&self) {
+        self.frames.borrow_mut().push(vec![]);
     }
 
-    fn pop_frame(&mut self) -> Option<Vec<Instruction>> {
-        self.frames.pop()
+    fn pop_frame(&self) -> Option<Vec<Instruction>> {
+        self.frames.borrow_mut().pop()
     }
 
-    fn fresh_variable(&mut self) -> Variable {
-        let v = self.next_variable;
-        self.next_variable = v.next();
+    fn fresh_variable(&self) -> Variable {
+        let mut next_variable = self.next_variable.borrow_mut();
+        let v = *next_variable;
+        *next_variable = v.next();
         v
     }
 
-    fn push_binary_op(
-        &mut self,
-        kind: BinaryKind,
-        lhs: interop::Value,
-        rhs: interop::Value,
-    ) -> Value {
+    fn push_binary_op(&self, kind: BinaryKind, lhs: interop::Value, rhs: interop::Value) -> Value {
         let result = self.fresh_variable();
         self.push_inst(Instruction::BinaryOp(BinaryOp {
             kind,
@@ -392,40 +398,6 @@ impl SimpleModule {
         builder.external_functions.push(function.clone());
         function
     }
-
-    fn if_(
-        &self,
-        py: Python,
-        cond: Value,
-        r#true: Option<&PyAny>,
-        r#false: Option<&PyAny>,
-    ) -> PyResult<()> {
-        let if_ = If {
-            cond: cond.0,
-            if_true: build_frame(py, &self.builder, r#true)?,
-            if_false: build_frame(py, &self.builder, r#false)?,
-        };
-        let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.push_inst(Instruction::If(if_));
-        Ok(())
-    }
-
-    fn if_result(
-        &self,
-        py: Python,
-        cond: Value,
-        one: Option<&PyAny>,
-        zero: Option<&PyAny>,
-    ) -> PyResult<()> {
-        let if_result = IfResult {
-            cond: cond.0,
-            if_one: build_frame(py, &self.builder, one)?,
-            if_zero: build_frame(py, &self.builder, zero)?,
-        };
-        let mut builder = self.builder.as_ref(py).borrow_mut();
-        builder.push_inst(Instruction::IfResult(if_result));
-        Ok(())
-    }
 }
 
 impl SimpleModule {
@@ -437,7 +409,8 @@ impl SimpleModule {
             .map(|f| (f.name.clone(), f.ty.clone()))
             .collect();
 
-        match builder.frames[..] {
+        let frames = builder.frames.borrow();
+        match frames[..] {
             [ref instructions] => SemanticModel {
                 external_functions,
                 instructions: instructions.clone(),
@@ -448,21 +421,11 @@ impl SimpleModule {
     }
 }
 
-fn build_frame(
-    py: Python,
-    builder: &Py<Builder>,
-    callback: Option<&PyAny>,
-) -> PyResult<Vec<Instruction>> {
-    {
-        let mut builder = builder.as_ref(py).borrow_mut();
-        builder.push_frame();
-    }
-
+fn build_frame(builder: &Builder, callback: Option<&PyAny>) -> PyResult<Vec<Instruction>> {
+    builder.push_frame();
     if let Some(callback) = callback {
         callback.call0()?;
     }
-
-    let mut builder = builder.as_ref(py).borrow_mut();
     Ok(builder.pop_frame().unwrap())
 }
 
@@ -562,30 +525,24 @@ impl BasicQisBuilder {
     fn if_result(
         &self,
         py: Python,
-        result: Value,
+        cond: Value,
         one: Option<&PyAny>,
         zero: Option<&PyAny>,
     ) -> PyResult<()> {
-        let builtins = PyModule::import(py, "builtins")?;
-        let deprecation_warning = builtins.getattr("DeprecationWarning")?;
-        let warnings = PyModule::import(py, "warnings")?;
-        warnings
-            .getattr("warn")?
-            .call1(("Use SimpleModule.if_result instead.", deprecation_warning))?;
-
+        let builder = self.builder.borrow(py);
         let if_result = IfResult {
-            cond: result.0,
-            if_one: build_frame(py, &self.builder, one)?,
-            if_zero: build_frame(py, &self.builder, zero)?,
+            cond: cond.0,
+            if_one: build_frame(&builder, one)?,
+            if_zero: build_frame(&builder, zero)?,
         };
-        self.push_inst(py, Instruction::IfResult(if_result));
+        builder.push_inst(Instruction::IfResult(if_result));
         Ok(())
     }
 }
 
 impl BasicQisBuilder {
     fn push_inst(&self, py: Python, inst: Instruction) {
-        let mut builder = self.builder.as_ref(py).borrow_mut();
+        let builder = self.builder.as_ref(py).borrow();
         builder.push_inst(inst);
     }
 }
