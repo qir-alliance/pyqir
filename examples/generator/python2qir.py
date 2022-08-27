@@ -10,7 +10,7 @@ import ast
 from pyqir.generator import BasicQisBuilder, SimpleModule
 
 
-def main():
+def main() -> None:
     # Open and parse the input file
     with open("python2qir_qiskit_input.py", "r") as source:
         tree = ast.parse(source.read())
@@ -27,7 +27,7 @@ class Analyzer(ast.NodeVisitor):
     module: SimpleModule
     builder: BasicQisBuilder
 
-    def visit_Call(self, node: ast.Call):
+    def visit_Call(self, node: ast.Call) -> None:
         if isinstance(node.func, ast.Name):
             name: ast.Name = node.func
             if name.id == "QuantumCircuit":

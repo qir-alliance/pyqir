@@ -4,7 +4,7 @@
 from pyqir.evaluator import GateLogger, NonadaptiveEvaluator
 
 
-def test_bell_qir():
+def test_bell_qir() -> None:
     file = "tests/bell_qir_measure.bc"
     evaluator = NonadaptiveEvaluator()
     logger = GateLogger()

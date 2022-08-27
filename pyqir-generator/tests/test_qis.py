@@ -1,13 +1,14 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, SimpleModule, const, types
+from typing import Callable, Union
+from pyqir.generator import BasicQisBuilder, SimpleModule, Value, const, types
 import unittest
 
 
 class QisTest(unittest.TestCase):
     def test_single(self) -> None:
-        cases = [
+        cases: list[tuple[str, Callable[[BasicQisBuilder], Callable[[Value], None]]]] = [
             ("h", lambda qis: qis.h),
             ("reset", lambda qis: qis.reset),
             ("s", lambda qis: qis.s),
@@ -26,7 +27,7 @@ class QisTest(unittest.TestCase):
                 self.assertIn(call, mod.ir())
 
     def test_controlled(self) -> None:
-        cases = [
+        cases: list[tuple[str, Callable[[BasicQisBuilder], Callable[[Value, Value], None]]]] = [
             ("cnot", lambda qis: qis.cx),
             ("cz", lambda qis: qis.cz),
         ]
@@ -40,7 +41,7 @@ class QisTest(unittest.TestCase):
                 self.assertIn(call, mod.ir())
 
     def test_adjoint(self) -> None:
-        cases = [
+        cases: list[tuple[str, Callable[[BasicQisBuilder], Callable[[Value], None]]]] = [
             ("s", lambda qis: qis.s_adj),
             ("t", lambda qis: qis.t_adj),
         ]
@@ -54,14 +55,16 @@ class QisTest(unittest.TestCase):
                 self.assertIn(call, mod.ir())
 
     def test_rotated(self) -> None:
-        cases = [
+        cases: list[tuple[str, Callable[[BasicQisBuilder], Callable[[Union[Value, float], Value], None]]]] = [
             ("rx", lambda qis: qis.rx),
             ("ry", lambda qis: qis.ry),
             ("rz", lambda qis: qis.rz),
         ]
 
+        values: list[Union[Value, float]] = [const(types.DOUBLE, 1.0), 1.0]
+
         for name, gate in cases:
-            for value in [const(types.DOUBLE, 1.0), 1.0]:
+            for value in values:
                 with self.subTest(f"{name} ({value})"):
                     mod = SimpleModule("test_rotated", 1, 0)
                     qis = BasicQisBuilder(mod.builder)

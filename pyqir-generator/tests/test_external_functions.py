@@ -3,7 +3,7 @@
 
 from pyqir.generator import BasicQisBuilder, SimpleModule, Type, Value, const, types
 import re
-from typing import Any, Callable, List, Tuple, Union
+from typing import Any, Callable, Union
 import unittest
 
 
@@ -37,7 +37,7 @@ class ExternalFunctionsTest(unittest.TestCase):
         )
 
     def test_call_double(self) -> None:
-        values: List[Union[Value, float]] = [const(types.DOUBLE, 23.25), 23.25]
+        values: list[Union[Value, float]] = [const(types.DOUBLE, 23.25), 23.25]
         for value in values:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
@@ -50,7 +50,7 @@ class ExternalFunctionsTest(unittest.TestCase):
                 )
 
     def test_call_int(self) -> None:
-        values: List[Union[Value, int]] = [const(types.Int(64), 42), 42]
+        values: list[Union[Value, int]] = [const(types.Int(64), 42), 42]
         for value in values:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
@@ -62,7 +62,7 @@ class ExternalFunctionsTest(unittest.TestCase):
                 self.assertIn("call void @test_function(i64 42)", mod.ir())
 
     def test_call_bool_true(self) -> None:
-        values: List[Union[Value, bool]] = [const(types.BOOL, True), True]
+        values: list[Union[Value, bool]] = [const(types.BOOL, True), True]
         for value in values:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
@@ -73,7 +73,7 @@ class ExternalFunctionsTest(unittest.TestCase):
                 self.assertIn("call void @test_function(i1 true)", mod.ir())
 
     def test_call_bool_false(self) -> None:
-        values: List[Union[Value, bool]] = [const(types.BOOL, False), False]
+        values: list[Union[Value, bool]] = [const(types.BOOL, False), False]
         for value in values:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
@@ -131,7 +131,7 @@ class ExternalFunctionsTest(unittest.TestCase):
         )
 
     def test_wrong_type_conversion(self) -> None:
-        cases: List[Tuple[List[Type], Callable[[SimpleModule], List[Any]]]] = [
+        cases: list[tuple[list[Type], Callable[[SimpleModule], list[Any]]]] = [
             ([types.BOOL], lambda _: ["true"]),
             ([types.Int(64)], lambda _: [1.23]),
             ([types.Int(64)], lambda _: ["123"]),
@@ -170,7 +170,7 @@ class ExternalFunctionsTest(unittest.TestCase):
                     mod.builder.call(f, [value])
 
     def test_wrong_number_of_args(self) -> None:
-        cases: List[List[Value]] = [
+        cases: list[list[Value]] = [
             [],
             [const(types.DOUBLE, 1.23)],
             [
@@ -183,7 +183,7 @@ class ExternalFunctionsTest(unittest.TestCase):
         for args in cases:
             with self.subTest(repr(args)):
                 mod = SimpleModule("test", 0, 0)
-                param_types: List[Type] = [types.DOUBLE, types.BOOL]
+                param_types: list[Type] = [types.DOUBLE, types.BOOL]
                 f = mod.add_external_function(
                     "test_function", types.Function(param_types, types.VOID)
                 )

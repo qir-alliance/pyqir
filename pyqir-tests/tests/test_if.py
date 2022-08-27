@@ -6,7 +6,7 @@ from pyqir.generator import BasicQisBuilder, IntPredicate, SimpleModule, const, 
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
 import pytest
 import tempfile
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional
 
 
 class _Brancher(metaclass=ABCMeta):
@@ -92,7 +92,7 @@ class _BoolBrancher(_Brancher):
         self._brancher.module.builder.if_(cond, true, false)
 
 
-def _branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
+def _branchers(num_queries: int) -> list[Callable[[], _Brancher]]:
     return [lambda: _ResultBrancher(num_queries), lambda: _BoolBrancher(num_queries)]
 
 
@@ -108,7 +108,7 @@ def brancher(request: pytest.FixtureRequest) -> _Brancher:
 def _eval(
     module: SimpleModule,
     gates: GateSet,
-    result_stream: Optional[List[bool]] = None,
+    result_stream: Optional[list[bool]] = None,
 ) -> None:
     with tempfile.NamedTemporaryFile(suffix=".ll") as f:
         f.write(module.ir().encode("utf-8"))
@@ -379,7 +379,7 @@ def test_arithmetic_in_branch(result: bool) -> None:
     qis = BasicQisBuilder(module.builder)
     i32 = types.Int(32)
 
-    def true():
+    def true() -> None:
         four = module.builder.add(const(i32, 2), const(i32, 2))
         cond = module.builder.icmp(IntPredicate.EQ, four, const(i32, 4))
         module.builder.if_(cond, lambda: qis.x(module.qubits[0]))
@@ -400,7 +400,7 @@ def test_call_in_branch(result: bool) -> None:
         "__quantum__qis__x__body", types.Function([types.QUBIT], types.VOID))
 
     cond = brancher.oracle()
-    def apply_x_qubit0(): module.builder.call(x, [module.qubits[0]])
+    def apply_x_qubit0() -> None: module.builder.call(x, [module.qubits[0]])
     brancher.if_(cond, apply_x_qubit0)
 
     logger = GateLogger()

@@ -3,7 +3,7 @@
 
 from pyqir.generator._builder import IntPredicate
 from pyqir.generator.types import Type
-from typing import Callable, Optional, Sequence, Tuple, Union
+from typing import Callable, Optional, Sequence, Union
 
 
 def ir_to_bitcode(ir: str, module_name: Optional[str], source_file_name: Optional[str]) -> bytes:
@@ -203,12 +203,12 @@ class SimpleModule:
         ...
 
     @property
-    def qubits(self) -> Tuple[Value, ...]:
+    def qubits(self) -> tuple[Value, ...]:
         """The global qubit register."""
         ...
 
     @property
-    def results(self) -> Tuple[Value, ...]:
+    def results(self) -> tuple[Value, ...]:
         """The global result register."""
         ...
 

@@ -19,7 +19,7 @@ for i in range(2):
     qis.mz(mod.qubits[i], mod.results[i])
 
 
-def x_both():
+def x_both() -> None:
     qis.x(mod.qubits[0])
     qis.x(mod.qubits[1])
 
