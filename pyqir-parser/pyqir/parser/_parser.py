@@ -1000,7 +1000,7 @@ class QirBlock:
         terminator instruction (see QirBlock.terminator).
         """
         if self._instructions is None:
-            self._instructions = List(map(QirInstr, self.block.instructions))
+            self._instructions = list(map(QirInstr, self.block.instructions))
         return self._instructions
 
     @property
@@ -1022,7 +1022,7 @@ class QirBlock:
         phi nodes will return an empty list.
         """
         if self._phi_nodes is None:
-            self._phi_nodes = List(map(QirPhiInstr, self.block.phi_nodes))
+            self._phi_nodes = list(map(QirPhiInstr, self.block.phi_nodes))
         return self._phi_nodes
 
     def get_phi_pairs_by_source_name(self, name: str) -> List[Tuple[str, QirOperand]]:
@@ -1087,7 +1087,7 @@ class QirFunction:
         Gets the list of parameters used when calling this function.
         """
         if self._parameters is None:
-            self._parameters = List(map(QirParameter, self.func.parameters))
+            self._parameters = list(map(QirParameter, self.func.parameters))
         return self._parameters
 
     @property
@@ -1179,7 +1179,7 @@ class QirModule:
         Gets all the functions defined in this module.
         """
         if self._functions is None:
-            self._functions = List(map(QirFunction, self.module.functions))
+            self._functions = list(map(QirFunction, self.module.functions))
         return self._functions
 
     def get_func_by_name(self, name: str) -> Optional[QirFunction]:
@@ -1198,7 +1198,7 @@ class QirModule:
         Gets any functions that have an attribute whose name matches the provided string.
         :param attr: the attribute to use when looking for functions
         """
-        return List(map(QirFunction, self.module.get_funcs_by_attr(attr)))
+        return list(map(QirFunction, self.module.get_funcs_by_attr(attr)))
 
     @property
     def entrypoint_funcs(self) -> List[QirFunction]:
