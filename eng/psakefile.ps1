@@ -67,8 +67,6 @@ task manylinux -depends build-manylinux-container-image, run-manylinux-container
 
 task checks -depends cargo-fmt, cargo-clippy, mypy
 
-task build -depends qirlib, generator, evaluator, parser
-
 task run-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
     $srcPath = $repo.root
 
