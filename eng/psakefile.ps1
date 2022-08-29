@@ -53,8 +53,6 @@ properties {
     $linux = @{}
     $linux.manylinux_tag = "manylinux2014_x86_64_maturin"
     $linux.manylinux_root = "/io"
-    $linux.musllinux_tag = "musllinux_1_2_x86_64_maturin"
-    $linux.musllinux_root = "/oi"
 
     [Diagnostics.CodeAnalysis.SuppressMessage("PSUseDeclaredVarsMoreThanAssignments", "")]
     $wheelhouse = Join-Path $repo.root "target" "wheels" "*.whl"
@@ -66,8 +64,6 @@ include utils.ps1
 task default -depends qirlib, pyqir-tests, parser, generator, evaluator, metawheel, run-examples
 
 task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers 
-
-task musllinux -depends build-musllinux-container-image, run-musllinux-container-image, run-examples-in-musl-containers
 
 task checks -depends cargo-fmt, cargo-clippy, mypy
 
@@ -89,27 +85,6 @@ task run-manylinux-container-image -preaction { Write-CacheStats } -postaction {
 
     Invoke-LoggedCommand {
         docker run --rm --user $userName -v $ioVolume @cacheMount @cacheEnv -e QIRLIB_CACHE_DIR="/tmp/llvm" -w "$($linux.manylinux_root)" "$($linux.manylinux_tag)" conda run --no-capture-output pwsh build.ps1 -t default
-    }
-}
-
-task run-musllinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    $srcPath = $repo.root
-
-    # For any of the volumes mapped, if the dir doesn't exist,
-    # docker will create it and it will be owned by root and
-    # the caching/install breaks with permission errors.
-    # New-Item is idempotent so we don't need to check for existence
-
-    $cacheMount, $cacheEnv = Get-CCacheParams
-
-    Write-BuildLog "Running container image: $($linux.musllinux_tag)"
-    $ioVolume = "$($srcPath):$($linux.musllinux_root)"
-    $userName = Get-LinuxContainerUserName
-    if (Test-CI) {
-        $userName = "root"
-    }
-    Invoke-LoggedCommand {
-        docker run --rm --user $userName -v $ioVolume @cacheMount @cacheEnv -e QIRLIB_CACHE_DIR="/tmp/llvm" -w "$($linux.musllinux_root)" "$($linux.musllinux_tag)" pwsh build.ps1
     }
 }
 
@@ -154,37 +129,8 @@ task pyqir-tests -depends init, generator, evaluator {
 }
 
 task qirlib -depends init {
-    if (Test-MuslLinux) {
-        # https://github.com/rust-lang/rust/issues/71651
-        $old_rustflags = ""
-        $reset_rustflags = $false
-
-        if (Test-Path env:\RUSTFLAGS) {
-            $reset_rustflags = $true
-            $old_rustflags = $env:RUSTFLAGS
-            $env:RUSTFLAGS = "$($old_rustflags) -C target-feature=-crt-static".Trim()
-        }
-        else {
-            $env:RUSTFLAGS = "-C target-feature=-crt-static"
-        }
-        try {
-            Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-                cargo test --release @("$($env:CARGO_EXTRA_ARGS)" -split " ")
-            }
-        }
-        finally {
-            if ($reset_rustflags) {
-                $env:RUSTFLAGS = $old_rustflags
-            }
-            else {
-                Remove-Item env:\RUSTFLAGS
-            }
-        }
-    }
-    else {
-        Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-            cargo test --release @("$($env:CARGO_EXTRA_ARGS)" -split " ")
-        }
+    Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
+        cargo test --release @("$($env:CARGO_EXTRA_ARGS)" -split " ")
     }
     Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
         cargo build --release @("$($env:CARGO_EXTRA_ARGS)" -split " ")
@@ -316,27 +262,6 @@ task install-llvm-from-source -depends configure-sccache -postaction { Write-Cac
     Assert (Test-LlvmConfig $installationDirectory) "install-llvm-from-source failed to install a usable LLVM installation"
 }
 
-task package-musllinux-llvm -depends build-musllinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    $srcPath = $repo.root
-
-    # For any of the volumes mapped, if the dir doesn't exist,
-    # docker will create it and it will be owned by root and
-    # the caching/install breaks with permission errors.
-    # New-Item is idempotent so we don't need to check for existence
-
-    $cacheMount, $cacheEnv = Get-CCacheParams
-
-    Write-BuildLog "Running container image: $($linux.musllinux_tag)"
-    $ioVolume = "$($srcPath):$($linux.musllinux_root)"
-    $userName = Get-LinuxContainerUserName
-    if (Test-CI) {
-        $userName = "root"
-    }
-    Invoke-LoggedCommand {
-        docker run --rm --user $userName -v $ioVolume @cacheMount @cacheEnv -w "$($linux.musllinux_root)" -e QIRLIB_PKG_DEST="$($linux.musllinux_root)/target/musllinux" "$($linux.musllinux_tag)" pwsh build.ps1 -t package-llvm
-    }
-}
-
 task package-manylinux-llvm -depends build-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
     $srcPath = $repo.root
 
@@ -396,35 +321,6 @@ task build-manylinux-container-image {
     }
 }
 
-task build-musllinux-container-image {
-    $srcPath = $repo.root
-    Write-BuildLog "Building container image musllinux-llvm-builder"
-    if (Test-CI) {
-        Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
-            $rustv = "$($rust.version)"
-            $tag = "$($linux.musllinux_tag)"
-            Get-Content musllinuxCI.Dockerfile | docker build `
-                --build-arg RUST_VERSION=$rustv `
-                -t $tag -
-        }
-    }
-    else {
-        Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
-            $user = "$(Get-LinuxContainerUserName)"
-            $uid = "$(Get-LinuxContainerUserId)"
-            $gid = "$(Get-LinuxContainerGroupId)"
-            $rustv = "$($rust.version)"
-            $tag = "$($linux.musllinux_tag)"
-            Get-Content musllinux.Dockerfile | docker build `
-                --build-arg USERNAME=$user `
-                --build-arg USER_UID=$uid `
-                --build-arg USER_GID=$gid `
-                --build-arg RUST_VERSION=$rustv `
-                -t $tag -
-        }
-    }
-}
-
 # This is only usable if building for manylinux
 task run-examples-in-containers {
     $user = Get-LinuxContainerUserName
@@ -438,16 +334,6 @@ task run-examples-in-containers {
         exec {
             docker run --rm --user $user -v "$($repo.root):/home/$user" "pyqir-$image-examples" build.ps1 -t run-examples
         }
-    }
-}
-
-task run-examples-in-musl-containers {
-    $userName = Get-LinuxContainerUserName
-    if (Test-CI) {
-        $userName = "root"
-    }
-    Invoke-LoggedCommand {
-        docker run --rm --user $userName -w "/home/$user" -v "$($repo.root):/home/$user" "$($linux.musllinux_tag)" pwsh build.ps1 -t run-examples
     }
 }
 
