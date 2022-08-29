@@ -125,11 +125,20 @@ task cargo-clippy -depends init {
     }
 }
 
-task mypy {
+task mypy -depends check-environment {
     pip install mypy
 
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above mypy errors" {
-        mypy
+        exec {
+            pip install `
+                --requirement (Join-Path $pyqir.generator.examples_dir requirements.txt) `
+                --requirement (Join-Path $pyqir.evaluator.dir requirements-dev.txt) `
+                --requirement (Join-Path $pyqir.generator.dir requirements-dev.txt) `
+                --requirement (Join-Path $pyqir.parser.dir requirements-dev.txt)
+        }
+        exec {
+            mypy
+        }
     }
 }
 
