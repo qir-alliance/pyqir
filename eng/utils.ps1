@@ -226,16 +226,6 @@ function Get-LinuxContainerUserName {
     }
 }
 
-function Test-MuslLinux {
-    if ($IsLinux) {
-        $triple = Get-LinuxTargetTriple
-        $triple -eq "x86_64-unknown-linux-musl"
-    }
-    else {
-        $false
-    }
-}
-
 function Write-CacheStats {
     if (Test-CommandExists("ccache")) {
         Write-BuildLog "ccache config:"
@@ -264,9 +254,6 @@ function Build-PyQIR([string]$project) {
 
     exec -workingDirectory (Join-Path $srcPath $project) {
         $build_extra_args = ""
-        if (Test-MuslLinux) {
-            $build_extra_args = "--skip-auditwheel"
-        }
         Invoke-LoggedCommand {
             exec {
                 & $python -m pip install -r requirements-dev.txt
