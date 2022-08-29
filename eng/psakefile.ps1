@@ -125,20 +125,13 @@ task cargo-clippy -depends init {
     }
 }
 
-task mypy -depends check-environment {
-    pip install mypy
+task mypy -depends python-requirements {
+    exec {
+        pip install mypy
+    }
 
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above mypy errors" {
-        exec {
-            pip install `
-                --requirement (Join-Path $pyqir.generator.examples_dir requirements.txt) `
-                --requirement (Join-Path $pyqir.evaluator.dir requirements-dev.txt) `
-                --requirement (Join-Path $pyqir.generator.dir requirements-dev.txt) `
-                --requirement (Join-Path $pyqir.parser.dir requirements-dev.txt)
-        }
-        exec {
-            mypy
-        }
+        mypy
     }
 }
 
@@ -258,7 +251,15 @@ task check-environment {
     Assert ((Test-InVirtualEnvironment) -eq $true) "$($env_message -join ' ')"
 }
 
-task init -depends check-environment {
+task python-requirements -depends check-environment {
+    pip install `
+        --requirement (Join-Path $pyqir.generator.examples_dir requirements.txt) `
+        --requirement (Join-Path $pyqir.evaluator.dir requirements-dev.txt) `
+        --requirement (Join-Path $pyqir.generator.dir requirements-dev.txt) `
+        --requirement (Join-Path $pyqir.parser.dir requirements-dev.txt)
+}
+
+task init -depends python-requirements {
     if (Test-CI) {
         & $python -m pip install maturin==0.12.12
     }
