@@ -1,8 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from typing import Callable, List, Tuple, Union
 from pyqir.generator import BasicQisBuilder, SimpleModule, Value, const, types
+from typing import Callable, List, Tuple, Union
 import unittest
 
 
