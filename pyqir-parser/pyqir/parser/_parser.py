@@ -3,7 +3,7 @@
 
 import pyqir.parser._native as native
 from pyqir.parser._native import module_from_bitcode
-from typing import Optional
+from typing import List, Optional, Tuple
 
 __all__ = [
     "QirType",
@@ -186,7 +186,7 @@ class QirStructType(QirType):
     """
 
     @property
-    def struct_element_types(self) -> list[QirType]:
+    def struct_element_types(self) -> List[QirType]:
         """
         Gets the ordered list of QirTypes representing the underlying struct types.
         """
@@ -534,7 +534,7 @@ class QirSwitchTerminator(QirTerminator):
         return self._operand
 
     @property
-    def dest_pairs(self) -> list[tuple[QirConstant, str]]:
+    def dest_pairs(self) -> List[Tuple[QirConstant, str]]:
         """
         Gets a list of pairs representing the constant values to compare the operand against and the
         matching block name to jump to if the comparison succeeds.
@@ -663,7 +663,7 @@ class QirOpInstr(QirInstr):
     """
 
     @property
-    def target_operands(self) -> list[QirOperand]:
+    def target_operands(self) -> List[QirOperand]:
         """
         Gets the list of operands that this instruction operates on.
         """
@@ -896,7 +896,7 @@ class QirPhiInstr(QirInstr):
     """
 
     @property
-    def incoming_values(self) -> list[tuple[QirOperand, str]]:
+    def incoming_values(self) -> List[Tuple[QirOperand, str]]:
         """
         Gets a list of all the incoming value pairs for this phi node, where each pair is the QirOperand
         for the value to use and the string name of the originating block.
@@ -936,7 +936,7 @@ class QirCallInstr(QirInstr):
         return func_name
 
     @property
-    def func_args(self) -> list[QirOperand]:
+    def func_args(self) -> List[QirOperand]:
         """
         Gets the list of QirOperand instances that are passed as arguments to the function call.
         """
@@ -980,9 +980,9 @@ class QirBlock:
 
     def __init__(self, block: native.PyQirBasicBlock):
         self.block = block
-        self._instructions: Optional[list[QirInstr]] = None
+        self._instructions: Optional[List[QirInstr]] = None
         self._terminator: Optional[QirTerminator] = None
-        self._phi_nodes: Optional[list[QirPhiInstr]] = None
+        self._phi_nodes: Optional[List[QirPhiInstr]] = None
 
     @property
     def name(self) -> str:
@@ -993,14 +993,14 @@ class QirBlock:
         return self.block.name
 
     @property
-    def instructions(self) -> list[QirInstr]:
+    def instructions(self) -> List[QirInstr]:
         """
         Gets the list of instructions that make up this block. The list is ordered; instructions are
         executed from first to last unconditionally. This list does not include the special 
         terminator instruction (see QirBlock.terminator).
         """
         if self._instructions is None:
-            self._instructions = list(map(QirInstr, self.block.instructions))
+            self._instructions = List(map(QirInstr, self.block.instructions))
         return self._instructions
 
     @property
@@ -1014,7 +1014,7 @@ class QirBlock:
         return self._terminator
 
     @property
-    def phi_nodes(self) -> list[QirPhiInstr]:
+    def phi_nodes(self) -> List[QirPhiInstr]:
         """
         Gets any phi nodes defined for this block. Phi nodes are a special instruction that defines
         variables based on which block transferred execution to this block. A block may have any number
@@ -1022,10 +1022,10 @@ class QirBlock:
         phi nodes will return an empty list.
         """
         if self._phi_nodes is None:
-            self._phi_nodes = list(map(QirPhiInstr, self.block.phi_nodes))
+            self._phi_nodes = List(map(QirPhiInstr, self.block.phi_nodes))
         return self._phi_nodes
 
-    def get_phi_pairs_by_source_name(self, name: str) -> list[tuple[str, QirOperand]]:
+    def get_phi_pairs_by_source_name(self, name: str) -> List[Tuple[str, QirOperand]]:
         """
         Gets the variable name, variable value pairs for any phi nodes in this block that correspond
         to the given name. If the name doesn't match a block that can branch to this block or if 
@@ -1070,9 +1070,9 @@ class QirFunction:
 
     def __init__(self, func: native.PyQirFunction):
         self.func = func
-        self._parameters: Optional[list[QirParameter]] = None
+        self._parameters: Optional[List[QirParameter]] = None
         self._return_type: Optional[QirType] = None
-        self._blocks: Optional[list[QirBlock]] = None
+        self._blocks: Optional[List[QirBlock]] = None
 
     @property
     def name(self) -> str:
@@ -1082,12 +1082,12 @@ class QirFunction:
         return self.func.name
 
     @property
-    def parameters(self) -> list[QirParameter]:
+    def parameters(self) -> List[QirParameter]:
         """
         Gets the list of parameters used when calling this function.
         """
         if self._parameters is None:
-            self._parameters = list(map(QirParameter, self.func.parameters))
+            self._parameters = List(map(QirParameter, self.func.parameters))
         return self._parameters
 
     @property
@@ -1100,7 +1100,7 @@ class QirFunction:
         return self._return_type
 
     @property
-    def blocks(self) -> list[QirBlock]:
+    def blocks(self) -> List[QirBlock]:
         """
         Gets all the basic blocks for this function.
         """
@@ -1163,9 +1163,9 @@ class QirModule:
     functions and global definitions from the program.
     """
 
-    _functions: Optional[list[QirFunction]]
-    _interop_funcs: Optional[list[QirFunction]]
-    _entrypoint_funcs: Optional[list[QirFunction]]
+    _functions: Optional[List[QirFunction]]
+    _interop_funcs: Optional[List[QirFunction]]
+    _entrypoint_funcs: Optional[List[QirFunction]]
 
     def __init__(self, name: str) -> None:
         self.module = module_from_bitcode(name)
@@ -1174,12 +1174,12 @@ class QirModule:
         self._entrypoint_funcs = None
 
     @property
-    def functions(self) -> list[QirFunction]:
+    def functions(self) -> List[QirFunction]:
         """
         Gets all the functions defined in this module.
         """
         if self._functions is None:
-            self._functions = list(map(QirFunction, self.module.functions))
+            self._functions = List(map(QirFunction, self.module.functions))
         return self._functions
 
     def get_func_by_name(self, name: str) -> Optional[QirFunction]:
@@ -1193,15 +1193,15 @@ class QirModule:
         else:
             return None
 
-    def get_funcs_by_attr(self, attr: str) -> list[QirFunction]:
+    def get_funcs_by_attr(self, attr: str) -> List[QirFunction]:
         """
         Gets any functions that have an attribute whose name matches the provided string.
         :param attr: the attribute to use when looking for functions
         """
-        return list(map(QirFunction, self.module.get_funcs_by_attr(attr)))
+        return List(map(QirFunction, self.module.get_funcs_by_attr(attr)))
 
     @property
-    def entrypoint_funcs(self) -> list[QirFunction]:
+    def entrypoint_funcs(self) -> List[QirFunction]:
         """
         Gets any functions with the "EntryPoint" attribute.
         """
@@ -1211,7 +1211,7 @@ class QirModule:
         return self._entrypoint_funcs
 
     @property
-    def interop_funcs(self) -> list[QirFunction]:
+    def interop_funcs(self) -> List[QirFunction]:
         """
         Gets any functions with the "InteropFriendly" attribute.
         """

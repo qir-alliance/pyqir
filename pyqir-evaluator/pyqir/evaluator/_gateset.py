@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from typing import Any
+from typing import Any, Dict
 
 
 class GateSet:
@@ -58,7 +58,7 @@ class GateSet:
     def z(self, qubit: str) -> None:
         pass
 
-    def finish(self, metadata: dict[str, Any]) -> None:
+    def finish(self, metadata: Dict[str, Any]) -> None:
         """
         Called at the end of QIR evaluation supplying run metadata.
         """

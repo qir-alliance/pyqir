@@ -3,10 +3,10 @@
 
 from functools import partial
 from pyqir.generator import Builder, IntPredicate, SimpleModule, Value, const, types
-from typing import Callable
+from typing import Callable, List, Tuple
 import unittest
 
-_OPERATORS: list[tuple[str, Callable[[Builder], Callable[[Value, Value], Value]]]] = [
+_OPERATORS: List[Tuple[str, Callable[[Builder], Callable[[Value, Value], Value]]]] = [
     ("and", lambda b: b.and_),
     ("or", lambda b: b.or_),
     ("xor", lambda b: b.xor),

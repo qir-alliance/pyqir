@@ -3,7 +3,7 @@
 
 from pyqir.evaluator._gateset import GateSet
 from pyqir.evaluator._native import PyNonadaptiveJit
-from typing import Optional
+from typing import List, Optional
 
 
 class NonadaptiveEvaluator:
@@ -20,7 +20,7 @@ class NonadaptiveEvaluator:
         file_path: str,
         gateset: GateSet,
         entry_point: Optional[str] = None,
-        result_stream: Optional[list[bool]] = None,
+        result_stream: Optional[List[bool]] = None,
     ) -> None:
         """
         JIT compiles and evaluates the QIR program, delegating quantum

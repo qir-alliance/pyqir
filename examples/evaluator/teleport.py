@@ -4,9 +4,10 @@
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
 from pyqir.generator import BasicQisBuilder, SimpleModule, Value
 import tempfile
+from typing import List, Tuple
 
 
-def teleport(qis: BasicQisBuilder, qubits: tuple[Value, ...], results: tuple[Value, ...]) -> None:
+def teleport(qis: BasicQisBuilder, qubits: Tuple[Value, ...], results: Tuple[Value, ...]) -> None:
     msg = qubits[0]
     target = qubits[1]
     register = qubits[2]
@@ -30,7 +31,7 @@ def teleport(qis: BasicQisBuilder, qubits: tuple[Value, ...], results: tuple[Val
     qis.if_result(results[1], one=lambda: qis.x(target))
 
 
-def eval(module: SimpleModule, gates: GateSet, results: list[bool]) -> None:
+def eval(module: SimpleModule, gates: GateSet, results: List[bool]) -> None:
     with tempfile.NamedTemporaryFile(suffix=".ll") as f:
         f.write(module.ir().encode("utf-8"))
         f.flush()

@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from pyqir.evaluator._gateset import GateSet
-from typing import Any
+from typing import Any, Dict, List
 
 
 class GateLogger(GateSet):
@@ -12,7 +12,7 @@ class GateLogger(GateSet):
 
     number_of_qubits: int
     number_of_registers: int
-    instructions: list[str]
+    instructions: List[str]
 
     def __init__(self) -> None:
         self.number_of_qubits = 0
@@ -67,7 +67,7 @@ class GateLogger(GateSet):
     def z(self, qubit: str) -> None:
         self.instructions.append(f"z qubit[{qubit}]")
 
-    def finish(self, metadata: dict[str, Any]) -> None:
+    def finish(self, metadata: Dict[str, Any]) -> None:
         super().finish(metadata)
         self.number_of_qubits = metadata["number_of_qubits"]
         self.number_of_registers = self.number_of_qubits

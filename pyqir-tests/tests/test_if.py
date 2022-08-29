@@ -6,7 +6,7 @@ from pyqir.generator import BasicQisBuilder, IntPredicate, SimpleModule, const, 
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
 import pytest
 import tempfile
-from typing import Any, Callable, Optional
+from typing import Any, Callable, List, Optional
 
 
 class _Brancher(metaclass=ABCMeta):
@@ -92,7 +92,7 @@ class _BoolBrancher(_Brancher):
         self._brancher.module.builder.if_(cond, true, false)
 
 
-def _branchers(num_queries: int) -> list[Callable[[], _Brancher]]:
+def _branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
     return [lambda: _ResultBrancher(num_queries), lambda: _BoolBrancher(num_queries)]
 
 
@@ -108,7 +108,7 @@ def brancher(request: pytest.FixtureRequest) -> _Brancher:
 def _eval(
     module: SimpleModule,
     gates: GateSet,
-    result_stream: Optional[list[bool]] = None,
+    result_stream: Optional[List[bool]] = None,
 ) -> None:
     with tempfile.NamedTemporaryFile(suffix=".ll") as f:
         f.write(module.ir().encode("utf-8"))
