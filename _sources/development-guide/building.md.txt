@@ -159,6 +159,3 @@ targeting Python ABI 3.6.
 
 The manylinux support uses a Docker image in the build scripts to run the builds
 in the CI environment.
-
-The musllinux support uses a Docker image in the build scripts to run the builds
-in the CI environment.
