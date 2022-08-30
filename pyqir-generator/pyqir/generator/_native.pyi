@@ -6,7 +6,9 @@ from pyqir.generator.types import Type
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 
-def ir_to_bitcode(ir: str, module_name: Optional[str], source_file_name: Optional[str]) -> bytes:
+def ir_to_bitcode(
+    ir: str, module_name: Optional[str] = ..., source_file_name: Optional[str] = ...
+) -> bytes:
     """
     Converts the supplied QIR string to its bitcode equivalent.
 
@@ -18,7 +20,9 @@ def ir_to_bitcode(ir: str, module_name: Optional[str], source_file_name: Optiona
     ...
 
 
-def bitcode_to_ir(bitcode: bytes, module_name: Optional[str], source_file_name: Optional[str]) -> str:
+def bitcode_to_ir(
+    bitcode: bytes, module_name: Optional[str] = ..., source_file_name: Optional[str] = ...
+) -> str:
     """
     Converts the supplied bitcode to its QIR string equivalent.
 
