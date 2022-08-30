@@ -74,7 +74,7 @@ integer type, just unsigned arithmetic instructions.</p>
 <p>Instances of QirPointerType represent a pointer to some other type in QIR.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pyqir.parser.QirPointerType.addrspace">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">addrspace</span></span><a class="headerlink" href="#pyqir.parser.QirPointerType.addrspace" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">addrspace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyqir.parser.QirPointerType.addrspace" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the address space to which this pointer points.</p>
 </dd></dl>
 
@@ -105,9 +105,9 @@ integer type, just unsigned arithmetic instructions.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pyqir.parser.QirArrayType.element_types">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">element_types</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><span class="pre">QirType</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyqir.parser.QirArrayType.element_types" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the ordered list of QirTypes representing the underlying array types.</p>
+<dt class="sig sig-object py" id="pyqir.parser.QirArrayType.element_type">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">element_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.parser.QirType" title="pyqir.parser._parser.QirType"><span class="pre">QirType</span></a></em><a class="headerlink" href="#pyqir.parser.QirArrayType.element_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the QirType representing the underlying array type.</p>
 </dd></dl>
 
 </dd></dl>
@@ -218,7 +218,7 @@ source language, a generated name based on an identifier, or a generated integer
 property to inspect which pointer type this null represents.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pyqir.parser.QirNullConstant.value">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#pyqir.parser.QirNullConstant.value" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pyqir.parser.QirNullConstant.value" title="Permalink to this definition">¶</a></dt>
 <dd><p>The value of QirNullConstant instances is always None.</p>
 </dd></dl>
 
