@@ -2,13 +2,14 @@
 # Licensed under the MIT License.
 
 from pyqir.parser import *
-
 import pytest
 
-def test_parser():
+
+def test_parser() -> None:
     mod = QirModule("tests/teleportchain.baseprofile.bc")
     func_name = "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
     func = mod.get_func_by_name(func_name)
+    assert func is not None
     assert func.name == func_name
     func_list = mod.functions
     assert len(func_list) == 1
@@ -30,30 +31,44 @@ def test_parser():
     assert isinstance(term, QirCondBrTerminator)
     assert term.true_dest == "then0__1.i.i.i"
     assert term.false_dest == "continue__1.i.i.i"
+    assert isinstance(term.condition, QirLocalOperand)
     assert term.condition.name == "0"
+    assert isinstance(blocks[1].terminator, QirBrTerminator)
     assert blocks[1].terminator.dest == "continue__1.i.i.i"
+    assert isinstance(blocks[8].terminator, QirRetTerminator)
+    assert isinstance(blocks[8].terminator.operand, QirLocalOperand)
+    assert isinstance(blocks[8].terminator.operand.type, QirIntegerType)
     assert blocks[8].terminator.operand.type.width == 8
     block = func.get_block_by_name("then0__2.i.i3.i")
+    assert block is not None
     assert isinstance(block.instructions[0], QirQisCallInstr)
     assert isinstance(block.instructions[0].func_args[0], QirQubitConstant)
     assert block.instructions[0].func_args[0].id == 5
     block = func.get_block_by_name("continue__1.i.i2.i")
+    assert block is not None
+    assert isinstance(block.terminator, QirCondBrTerminator)
+    assert isinstance(block.terminator.condition, QirLocalOperand)
     var_name = block.terminator.condition.name
     instr = func.get_instruction_by_output_name(var_name)
     assert isinstance(instr, QirQirCallInstr)
     assert instr.output_name == var_name
     assert instr.func_name == "__quantum__qir__read_result"
+    assert isinstance(instr.func_args[0], QirResultConstant)
     assert instr.func_args[0].id == 3
     assert isinstance(instr.type, QirIntegerType)
     assert instr.type.width == 1
 
-def test_parser_select_support():
+
+def test_parser_select_support() -> None:
     mod = QirModule("tests/select.bc")
     func = mod.get_funcs_by_attr("EntryPoint")[0]
     block = func.blocks[0]
     instr = block.instructions[5]
     assert isinstance(instr, QirSelectInstr)
-    assert isinstance(func.get_instruction_by_output_name("spec.select"), QirSelectInstr)
+    assert isinstance(
+        func.get_instruction_by_output_name("spec.select"),
+        QirSelectInstr,
+    )
     assert isinstance(instr.condition, QirLocalOperand)
     assert instr.condition.name == "0"
     assert isinstance(instr.true_value, QirIntConstant)
@@ -70,7 +85,7 @@ def test_parser_select_support():
     assert instr2.false_value.name == "val.i.1"
 
 
-def test_global_string():
+def test_global_string() -> None:
     mod = QirModule("tests/hello.bc")
     func_name = "program__main__body"
     func = mod.get_func_by_name(func_name)
@@ -81,10 +96,12 @@ def test_global_string():
     assert isinstance(instr, QirRtCallInstr)
     assert instr.func_name == "__quantum__rt__string_create"
     assert isinstance(instr.func_args[0], QirGlobalByteArrayConstant)
-    assert mod.get_global_bytes_value(instr.func_args[0]).decode('utf-8') == "Hello World!\0"
+    value = mod.get_global_bytes_value(instr.func_args[0])
+    assert value is not None
+    assert value.decode('utf-8') == "Hello World!\0"
 
 
-def test_parser_zext_support():
+def test_parser_zext_support() -> None:
     mod = QirModule("tests/select.bc")
     func = mod.get_funcs_by_attr("EntryPoint")[0]
     block = func.blocks[0]
@@ -96,27 +113,29 @@ def test_parser_zext_support():
     assert len(instr.target_operands) == 1
     assert isinstance(instr.target_operands[0], QirLocalOperand)
     assert instr.target_operands[0].name == "1"
+    assert isinstance(instr.target_operands[0].type, QirIntegerType)
     assert instr.target_operands[0].type.width == 1
 
 
-def test_loading_invalid_bitcode():
+def test_loading_invalid_bitcode() -> None:
     path = "tests/teleportchain.ll.reference"
     with pytest.raises(RuntimeError) as exc_info:
         _ = module_from_bitcode(path)
     assert str(exc_info.value).lower() == "invalid bitcode signature"
 
 
-def test_loading_bad_bitcode_file_path():
+def test_loading_bad_bitcode_file_path() -> None:
     path = "tests/does_not_exist.bc"
     with pytest.raises(RuntimeError) as exc_info:
-        _ = module_from_bitcode(path)
+        module_from_bitcode(path)
     assert str(exc_info.value).lower() == "no such file or directory"
 
 
-def test_parser_internals():
+def test_parser_internals() -> None:
     mod = module_from_bitcode("tests/teleportchain.baseprofile.bc")
     func_name = "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
     func = mod.get_func_by_name(func_name)
+    assert func is not None
     assert func.name == func_name
     assert len(func.parameters) == 0
     assert func.return_type.is_integer
@@ -132,6 +151,7 @@ def test_parser_internals():
     assert len(blocks) == 9
     assert blocks[0].name == "entry"
     entry_block = func.get_block_by_name("entry")
+    assert entry_block is not None
     assert entry_block.name == "entry"
     assert entry_block.terminator.is_condbr
     assert not entry_block.terminator.is_ret
@@ -145,20 +165,31 @@ def test_parser_internals():
     assert entry_block.instructions[0].call_func_name == "__quantum__qis__h__body"
     assert entry_block.instructions[0].is_qis_call
     param_list = entry_block.instructions[0].call_func_params
+    assert param_list is not None
     assert len(param_list) == 1
     assert param_list[0].is_constant
+    assert param_list[0].constant is not None
     assert param_list[0].constant.is_qubit
     assert param_list[0].constant.qubit_static_id == 0
     assert entry_block.instructions[8].is_qis_call
     assert entry_block.instructions[8].call_func_name == "__quantum__qis__mz__body"
+    assert entry_block.instructions[8].call_func_params is not None
+    assert entry_block.instructions[8].call_func_params[0].constant is not None
     assert entry_block.instructions[8].call_func_params[0].constant.qubit_static_id == 1
+    assert entry_block.instructions[8].call_func_params[1].constant is not None
     assert entry_block.instructions[8].call_func_params[1].constant.result_static_id == 0
     branch_cond = entry_block.terminator.condbr_condition
+    assert branch_cond is not None
     assert branch_cond.local_name == "0"
     assert entry_block.instructions[10].is_qir_call
     assert entry_block.instructions[10].call_func_name == "__quantum__qir__read_result"
+    assert entry_block.instructions[10].call_func_params is not None
+    assert entry_block.instructions[10].call_func_params[0].constant is not None
     assert entry_block.instructions[10].call_func_params[0].constant.result_static_id == 0
     assert entry_block.instructions[10].has_output
     assert entry_block.instructions[10].output_name == "0"
     source_instr = func.get_instruction_by_output_name(branch_cond.local_name)
+    assert source_instr is not None
+    assert source_instr.call_func_params is not None
+    assert source_instr.call_func_params[0].constant is not None
     assert source_instr.call_func_params[0].constant.result_static_id == 0

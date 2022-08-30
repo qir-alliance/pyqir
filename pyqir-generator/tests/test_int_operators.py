@@ -40,7 +40,9 @@ class IntOperatorsTest(unittest.TestCase):
                     "sink", types.Function([ty], types.VOID))
 
                 x = mod.builder.call(source, [])
+                assert x is not None
                 y = mod.builder.call(source, [])
+                assert y is not None
                 z = build(mod.builder)(x, y)
                 mod.builder.call(sink, [z])
 
@@ -57,6 +59,7 @@ class IntOperatorsTest(unittest.TestCase):
                     "sink", types.Function([ty], types.VOID))
 
                 x = mod.builder.call(source, [])
+                assert x is not None
                 y = build(mod.builder)(const(types.Int(64), 1), x)
                 mod.builder.call(sink, [y])
 
@@ -70,6 +73,7 @@ class IntOperatorsTest(unittest.TestCase):
             "sink", types.Function([types.Int(16)], types.VOID))
 
         x = mod.builder.call(source, [])
+        assert x is not None
         y = mod.builder.add(x, const(types.Int(18), 2))
         mod.builder.call(sink, [y])
 

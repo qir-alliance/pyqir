@@ -4,10 +4,10 @@
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
 from pyqir.generator import BasicQisBuilder, SimpleModule, Value
 import tempfile
-from typing import List
+from typing import List, Tuple
 
 
-def _teleport(qis: BasicQisBuilder, qubits: List[Value], results: List[Value]) -> None:
+def _teleport(qis: BasicQisBuilder, qubits: Tuple[Value, ...], results: Tuple[Value, ...]) -> None:
     msg = qubits[0]
     target = qubits[1]
     register = qubits[2]

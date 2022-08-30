@@ -1,61 +1,64 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+from typing import Any, Dict
+
+
 class GateSet:
     """
     Defines the quantum circuit operations which may be registered for
     callbacks during evaluation of QIR
     """
 
-    def cx(self, control: str, target: str):
+    def cx(self, control: str, target: str) -> None:
         pass
 
-    def cz(self, control: str, target: str):
+    def cz(self, control: str, target: str) -> None:
         pass
 
-    def h(self, target: str):
+    def h(self, target: str) -> None:
         pass
 
-    def m(self, qubit: str, target: str):
+    def m(self, qubit: str, target: str) -> None:
         pass
 
-    def mz(self, qubit: str, target: str):
+    def mz(self, qubit: str, target: str) -> None:
         pass
 
-    def reset(self, target: str):
+    def reset(self, target: str) -> None:
         pass
 
-    def rx(self, theta: float, qubit: str):
+    def rx(self, theta: float, qubit: str) -> None:
         pass
 
-    def ry(self, theta: float, qubit: str):
+    def ry(self, theta: float, qubit: str) -> None:
         pass
 
-    def rz(self, theta: float, qubit: str):
+    def rz(self, theta: float, qubit: str) -> None:
         pass
 
-    def s(self, qubit: str):
+    def s(self, qubit: str) -> None:
         pass
 
-    def s_adj(self, qubit: str):
+    def s_adj(self, qubit: str) -> None:
         pass
 
-    def t(self, qubit: str):
+    def t(self, qubit: str) -> None:
         pass
 
-    def t_adj(self, qubit: str):
+    def t_adj(self, qubit: str) -> None:
         pass
 
-    def x(self, qubit: str):
+    def x(self, qubit: str) -> None:
         pass
 
-    def y(self, qubit: str):
+    def y(self, qubit: str) -> None:
         pass
 
-    def z(self, qubit: str):
+    def z(self, qubit: str) -> None:
         pass
 
-    def finish(self, metadata: dict):
+    def finish(self, metadata: Dict[str, Any]) -> None:
         """
         Called at the end of QIR evaluation supplying run metadata.
         """

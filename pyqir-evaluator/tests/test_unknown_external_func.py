@@ -6,7 +6,7 @@ import pytest
 import tempfile
 
 
-def test_unknown_external_func():
+def test_unknown_external_func() -> None:
     content = """
         ; ModuleID = 'test_unknown_external_func'
         source_filename = "test_unknown_external_func"
@@ -31,10 +31,11 @@ def test_unknown_external_func():
             fd.write(content)
             fd.flush()
             evaluator.eval(fd.name, logger)
-    assert str(excinfo.value) == "Unsupported functions `__quantum__rt__bool_to_string`."
+    assert (str(excinfo.value)
+            == "Unsupported functions `__quantum__rt__bool_to_string`.")
 
 
-def test_multiple_unknown_external_funcs():
+def test_multiple_unknown_external_funcs() -> None:
     content = """
         ; ModuleID = 'test_unknown_external_func'
         source_filename = "test_unknown_external_func"
@@ -61,4 +62,5 @@ def test_multiple_unknown_external_funcs():
             fd.write(content)
             fd.flush()
             evaluator.eval(fd.name, logger)
-    assert str(excinfo.value) == "Unsupported functions `__quantum__rt__bool_to_string`, `__quantum__rt__int_to_string`."
+    assert (str(excinfo.value)
+            == "Unsupported functions `__quantum__rt__bool_to_string`, `__quantum__rt__int_to_string`.")

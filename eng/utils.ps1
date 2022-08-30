@@ -256,9 +256,6 @@ function Build-PyQIR([string]$project) {
         $build_extra_args = ""
         Invoke-LoggedCommand {
             exec {
-                & $python -m pip install -r requirements-dev.txt
-            }
-            exec {
                 maturin build --release $build_extra_args --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
             }
             exec {

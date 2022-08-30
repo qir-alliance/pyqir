@@ -14,28 +14,32 @@ properties {
 
     $pyqir.qirlib = @{}
     $pyqir.qirlib.name = "qirlib"
-    $pyqir.qirlib.dir = Join-Path $repo.root "qirlib"
+    $pyqir.qirlib.dir = Join-Path $repo.root $pyqir.qirlib.name
 
     $pyqir.meta = @{}
     $pyqir.meta.name = "pyqir"
-    $pyqir.meta.dir = Join-Path $repo.root "pyqir"
+    $pyqir.meta.dir = Join-Path $repo.root $pyqir.meta.name
 
     $pyqir.parser = @{}
     $pyqir.parser.name = "pyqir-parser"
-    $pyqir.parser.dir = Join-Path $repo.root "pyqir-parser"
+    $pyqir.parser.dir = Join-Path $repo.root $pyqir.parser.name
     $pyqir.parser.python_dir = Join-Path $pyqir.parser.dir "pyqir" "parser"
 
     $pyqir.generator = @{}
     $pyqir.generator.name = "pyqir-generator"
-    $pyqir.generator.dir = Join-Path $repo.root "pyqir-generator"
+    $pyqir.generator.dir = Join-Path $repo.root $pyqir.generator.name
     $pyqir.generator.examples_dir = Join-Path $repo.root "examples" "generator"
     $pyqir.generator.python_dir = Join-Path $pyqir.generator.dir "pyqir" "generator"
 
     $pyqir.evaluator = @{}
     $pyqir.evaluator.name = "pyqir-evaluator"
-    $pyqir.evaluator.dir = Join-Path $repo.root "pyqir-evaluator"
+    $pyqir.evaluator.dir = Join-Path $repo.root $pyqir.evaluator.name
     $pyqir.evaluator.examples_dir = Join-Path $repo.root "examples" "evaluator"
     $pyqir.evaluator.python_dir = Join-Path $pyqir.evaluator.dir "pyqir" "evaluator"
+
+    $pyqir.tests = @{}
+    $pyqir.tests.name = "pyqir-tests"
+    $pyqir.tests.dir = Join-Path $repo.root $pyqir.tests.name
 
     $docs = @{}
     $docs.root = Join-Path $repo.root "docs"
@@ -50,6 +54,7 @@ properties {
     $linux.manylinux_tag = "manylinux2014_x86_64_maturin"
     $linux.manylinux_root = "/io"
 
+    [Diagnostics.CodeAnalysis.SuppressMessage("PSUseDeclaredVarsMoreThanAssignments", "")]
     $wheelhouse = Join-Path $repo.root "target" "wheels" "*.whl"
 }
 
@@ -60,9 +65,7 @@ task default -depends qirlib, pyqir-tests, parser, generator, evaluator, metawhe
 
 task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers 
 
-task checks -depends cargo-fmt, cargo-clippy, checkmypy
-
-task rebuild -depends qirlib, generator, evaluator, parser
+task checks -depends cargo-fmt, cargo-clippy, mypy
 
 task run-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
     $srcPath = $repo.root
@@ -91,28 +94,17 @@ task cargo-fmt {
 
 task cargo-clippy -depends init {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
-        $extraArgs = (Test-CI) ? @("--", "-D", "warnings") : @()
-        cargo clippy --workspace --all-targets @("$($env:CARGO_EXTRA_ARGS)" -split " ") @extraArgs
+        cargo clippy --workspace --all-targets @("$($env:CARGO_EXTRA_ARGS)" -split " ") -- -D warnings
     }
 }
 
-task checkmypy -depends wheelhouse {
-
-    # - Run mypy from within new venv. Reuse same script from task docs
-    Write-Host (Get-ChildItem $wheelhouse -Include *.whl)
-    $envPath = Join-Path $repo.root ".mypy-venv"
-    Create-PyEnv `
-        -EnvironmentPath $envPath `
-        -RequirementsPath (Join-Path $repo.root "eng" "lint-requirements.txt") `
-        -ArtifactPaths (Get-Item $wheelhouse)
-    & (Join-Path $envPath "bin" "Activate.ps1")
-    try {
-        Invoke-LoggedCommand -errorMessage "Please fix the above mypy errors" {
-            mypy "$($pyqir.parser.python_dir)" "$($pyqir.generator.python_dir)" "$($pyqir.evaluator.python_dir)"
-        }
+task mypy -depends python-requirements {
+    exec {
+        & $python -m pip install mypy
     }
-    finally {
-        deactivate
+
+    Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above mypy errors" {
+        mypy
     }
 }
 
@@ -129,7 +121,7 @@ task parser -depends init {
 }
 
 task pyqir-tests -depends init, generator, evaluator {
-    exec -workingDirectory (Join-Path $repo.root "pyqir-tests") {
+    exec -workingDirectory $pyqir.tests.dir {
         pytest
     }
 }
@@ -203,7 +195,17 @@ task check-environment {
     Assert ((Test-InVirtualEnvironment) -eq $true) "$($env_message -join ' ')"
 }
 
-task init -depends check-environment {
+task python-requirements -depends check-environment {
+    exec {
+        & $python -m pip install `
+            --requirement (Join-Path $pyqir.generator.examples_dir requirements.txt) `
+            --requirement (Join-Path $pyqir.evaluator.dir requirements-dev.txt) `
+            --requirement (Join-Path $pyqir.generator.dir requirements-dev.txt) `
+            --requirement (Join-Path $pyqir.parser.dir requirements-dev.txt)
+    }
+}
+
+task init -depends python-requirements {
     if (Test-CI) {
         & $python -m pip install maturin==0.12.12
     }
