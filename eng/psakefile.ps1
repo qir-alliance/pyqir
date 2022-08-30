@@ -100,7 +100,7 @@ task cargo-clippy -depends init {
 
 task mypy -depends python-requirements {
     exec {
-        pip install mypy
+        & $python -m pip install mypy
     }
 
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above mypy errors" {
@@ -196,7 +196,7 @@ task check-environment {
 }
 
 task python-requirements -depends check-environment {
-    pip install `
+    & $python -m pip install `
         --requirement (Join-Path $pyqir.generator.examples_dir requirements.txt) `
         --requirement (Join-Path $pyqir.evaluator.dir requirements-dev.txt) `
         --requirement (Join-Path $pyqir.generator.dir requirements-dev.txt) `
