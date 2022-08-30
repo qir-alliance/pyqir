@@ -196,11 +196,13 @@ task check-environment {
 }
 
 task python-requirements -depends check-environment {
-    & $python -m pip install `
-        --requirement (Join-Path $pyqir.generator.examples_dir requirements.txt) `
-        --requirement (Join-Path $pyqir.evaluator.dir requirements-dev.txt) `
-        --requirement (Join-Path $pyqir.generator.dir requirements-dev.txt) `
-        --requirement (Join-Path $pyqir.parser.dir requirements-dev.txt)
+    exec {
+        & $python -m pip install `
+            --requirement (Join-Path $pyqir.generator.examples_dir requirements.txt) `
+            --requirement (Join-Path $pyqir.evaluator.dir requirements-dev.txt) `
+            --requirement (Join-Path $pyqir.generator.dir requirements-dev.txt) `
+            --requirement (Join-Path $pyqir.parser.dir requirements-dev.txt)
+    }
 }
 
 task init -depends python-requirements {
