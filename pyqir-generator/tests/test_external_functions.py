@@ -3,7 +3,7 @@
 
 from pyqir.generator import BasicQisBuilder, SimpleModule, Type, Value, const, types
 import re
-from typing import Any, Callable, List, Tuple
+from typing import Any, Callable, List, Tuple, Union
 import unittest
 
 
@@ -37,7 +37,8 @@ class ExternalFunctionsTest(unittest.TestCase):
         )
 
     def test_call_double(self) -> None:
-        for value in [const(types.DOUBLE, 23.25), 23.25]:
+        values: List[Union[Value, float]] = [const(types.DOUBLE, 23.25), 23.25]
+        for value in values:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
                 f = mod.add_external_function(
@@ -49,7 +50,8 @@ class ExternalFunctionsTest(unittest.TestCase):
                 )
 
     def test_call_int(self) -> None:
-        for value in [const(types.Int(64), 42), 42]:
+        values: List[Union[Value, int]] = [const(types.Int(64), 42), 42]
+        for value in values:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
                 f = mod.add_external_function(
@@ -60,7 +62,8 @@ class ExternalFunctionsTest(unittest.TestCase):
                 self.assertIn("call void @test_function(i64 42)", mod.ir())
 
     def test_call_bool_true(self) -> None:
-        for value in [const(types.BOOL, True), True]:
+        values: List[Union[Value, bool]] = [const(types.BOOL, True), True]
+        for value in values:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
                 f = mod.add_external_function(
@@ -70,7 +73,8 @@ class ExternalFunctionsTest(unittest.TestCase):
                 self.assertIn("call void @test_function(i1 true)", mod.ir())
 
     def test_call_bool_false(self) -> None:
-        for value in [const(types.BOOL, False), False]:
+        values: List[Union[Value, bool]] = [const(types.BOOL, False), False]
+        for value in values:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
                 f = mod.add_external_function(
@@ -196,6 +200,7 @@ class ExternalFunctionsTest(unittest.TestCase):
             "bar", types.Function([types.Int(64)], types.VOID))
 
         x = mod.builder.call(foo, [])
+        assert x is not None
         mod.builder.call(bar, [x])
 
         ir = mod.ir()
@@ -210,6 +215,7 @@ class ExternalFunctionsTest(unittest.TestCase):
             "bar", types.Function([types.QUBIT], types.VOID))
 
         x = mod.builder.call(foo, [])
+        assert x is not None
         mod.builder.call(bar, [x])
 
         with self.assertRaisesRegex(OSError, "^Call parameter type does not match function signature!"):
@@ -222,6 +228,7 @@ class ExternalFunctionsTest(unittest.TestCase):
             "foo", types.Function([], types.Int(64)))
 
         x = mod.builder.call(foo, [])
+        assert x is not None
         qis.rz(x, mod.qubits[0])
 
         with self.assertRaisesRegex(OSError, "^Call parameter type does not match function signature!"):
@@ -235,7 +242,9 @@ class ExternalFunctionsTest(unittest.TestCase):
             "bar", types.Function([types.Int(64), types.Int(64)], types.VOID))
 
         x = mod.builder.call(foo, [])
+        assert x is not None
         y = mod.builder.call(foo, [])
+        assert y is not None
         mod.builder.call(bar, [x, y])
 
         ir = mod.ir()
@@ -250,6 +259,7 @@ class ExternalFunctionsTest(unittest.TestCase):
             "foo", types.Function([], types.DOUBLE))
 
         theta = mod.builder.call(foo, [])
+        assert theta is not None
         qis.rx(theta, mod.qubits[0])
         qis.ry(theta, mod.qubits[0])
         qis.rz(theta, mod.qubits[0])

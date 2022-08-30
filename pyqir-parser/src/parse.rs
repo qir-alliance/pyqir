@@ -272,7 +272,7 @@ impl TypeExt for llvm_ir::Type {
 pub trait ConstantExt {
     fn qubit_id(&self) -> Option<u64>;
     fn result_id(&self) -> Option<u64>;
-    fn bytes_val(&self) -> Option<Vec<i8>>;
+    fn bytes_val(&self) -> Option<Vec<u8>>;
 }
 
 macro_rules! constant_id {
@@ -302,7 +302,7 @@ impl ConstantExt for llvm_ir::Constant {
     constant_id!(qubit_id, TypeExt::is_qubit);
     constant_id!(result_id, TypeExt::is_result);
 
-    fn bytes_val(&self) -> Option<Vec<i8>> {
+    fn bytes_val(&self) -> Option<Vec<u8>> {
         match &self {
             llvm_ir::Constant::Array {
                 element_type: elem_type,

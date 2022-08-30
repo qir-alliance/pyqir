@@ -29,17 +29,22 @@ m = mod.add_external_function(
 )
 
 # Instead of mod.qubits[i], use __quantum__rt__qubit_allocate.
-qubit = mod.builder.call(qubit_allocate, [])
+qubit_return = mod.builder.call(qubit_allocate, [])
+assert qubit_return is not None
+qubit = qubit_return
 
 qis = BasicQisBuilder(mod.builder)
 qis.h(qubit)
 
 # Instead of qis.mz, use __quantum__qis__m__body.
 result = mod.builder.call(m, [qubit])
+assert result is not None
 
 # Instead of mod.if_result, use __quantum__rt__result_equal and mod.if_.
 one = mod.builder.call(result_get_one, [])
+assert one is not None
 result_is_one = mod.builder.call(result_equal, [result, one])
+assert result_is_one is not None
 mod.builder.if_(result_is_one, lambda: qis.reset(qubit))
 
 # Be sure to release any allocated qubits when you're done with them.

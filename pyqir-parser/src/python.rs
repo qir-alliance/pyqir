@@ -21,7 +21,7 @@ use super::parse::{
     TypeExt,
 };
 use llvm_ir::{self, types::Typed};
-use pyo3::{exceptions::PyRuntimeError, prelude::*};
+use pyo3::{exceptions::PyRuntimeError, prelude::*, types::PyBytes};
 use std::{convert::TryFrom, path::PathBuf};
 
 #[pymodule]
@@ -1058,35 +1058,28 @@ impl PyQirConstant {
         }
     }
 
-    fn get_global_byte_array_value(&self, module: &PyQirModule) -> Option<Vec<i8>> {
-        match self.constantref.as_ref() {
-            llvm_ir::Constant::GetElementPtr(llvm_ir::constant::GetElementPtr {
-                address: addr,
-                indices: _,
-                in_bounds: _,
-            }) => match addr.as_ref() {
-                llvm_ir::Constant::GlobalReference {
-                    name: llvm_ir::Name::Number(n),
-                    ty: _,
-                } => module
-                    .module
-                    .global_vars
-                    .iter()
-                    .find(|g| match &g.name {
-                        llvm_ir::Name::Number(m) => m == n,
-                        llvm_ir::Name::Name(_) => false,
-                    })
-                    .and_then(|global| {
-                        global
-                            .initializer
-                            .as_ref()
-                            .map(|init| init.as_ref().bytes_val())
-                    })
-                    .flatten(),
-                _ => None,
-            },
+    fn get_global_byte_array_value(&self, py: Python, module: &PyQirModule) -> Option<Py<PyBytes>> {
+        let gep = match self.constantref.as_ref() {
+            llvm_ir::Constant::GetElementPtr(gep) => Some(gep),
             _ => None,
-        }
+        }?;
+
+        let n = match gep.address.as_ref() {
+            llvm_ir::Constant::GlobalReference {
+                name: llvm_ir::Name::Number(n),
+                ..
+            } => Some(n),
+            _ => None,
+        }?;
+
+        module
+            .module
+            .global_vars
+            .iter()
+            .find(|g| matches!(&g.name, llvm_ir::Name::Number(m) if m == n))
+            .and_then(|g| g.initializer.as_ref())
+            .and_then(|c| c.as_ref().bytes_val())
+            .map(|b| PyBytes::new(py, &b).into())
     }
 }
 

@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from pyqir.evaluator._gateset import GateSet
-from pyqir.evaluator._native import PyNonadaptiveJit # type: ignore
+from pyqir.evaluator._native import PyNonadaptiveJit
 from typing import List, Optional
 
 
@@ -12,14 +12,16 @@ class NonadaptiveEvaluator:
     state. Measurement results are pre-determined before the program starts.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._jit = PyNonadaptiveJit()
 
-    def eval(self,
-             file_path: str,
-             gateset: GateSet,
-             entry_point: Optional[str] = None,
-             result_stream: Optional[List[bool]] = None):
+    def eval(
+        self,
+        file_path: str,
+        gateset: GateSet,
+        entry_point: Optional[str] = None,
+        result_stream: Optional[List[bool]] = None,
+    ) -> None:
         """
         JIT compiles and evaluates the QIR program, delegating quantum
         operations to the supplied gate set.

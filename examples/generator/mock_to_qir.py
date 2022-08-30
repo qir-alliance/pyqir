@@ -12,7 +12,7 @@ from pathlib import Path
 from pyqir.generator import BasicQisBuilder, SimpleModule, Value
 
 
-class QirGenerator(MockLanguageListener):
+class QirGenerator(MockLanguageListener):  # type: ignore[misc]
     """
     Class that generates QIR when walking the parse tree 
     of a Mock language program.
