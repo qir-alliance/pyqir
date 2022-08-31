@@ -1,28 +1,15 @@
-# pyqir.evaluator
-
-## `NonadaptiveEvaluator` class
+# Evaluator
 
 ```{eval-rst}
 .. autoclass:: pyqir.evaluator.NonadaptiveEvaluator
-    :show-inheritance:
-    :members:
-    :undoc-members:
-```
+   :members:
 
-## `GateSet` class
-
-```{eval-rst}
 .. autoclass:: pyqir.evaluator.GateSet
-    :show-inheritance:
-    :members:
-    :undoc-members:
-```
+   :members:
+   :undoc-members:
 
-## `GateLogger` class
-
-```{eval-rst}
 .. autoclass:: pyqir.evaluator.GateLogger
-    :show-inheritance:
-    :members:
-    :undoc-members:
+   :show-inheritance:
+   :members:
+   :undoc-members:
 ```

@@ -28,12 +28,13 @@ author = 'QIR Alliance'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "myst_parser",
-    "sphinx.ext.autodoc",
-    "sphinx.ext.intersphinx"
+    'enum_tools.autoenum',
+    'myst_parser',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
 ]
 myst_enable_extensions = [
-    "colon_fence"
+    'colon_fence',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -46,7 +47,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 intersphinx_mapping = {
     'sphinx': ('https://www.sphinx-doc.org/en/master', None),
-    'myst-parser': ('https://myst-parser.readthedocs.io/en/latest/', None)
+    'myst-parser': ('https://myst-parser.readthedocs.io/en/latest/', None),
 }
 
 # -- Options for HTML output -------------------------------------------------

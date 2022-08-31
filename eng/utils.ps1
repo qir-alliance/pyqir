@@ -291,7 +291,7 @@ function Create-PyEnv() {
     try {
         pip install -r $RequirementsPath
         foreach ($artifact in $ArtifactPaths) {
-            pip install $artifact
+            pip install --force-reinstall $artifact
         }
     }
     finally {
