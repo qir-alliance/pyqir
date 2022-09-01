@@ -14,7 +14,7 @@ from pyqir.generator import BasicQisBuilder, SimpleModule, Value
 
 class QirGenerator(MockLanguageListener):  # type: ignore[misc]
     """
-    Class that generates QIR when walking the parse tree 
+    Class that generates QIR when walking the parse tree
     of a Mock language program.
     """
 
@@ -35,17 +35,13 @@ class QirGenerator(MockLanguageListener):  # type: ignore[misc]
         try:
             return self.module.qubits[int(id)]
         except IndexError as e:
-            raise ValueError(
-                "Parsed progam uses more qubits than allocated"
-            ) from e
+            raise ValueError("Parsed progam uses more qubits than allocated") from e
 
     def parse_result(self, id: str) -> Value:
         try:
             return self.module.results[int(id)]
         except IndexError as e:
-            raise ValueError(
-                "Parsed progam uses more results than allocated"
-            ) from e
+            raise ValueError("Parsed progam uses more results than allocated") from e
 
     def enterXGate(self, ctx: MockLanguageParser.XGateContext) -> None:
         qubit = self.parse_qubit(ctx.target.text)
@@ -69,8 +65,8 @@ class QirGenerator(MockLanguageListener):  # type: ignore[misc]
 def mock_program_to_qir(num_qubits: int, input_file: str) -> str:
     """
     Parses a Mock program and generates QIR based on the syntax tree.
-    Usually the language-specific compiler would fully validate and 
-    potentially optimize the program before QIR is generated, but for 
+    Usually the language-specific compiler would fully validate and
+    potentially optimize the program before QIR is generated, but for
     illustration purposes we omit that from this example.
 
     :param num_qubits: The total number of qubits used in the program.
@@ -88,26 +84,23 @@ def mock_program_to_qir(num_qubits: int, input_file: str) -> str:
     return generator.ir()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     command_line = ArgumentParser()
     command_line.add_argument(
-        'input_file', type=str,
-        help='Path of the file containing the Mock program.'
+        "input_file", type=str, help="Path of the file containing the Mock program."
     )
     command_line.add_argument(
-        'num_qubits', type=int,
-        help='The total number of qubits used in the program.'
+        "num_qubits", type=int, help="The total number of qubits used in the program."
     )
     command_line.add_argument(
-        '-o', '--output_file', type=str,
-        help='Path of the file to write the IR to.'
+        "-o", "--output_file", type=str, help="Path of the file to write the IR to."
     )
     args = command_line.parse_args()
 
     generated_qir = mock_program_to_qir(args.num_qubits, args.input_file)
 
     if args.output_file is not None:
-        with open(args.output_file, 'w') as file:
+        with open(args.output_file, "w") as file:
             file.write(generated_qir)
     else:
         print(generated_qir)

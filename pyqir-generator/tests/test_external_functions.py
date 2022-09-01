@@ -10,9 +10,7 @@ import unittest
 class ExternalFunctionsTest(unittest.TestCase):
     def test_call_no_params(self) -> None:
         mod = SimpleModule("test", 0, 0)
-        f = mod.add_external_function(
-            "test_function", types.Function([], types.VOID)
-        )
+        f = mod.add_external_function("test_function", types.Function([], types.VOID))
         mod.builder.call(f, [])
         self.assertIn("call void @test_function()", mod.ir())
 
@@ -27,8 +25,7 @@ class ExternalFunctionsTest(unittest.TestCase):
     def test_call_two_qubits(self) -> None:
         mod = SimpleModule("test", 2, 0)
         f = mod.add_external_function(
-            "test_function",
-            types.Function([types.QUBIT, types.QUBIT], types.VOID)
+            "test_function", types.Function([types.QUBIT, types.QUBIT], types.VOID)
         )
         mod.builder.call(f, [mod.qubits[0], mod.qubits[1]])
         self.assertIn(
@@ -45,9 +42,7 @@ class ExternalFunctionsTest(unittest.TestCase):
                     "test_function", types.Function([types.DOUBLE], types.VOID)
                 )
                 mod.builder.call(f, [value])
-                self.assertIn(
-                    "call void @test_function(double 2.325000e+01)", mod.ir()
-                )
+                self.assertIn("call void @test_function(double 2.325000e+01)", mod.ir())
 
     def test_call_int(self) -> None:
         values: List[Union[Value, int]] = [const(types.Int(64), 42), 42]
@@ -55,8 +50,7 @@ class ExternalFunctionsTest(unittest.TestCase):
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
                 f = mod.add_external_function(
-                    "test_function",
-                    types.Function([types.Int(64)], types.VOID)
+                    "test_function", types.Function([types.Int(64)], types.VOID)
                 )
                 mod.builder.call(f, [value])
                 self.assertIn("call void @test_function(i64 42)", mod.ir())
@@ -101,8 +95,7 @@ class ExternalFunctionsTest(unittest.TestCase):
         qis.mz(mod.qubits[0], mod.results[1])
 
         f = mod.add_external_function(
-            "test_function",
-            types.Function([types.RESULT, types.RESULT], types.VOID)
+            "test_function", types.Function([types.RESULT, types.RESULT], types.VOID)
         )
         mod.builder.call(f, [mod.results[1], mod.results[0]])
 
@@ -120,9 +113,10 @@ class ExternalFunctionsTest(unittest.TestCase):
         double_rep = "double 4.242000e+01"
 
         mod = SimpleModule("test", 0, 0)
-        f = mod.add_external_function("test_function", types.Function(
-            [types.BOOL, types.Int(64), types.DOUBLE], types.VOID
-        ))
+        f = mod.add_external_function(
+            "test_function",
+            types.Function([types.BOOL, types.Int(64), types.DOUBLE], types.VOID),
+        )
         mod.builder.call(f, [b, i, d])
 
         self.assertIn(
@@ -156,10 +150,10 @@ class ExternalFunctionsTest(unittest.TestCase):
 
     def test_overflow_int_value(self) -> None:
         with self.assertRaises(OverflowError):
-            const(types.Int(64), 2 ** 64)
+            const(types.Int(64), 2**64)
 
     def test_overflow_conversion(self) -> None:
-        for value in [123, 2 ** 64]:
+        for value in [123, 2**64]:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
                 f = mod.add_external_function(
@@ -194,10 +188,10 @@ class ExternalFunctionsTest(unittest.TestCase):
 
     def test_variable(self) -> None:
         mod = SimpleModule("test", 0, 0)
-        foo = mod.add_external_function(
-            "foo", types.Function([], types.Int(64)))
+        foo = mod.add_external_function("foo", types.Function([], types.Int(64)))
         bar = mod.add_external_function(
-            "bar", types.Function([types.Int(64)], types.VOID))
+            "bar", types.Function([types.Int(64)], types.VOID)
+        )
 
         x = mod.builder.call(foo, [])
         assert x is not None
@@ -209,37 +203,40 @@ class ExternalFunctionsTest(unittest.TestCase):
 
     def test_variable_wrong_external_type(self) -> None:
         mod = SimpleModule("test", 0, 0)
-        foo = mod.add_external_function(
-            "foo", types.Function([], types.Int(64)))
+        foo = mod.add_external_function("foo", types.Function([], types.Int(64)))
         bar = mod.add_external_function(
-            "bar", types.Function([types.QUBIT], types.VOID))
+            "bar", types.Function([types.QUBIT], types.VOID)
+        )
 
         x = mod.builder.call(foo, [])
         assert x is not None
         mod.builder.call(bar, [x])
 
-        with self.assertRaisesRegex(OSError, "^Call parameter type does not match function signature!"):
+        with self.assertRaisesRegex(
+            OSError, "^Call parameter type does not match function signature!"
+        ):
             mod.ir()
 
     def test_variable_wrong_angle_type(self) -> None:
         mod = SimpleModule("test", 1, 0)
         qis = BasicQisBuilder(mod.builder)
-        foo = mod.add_external_function(
-            "foo", types.Function([], types.Int(64)))
+        foo = mod.add_external_function("foo", types.Function([], types.Int(64)))
 
         x = mod.builder.call(foo, [])
         assert x is not None
         qis.rz(x, mod.qubits[0])
 
-        with self.assertRaisesRegex(OSError, "^Call parameter type does not match function signature!"):
+        with self.assertRaisesRegex(
+            OSError, "^Call parameter type does not match function signature!"
+        ):
             mod.ir()
 
     def test_two_variables(self) -> None:
         mod = SimpleModule("test", 0, 0)
-        foo = mod.add_external_function(
-            "foo", types.Function([], types.Int(64)))
+        foo = mod.add_external_function("foo", types.Function([], types.Int(64)))
         bar = mod.add_external_function(
-            "bar", types.Function([types.Int(64), types.Int(64)], types.VOID))
+            "bar", types.Function([types.Int(64), types.Int(64)], types.VOID)
+        )
 
         x = mod.builder.call(foo, [])
         assert x is not None
@@ -255,8 +252,7 @@ class ExternalFunctionsTest(unittest.TestCase):
     def test_computed_rotation(self) -> None:
         mod = SimpleModule("test", 1, 0)
         qis = BasicQisBuilder(mod.builder)
-        foo = mod.add_external_function(
-            "foo", types.Function([], types.DOUBLE))
+        foo = mod.add_external_function("foo", types.Function([], types.DOUBLE))
 
         theta = mod.builder.call(foo, [])
         assert theta is not None
@@ -267,8 +263,11 @@ class ExternalFunctionsTest(unittest.TestCase):
         ir = mod.ir()
         self.assertIn("%0 = call double @foo()", ir)
         self.assertIn(
-            "call void @__quantum__qis__rx__body(double %0, %Qubit* null)", ir)
+            "call void @__quantum__qis__rx__body(double %0, %Qubit* null)", ir
+        )
         self.assertIn(
-            "call void @__quantum__qis__ry__body(double %0, %Qubit* null)", ir)
+            "call void @__quantum__qis__ry__body(double %0, %Qubit* null)", ir
+        )
         self.assertIn(
-            "call void @__quantum__qis__rz__body(double %0, %Qubit* null)", ir)
+            "call void @__quantum__qis__rz__body(double %0, %Qubit* null)", ir
+        )

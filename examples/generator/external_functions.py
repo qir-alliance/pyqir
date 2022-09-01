@@ -8,9 +8,7 @@ qis = BasicQisBuilder(mod.builder)
 
 # Declare an externally linked function named that has no parameters and returns
 # void.
-my_function = mod.add_external_function(
-    "my_function", types.Function([], types.VOID)
-)
+my_function = mod.add_external_function("my_function", types.Function([], types.VOID))
 
 # Call the function with no arguments (the empty list).
 mod.builder.call(my_function, [])
@@ -24,9 +22,7 @@ my_gate = mod.add_external_function(
 mod.builder.call(my_gate, [const(types.Int(64), 123), mod.qubits[0]])
 
 # Declare a function that returns a double.
-get_angle = mod.add_external_function(
-    "get_angle", types.Function([], types.DOUBLE)
-)
+get_angle = mod.add_external_function("get_angle", types.Function([], types.DOUBLE))
 
 # Use the return value of the function as the input to a rotation gate.
 angle = mod.builder.call(get_angle, [])

@@ -8,24 +8,20 @@ from pyqir.generator import BasicQisBuilder, SimpleModule, types
 # appropriate runtime functions.
 mod = SimpleModule("dynamic_allocation", num_qubits=0, num_results=0)
 qubit_allocate = mod.add_external_function(
-    "__quantum__rt__qubit_allocate",
-    types.Function([], types.QUBIT)
+    "__quantum__rt__qubit_allocate", types.Function([], types.QUBIT)
 )
 qubit_release = mod.add_external_function(
-    "__quantum__rt__qubit_release",
-    types.Function([types.QUBIT], types.VOID)
+    "__quantum__rt__qubit_release", types.Function([types.QUBIT], types.VOID)
 )
 result_get_one = mod.add_external_function(
-    "__quantum__rt__result_get_one",
-    types.Function([], types.RESULT)
+    "__quantum__rt__result_get_one", types.Function([], types.RESULT)
 )
 result_equal = mod.add_external_function(
     "__quantum__rt__result_equal",
-    types.Function([types.RESULT, types.RESULT], types.BOOL)
+    types.Function([types.RESULT, types.RESULT], types.BOOL),
 )
 m = mod.add_external_function(
-    "__quantum__qis__m__body",
-    types.Function([types.QUBIT], types.RESULT)
+    "__quantum__qis__m__body", types.Function([types.QUBIT], types.RESULT)
 )
 
 # Instead of mod.qubits[i], use __quantum__rt__qubit_allocate.

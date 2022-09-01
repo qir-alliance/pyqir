@@ -10,8 +10,7 @@ qis = BasicQisBuilder(mod.builder)
 # external_functions.py.
 i32 = types.Int(32)
 get_int = mod.add_external_function("get_int", types.Function([], i32))
-take_int = mod.add_external_function(
-    "take_int", types.Function([i32], types.VOID))
+take_int = mod.add_external_function("take_int", types.Function([i32], types.VOID))
 
 # Add 3 to a number and multiply the result by 2.
 a = mod.builder.call(get_int, [])

@@ -5,7 +5,6 @@ from pyqir.generator._builder import IntPredicate
 from pyqir.generator.types import Type
 from typing import Callable, Optional, Sequence, Tuple, Union
 
-
 def ir_to_bitcode(
     ir: str, module_name: Optional[str] = ..., source_file_name: Optional[str] = ...
 ) -> bytes:
@@ -19,9 +18,10 @@ def ir_to_bitcode(
     """
     ...
 
-
 def bitcode_to_ir(
-    bitcode: bytes, module_name: Optional[str] = ..., source_file_name: Optional[str] = ...
+    bitcode: bytes,
+    module_name: Optional[str] = ...,
+    source_file_name: Optional[str] = ...,
 ) -> str:
     """
     Converts the supplied bitcode to its QIR string equivalent.
@@ -33,16 +33,15 @@ def bitcode_to_ir(
     """
     ...
 
-
 class Function:
     """A QIR function."""
-    ...
 
+    ...
 
 class Value:
     """A QIR value."""
-    ...
 
+    ...
 
 def const(ty: Type, value: Union[int, float]) -> Value:
     """
@@ -53,7 +52,6 @@ def const(ty: Type, value: Union[int, float]) -> Value:
     :returns: The constant QIR value.
     """
     ...
-
 
 class Builder:
     """An instruction builder."""
@@ -67,7 +65,6 @@ class Builder:
         :returns: The result.
         """
         ...
-
     def or_(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a bitwise logical or instruction.
@@ -77,7 +74,6 @@ class Builder:
         :returns: The result.
         """
         ...
-
     def xor(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a bitwise logical exclusive or instruction.
@@ -87,7 +83,6 @@ class Builder:
         :returns: The result.
         """
         ...
-
     def add(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts an addition instruction.
@@ -97,7 +92,6 @@ class Builder:
         :returns: The sum.
         """
         ...
-
     def sub(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a subtraction instruction.
@@ -107,7 +101,6 @@ class Builder:
         :returns: The difference.
         """
         ...
-
     def mul(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a multiplication instruction.
@@ -117,7 +110,6 @@ class Builder:
         :returns: The product.
         """
         ...
-
     def shl(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a shift left instruction.
@@ -127,7 +119,6 @@ class Builder:
         :returns: The result.
         """
         ...
-
     def lshr(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a logical (zero fill) shift right instruction.
@@ -137,7 +128,6 @@ class Builder:
         :returns: The result.
         """
         ...
-
     def icmp(self, pred: IntPredicate, lhs: Value, rhs: Value) -> Value:
         """
         Inserts an integer comparison instruction.
@@ -148,11 +138,8 @@ class Builder:
         :return: The boolean result.
         """
         ...
-
     def call(
-        self,
-        function: Function,
-        args: Sequence[Union[Value, bool, int, float]]
+        self, function: Function, args: Sequence[Union[Value, bool, int, float]]
     ) -> Optional[Value]:
         """
         Inserts a call instruction.
@@ -162,8 +149,12 @@ class Builder:
         :returns: The return value, or None if the function has a void return type.
         """
         ...
-
-    def if_(self, cond: Value, true: Callable[[], None] = ..., false: Callable[[], None] = ...) -> None:
+    def if_(
+        self,
+        cond: Value,
+        true: Callable[[], None] = ...,
+        false: Callable[[], None] = ...,
+    ) -> None:
         """
         Inserts a branch conditioned on a boolean.
 
@@ -179,7 +170,6 @@ class Builder:
                       the condition is false.
         """
         ...
-
 
 class SimpleModule:
     """
@@ -205,30 +195,24 @@ class SimpleModule:
         :param num_results: The number of statically allocated results.
         """
         ...
-
     @property
     def qubits(self) -> Tuple[Value, ...]:
         """The global qubit register."""
         ...
-
     @property
     def results(self) -> Tuple[Value, ...]:
         """The global result register."""
         ...
-
     @property
     def builder(self) -> Builder:
         """The instruction builder."""
         ...
-
     def ir(self) -> str:
         """Emits the LLVM IR for the module as plain text."""
         ...
-
     def bitcode(self) -> bytes:
         """Emits the LLVM bitcode for the module as a sequence of bytes."""
         ...
-
     def add_external_function(self, name: str, ty: Type) -> Function:
         """
         Adds a declaration for an externally linked function to the module.
@@ -238,7 +222,6 @@ class SimpleModule:
         :return: The function value.
         """
         ...
-
 
 class BasicQisBuilder:
     """
@@ -252,7 +235,6 @@ class BasicQisBuilder:
         builder.
         """
         ...
-
     def cx(self, control: Value, target: Value) -> None:
         """
         Inserts a controlled Pauli :math:`X` gate.
@@ -261,7 +243,6 @@ class BasicQisBuilder:
         :param target: The target qubit.
         """
         ...
-
     def cz(self, control: Value, target: Value) -> None:
         """
         Inserts a controlled Pauli :math:`Z` gate.
@@ -270,7 +251,6 @@ class BasicQisBuilder:
         :param target: The target qubit.
         """
         ...
-
     def h(self, qubit: Value) -> None:
         """
         Inserts a Hadamard gate.
@@ -278,7 +258,6 @@ class BasicQisBuilder:
         :param qubit: The target qubit.
         """
         ...
-
     def mz(self, qubit: Value, result: Value) -> None:
         """
         Inserts a Z-basis measurement operation.
@@ -287,7 +266,6 @@ class BasicQisBuilder:
         :param result: A result where the measurement result will be written to.
         """
         ...
-
     def reset(self, qubit: Value) -> None:
         """
         Inserts a reset operation.
@@ -295,7 +273,6 @@ class BasicQisBuilder:
         :param qubit: The qubit to reset.
         """
         ...
-
     def rx(self, theta: Union[Value, float], qubit: Value) -> None:
         """
         Inserts a rotation gate about the :math:`x` axis.
@@ -304,7 +281,6 @@ class BasicQisBuilder:
         :param qubit: The qubit to rotate.
         """
         ...
-
     def ry(self, theta: Union[Value, float], qubit: Value) -> None:
         """
         Inserts a rotation gate about the :math:`y` axis.
@@ -313,7 +289,6 @@ class BasicQisBuilder:
         :param qubit: The qubit to rotate.
         """
         ...
-
     def rz(self, theta: Union[Value, float], qubit: Value) -> None:
         """
         Inserts a rotation gate about the :math:`z` axis.
@@ -322,7 +297,6 @@ class BasicQisBuilder:
         :param qubit: The qubit to rotate.
         """
         ...
-
     def s(self, qubit: Value) -> None:
         """
         Inserts an :math:`S` gate.
@@ -330,7 +304,6 @@ class BasicQisBuilder:
         :param qubit: The target qubit.
         """
         ...
-
     def s_adj(self, qubit: Value) -> None:
         """
         Inserts an adjoint :math:`S` gate.
@@ -338,7 +311,6 @@ class BasicQisBuilder:
         :param qubit: The target qubit.
         """
         ...
-
     def t(self, qubit: Value) -> None:
         """
         Inserts a :math:`T` gate.
@@ -346,7 +318,6 @@ class BasicQisBuilder:
         :param qubit: The target qubit.
         """
         ...
-
     def t_adj(self, qubit: Value) -> None:
         """
         Inserts an adjoint :math:`T` gate.
@@ -354,7 +325,6 @@ class BasicQisBuilder:
         :param qubit: The target qubit.
         """
         ...
-
     def x(self, qubit: Value) -> None:
         """
         Inserts a Pauli :math:`X` gate.
@@ -362,7 +332,6 @@ class BasicQisBuilder:
         :param qubit: The target qubit.
         """
         ...
-
     def y(self, qubit: Value) -> None:
         """
         Inserts a Pauli :math:`Y` gate.
@@ -370,7 +339,6 @@ class BasicQisBuilder:
         :param qubit: The target qubit.
         """
         ...
-
     def z(self, qubit: Value) -> None:
         """
         Inserts a Pauli :math:`Z` gate.
@@ -378,8 +346,12 @@ class BasicQisBuilder:
         :param qubit: The target qubit.
         """
         ...
-
-    def if_result(self, result: Value, one: Callable[[], None] = ..., zero: Callable[[], None] = ...) -> None:
+    def if_result(
+        self,
+        result: Value,
+        one: Callable[[], None] = ...,
+        zero: Callable[[], None] = ...,
+    ) -> None:
         """
         Inserts a branch conditioned on a measurement result.
 
