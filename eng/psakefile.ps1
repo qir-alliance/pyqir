@@ -104,14 +104,7 @@ task black -depends check-environment {
     }
 
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please run black before pushing" {
-        black `
-            --check `
-            --extend-exclude "/examples/generator/mock_language/" `
-            examples `
-            pyqir-evaluator `
-            pyqir-generator `
-            pyqir-parser `
-            pyqir-tests
+        black --check --extend-exclude "^/examples/generator/mock_language/" .
     }
 }
 
