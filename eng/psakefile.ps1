@@ -65,7 +65,7 @@ task default -depends qirlib, pyqir-tests, parser, generator, evaluator, metawhe
 
 task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers 
 
-task checks -depends cargo-fmt, cargo-clippy, mypy
+task checks -depends cargo-fmt, cargo-clippy, black, mypy
 
 task run-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
     $srcPath = $repo.root
@@ -95,6 +95,23 @@ task cargo-fmt {
 task cargo-clippy -depends init {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
         cargo clippy --workspace --all-targets @("$($env:CARGO_EXTRA_ARGS)" -split " ") -- -D warnings
+    }
+}
+
+task black -depends check-environment {
+    exec {
+        pip install black
+    }
+
+    Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please run black before pushing" {
+        black `
+            --check `
+            --extend-exclude "/examples/generator/mock_language/" `
+            examples `
+            pyqir-evaluator `
+            pyqir-generator `
+            pyqir-parser `
+            pyqir-tests
     }
 }
 
