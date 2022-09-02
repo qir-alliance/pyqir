@@ -100,7 +100,7 @@ def _branchers(num_queries: int) -> List[Callable[[], _Brancher]]:
 
 @pytest.fixture
 def brancher(request: pytest.FixtureRequest) -> _Brancher:
-    brancher = request.param()  # type: ignore[attr-defined]
+    brancher = request.param()
     if isinstance(brancher, _Brancher):
         return brancher
     else:
