@@ -1,42 +1,46 @@
-# pyqir.generator
+# Generator
 
 ## Modules
 
 ```{eval-rst}
 .. autoclass:: pyqir.generator.SimpleModule
-    :show-inheritance:
-    :members:
-    :undoc-members:
+   :members:
 ```
 
 ## Builders
 
 ```{eval-rst}
 .. autoclass:: pyqir.generator.Builder
-    :show-inheritance:
-    :members:
-    :undoc-members:
+   :members:
+
+.. autoclass:: pyqir.generator.BasicQisBuilder
+   :members:
+
+.. autoenum:: pyqir.generator.IntPredicate
 ```
 
+## Types
+
 ```{eval-rst}
-.. autoclass:: pyqir.generator.BasicQisBuilder
-    :show-inheritance:
-    :members:
-    :undoc-members:
+.. automodule:: pyqir.generator.types
+   :members:
 ```
 
 ## Values
 
 ```{eval-rst}
-.. autoclass:: pyqir.generator.Qubit
-    :show-inheritance:
-    :members:
-    :undoc-members:
+.. autoclass:: pyqir.generator.Function
+   :members:
+
+.. autoclass:: pyqir.generator.Value
+   :members:
+
+.. autofunction:: pyqir.generator.const
 ```
 
+## IR and bitcode
+
 ```{eval-rst}
-.. autoclass:: pyqir.generator.Ref
-    :show-inheritance:
-    :members:
-    :undoc-members:
+.. autofunction:: pyqir.generator.ir_to_bitcode
+.. autofunction:: pyqir.generator.bitcode_to_ir
 ```
