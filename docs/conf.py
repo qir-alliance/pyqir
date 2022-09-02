@@ -12,8 +12,7 @@
 #
 # import os
 # import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
+# sys.path.insert(0, os.path.abspath("."))
 
 # -- Project information -----------------------------------------------------
 
@@ -21,14 +20,25 @@ project = "PyQIR"
 copyright = "2021, QIR Alliance"
 author = "QIR Alliance"
 
-
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
+# extensions coming with Sphinx (named "sphinx.ext.*") or your custom
 # ones.
-extensions = ["myst_parser", "sphinx.ext.autodoc", "sphinx.ext.intersphinx"]
-myst_enable_extensions = ["colon_fence"]
+extensions = [
+    "enum_tools.autoenum",
+    "myst_parser",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
+]
+
+myst_enable_extensions = [
+    "colon_fence",
+]
+
+autodoc_type_aliases = {
+    "Type": "Type",
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

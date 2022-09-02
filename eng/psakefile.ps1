@@ -63,9 +63,11 @@ include utils.ps1
 
 task default -depends qirlib, pyqir-tests, parser, generator, evaluator, metawheel, run-examples
 
-task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers 
+task build -depends qirlib, generator, evaluator, parser
 
 task checks -depends cargo-fmt, cargo-clippy, black, mypy
+
+task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers 
 
 task run-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
     $srcPath = $repo.root
@@ -157,7 +159,7 @@ task metawheel {
 
 task wheelhouse `
     -precondition { -not (Test-Path $wheelhouse -ErrorAction SilentlyContinue) } `
-{ Invoke-Task rebuild }
+{ Invoke-Task build }
 
 task docs -depends wheelhouse {
     # Write out the wheels available
