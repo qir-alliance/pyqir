@@ -8,7 +8,9 @@ import unittest
 
 class QisTest(unittest.TestCase):
     def test_single(self) -> None:
-        cases: List[Tuple[str, Callable[[BasicQisBuilder], Callable[[Value], None]]]] = [
+        cases: List[
+            Tuple[str, Callable[[BasicQisBuilder], Callable[[Value], None]]]
+        ] = [
             ("h", lambda qis: qis.h),
             ("reset", lambda qis: qis.reset),
             ("s", lambda qis: qis.s),
@@ -27,7 +29,9 @@ class QisTest(unittest.TestCase):
                 self.assertIn(call, mod.ir())
 
     def test_controlled(self) -> None:
-        cases: List[Tuple[str, Callable[[BasicQisBuilder], Callable[[Value, Value], None]]]] = [
+        cases: List[
+            Tuple[str, Callable[[BasicQisBuilder], Callable[[Value, Value], None]]]
+        ] = [
             ("cnot", lambda qis: qis.cx),
             ("cz", lambda qis: qis.cz),
         ]
@@ -41,7 +45,9 @@ class QisTest(unittest.TestCase):
                 self.assertIn(call, mod.ir())
 
     def test_adjoint(self) -> None:
-        cases: List[Tuple[str, Callable[[BasicQisBuilder], Callable[[Value], None]]]] = [
+        cases: List[
+            Tuple[str, Callable[[BasicQisBuilder], Callable[[Value], None]]]
+        ] = [
             ("s", lambda qis: qis.s_adj),
             ("t", lambda qis: qis.t_adj),
         ]
@@ -55,7 +61,14 @@ class QisTest(unittest.TestCase):
                 self.assertIn(call, mod.ir())
 
     def test_rotated(self) -> None:
-        cases: List[Tuple[str, Callable[[BasicQisBuilder], Callable[[Union[Value, float], Value], None]]]] = [
+        cases: List[
+            Tuple[
+                str,
+                Callable[
+                    [BasicQisBuilder], Callable[[Union[Value, float], Value], None]
+                ],
+            ]
+        ] = [
             ("rx", lambda qis: qis.rx),
             ("ry", lambda qis: qis.ry),
             ("rz", lambda qis: qis.rz),

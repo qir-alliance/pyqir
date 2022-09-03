@@ -31,8 +31,9 @@ def test_unknown_external_func() -> None:
             fd.write(content)
             fd.flush()
             evaluator.eval(fd.name, logger)
-    assert (str(excinfo.value)
-            == "Unsupported functions `__quantum__rt__bool_to_string`.")
+    assert (
+        str(excinfo.value) == "Unsupported functions `__quantum__rt__bool_to_string`."
+    )
 
 
 def test_multiple_unknown_external_funcs() -> None:
@@ -62,5 +63,7 @@ def test_multiple_unknown_external_funcs() -> None:
             fd.write(content)
             fd.flush()
             evaluator.eval(fd.name, logger)
-    assert (str(excinfo.value)
-            == "Unsupported functions `__quantum__rt__bool_to_string`, `__quantum__rt__int_to_string`.")
+    assert (
+        str(excinfo.value)
+        == "Unsupported functions `__quantum__rt__bool_to_string`, `__quantum__rt__int_to_string`."
+    )

@@ -13,6 +13,7 @@ from typing import Sequence, Union
 
 class Void(Enum):
     """The void type."""
+
     _VOID = auto()
 
 
@@ -26,16 +27,19 @@ class Int:
 
 class Double(Enum):
     """The 64-bit floating-point type."""
+
     _DOUBLE = auto()
 
 
 class Qubit(Enum):
     """The QIR qubit type, represented by the LLVM type `%Qubit*`."""
+
     _QUBIT = auto()
 
 
 class Result(Enum):
     """The QIR result type, represented by the LLVM type `%Result*`."""
+
     _RESULT = auto()
 
 

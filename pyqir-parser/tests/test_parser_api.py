@@ -7,7 +7,9 @@ import pytest
 
 def test_parser() -> None:
     mod = QirModule("tests/teleportchain.baseprofile.bc")
-    func_name = "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
+    func_name = (
+        "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
+    )
     func = mod.get_func_by_name(func_name)
     assert func is not None
     assert func.name == func_name
@@ -23,8 +25,7 @@ def test_parser() -> None:
     blocks = func.blocks
     assert len(blocks) == 9
     assert hash(blocks[0]) == hash(func.blocks[0])
-    assert (hash(blocks[0].instructions[0])
-            == hash(func.blocks[0].instructions[0]))
+    assert hash(blocks[0].instructions[0]) == hash(func.blocks[0].instructions[0])
     assert blocks[0].name == "entry"
     term = blocks[0].terminator
     assert isinstance(term, QirTerminator)
@@ -98,7 +99,7 @@ def test_global_string() -> None:
     assert isinstance(instr.func_args[0], QirGlobalByteArrayConstant)
     value = mod.get_global_bytes_value(instr.func_args[0])
     assert value is not None
-    assert value.decode('utf-8') == "Hello World!\0"
+    assert value.decode("utf-8") == "Hello World!\0"
 
 
 def test_parser_zext_support() -> None:
@@ -133,7 +134,9 @@ def test_loading_bad_bitcode_file_path() -> None:
 
 def test_parser_internals() -> None:
     mod = module_from_bitcode("tests/teleportchain.baseprofile.bc")
-    func_name = "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
+    func_name = (
+        "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
+    )
     func = mod.get_func_by_name(func_name)
     assert func is not None
     assert func.name == func_name
@@ -177,7 +180,9 @@ def test_parser_internals() -> None:
     assert entry_block.instructions[8].call_func_params[0].constant is not None
     assert entry_block.instructions[8].call_func_params[0].constant.qubit_static_id == 1
     assert entry_block.instructions[8].call_func_params[1].constant is not None
-    assert entry_block.instructions[8].call_func_params[1].constant.result_static_id == 0
+    assert (
+        entry_block.instructions[8].call_func_params[1].constant.result_static_id == 0
+    )
     branch_cond = entry_block.terminator.condbr_condition
     assert branch_cond is not None
     assert branch_cond.local_name == "0"
@@ -185,7 +190,9 @@ def test_parser_internals() -> None:
     assert entry_block.instructions[10].call_func_name == "__quantum__qir__read_result"
     assert entry_block.instructions[10].call_func_params is not None
     assert entry_block.instructions[10].call_func_params[0].constant is not None
-    assert entry_block.instructions[10].call_func_params[0].constant.result_static_id == 0
+    assert (
+        entry_block.instructions[10].call_func_params[0].constant.result_static_id == 0
+    )
     assert entry_block.instructions[10].has_output
     assert entry_block.instructions[10].output_name == "0"
     source_instr = func.get_instruction_by_output_name(branch_cond.local_name)

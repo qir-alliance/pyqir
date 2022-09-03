@@ -74,6 +74,7 @@ class QirType:
     Instances of QirType represent a type description in QIR. Specific subclasses may contain
     additional properties of that type.
     """
+
     def __new__(cls, ty: native.PyQirType) -> "QirType":
         if ty.is_qubit:
             return super().__new__(QirQubitType)
@@ -104,6 +105,7 @@ class QirVoidType(QirType):
     """
     Instances of QirVoidType represent a void type in QIR.
     """
+
     pass
 
 
@@ -151,6 +153,7 @@ class QirDoubleType(QirType):
     """
     Instances of QirDoubleType represent the double-sized floating point type in a QIR program.
     """
+
     pass
 
 
@@ -218,6 +221,7 @@ class QirQubitType(QirNamedStructType):
     Instances of QirQubitType are specific QIR opaque pointer corresponding to the Qubit special
     type.
     """
+
     pass
 
 
@@ -226,6 +230,7 @@ class QirResultType(QirNamedStructType):
     Instances of QirResultType are specific QIR opaque pointer corresponding to the Result special
     type.
     """
+
     pass
 
 
@@ -234,6 +239,7 @@ class QirOperand:
     Instances of QirOperand represent an instance in a QIR program, either a local operand (variable)
     or constant.
     """
+
     def __new__(cls, op: native.PyQirOperand) -> "QirOperand":
         if op.is_local:
             return super().__new__(QirLocalOperand)
@@ -417,6 +423,7 @@ class QirGlobalByteArrayConstant(QirConstant):
     """
     Instances of QirGlobalByteArrayConstant represent a globally defined array of bytes in a QIR program.
     """
+
     pass
 
 
@@ -562,6 +569,7 @@ class QirUnreachableTerminator(QirTerminator):
     implies, this terminator is not expected to be reached such that some instruction in the block
     before this terminator should halt program execution.
     """
+
     pass
 
 
@@ -668,8 +676,7 @@ class QirOpInstr(QirInstr):
         Gets the list of operands that this instruction operates on.
         """
         if not hasattr(self, "_target_operands"):
-            self._target_operands = list(
-                map(QirOperand, self.instr.target_operands))
+            self._target_operands = list(map(QirOperand, self.instr.target_operands))
         return self._target_operands
 
 
@@ -677,6 +684,7 @@ class QirAddInstr(QirOpInstr):
     """
     Instances of QirAddInstr represent an integer addition instruction that takes two operands.
     """
+
     pass
 
 
@@ -684,6 +692,7 @@ class QirSubInstr(QirOpInstr):
     """
     Instances of QirSubInstr represent an integer subtraction instruction that takes two operands.
     """
+
     pass
 
 
@@ -691,6 +700,7 @@ class QirMulInstr(QirOpInstr):
     """
     Instances of QirMulInstr represent an integer multiplication instruction that takes two operands.
     """
+
     pass
 
 
@@ -698,6 +708,7 @@ class QirUDivInstr(QirOpInstr):
     """
     Instances of QirUDivInstr represent an unsigned integer division instruction that takes two operands.
     """
+
     pass
 
 
@@ -705,6 +716,7 @@ class QirSDivInstr(QirOpInstr):
     """
     Instances of QirSDivInstr represent a signed integer division instruction that takes two operands.
     """
+
     pass
 
 
@@ -712,6 +724,7 @@ class QirURemInstr(QirOpInstr):
     """
     Instances of QirURemInstr represent an unsigned integer remainder instruction that takes two operands.
     """
+
     pass
 
 
@@ -719,6 +732,7 @@ class QirSRemInstr(QirOpInstr):
     """
     Instances of QirSRemInstr represent a signed integer remainder instruction that takes two operands.
     """
+
     pass
 
 
@@ -726,6 +740,7 @@ class QirAndInstr(QirOpInstr):
     """
     Instances of QirAndInstr represent a boolean and instruction that takes two operands.
     """
+
     pass
 
 
@@ -733,6 +748,7 @@ class QirOrInstr(QirOpInstr):
     """
     Instances of QirOrInstr represent a boolean or instruction that takes two operands.
     """
+
     pass
 
 
@@ -740,6 +756,7 @@ class QirXorInstr(QirOpInstr):
     """
     Instances of QirXorInstr represent a boolean xor instruction that takes two operands.
     """
+
     pass
 
 
@@ -747,6 +764,7 @@ class QirShlInstr(QirOpInstr):
     """
     Instances of QirShlInstr represent a bitwise shift left instruction that takes two operands.
     """
+
     pass
 
 
@@ -754,6 +772,7 @@ class QirLShrInstr(QirOpInstr):
     """
     Instances of QirLShrInstr represent a logical bitwise shift right instruction that takes two operands.
     """
+
     pass
 
 
@@ -761,6 +780,7 @@ class QirAShrInstr(QirOpInstr):
     """
     Instances of QirAShrInstr represent an arithmetic bitwise shift right instruction that takes two operands.
     """
+
     pass
 
 
@@ -768,6 +788,7 @@ class QirFAddInstr(QirOpInstr):
     """
     Instances of QirFAddInstr represent a floating-point addition instruction that takes two operands.
     """
+
     pass
 
 
@@ -775,6 +796,7 @@ class QirFSubInstr(QirOpInstr):
     """
     Instances of QirFSubInstr represent a floating-point subtraction instruction that takes two operands.
     """
+
     pass
 
 
@@ -782,6 +804,7 @@ class QirFMulInstr(QirOpInstr):
     """
     Instances of QirFMulInstr represent a floating-point multiplication instruction that takes two operands.
     """
+
     pass
 
 
@@ -789,6 +812,7 @@ class QirFDivInstr(QirOpInstr):
     """
     Instances of QirFDivInstr represent a floating-point division instruction that takes two operands.
     """
+
     pass
 
 
@@ -796,6 +820,7 @@ class QirFRemInstr(QirOpInstr):
     """
     Instances of QirFRemInstr represent a floating-point remainder instruction that takes two operands.
     """
+
     pass
 
 
@@ -803,6 +828,7 @@ class QirFNegInstr(QirOpInstr):
     """
     Instances of QirFNegInstr represent a floating-point negation instruction that takes one operand.
     """
+
     pass
 
 
@@ -846,6 +872,7 @@ class QirZExtInstr(QirOpInstr):
     Instances of QirZExtInstr represent a zero-extension instruction that expands the bitwidth
     of the given integer operand to match the width of the output operand.
     """
+
     pass
 
 
@@ -904,8 +931,7 @@ class QirPhiInstr(QirInstr):
         if not hasattr(self, "_incoming_values"):
             incoming_values = self.instr.phi_incoming_values
             assert incoming_values is not None
-            self._incoming_values = [(QirOperand(v[0]), v[1])
-                                     for v in incoming_values]
+            self._incoming_values = [(QirOperand(v[0]), v[1]) for v in incoming_values]
         return self._incoming_values
 
     def get_incoming_value_for_name(self, name: str) -> Optional[QirOperand]:
@@ -952,6 +978,7 @@ class QirQisCallInstr(QirCallInstr):
     Instances of QirQisCallInstr represent a call instruction where the function name begins with
     "__quantum__qis__" indicating that it is a function from the QIR quantum intrinsic set.
     """
+
     pass
 
 
@@ -960,6 +987,7 @@ class QirRtCallInstr(QirCallInstr):
     Instances of QirRtCallInstr represent a call instruction where the function name begins with
     "__quantum__rt__" indicating that it is a function from the QIR runtime.
     """
+
     pass
 
 
@@ -968,13 +996,14 @@ class QirQirCallInstr(QirCallInstr):
     Instances of QirQirCallInstr represent a call instruction where the function name begins with
     "__quantum__qir__" indicating that it is a function from the QIR base profile.
     """
+
     pass
 
 
 class QirBlock:
     """
     Instances of the QirBlock type represent a basic block within a function body. Each basic block is
-    comprised of a list of instructions executed in sequence and a single, special final instruction 
+    comprised of a list of instructions executed in sequence and a single, special final instruction
     called a terminator that indicates where execution should jump at the end of the block.
     """
 
@@ -996,7 +1025,7 @@ class QirBlock:
     def instructions(self) -> List[QirInstr]:
         """
         Gets the list of instructions that make up this block. The list is ordered; instructions are
-        executed from first to last unconditionally. This list does not include the special 
+        executed from first to last unconditionally. This list does not include the special
         terminator instruction (see QirBlock.terminator).
         """
         if self._instructions is None:
@@ -1028,10 +1057,13 @@ class QirBlock:
     def get_phi_pairs_by_source_name(self, name: str) -> List[Tuple[str, QirOperand]]:
         """
         Gets the variable name, variable value pairs for any phi nodes in this block that correspond
-        to the given name. If the name doesn't match a block that can branch to this block or if 
+        to the given name. If the name doesn't match a block that can branch to this block or if
         this block doesn't include any phi nodes, the list will be empty.
         """
-        return [(p[0], QirOperand(p[1])) for p in self.block.get_phi_pairs_by_source_name(name)]
+        return [
+            (p[0], QirOperand(p[1]))
+            for p in self.block.get_phi_pairs_by_source_name(name)
+        ]
 
 
 class QirParameter:
@@ -1207,7 +1239,8 @@ class QirModule:
         """
         if self._entrypoint_funcs is None:
             self._entrypoint_funcs = list(
-                map(QirFunction, self.module.get_entrypoint_funcs()))
+                map(QirFunction, self.module.get_entrypoint_funcs())
+            )
         return self._entrypoint_funcs
 
     @property
@@ -1217,10 +1250,13 @@ class QirModule:
         """
         if self._interop_funcs is None:
             self._interop_funcs = list(
-                map(QirFunction, self.module.get_interop_funcs()))
+                map(QirFunction, self.module.get_interop_funcs())
+            )
         return self._interop_funcs
 
-    def get_global_bytes_value(self, global_ref: QirGlobalByteArrayConstant) -> Optional[bytes]:
+    def get_global_bytes_value(
+        self, global_ref: QirGlobalByteArrayConstant
+    ) -> Optional[bytes]:
         """
         Gets any globally defined bytes values matching the given global constant.
         :param global_ref: the global constant whose bytes should be retrieved.

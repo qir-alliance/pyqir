@@ -24,7 +24,7 @@ _OPERATORS: List[Tuple[str, Callable[[Builder], Callable[[Value, Value], Value]]
     ("icmp sgt", lambda b: partial(b.icmp, IntPredicate.SGT)),
     ("icmp sge", lambda b: partial(b.icmp, IntPredicate.SGE)),
     ("icmp slt", lambda b: partial(b.icmp, IntPredicate.SLT)),
-    ("icmp sle", lambda b: partial(b.icmp, IntPredicate.SLE))
+    ("icmp sle", lambda b: partial(b.icmp, IntPredicate.SLE)),
 ]
 
 
@@ -34,10 +34,12 @@ class IntOperatorsTest(unittest.TestCase):
             with self.subTest(name):
                 mod = SimpleModule("test " + name, 0, 0)
                 source = mod.add_external_function(
-                    "source", types.Function([], types.Int(64)))
+                    "source", types.Function([], types.Int(64))
+                )
                 ty = types.BOOL if name.startswith("icmp") else types.Int(64)
                 sink = mod.add_external_function(
-                    "sink", types.Function([ty], types.VOID))
+                    "sink", types.Function([ty], types.VOID)
+                )
 
                 x = mod.builder.call(source, [])
                 assert x is not None
@@ -53,10 +55,12 @@ class IntOperatorsTest(unittest.TestCase):
             with self.subTest(name):
                 mod = SimpleModule("test " + name, 0, 0)
                 source = mod.add_external_function(
-                    "source", types.Function([], types.Int(64)))
+                    "source", types.Function([], types.Int(64))
+                )
                 ty = types.BOOL if name.startswith("icmp") else types.Int(64)
                 sink = mod.add_external_function(
-                    "sink", types.Function([ty], types.VOID))
+                    "sink", types.Function([ty], types.VOID)
+                )
 
                 x = mod.builder.call(source, [])
                 assert x is not None
@@ -67,10 +71,10 @@ class IntOperatorsTest(unittest.TestCase):
 
     def test_type_mismatch(self) -> None:
         mod = SimpleModule("test_type_mismatch", 0, 0)
-        source = mod.add_external_function(
-            "source", types.Function([], types.Int(16)))
+        source = mod.add_external_function("source", types.Function([], types.Int(16)))
         sink = mod.add_external_function(
-            "sink", types.Function([types.Int(16)], types.VOID))
+            "sink", types.Function([types.Int(16)], types.VOID)
+        )
 
         x = mod.builder.call(source, [])
         assert x is not None

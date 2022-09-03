@@ -7,7 +7,9 @@ import tempfile
 from typing import List, Tuple
 
 
-def teleport(qis: BasicQisBuilder, qubits: Tuple[Value, ...], results: Tuple[Value, ...]) -> None:
+def teleport(
+    qis: BasicQisBuilder, qubits: Tuple[Value, ...], results: Tuple[Value, ...]
+) -> None:
     msg = qubits[0]
     target = qubits[1]
     register = qubits[2]

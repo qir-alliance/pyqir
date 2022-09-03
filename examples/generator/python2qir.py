@@ -33,8 +33,7 @@ class Analyzer(ast.NodeVisitor):
             if name.id == "QuantumCircuit":
                 num_qubits = int_value(node.args[0])
                 num_results = int_value(node.args[1])
-                self.module = SimpleModule(
-                    "python2qir", num_qubits, num_results)
+                self.module = SimpleModule("python2qir", num_qubits, num_results)
                 self.builder = BasicQisBuilder(self.module.builder)
 
         if isinstance(node.func, ast.Attribute):
@@ -42,16 +41,14 @@ class Analyzer(ast.NodeVisitor):
             if attribute.attr == "cx":
                 control = int_value(node.args[0])
                 target = int_value(node.args[1])
-                self.builder.cx(
-                    self.module.qubits[control], self.module.qubits[target])
+                self.builder.cx(self.module.qubits[control], self.module.qubits[target])
             if attribute.attr == "h":
                 qubit = int_value(node.args[0])
                 self.builder.h(self.module.qubits[qubit])
             if attribute.attr == "measure":
                 qubit = int_value(node.args[0])
                 bit = int_value(node.args[1])
-                self.builder.mz(
-                    self.module.qubits[qubit], self.module.results[bit])
+                self.builder.mz(self.module.qubits[qubit], self.module.results[bit])
             if attribute.attr == "z":
                 qubit = int_value(node.args[0])
                 self.builder.z(self.module.qubits[qubit])
