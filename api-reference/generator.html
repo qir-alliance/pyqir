@@ -4,9 +4,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>pyqir.generator &#8212; PyQIR  documentation</title>
+    <title>Generator &#8212; PyQIR  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
@@ -14,10 +14,11 @@
     <script src="../_static/underscore.js"></script>
     <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="pyqir.evaluator" href="evaluator.html" />
-    <link rel="prev" title="pyqir.parser" href="parser.html" />
+    <link rel="next" title="Evaluator" href="evaluator.html" />
+    <link rel="prev" title="Parser" href="parser.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -34,43 +35,102 @@
 
           <div class="body" role="main">
             
-  <section id="pyqir-generator">
-<h1>pyqir.generator<a class="headerlink" href="#pyqir-generator" title="Permalink to this heading">¶</a></h1>
+  <section id="generator">
+<h1>Generator<a class="headerlink" href="#generator" title="Permalink to this heading">¶</a></h1>
 <section id="modules">
 <h2>Modules<a class="headerlink" href="#modules" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyqir.generator.SimpleModule">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">SimpleModule</span></span><a class="headerlink" href="#pyqir.generator.SimpleModule" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dd><p>A simple module represents an executable QIR program with these restrictions:</p>
+<ul class="simple">
+<li><p>There is one global qubit register and one global result register. Both are statically
+allocated with a fixed size.</p></li>
+<li><p>There is only a single function that runs as the entry point.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – The name of the module.</p></li>
+<li><p><strong>num_qubits</strong> (<em>int</em>) – The number of statically allocated qubits.</p></li>
+<li><p><strong>num_results</strong> (<em>int</em>) – The number of statically allocated results.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.SimpleModule.add_external_function">
-<span class="sig-name descname"><span class="pre">add_external_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.SimpleModule.add_external_function" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">add_external_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ty</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.SimpleModule.add_external_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a declaration for an externally linked function to the module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – The name of the function.</p></li>
+<li><p><strong>ty</strong> (<em>Type</em>) – The type of the function.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The function value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.generator.Function" title="pyqir.generator.Function">Function</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.SimpleModule.bitcode">
 <span class="sig-name descname"><span class="pre">bitcode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.SimpleModule.bitcode" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Emits the LLVM bitcode for the module as a sequence of bytes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bytes</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyqir.generator.SimpleModule.builder">
 <span class="sig-name descname"><span class="pre">builder</span></span><a class="headerlink" href="#pyqir.generator.SimpleModule.builder" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>The instruction builder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.generator.Builder" title="pyqir.generator.Builder">Builder</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.SimpleModule.ir">
 <span class="sig-name descname"><span class="pre">ir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.SimpleModule.ir" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Emits the LLVM IR for the module as plain text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyqir.generator.SimpleModule.qubits">
 <span class="sig-name descname"><span class="pre">qubits</span></span><a class="headerlink" href="#pyqir.generator.SimpleModule.qubits" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>The global qubit register.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value">Value</a>, …]</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyqir.generator.SimpleModule.results">
 <span class="sig-name descname"><span class="pre">results</span></span><a class="headerlink" href="#pyqir.generator.SimpleModule.results" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>The global result register.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value">Value</a>, …]</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -80,153 +140,721 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="pyqir.generator.Builder">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">Builder</span></span><a class="headerlink" href="#pyqir.generator.Builder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dd><p>An instruction builder.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.Builder.add">
-<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.add" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts an addition instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The left-hand side.</p></li>
+<li><p><strong>rhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The right-hand side.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The sum.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value">Value</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.Builder.and_">
-<span class="sig-name descname"><span class="pre">and_</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.and_" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">and_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.and_" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a bitwise logical and instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The left-hand side.</p></li>
+<li><p><strong>rhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The right-hand side.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The result.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value">Value</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.Builder.call">
-<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.call" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.call" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a call instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>function</strong> (<a class="reference internal" href="#pyqir.generator.Function" title="pyqir.generator.Function"><em>Function</em></a>) – The function to call.</p></li>
+<li><p><strong>args</strong> (<em>Sequence</em><em>[</em><em>Union</em><em>[</em><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a><em>, </em><em>bool</em><em>, </em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – The arguments to the function.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The return value, or None if the function has a void return type.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value">Value</a>]</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.Builder.icmp">
-<span class="sig-name descname"><span class="pre">icmp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.icmp" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">icmp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.icmp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts an integer comparison instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pred</strong> (<a class="reference internal" href="#pyqir.generator.IntPredicate" title="pyqir.generator.IntPredicate"><em>IntPredicate</em></a>) – The predicate to compare by.</p></li>
+<li><p><strong>lhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The left-hand side.</p></li>
+<li><p><strong>rhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The right-hand side.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The boolean result.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value">Value</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.Builder.if_">
-<span class="sig-name descname"><span class="pre">if_</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.if_" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">if_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">false</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.if_" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a branch conditioned on a boolean.</p>
+<p>Instructions inserted when <code class="docutils literal notranslate"><span class="pre">true</span></code> is called will be inserted into the true branch.
+Instructions inserted when <code class="docutils literal notranslate"><span class="pre">false</span></code> is called will be inserted into the false branch. The
+true and false callables should use this module’s builder to build instructions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cond</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The boolean condition to branch on.</p></li>
+<li><p><strong>true</strong> (<em>Callable</em><em>[</em><em>[</em><em>]</em><em>, </em><em>None</em><em>]</em>) – A callable that inserts instructions for the branch where the condition is true.</p></li>
+<li><p><strong>false</strong> (<em>Callable</em><em>[</em><em>[</em><em>]</em><em>, </em><em>None</em><em>]</em>) – A callable that inserts instructions for the branch where the condition is false.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.Builder.lshr">
-<span class="sig-name descname"><span class="pre">lshr</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.lshr" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">lshr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.lshr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a logical (zero fill) shift right instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The value to shift.</p></li>
+<li><p><strong>rhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The number of bits to shift by.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The result.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value">Value</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.Builder.mul">
-<span class="sig-name descname"><span class="pre">mul</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.mul" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">mul</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.mul" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a multiplication instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The left-hand side.</p></li>
+<li><p><strong>rhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The right-hand side.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The product.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value">Value</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.Builder.or_">
-<span class="sig-name descname"><span class="pre">or_</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.or_" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">or_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.or_" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a bitwise logical or instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The left-hand side.</p></li>
+<li><p><strong>rhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The right-hand side.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The result.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value">Value</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.Builder.shl">
-<span class="sig-name descname"><span class="pre">shl</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.shl" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">shl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.shl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a shift left instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The value to shift.</p></li>
+<li><p><strong>rhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The number of bits to shift by.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The result.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value">Value</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.Builder.sub">
-<span class="sig-name descname"><span class="pre">sub</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.sub" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">sub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.sub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a subtraction instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The left-hand side.</p></li>
+<li><p><strong>rhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The right-hand side.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The difference.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value">Value</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.Builder.xor">
-<span class="sig-name descname"><span class="pre">xor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.xor" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">xor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.Builder.xor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a bitwise logical exclusive or instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The left-hand side.</p></li>
+<li><p><strong>rhs</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The right-hand side.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The result.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value">Value</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">BasicQisBuilder</span></span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dd><p>An instruction builder that generates instructions from the basic quantum instruction set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>builder</strong> (<a class="reference internal" href="#pyqir.generator.Builder" title="pyqir.generator.Builder"><em>Builder</em></a>) – The underlying builder used to build QIS instructions.</p>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.cx">
-<span class="sig-name descname"><span class="pre">cx</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.cx" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">cx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">control</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.cx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a controlled Pauli <span class="math notranslate nohighlight">\(X\)</span> gate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>control</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The control qubit.</p></li>
+<li><p><strong>target</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The target qubit.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.cz">
-<span class="sig-name descname"><span class="pre">cz</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.cz" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">cz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">control</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.cz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a controlled Pauli <span class="math notranslate nohighlight">\(Z\)</span> gate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>control</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The control qubit.</p></li>
+<li><p><strong>target</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The target qubit.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.h">
-<span class="sig-name descname"><span class="pre">h</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.h" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">h</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.h" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a Hadamard gate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>qubit</strong> – The target qubit.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.if_result">
-<span class="sig-name descname"><span class="pre">if_result</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.if_result" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">if_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.if_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a branch conditioned on a measurement result.</p>
+<p>Instructions inserted when <code class="docutils literal notranslate"><span class="pre">one</span></code> is called will be inserted into the one branch.
+Instructions inserted when <code class="docutils literal notranslate"><span class="pre">zero</span></code> is called will be inserted into the zero branch. The one
+and zero callables should use this module’s builder to build instructions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cond</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The result condition to branch on.</p></li>
+<li><p><strong>one</strong> (<em>Callable</em><em>[</em><em>[</em><em>]</em><em>, </em><em>None</em><em>]</em>) – A callable that inserts instructions for the branch where the result is one.</p></li>
+<li><p><strong>zero</strong> (<em>Callable</em><em>[</em><em>[</em><em>]</em><em>, </em><em>None</em><em>]</em>) – A callable that inserts instructions for the branch where the result is zero.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.mz">
-<span class="sig-name descname"><span class="pre">mz</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.mz" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">mz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.mz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a Z-basis measurement operation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>qubit</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The qubit to measure.</p></li>
+<li><p><strong>result</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – A result where the measurement result will be written to.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.reset">
-<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.reset" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a reset operation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>qubit</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The qubit to reset.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.rx">
-<span class="sig-name descname"><span class="pre">rx</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.rx" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">rx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.rx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a rotation gate about the <span class="math notranslate nohighlight">\(x\)</span> axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>theta</strong> (<em>Union</em><em>[</em><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a><em>, </em><em>float</em><em>]</em>) – The angle to rotate by.</p></li>
+<li><p><strong>qubit</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The qubit to rotate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.ry">
-<span class="sig-name descname"><span class="pre">ry</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.ry" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">ry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.ry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a rotation gate about the <span class="math notranslate nohighlight">\(y\)</span> axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>theta</strong> (<em>Union</em><em>[</em><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a><em>, </em><em>float</em><em>]</em>) – The angle to rotate by.</p></li>
+<li><p><strong>qubit</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The qubit to rotate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.rz">
-<span class="sig-name descname"><span class="pre">rz</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.rz" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">rz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.rz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a rotation gate about the <span class="math notranslate nohighlight">\(z\)</span> axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>theta</strong> (<em>Union</em><em>[</em><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a><em>, </em><em>float</em><em>]</em>) – The angle to rotate by.</p></li>
+<li><p><strong>qubit</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The qubit to rotate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.s">
-<span class="sig-name descname"><span class="pre">s</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.s" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">s</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.s" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts an <span class="math notranslate nohighlight">\(S\)</span> gate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>qubit</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The target qubit.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.s_adj">
-<span class="sig-name descname"><span class="pre">s_adj</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.s_adj" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">s_adj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.s_adj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts an adjoint <span class="math notranslate nohighlight">\(S\)</span> gate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>qubit</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The target qubit.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.t">
-<span class="sig-name descname"><span class="pre">t</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.t" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">t</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.t" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a <span class="math notranslate nohighlight">\(T\)</span> gate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>qubit</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The target qubit.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.t_adj">
-<span class="sig-name descname"><span class="pre">t_adj</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.t_adj" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">t_adj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.t_adj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts an adjoint <span class="math notranslate nohighlight">\(T\)</span> gate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>qubit</strong> – The target qubit.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.x">
-<span class="sig-name descname"><span class="pre">x</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.x" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a Pauli <span class="math notranslate nohighlight">\(X\)</span> gate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>qubit</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The target qubit.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.y">
-<span class="sig-name descname"><span class="pre">y</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.y" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">y</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.y" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a Pauli <span class="math notranslate nohighlight">\(Y\)</span> gate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>qubit</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The target qubit.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.generator.BasicQisBuilder.z">
-<span class="sig-name descname"><span class="pre">z</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.z" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">z</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.BasicQisBuilder.z" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a Pauli <span class="math notranslate nohighlight">\(Z\)</span> gate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>qubit</strong> (<a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value"><em>Value</em></a>) – The target qubit.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class enum">
+<dt class="sig sig-object py" id="pyqir.generator.IntPredicate">
+<em class="property"><span class="pre">enum</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">IntPredicate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.IntPredicate" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer comparison predicate.</p>
+<p>Valid values are as follows:</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.IntPredicate.EQ">
+<span class="sig-name descname"><span class="pre">EQ</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;IntPredicate.EQ:</span> <span class="pre">1&gt;</span></em><a class="headerlink" href="#pyqir.generator.IntPredicate.EQ" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.IntPredicate.NE">
+<span class="sig-name descname"><span class="pre">NE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;IntPredicate.NE:</span> <span class="pre">2&gt;</span></em><a class="headerlink" href="#pyqir.generator.IntPredicate.NE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.IntPredicate.UGT">
+<span class="sig-name descname"><span class="pre">UGT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;IntPredicate.UGT:</span> <span class="pre">3&gt;</span></em><a class="headerlink" href="#pyqir.generator.IntPredicate.UGT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.IntPredicate.UGE">
+<span class="sig-name descname"><span class="pre">UGE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;IntPredicate.UGE:</span> <span class="pre">4&gt;</span></em><a class="headerlink" href="#pyqir.generator.IntPredicate.UGE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.IntPredicate.ULT">
+<span class="sig-name descname"><span class="pre">ULT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;IntPredicate.ULT:</span> <span class="pre">5&gt;</span></em><a class="headerlink" href="#pyqir.generator.IntPredicate.ULT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.IntPredicate.ULE">
+<span class="sig-name descname"><span class="pre">ULE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;IntPredicate.ULE:</span> <span class="pre">6&gt;</span></em><a class="headerlink" href="#pyqir.generator.IntPredicate.ULE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.IntPredicate.SGT">
+<span class="sig-name descname"><span class="pre">SGT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;IntPredicate.SGT:</span> <span class="pre">7&gt;</span></em><a class="headerlink" href="#pyqir.generator.IntPredicate.SGT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.IntPredicate.SGE">
+<span class="sig-name descname"><span class="pre">SGE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;IntPredicate.SGE:</span> <span class="pre">8&gt;</span></em><a class="headerlink" href="#pyqir.generator.IntPredicate.SGE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.IntPredicate.SLT">
+<span class="sig-name descname"><span class="pre">SLT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;IntPredicate.SLT:</span> <span class="pre">9&gt;</span></em><a class="headerlink" href="#pyqir.generator.IntPredicate.SLT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.IntPredicate.SLE">
+<span class="sig-name descname"><span class="pre">SLE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;IntPredicate.SLE:</span> <span class="pre">10&gt;</span></em><a class="headerlink" href="#pyqir.generator.IntPredicate.SLE" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 </section>
+<section id="module-pyqir.generator.types">
+<span id="types"></span><h2>Types<a class="headerlink" href="#module-pyqir.generator.types" title="Permalink to this heading">¶</a></h2>
+<p>Types from the LLVM type system, as well as additional type aliases and opaque
+types defined by QIR.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="pyqir.generator.types.BOOL">
+<span class="sig-prename descclassname"><span class="pre">pyqir.generator.types.</span></span><span class="sig-name descname"><span class="pre">BOOL</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.generator.types.Int" title="pyqir.generator.types.Int"><span class="pre">Int</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Int(width=1)</span></em><a class="headerlink" href="#pyqir.generator.types.BOOL" title="Permalink to this definition">¶</a></dt>
+<dd><p>The boolean type, represented by a 1-bit integer.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pyqir.generator.types.DOUBLE">
+<span class="sig-prename descclassname"><span class="pre">pyqir.generator.types.</span></span><span class="sig-name descname"><span class="pre">DOUBLE</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.generator.types.Double" title="pyqir.generator.types.Double"><span class="pre">Double</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Double._DOUBLE</span></em><a class="headerlink" href="#pyqir.generator.types.DOUBLE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The 64-bit floating-point type.</p>
+</dd></dl>
+
+<dl class="py class enum">
+<dt class="sig sig-object py" id="pyqir.generator.types.Double">
+<em class="property"><span class="pre">enum</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.types.</span></span><span class="sig-name descname"><span class="pre">Double</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.types.Double" title="Permalink to this definition">¶</a></dt>
+<dd><p>The 64-bit floating-point type.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.generator.types.Function">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.types.</span></span><span class="sig-name descname"><span class="pre">Function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.types.Function" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of a function.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.types.Function.params">
+<span class="sig-name descname"><span class="pre">params</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyqir.generator.types.Function.params" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of each parameter to the function.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.types.Function.result">
+<span class="sig-name descname"><span class="pre">result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span></em><a class="headerlink" href="#pyqir.generator.types.Function.result" title="Permalink to this definition">¶</a></dt>
+<dd><p>The return type of the function.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.generator.types.Int">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.types.</span></span><span class="sig-name descname"><span class="pre">Int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.types.Int" title="Permalink to this definition">¶</a></dt>
+<dd><p>The integer type.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.generator.types.Int.width">
+<span class="sig-name descname"><span class="pre">width</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pyqir.generator.types.Int.width" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of bits used to represent the integer.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pyqir.generator.types.QUBIT">
+<span class="sig-prename descclassname"><span class="pre">pyqir.generator.types.</span></span><span class="sig-name descname"><span class="pre">QUBIT</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.generator.types.Qubit" title="pyqir.generator.types.Qubit"><span class="pre">Qubit</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Qubit._QUBIT</span></em><a class="headerlink" href="#pyqir.generator.types.QUBIT" title="Permalink to this definition">¶</a></dt>
+<dd><p>The QIR qubit type, represented by the LLVM type <cite>%Qubit*</cite>.</p>
+</dd></dl>
+
+<dl class="py class enum">
+<dt class="sig sig-object py" id="pyqir.generator.types.Qubit">
+<em class="property"><span class="pre">enum</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.types.</span></span><span class="sig-name descname"><span class="pre">Qubit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.types.Qubit" title="Permalink to this definition">¶</a></dt>
+<dd><p>The QIR qubit type, represented by the LLVM type <cite>%Qubit*</cite>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pyqir.generator.types.RESULT">
+<span class="sig-prename descclassname"><span class="pre">pyqir.generator.types.</span></span><span class="sig-name descname"><span class="pre">RESULT</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.generator.types.Result" title="pyqir.generator.types.Result"><span class="pre">Result</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Result._RESULT</span></em><a class="headerlink" href="#pyqir.generator.types.RESULT" title="Permalink to this definition">¶</a></dt>
+<dd><p>The QIR result type, represented by the LLVM type <cite>%Result*</cite>.</p>
+</dd></dl>
+
+<dl class="py class enum">
+<dt class="sig sig-object py" id="pyqir.generator.types.Result">
+<em class="property"><span class="pre">enum</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.types.</span></span><span class="sig-name descname"><span class="pre">Result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.types.Result" title="Permalink to this definition">¶</a></dt>
+<dd><p>The QIR result type, represented by the LLVM type <cite>%Result*</cite>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pyqir.generator.types.Type">
+<span class="sig-prename descclassname"><span class="pre">pyqir.generator.types.</span></span><span class="sig-name descname"><span class="pre">Type</span></span><a class="headerlink" href="#pyqir.generator.types.Type" title="Permalink to this definition">¶</a></dt>
+<dd><p>A QIR type.</p>
+<p>alias of <code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="#pyqir.generator.types.Void" title="pyqir.generator.types.Void"><code class="xref py py-class docutils literal notranslate"><span class="pre">Void</span></code></a>, <a class="reference internal" href="#pyqir.generator.types.Int" title="pyqir.generator.types.Int"><code class="xref py py-class docutils literal notranslate"><span class="pre">Int</span></code></a>, <a class="reference internal" href="#pyqir.generator.types.Double" title="pyqir.generator.types.Double"><code class="xref py py-class docutils literal notranslate"><span class="pre">Double</span></code></a>, <a class="reference internal" href="#pyqir.generator.types.Qubit" title="pyqir.generator.types.Qubit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Qubit</span></code></a>, <a class="reference internal" href="#pyqir.generator.types.Result" title="pyqir.generator.types.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a>, <a class="reference internal" href="#pyqir.generator.types.Function" title="pyqir.generator.types.Function"><code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code></a>]</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pyqir.generator.types.VOID">
+<span class="sig-prename descclassname"><span class="pre">pyqir.generator.types.</span></span><span class="sig-name descname"><span class="pre">VOID</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.generator.types.Void" title="pyqir.generator.types.Void"><span class="pre">Void</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Void._VOID</span></em><a class="headerlink" href="#pyqir.generator.types.VOID" title="Permalink to this definition">¶</a></dt>
+<dd><p>The void type.</p>
+</dd></dl>
+
+<dl class="py class enum">
+<dt class="sig sig-object py" id="pyqir.generator.types.Void">
+<em class="property"><span class="pre">enum</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.types.</span></span><span class="sig-name descname"><span class="pre">Void</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.types.Void" title="Permalink to this definition">¶</a></dt>
+<dd><p>The void type.</p>
+</dd></dl>
+
+</section>
 <section id="values">
 <h2>Values<a class="headerlink" href="#values" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.generator.Function">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">Function</span></span><a class="headerlink" href="#pyqir.generator.Function" title="Permalink to this definition">¶</a></dt>
+<dd><p>A QIR function.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.generator.Value">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">Value</span></span><a class="headerlink" href="#pyqir.generator.Value" title="Permalink to this definition">¶</a></dt>
+<dd><p>A QIR value.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyqir.generator.const">
+<span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">const</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.const" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a constant QIR value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ty</strong> (<em>Type</em>) – The type of the value.</p></li>
+<li><p><strong>value</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – A Python value that will be converted into a QIR value.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The constant QIR value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.generator.Value" title="pyqir.generator.Value">Value</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="ir-and-bitcode">
+<h2>IR and bitcode<a class="headerlink" href="#ir-and-bitcode" title="Permalink to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyqir.generator.ir_to_bitcode">
+<span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">ir_to_bitcode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_file_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.ir_to_bitcode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts the supplied QIR string to its bitcode equivalent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ir</strong> (<em>str</em>) – The QIR string to convert</p></li>
+<li><p><strong>module_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the QIR module, default is “” if None</p></li>
+<li><p><strong>source_file_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The source file name of the QIR module. Unchanged if None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The equivalent bitcode as bytes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bytes</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyqir.generator.bitcode_to_ir">
+<span class="sig-prename descclassname"><span class="pre">pyqir.generator.</span></span><span class="sig-name descname"><span class="pre">bitcode_to_ir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bitcode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_file_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.generator.bitcode_to_ir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts the supplied bitcode to its QIR string equivalent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ir</strong> (<em>bytes</em>) – The bitcode bytes to convert</p></li>
+<li><p><strong>module_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the QIR module, default is “” if None</p></li>
+<li><p><strong>source_file_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The source file name of the QIR module. Unchanged if None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The equivalent QIR string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 </section>
 
@@ -250,9 +878,9 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="parser.html">pyqir.parser</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">pyqir.generator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="evaluator.html">pyqir.evaluator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parser.html">Parser</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="evaluator.html">Evaluator</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../development-guide/index.html">Development Guide</a></li>
@@ -263,8 +891,8 @@
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="index.html">API Reference</a><ul>
-      <li>Previous: <a href="parser.html" title="previous chapter">pyqir.parser</a></li>
-      <li>Next: <a href="evaluator.html" title="next chapter">pyqir.evaluator</a></li>
+      <li>Previous: <a href="parser.html" title="previous chapter">Parser</a></li>
+      <li>Next: <a href="evaluator.html" title="next chapter">Evaluator</a></li>
   </ul></li>
   </ul></li>
 </ul>

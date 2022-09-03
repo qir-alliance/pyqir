@@ -53,6 +53,7 @@
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
  | <a href="#V"><strong>V</strong></a>
  | <a href="#W"><strong>W</strong></a>
  | <a href="#X"><strong>X</strong></a>
@@ -83,8 +84,12 @@
 </li>
       <li><a href="api-reference/generator.html#pyqir.generator.SimpleModule.bitcode">bitcode() (pyqir.generator.SimpleModule method)</a>
 </li>
+      <li><a href="api-reference/generator.html#pyqir.generator.bitcode_to_ir">bitcode_to_ir() (in module pyqir.generator)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/generator.html#pyqir.generator.types.BOOL">BOOL (in module pyqir.generator.types)</a>
+</li>
       <li><a href="api-reference/generator.html#pyqir.generator.Builder">Builder (class in pyqir.generator)</a>
 </li>
       <li><a href="api-reference/generator.html#pyqir.generator.SimpleModule.builder">builder (pyqir.generator.SimpleModule attribute)</a>
@@ -98,6 +103,8 @@
       <li><a href="api-reference/generator.html#pyqir.generator.Builder.call">call() (pyqir.generator.Builder method)</a>
 </li>
       <li><a href="api-reference/parser.html#pyqir.parser.QirCondBrTerminator.condition">condition (pyqir.parser.QirCondBrTerminator property)</a>
+</li>
+      <li><a href="api-reference/generator.html#pyqir.generator.const">const() (in module pyqir.generator)</a>
 </li>
       <li><a href="api-reference/evaluator.html#pyqir.evaluator.GateLogger.cx">cx() (pyqir.evaluator.GateLogger method)</a>
 
@@ -125,11 +132,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/parser.html#pyqir.parser.QirSwitchTerminator.default_dest">default_dest (pyqir.parser.QirSwitchTerminator property)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/parser.html#pyqir.parser.QirBrTerminator.dest">dest (pyqir.parser.QirBrTerminator property)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/parser.html#pyqir.parser.QirSwitchTerminator.dest_pairs">dest_pairs (pyqir.parser.QirSwitchTerminator property)</a>
+</li>
+      <li><a href="api-reference/generator.html#pyqir.generator.types.DOUBLE">DOUBLE (in module pyqir.generator.types)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -139,9 +148,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/parser.html#pyqir.parser.QirArrayType.element_count">element_count (pyqir.parser.QirArrayType property)</a>
 </li>
+      <li><a href="api-reference/parser.html#pyqir.parser.QirArrayType.element_type">element_type (pyqir.parser.QirArrayType property)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api-reference/parser.html#pyqir.parser.QirArrayType.element_type">element_type (pyqir.parser.QirArrayType property)</a>
+      <li><a href="api-reference/generator.html#pyqir.generator.IntPredicate.EQ">EQ (pyqir.generator.IntPredicate attribute)</a>
 </li>
       <li><a href="api-reference/evaluator.html#pyqir.evaluator.NonadaptiveEvaluator.eval">eval() (pyqir.evaluator.NonadaptiveEvaluator method)</a>
 </li>
@@ -165,6 +176,12 @@
 </li>
       <li><a href="api-reference/parser.html#pyqir.parser.QirCallInstr.func_name">func_name (pyqir.parser.QirCallInstr property)</a>
 </li>
+      <li><a href="api-reference/generator.html#pyqir.generator.Function">Function (class in pyqir.generator)</a>
+
+      <ul>
+        <li><a href="api-reference/generator.html#pyqir.generator.types.Function">(class in pyqir.generator.types)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -209,15 +226,19 @@
       </ul></li>
       <li><a href="api-reference/generator.html#pyqir.generator.Builder.if_">if_() (pyqir.generator.Builder method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/generator.html#pyqir.generator.BasicQisBuilder.if_result">if_result() (pyqir.generator.BasicQisBuilder method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/parser.html#pyqir.parser.QirPhiInstr.incoming_values">incoming_values (pyqir.parser.QirPhiInstr property)</a>
 </li>
       <li><a href="api-reference/evaluator.html#pyqir.evaluator.GateLogger.instructions">instructions (pyqir.evaluator.GateLogger attribute)</a>
 </li>
+      <li><a href="api-reference/generator.html#pyqir.generator.types.Int">Int (class in pyqir.generator.types)</a>
+</li>
       <li><a href="api-reference/generator.html#pyqir.generator.SimpleModule.ir">ir() (pyqir.generator.SimpleModule method)</a>
+</li>
+      <li><a href="api-reference/generator.html#pyqir.generator.ir_to_bitcode">ir_to_bitcode() (in module pyqir.generator)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -239,10 +260,17 @@
         <li><a href="api-reference/evaluator.html#pyqir.evaluator.GateSet.m">(pyqir.evaluator.GateSet method)</a>
 </li>
       </ul></li>
-      <li><a href="api-reference/generator.html#pyqir.generator.Builder.mul">mul() (pyqir.generator.Builder method)</a>
+      <li>
+    module
+
+      <ul>
+        <li><a href="api-reference/generator.html#module-pyqir.generator.types">pyqir.generator.types</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/generator.html#pyqir.generator.Builder.mul">mul() (pyqir.generator.Builder method)</a>
+</li>
       <li><a href="api-reference/evaluator.html#pyqir.evaluator.GateLogger.mz">mz() (pyqir.evaluator.GateLogger method)</a>
 
       <ul>
@@ -263,6 +291,8 @@
         <li><a href="api-reference/parser.html#pyqir.parser.QirNamedStructType.name">(pyqir.parser.QirNamedStructType property)</a>
 </li>
       </ul></li>
+      <li><a href="api-reference/generator.html#pyqir.generator.IntPredicate.NE">NE (pyqir.generator.IntPredicate attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/evaluator.html#pyqir.evaluator.NonadaptiveEvaluator">NonadaptiveEvaluator (class in pyqir.evaluator)</a>
@@ -295,6 +325,8 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/generator.html#pyqir.generator.types.Function.params">params (pyqir.generator.types.Function attribute)</a>
+</li>
       <li><a href="api-reference/parser.html#pyqir.parser.QirFCmpInstr.predicate">predicate (pyqir.parser.QirFCmpInstr property)</a>
 
       <ul>
@@ -305,6 +337,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/evaluator.html#pyqir.evaluator.GateLogger.print">print() (pyqir.evaluator.GateLogger method)</a>
 </li>
+      <li>
+    pyqir.generator.types
+
+      <ul>
+        <li><a href="api-reference/generator.html#module-pyqir.generator.types">module</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -411,6 +450,8 @@
 </li>
       <li><a href="api-reference/parser.html#pyqir.parser.QirXorInstr">QirXorInstr (class in pyqir.parser)</a>
 </li>
+      <li><a href="api-reference/generator.html#pyqir.generator.types.QUBIT">QUBIT (in module pyqir.generator.types)</a>
+</li>
       <li><a href="api-reference/generator.html#pyqir.generator.SimpleModule.qubits">qubits (pyqir.generator.SimpleModule attribute)</a>
 </li>
   </ul></td>
@@ -427,6 +468,10 @@
         <li><a href="api-reference/generator.html#pyqir.generator.BasicQisBuilder.reset">(pyqir.generator.BasicQisBuilder method)</a>
 </li>
       </ul></li>
+      <li><a href="api-reference/generator.html#pyqir.generator.types.RESULT">RESULT (in module pyqir.generator.types)</a>
+</li>
+      <li><a href="api-reference/generator.html#pyqir.generator.types.Function.result">result (pyqir.generator.types.Function attribute)</a>
+</li>
       <li><a href="api-reference/generator.html#pyqir.generator.SimpleModule.results">results (pyqir.generator.SimpleModule attribute)</a>
 </li>
       <li><a href="api-reference/evaluator.html#pyqir.evaluator.GateLogger.rx">rx() (pyqir.evaluator.GateLogger method)</a>
@@ -477,11 +522,19 @@
         <li><a href="api-reference/generator.html#pyqir.generator.BasicQisBuilder.s_adj">(pyqir.generator.BasicQisBuilder method)</a>
 </li>
       </ul></li>
+      <li><a href="api-reference/generator.html#pyqir.generator.IntPredicate.SGE">SGE (pyqir.generator.IntPredicate attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/generator.html#pyqir.generator.IntPredicate.SGT">SGT (pyqir.generator.IntPredicate attribute)</a>
+</li>
       <li><a href="api-reference/generator.html#pyqir.generator.Builder.shl">shl() (pyqir.generator.Builder method)</a>
 </li>
       <li><a href="api-reference/generator.html#pyqir.generator.SimpleModule">SimpleModule (class in pyqir.generator)</a>
+</li>
+      <li><a href="api-reference/generator.html#pyqir.generator.IntPredicate.SLE">SLE (pyqir.generator.IntPredicate attribute)</a>
+</li>
+      <li><a href="api-reference/generator.html#pyqir.generator.IntPredicate.SLT">SLT (pyqir.generator.IntPredicate attribute)</a>
 </li>
       <li><a href="api-reference/parser.html#pyqir.parser.QirStructType.struct_element_types">struct_element_types (pyqir.parser.QirStructType property)</a>
 </li>
@@ -513,6 +566,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/parser.html#pyqir.parser.QirCondBrTerminator.true_dest">true_dest (pyqir.parser.QirCondBrTerminator property)</a>
 </li>
+      <li><a href="api-reference/generator.html#pyqir.generator.types.Type">Type (in module pyqir.generator.types)</a>
+</li>
       <li><a href="api-reference/parser.html#pyqir.parser.QirInstr.type">type (pyqir.parser.QirInstr property)</a>
 
       <ul>
@@ -524,9 +579,27 @@
   </ul></td>
 </tr></table>
 
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/generator.html#pyqir.generator.IntPredicate.UGE">UGE (pyqir.generator.IntPredicate attribute)</a>
+</li>
+      <li><a href="api-reference/generator.html#pyqir.generator.IntPredicate.UGT">UGT (pyqir.generator.IntPredicate attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/generator.html#pyqir.generator.IntPredicate.ULE">ULE (pyqir.generator.IntPredicate attribute)</a>
+</li>
+      <li><a href="api-reference/generator.html#pyqir.generator.IntPredicate.ULT">ULT (pyqir.generator.IntPredicate attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/generator.html#pyqir.generator.Value">Value (class in pyqir.generator)</a>
+</li>
       <li><a href="api-reference/parser.html#pyqir.parser.QirDoubleConstant.value">value (pyqir.parser.QirDoubleConstant property)</a>
 
       <ul>
@@ -540,14 +613,20 @@
 </li>
       </ul></li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/generator.html#pyqir.generator.types.VOID">VOID (in module pyqir.generator.types)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api-reference/parser.html#pyqir.parser.QirIntConstant.width">width (pyqir.parser.QirIntConstant property)</a>
+      <li><a href="api-reference/generator.html#pyqir.generator.types.Int.width">width (pyqir.generator.types.Int attribute)</a>
 
       <ul>
+        <li><a href="api-reference/parser.html#pyqir.parser.QirIntConstant.width">(pyqir.parser.QirIntConstant property)</a>
+</li>
         <li><a href="api-reference/parser.html#pyqir.parser.QirIntegerType.width">(pyqir.parser.QirIntegerType property)</a>
 </li>
       </ul></li>

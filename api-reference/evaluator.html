@@ -4,9 +4,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>pyqir.evaluator &#8212; PyQIR  documentation</title>
+    <title>Evaluator &#8212; PyQIR  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
@@ -17,7 +17,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Development Guide" href="../development-guide/index.html" />
-    <link rel="prev" title="pyqir.generator" href="generator.html" />
+    <link rel="prev" title="Generator" href="generator.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -34,15 +34,12 @@
 
           <div class="body" role="main">
             
-  <section id="pyqir-evaluator">
-<h1>pyqir.evaluator<a class="headerlink" href="#pyqir-evaluator" title="Permalink to this heading">¶</a></h1>
-<section id="nonadaptiveevaluator-class">
-<h2><code class="docutils literal notranslate"><span class="pre">NonadaptiveEvaluator</span></code> class<a class="headerlink" href="#nonadaptiveevaluator-class" title="Permalink to this heading">¶</a></h2>
+  <section id="evaluator">
+<h1>Evaluator<a class="headerlink" href="#evaluator" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyqir.evaluator.NonadaptiveEvaluator">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.evaluator.</span></span><span class="sig-name descname"><span class="pre">NonadaptiveEvaluator</span></span><a class="headerlink" href="#pyqir.evaluator.NonadaptiveEvaluator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>The non-adaptive JIT evaluates QIR programs without simulating the quantum
+<dd><p>The non-adaptive JIT evaluates QIR programs without simulating the quantum
 state. Measurement results are pre-determined before the program starts.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.evaluator.NonadaptiveEvaluator.eval">
@@ -69,14 +66,10 @@ calls.</p>
 
 </dd></dl>
 
-</section>
-<section id="gateset-class">
-<h2><code class="docutils literal notranslate"><span class="pre">GateSet</span></code> class<a class="headerlink" href="#gateset-class" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyqir.evaluator.GateSet">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.evaluator.</span></span><span class="sig-name descname"><span class="pre">GateSet</span></span><a class="headerlink" href="#pyqir.evaluator.GateSet" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Defines the quantum circuit operations which may be registered for
+<dd><p>Defines the quantum circuit operations which may be registered for
 callbacks during evaluation of QIR</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.evaluator.GateSet.cx">
@@ -166,9 +159,6 @@ callbacks during evaluation of QIR</p>
 
 </dd></dl>
 
-</section>
-<section id="gatelogger-class">
-<h2><code class="docutils literal notranslate"><span class="pre">GateLogger</span></code> class<a class="headerlink" href="#gatelogger-class" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyqir.evaluator.GateLogger">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.evaluator.</span></span><span class="sig-name descname"><span class="pre">GateLogger</span></span><a class="headerlink" href="#pyqir.evaluator.GateLogger" title="Permalink to this definition">¶</a></dt>
@@ -283,7 +273,6 @@ callbacks during evaluation of QIR</p>
 </dd></dl>
 
 </section>
-</section>
 
 
           </div>
@@ -305,9 +294,9 @@ callbacks during evaluation of QIR</p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="parser.html">pyqir.parser</a></li>
-<li class="toctree-l2"><a class="reference internal" href="generator.html">pyqir.generator</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">pyqir.evaluator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parser.html">Parser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generator.html">Generator</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Evaluator</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../development-guide/index.html">Development Guide</a></li>
@@ -318,7 +307,7 @@ callbacks during evaluation of QIR</p>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="index.html">API Reference</a><ul>
-      <li>Previous: <a href="generator.html" title="previous chapter">pyqir.generator</a></li>
+      <li>Previous: <a href="generator.html" title="previous chapter">Generator</a></li>
       <li>Next: <a href="../development-guide/index.html" title="next chapter">Development Guide</a></li>
   </ul></li>
   </ul></li>
