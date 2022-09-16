@@ -9,6 +9,7 @@
 // to resolve it until we move to a newer version of python.
 #![allow(clippy::format_push_string)]
 
+use crate::python_llvm::{LlvmContext, LlvmModule};
 use pyo3::{
     exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
     prelude::*,
@@ -34,7 +35,11 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Value>()?;
     m.add("const", wrap_pyfunction!(constant, m)?)?;
     m.add_class::<SimpleModule>()?;
-    m.add_class::<BasicQisBuilder>()
+    m.add_class::<BasicQisBuilder>()?;
+
+    // LLVM experiment.
+    m.add_class::<LlvmContext>()?;
+    m.add_class::<LlvmModule>()
 }
 
 const TYPES_MODULE_NAME: &str = "pyqir.generator.types";
