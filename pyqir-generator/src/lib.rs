@@ -7,4 +7,4 @@
 pub mod python;
 
 #[cfg(feature = "python-bindings")]
-mod python_llvm;
+mod types;

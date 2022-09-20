@@ -2,8 +2,34 @@
 # Licensed under the MIT License.
 
 from pyqir.generator._builder import IntPredicate
-from pyqir.generator.types import Type
-from typing import Callable, Optional, Sequence, Tuple, Union
+from typing import Callable, List, Optional, Sequence, Tuple, Union
+
+class Context:
+    def __init__(self) -> None: ...
+
+class Type: ...
+
+class VoidType(Type):
+    def __init__(self, context: Context) -> None: ...
+
+class IntegerType(Type):
+    def __init__(self, context: Context, width: int) -> None: ...
+
+class DoubleType(Type):
+    def __init__(self, context: Context) -> None: ...
+
+class FunctionType(Type):
+    def __init__(self, return_: Type, params: List[Type]) -> None: ...
+
+class StructType(Type):
+    @staticmethod
+    def opaque(context: Context, name: str) -> StructType: ...
+
+class ArrayType(Type):
+    def __init__(self, element: Type, count: int) -> None: ...
+
+class PointerType(Type):
+    def __init__(self, pointee: Type, address_space: int) -> None: ...
 
 class Function: ...
 class Value: ...

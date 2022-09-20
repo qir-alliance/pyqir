@@ -9,25 +9,28 @@
 // to resolve it until we move to a newer version of python.
 #![allow(clippy::format_push_string)]
 
-use crate::python_llvm::{LlvmContext, LlvmModule};
+use crate::types::{self, Type};
 use pyo3::{
     exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
     prelude::*,
+    type_object::PyTypeObject,
     types::{PyBytes, PySequence, PyString, PyUnicode},
     PyObjectProtocol,
 };
-use qirlib::generation::{
-    emit,
-    interop::{
-        self, BinaryKind, BinaryOp, Call, Controlled, If, IfResult, Instruction, Int, IntPredicate,
-        Measured, Rotated, SemanticModel, Single, Type, Variable,
+use qirlib::{
+    generation::{
+        emit,
+        interop::{
+            self, BinaryKind, BinaryOp, Call, Controlled, If, IfResult, Instruction, Int,
+            IntPredicate, Measured, Rotated, SemanticModel, Single, Variable,
+        },
     },
+    inkwell,
 };
-use std::{cell::RefCell, vec};
+use std::{cell::RefCell, ops::Deref, vec};
 
 #[pymodule]
-#[pyo3(name = "_native")]
-fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
+fn _native(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
     m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
     m.add_class::<Function>()?;
@@ -37,86 +40,34 @@ fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<SimpleModule>()?;
     m.add_class::<BasicQisBuilder>()?;
 
-    // LLVM experiment.
-    m.add_class::<LlvmContext>()?;
-    m.add_class::<LlvmModule>()
+    m.add_class::<types::Type>()?;
+    m.add("VoidType", types::Void::type_object(py))?;
+    m.add("IntegerType", types::Integer::type_object(py))?;
+    m.add("DoubleType", types::Double::type_object(py))?;
+    m.add("FunctionType", types::Function::type_object(py))?;
+    m.add("StructType", types::Struct::type_object(py))?;
+    m.add("ArrayType", types::Array::type_object(py))?;
+    m.add("PointerType", types::Pointer::type_object(py))?;
+
+    Ok(())
 }
 
-const TYPES_MODULE_NAME: &str = "pyqir.generator.types";
+#[pyclass]
+pub(crate) struct Context(inkwell::context::Context);
 
-struct PyVoidType;
+impl Deref for Context {
+    type Target = inkwell::context::Context;
 
-impl<'source> FromPyObject<'source> for PyVoidType {
-    fn extract(ob: &'source PyAny) -> PyResult<Self> {
-        extract_sentinel(TYPES_MODULE_NAME, "Void", ob).map(|()| PyVoidType)
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
-#[derive(Clone, Copy, FromPyObject)]
-struct PyIntType {
-    width: u32,
-}
-
-struct PyDoubleType;
-
-impl<'source> FromPyObject<'source> for PyDoubleType {
-    fn extract(ob: &'source PyAny) -> PyResult<Self> {
-        extract_sentinel(TYPES_MODULE_NAME, "Double", ob).map(|()| PyDoubleType)
-    }
-}
-
-struct PyQubitType;
-
-impl<'source> FromPyObject<'source> for PyQubitType {
-    fn extract(ob: &'source PyAny) -> PyResult<Self> {
-        extract_sentinel(TYPES_MODULE_NAME, "Qubit", ob).map(|()| PyQubitType)
-    }
-}
-
-struct PyResultType;
-
-impl<'source> FromPyObject<'source> for PyResultType {
-    fn extract(ob: &'source PyAny) -> PyResult<Self> {
-        extract_sentinel(TYPES_MODULE_NAME, "Result", ob).map(|()| PyResultType)
-    }
-}
-
-struct PyFunctionType {
-    params: Vec<PyType>,
-    result: Box<PyType>,
-}
-
-impl<'source> FromPyObject<'source> for PyFunctionType {
-    fn extract(ob: &'source PyAny) -> PyResult<Self> {
-        let params = ob.getattr("params")?.extract()?;
-        let result = Box::new(ob.getattr("result")?.extract()?);
-        Ok(PyFunctionType { params, result })
-    }
-}
-
-#[derive(FromPyObject)]
-enum PyType {
-    Void(PyVoidType),
-    Int(PyIntType),
-    Double(PyDoubleType),
-    Qubit(PyQubitType),
-    Result(PyResultType),
-    Function(PyFunctionType),
-}
-
-impl From<PyType> for Type {
-    fn from(ty: PyType) -> Self {
-        match ty {
-            PyType::Void(PyVoidType) => Type::Void,
-            PyType::Int(PyIntType { width }) => Type::Int { width },
-            PyType::Double(PyDoubleType) => Type::Double,
-            PyType::Qubit(PyQubitType) => Type::Qubit,
-            PyType::Result(PyResultType) => Type::Result,
-            PyType::Function(PyFunctionType { params, result }) => Type::Function {
-                params: params.into_iter().map(Into::into).collect(),
-                result: Box::new((*result).into()),
-            },
-        }
+#[pymethods]
+impl Context {
+    #[new]
+    fn new() -> Self {
+        Self(inkwell::context::Context::create())
     }
 }
 
@@ -142,7 +93,7 @@ impl<'source> FromPyObject<'source> for PyIntPredicate {
 }
 
 /// A QIR function.
-#[derive(Clone)]
+// #[derive(Clone)]
 #[pyclass]
 struct Function {
     name: String,
@@ -179,15 +130,16 @@ impl PyObjectProtocol for Value {
 #[pyfunction]
 #[pyo3(text_signature = "(ty, value)")]
 #[allow(clippy::needless_pass_by_value)]
-fn constant(ty: PyType, value: &PyAny) -> PyResult<Value> {
-    match ty {
-        PyType::Int(PyIntType { width }) => extract_value(&Type::Int { width }, value),
-        PyType::Double(PyDoubleType) => extract_value(&Type::Double, value),
-        _ => Err(PyTypeError::new_err(
-            "Constant values are not supported for this type.",
-        )),
-    }
-    .map(Value)
+fn constant(ty: &Type, value: &PyAny) -> PyResult<Value> {
+    todo!()
+    // match ty {
+    //     PyType::Int(PyIntType { width }) => extract_value(&Type::Int { width }, value),
+    //     PyType::Double(PyDoubleType) => extract_value(&Type::Double, value),
+    //     _ => Err(PyTypeError::new_err(
+    //         "Constant values are not supported for this type.",
+    //     )),
+    // }
+    // .map(Value)
 }
 
 /// An instruction builder.
@@ -308,37 +260,38 @@ impl Builder {
     /// :returns: The return value, or None if the function has a void return type.
     /// :rtype: Optional[Value]
     #[pyo3(text_signature = "(self, function, args)")]
-    fn call(&self, function: Function, args: &PySequence) -> PyResult<Option<Value>> {
-        let (param_types, return_type) = match function.ty {
-            Type::Function { params, result } => (params, result),
-            _ => panic!("Invalid function type."),
-        };
+    fn call(&self, function: &Function, args: &PySequence) -> PyResult<Option<Value>> {
+        todo!()
+        // let (param_types, return_type) = match function.ty {
+        //     Type::Function { params, result } => (params, result),
+        //     _ => panic!("Invalid function type."),
+        // };
 
-        let num_params = param_types.len();
-        let num_args = args.len()?;
-        if num_params != num_args {
-            let message = format!("Expected {} arguments, got {}.", num_params, num_args);
-            return Err(PyValueError::new_err(message));
-        }
+        // let num_params = param_types.len();
+        // let num_args = args.len()?;
+        // if num_params != num_args {
+        //     let message = format!("Expected {} arguments, got {}.", num_params, num_args);
+        //     return Err(PyValueError::new_err(message));
+        // }
 
-        let args = args
-            .iter()?
-            .zip(&param_types)
-            .map(|(arg, ty)| extract_value(ty, arg?))
-            .collect::<PyResult<_>>()?;
+        // let args = args
+        //     .iter()?
+        //     .zip(&param_types)
+        //     .map(|(arg, ty)| extract_value(ty, arg?))
+        //     .collect::<PyResult<_>>()?;
 
-        let result = match *return_type {
-            Type::Void => None,
-            _ => Some(self.fresh_variable()),
-        };
+        // let result = match *return_type {
+        //     Type::Void => None,
+        //     _ => Some(self.fresh_variable()),
+        // };
 
-        self.push_inst(Instruction::Call(Call {
-            name: function.name,
-            args,
-            result,
-        }));
+        // self.push_inst(Instruction::Call(Call {
+        //     name: function.name,
+        //     args,
+        //     result,
+        // }));
 
-        Ok(result.map(|v| Value(interop::Value::Variable(v))))
+        // Ok(result.map(|v| Value(interop::Value::Variable(v))))
     }
 
     /// Inserts a branch conditioned on a boolean.
@@ -494,33 +447,35 @@ impl SimpleModule {
     /// :return: The function value.
     /// :rtype: Function
     #[pyo3(text_signature = "(self, name, ty)")]
-    fn add_external_function(&mut self, py: Python, name: String, ty: PyType) -> Function {
-        let mut builder = self.builder.as_ref(py).borrow_mut();
-        let ty = ty.into();
-        let function = Function { name, ty };
-        builder.external_functions.push(function.clone());
-        function
+    fn add_external_function(&mut self, py: Python, name: String, ty: &Type) -> Function {
+        todo!()
+        // let mut builder = self.builder.as_ref(py).borrow_mut();
+        // let ty = ty.into();
+        // let function = Function { name, ty };
+        // builder.external_functions.push(function.clone());
+        // function
     }
 }
 
 impl SimpleModule {
     fn model_from_builder(&self, py: Python) -> SemanticModel {
-        let builder = self.builder.as_ref(py).borrow();
-        let external_functions = builder
-            .external_functions
-            .iter()
-            .map(|f| (f.name.clone(), f.ty.clone()))
-            .collect();
+        todo!()
+        // let builder = self.builder.as_ref(py).borrow();
+        // let external_functions = builder
+        //     .external_functions
+        //     .iter()
+        //     .map(|f| (f.name.clone(), f.ty.clone()))
+        //     .collect();
 
-        let frames = builder.frames.borrow();
-        match frames[..] {
-            [ref instructions] => SemanticModel {
-                external_functions,
-                instructions: instructions.clone(),
-                ..self.model.clone()
-            },
-            _ => panic!("Builder does not contain exactly one stack frame."),
-        }
+        // let frames = builder.frames.borrow();
+        // match frames[..] {
+        //     [ref instructions] => SemanticModel {
+        //         external_functions,
+        //         instructions: instructions.clone(),
+        //         ..self.model.clone()
+        //     },
+        //     _ => panic!("Builder does not contain exactly one stack frame."),
+        // }
     }
 }
 
@@ -608,10 +563,11 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn rx(&self, py: Python, theta: &PyAny, qubit: Value) -> PyResult<()> {
-        let theta = extract_value(&Type::Double, theta)?;
-        let rotated = Rotated::new(theta, qubit.0);
-        self.push_inst(py, Instruction::Rx(rotated));
-        Ok(())
+        todo!()
+        // let theta = extract_value(&Type::Double, theta)?;
+        // let rotated = Rotated::new(theta, qubit.0);
+        // self.push_inst(py, Instruction::Rx(rotated));
+        // Ok(())
     }
 
     /// Inserts a rotation gate about the :math:`y` axis.
@@ -621,10 +577,11 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn ry(&self, py: Python, theta: &PyAny, qubit: Value) -> PyResult<()> {
-        let theta = extract_value(&Type::Double, theta)?;
-        let rotated = Rotated::new(theta, qubit.0);
-        self.push_inst(py, Instruction::Ry(rotated));
-        Ok(())
+        todo!()
+        // let theta = extract_value(&Type::Double, theta)?;
+        // let rotated = Rotated::new(theta, qubit.0);
+        // self.push_inst(py, Instruction::Ry(rotated));
+        // Ok(())
     }
 
     /// Inserts a rotation gate about the :math:`z` axis.
@@ -634,10 +591,11 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn rz(&self, py: Python, theta: &PyAny, qubit: Value) -> PyResult<()> {
-        let theta = extract_value(&Type::Double, theta)?;
-        let rotated = Rotated::new(theta, qubit.0);
-        self.push_inst(py, Instruction::Rz(rotated));
-        Ok(())
+        todo!()
+        // let theta = extract_value(&Type::Double, theta)?;
+        // let rotated = Rotated::new(theta, qubit.0);
+        // self.push_inst(py, Instruction::Rz(rotated));
+        // Ok(())
     }
 
     /// Inserts an :math:`S` gate.
@@ -802,19 +760,20 @@ fn extract_sentinel(module_name: &str, type_name: &str, ob: &PyAny) -> PyResult<
 }
 
 fn extract_value(ty: &Type, ob: &PyAny) -> PyResult<interop::Value> {
-    match ob.extract::<Value>() {
-        Ok(value) => Ok(value.0),
-        Err(_) => match ty {
-            &Type::Int { width } => Int::new(width, ob.extract()?)
-                .map(interop::Value::Int)
-                .ok_or_else(|| {
-                    let message = format!("Value too big for {}-bit integer.", width);
-                    PyOverflowError::new_err(message)
-                }),
-            Type::Double => Ok(interop::Value::Double(ob.extract()?)),
-            Type::Void | Type::Qubit | Type::Result | Type::Function { .. } => Err(
-                PyTypeError::new_err("Can't convert Python value into this type."),
-            ),
-        },
-    }
+    todo!()
+    // match ob.extract::<Value>() {
+    //     Ok(value) => Ok(value.0),
+    //     Err(_) => match ty {
+    //         &Type::Int { width } => Int::new(width, ob.extract()?)
+    //             .map(interop::Value::Int)
+    //             .ok_or_else(|| {
+    //                 let message = format!("Value too big for {}-bit integer.", width);
+    //                 PyOverflowError::new_err(message)
+    //             }),
+    //         Type::Double => Ok(interop::Value::Double(ob.extract()?)),
+    //         Type::Void | Type::Qubit | Type::Result | Type::Function { .. } => Err(
+    //             PyTypeError::new_err("Can't convert Python value into this type."),
+    //         ),
+    //     },
+    // }
 }
