@@ -546,6 +546,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
         let module = unsafe {
+            // TODO (safety): Check invariance of Module lifetime.
             transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
         };
 
