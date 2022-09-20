@@ -10,7 +10,7 @@ import unittest
 class ExternalFunctionsTest(unittest.TestCase):
     def test_call_no_params(self) -> None:
         mod = SimpleModule("test", 0, 0)
-        f = mod.add_external_function("test_function", types.Function([], types.VOID))
+        f = mod.add_external_function("test_function", types.Function(types.Void(mod.context), []))
         mod.builder.call(f, [])
         self.assertIn("call void @test_function()", mod.ir())
 

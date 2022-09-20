@@ -10,105 +10,105 @@ use inkwell::values::FunctionValue;
 
 use super::types::{self, double, qubit, result};
 
-pub(crate) fn cnot_body<'ctx>(
+pub fn cnot_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_controlled_intrinsic_function_body(context, module, "cnot")
 }
 
-pub(crate) fn cz_body<'ctx>(
+pub fn cz_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_controlled_intrinsic_function_body(context, module, "cz")
 }
 
-pub(crate) fn h_body<'ctx>(
+pub fn h_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(context, module, "h")
 }
 
-pub(crate) fn s_body<'ctx>(
+pub fn s_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(context, module, "s")
 }
 
-pub(crate) fn s_adj<'ctx>(
+pub fn s_adj<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_intrinsic_function_adj(context, module, "s")
 }
 
-pub(crate) fn t_body<'ctx>(
+pub fn t_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(context, module, "t")
 }
 
-pub(crate) fn t_adj<'ctx>(
+pub fn t_adj<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_intrinsic_function_adj(context, module, "t")
 }
 
-pub(crate) fn x_body<'ctx>(
+pub fn x_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(context, module, "x")
 }
 
-pub(crate) fn y_body<'ctx>(
+pub fn y_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(context, module, "y")
 }
 
-pub(crate) fn z_body<'ctx>(
+pub fn z_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(context, module, "z")
 }
 
-pub(crate) fn rx_body<'ctx>(
+pub fn rx_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_rotated_intrinsic_function_body(context, module, "rx")
 }
 
-pub(crate) fn ry_body<'ctx>(
+pub fn ry_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_rotated_intrinsic_function_body(context, module, "ry")
 }
 
-pub(crate) fn rz_body<'ctx>(
+pub fn rz_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_rotated_intrinsic_function_body(context, module, "rz")
 }
 
-pub(crate) fn reset_body<'ctx>(
+pub fn reset_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(context, module, "reset")
 }
 
-pub(crate) fn mz_body<'ctx>(
+pub fn mz_body<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {

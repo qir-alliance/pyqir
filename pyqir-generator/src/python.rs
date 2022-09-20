@@ -9,7 +9,7 @@
 // to resolve it until we move to a newer version of python.
 #![allow(clippy::format_push_string)]
 
-use crate::types::{self, Type};
+use crate::types::{self, any_type_enum, Type};
 use pyo3::{
     exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
     prelude::*,
@@ -17,28 +17,23 @@ use pyo3::{
     types::{PyBytes, PySequence, PyString, PyUnicode},
     PyObjectProtocol,
 };
-use qirlib::{
-    generation::{
-        emit,
-        interop::{
-            self, BinaryKind, BinaryOp, Call, Controlled, If, IfResult, Instruction, Int,
-            IntPredicate, Measured, Rotated, SemanticModel, Single, Variable,
-        },
-    },
-    inkwell,
+use qirlib::inkwell::{
+    self,
+    module::Linkage,
+    values::{AnyValueEnum, BasicMetadataValueEnum},
 };
-use std::{cell::RefCell, ops::Deref, vec};
+use std::{mem::transmute, ops::Deref};
 
 #[pymodule]
 fn _native(py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
-    m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
-    m.add_class::<Function>()?;
-    m.add_class::<Builder>()?;
-    m.add_class::<Value>()?;
-    m.add("const", wrap_pyfunction!(constant, m)?)?;
     m.add_class::<SimpleModule>()?;
+    m.add_class::<Builder>()?;
     m.add_class::<BasicQisBuilder>()?;
+    m.add_class::<Value>()?;
+
+    m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
+    m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
+    m.add("const", wrap_pyfunction!(constant, m)?)?;
 
     m.add_class::<types::Type>()?;
     m.add("VoidType", types::Void::type_object(py))?;
@@ -71,53 +66,50 @@ impl Context {
     }
 }
 
-struct PyIntPredicate(IntPredicate);
+struct PyIntPredicate(inkwell::IntPredicate);
 
 impl<'source> FromPyObject<'source> for PyIntPredicate {
     fn extract(ob: &'source PyAny) -> PyResult<Self> {
         match ob.getattr("name")?.extract()? {
-            "EQ" => Ok(IntPredicate::EQ),
-            "NE" => Ok(IntPredicate::NE),
-            "UGT" => Ok(IntPredicate::UGT),
-            "UGE" => Ok(IntPredicate::UGE),
-            "ULT" => Ok(IntPredicate::ULT),
-            "ULE" => Ok(IntPredicate::ULE),
-            "SGT" => Ok(IntPredicate::SGT),
-            "SGE" => Ok(IntPredicate::SGE),
-            "SLT" => Ok(IntPredicate::SLT),
-            "SLE" => Ok(IntPredicate::SLE),
+            "EQ" => Ok(inkwell::IntPredicate::EQ),
+            "NE" => Ok(inkwell::IntPredicate::NE),
+            "UGT" => Ok(inkwell::IntPredicate::UGT),
+            "UGE" => Ok(inkwell::IntPredicate::UGE),
+            "ULT" => Ok(inkwell::IntPredicate::ULT),
+            "ULE" => Ok(inkwell::IntPredicate::ULE),
+            "SGT" => Ok(inkwell::IntPredicate::SGT),
+            "SGE" => Ok(inkwell::IntPredicate::SGE),
+            "SLT" => Ok(inkwell::IntPredicate::SLT),
+            "SLE" => Ok(inkwell::IntPredicate::SLE),
             _ => Err(PyValueError::new_err("Invalid predicate.")),
         }
         .map(Self)
     }
 }
 
-/// A QIR function.
-// #[derive(Clone)]
-#[pyclass]
-struct Function {
-    name: String,
-    ty: Type,
-}
-
 /// A QIR value.
+#[pyclass(unsendable)]
 #[derive(Clone)]
-#[pyclass]
-struct Value(interop::Value);
+struct Value {
+    value: AnyValueEnum<'static>,
+    context: Py<Context>,
+}
 
 #[pyproto]
 impl PyObjectProtocol for Value {
     fn __repr__(&self) -> String {
-        match &self.0 {
-            interop::Value::Int(int) => {
-                format!("const(types.Int({}), {})", int.width(), int.value())
-            }
-            interop::Value::Double(value) => format!("const(types.DOUBLE, {})", value),
-            interop::Value::Qubit(name) | interop::Value::Result(name) => {
-                format!("<Value {}>", name)
-            }
-            interop::Value::Variable(var) => format!("<Value {:?}>", var),
-        }
+        format!("{:?}", self.value)
+    }
+}
+
+impl Value {
+    fn new<'ctx>(context: Py<Context>, value: impl inkwell::values::AnyValue<'ctx>) -> Self {
+        Self::from_any(context, value.as_any_value_enum())
+    }
+
+    fn from_any<'ctx>(context: Py<Context>, value: AnyValueEnum<'ctx>) -> Self {
+        let value = unsafe { transmute::<AnyValueEnum, AnyValueEnum<'static>>(value) };
+        Self { value, context }
     }
 }
 
@@ -130,24 +122,38 @@ impl PyObjectProtocol for Value {
 #[pyfunction]
 #[pyo3(text_signature = "(ty, value)")]
 #[allow(clippy::needless_pass_by_value)]
-fn constant(ty: &Type, value: &PyAny) -> PyResult<Value> {
-    todo!()
-    // match ty {
-    //     PyType::Int(PyIntType { width }) => extract_value(&Type::Int { width }, value),
-    //     PyType::Double(PyDoubleType) => extract_value(&Type::Double, value),
-    //     _ => Err(PyTypeError::new_err(
-    //         "Constant values are not supported for this type.",
-    //     )),
-    // }
-    // .map(Value)
+fn constant(py: Python, ty: Py<Type>, value: &PyAny) -> PyResult<Value> {
+    let context = ty.borrow(py).context.clone();
+    let value = extract_value(any_type_enum(py, &ty)?, value)?;
+    Ok(Value::new(context, value))
+}
+
+#[pyclass(unsendable)]
+struct Module {
+    module: inkwell::module::Module<'static>,
+    context: Py<Context>,
+}
+
+impl Module {
+    fn new(py: Python, context: Py<Context>, name: &str) -> Module {
+        let module = {
+            let context = context.borrow(py);
+            let module = context.create_module(name);
+            unsafe {
+                transmute::<inkwell::module::Module, inkwell::module::Module<'static>>(module)
+            }
+        };
+
+        Module { module, context }
+    }
 }
 
 /// An instruction builder.
-#[pyclass]
+#[pyclass(unsendable)]
 struct Builder {
-    external_functions: Vec<Function>,
-    next_variable: RefCell<Variable>,
-    frames: RefCell<Vec<Vec<Instruction>>>,
+    builder: inkwell::builder::Builder<'static>,
+    module: Py<Module>, // TODO: https://github.com/TheDan64/inkwell/issues/347
+    context: Py<Context>,
 }
 
 #[pymethods]
@@ -160,7 +166,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn and_(&self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::And, lhs.0, rhs.0)
+        let context = lhs.context;
+        let lhs = lhs.value.into_int_value();
+        let rhs = rhs.value.into_int_value();
+        Value::new(context, self.builder.build_and(lhs, rhs, ""))
     }
 
     /// Inserts a bitwise logical or instruction.
@@ -171,7 +180,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn or_(&self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::Or, lhs.0, rhs.0)
+        let context = lhs.context;
+        let lhs = lhs.value.into_int_value();
+        let rhs = rhs.value.into_int_value();
+        Value::new(context, self.builder.build_or(lhs, rhs, ""))
     }
 
     /// Inserts a bitwise logical exclusive or instruction.
@@ -182,7 +194,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn xor(&self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::Xor, lhs.0, rhs.0)
+        let context = lhs.context;
+        let lhs = lhs.value.into_int_value();
+        let rhs = rhs.value.into_int_value();
+        Value::new(context, self.builder.build_xor(lhs, rhs, ""))
     }
 
     /// Inserts an addition instruction.
@@ -193,7 +208,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn add(&self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::Add, lhs.0, rhs.0)
+        let context = lhs.context;
+        let lhs = lhs.value.into_int_value();
+        let rhs = rhs.value.into_int_value();
+        Value::new(context, self.builder.build_int_add(lhs, rhs, ""))
     }
 
     /// Inserts a subtraction instruction.
@@ -204,7 +222,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn sub(&self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::Sub, lhs.0, rhs.0)
+        let context = lhs.context;
+        let lhs = lhs.value.into_int_value();
+        let rhs = rhs.value.into_int_value();
+        Value::new(context, self.builder.build_int_sub(lhs, rhs, ""))
     }
 
     /// Inserts a multiplication instruction.
@@ -215,7 +236,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn mul(&self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::Mul, lhs.0, rhs.0)
+        let context = lhs.context;
+        let lhs = lhs.value.into_int_value();
+        let rhs = rhs.value.into_int_value();
+        Value::new(context, self.builder.build_int_mul(lhs, rhs, ""))
     }
 
     /// Inserts a shift left instruction.
@@ -226,7 +250,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn shl(&self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::Shl, lhs.0, rhs.0)
+        let context = lhs.context;
+        let lhs = lhs.value.into_int_value();
+        let rhs = rhs.value.into_int_value();
+        Value::new(context, self.builder.build_left_shift(lhs, rhs, ""))
     }
 
     /// Inserts a logical (zero fill) shift right instruction.
@@ -237,7 +264,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn lshr(&self, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::LShr, lhs.0, rhs.0)
+        let context = lhs.context;
+        let lhs = lhs.value.into_int_value();
+        let rhs = rhs.value.into_int_value();
+        Value::new(context, self.builder.build_right_shift(lhs, rhs, false, ""))
     }
 
     /// Inserts an integer comparison instruction.
@@ -250,7 +280,13 @@ impl Builder {
     #[pyo3(text_signature = "(self, pred, lhs, rhs)")]
     #[allow(clippy::needless_pass_by_value)]
     fn icmp(&self, pred: PyIntPredicate, lhs: Value, rhs: Value) -> Value {
-        self.push_binary_op(BinaryKind::ICmp(pred.0), lhs.0, rhs.0)
+        let context = lhs.context;
+        let lhs = lhs.value.into_int_value();
+        let rhs = rhs.value.into_int_value();
+        Value::new(
+            context,
+            self.builder.build_int_compare(pred.0, lhs, rhs, ""),
+        )
     }
 
     /// Inserts a call instruction.
@@ -260,38 +296,35 @@ impl Builder {
     /// :returns: The return value, or None if the function has a void return type.
     /// :rtype: Optional[Value]
     #[pyo3(text_signature = "(self, function, args)")]
-    fn call(&self, function: &Function, args: &PySequence) -> PyResult<Option<Value>> {
-        todo!()
-        // let (param_types, return_type) = match function.ty {
-        //     Type::Function { params, result } => (params, result),
-        //     _ => panic!("Invalid function type."),
-        // };
+    fn call(&self, function: &Value, args: &PySequence) -> PyResult<Option<Value>> {
+        let context = function.context.clone();
+        let function = match function.value {
+            AnyValueEnum::FunctionValue(f) => Ok(f),
+            _ => Err(PyValueError::new_err("Not a function value.")),
+        }?;
 
-        // let num_params = param_types.len();
-        // let num_args = args.len()?;
-        // if num_params != num_args {
-        //     let message = format!("Expected {} arguments, got {}.", num_params, num_args);
-        //     return Err(PyValueError::new_err(message));
-        // }
+        let ty = function.get_type();
+        let param_types = ty.get_param_types();
+        let num_params = param_types.len();
+        let num_args = args.len()?;
 
-        // let args = args
-        //     .iter()?
-        //     .zip(&param_types)
-        //     .map(|(arg, ty)| extract_value(ty, arg?))
-        //     .collect::<PyResult<_>>()?;
+        if num_params != num_args {
+            let message = format!("Expected {} arguments, got {}.", num_params, num_args);
+            return Err(PyValueError::new_err(message));
+        }
 
-        // let result = match *return_type {
-        //     Type::Void => None,
-        //     _ => Some(self.fresh_variable()),
-        // };
+        let args = args
+            .iter()?
+            .zip(&param_types)
+            .map(|(arg, ty)| Ok(any_to_meta(extract_value(*ty, arg?)?).unwrap()))
+            .collect::<PyResult<Vec<_>>>()?;
 
-        // self.push_inst(Instruction::Call(Call {
-        //     name: function.name,
-        //     args,
-        //     result,
-        // }));
-
-        // Ok(result.map(|v| Value(interop::Value::Variable(v))))
+        Ok(self
+            .builder
+            .build_call(function, &args, "")
+            .try_as_basic_value()
+            .left()
+            .map(|v| Value::new(context, v)))
     }
 
     /// Inserts a branch conditioned on a boolean.
@@ -307,53 +340,33 @@ impl Builder {
     ///     A callable that inserts instructions for the branch where the condition is false.
     #[pyo3(text_signature = "(self, cond, true, false)")]
     fn if_(&self, cond: Value, r#true: Option<&PyAny>, r#false: Option<&PyAny>) -> PyResult<()> {
-        let if_ = If {
-            cond: cond.0,
-            if_true: build_frame(self, r#true)?,
-            if_false: build_frame(self, r#false)?,
-        };
-        self.push_inst(Instruction::If(if_));
-        Ok(())
+        todo!("Builder::if_")
+        // let if_ = If {
+        //     cond: cond.0,
+        //     if_true: build_frame(self, r#true)?,
+        //     if_false: build_frame(self, r#false)?,
+        // };
+        // self.push_inst(Instruction::If(if_));
+        // Ok(())
     }
 }
 
 impl Builder {
-    fn new() -> Builder {
-        Builder {
-            external_functions: vec![],
-            next_variable: RefCell::new(Variable::new()),
-            frames: RefCell::new(vec![vec![]]),
+    fn new(py: Python, context: Py<Context>, module: Py<Module>) -> Self {
+        let builder = {
+            let context = context.borrow(py);
+            unsafe {
+                transmute::<inkwell::builder::Builder, inkwell::builder::Builder<'static>>(
+                    context.create_builder(),
+                )
+            }
+        };
+
+        Self {
+            builder,
+            module,
+            context,
         }
-    }
-
-    fn push_inst(&self, inst: Instruction) {
-        self.frames.borrow_mut().last_mut().unwrap().push(inst);
-    }
-
-    fn push_frame(&self) {
-        self.frames.borrow_mut().push(vec![]);
-    }
-
-    fn pop_frame(&self) -> Option<Vec<Instruction>> {
-        self.frames.borrow_mut().pop()
-    }
-
-    fn fresh_variable(&self) -> Variable {
-        let mut next_variable = self.next_variable.borrow_mut();
-        let v = *next_variable;
-        *next_variable = v.next();
-        v
-    }
-
-    fn push_binary_op(&self, kind: BinaryKind, lhs: interop::Value, rhs: interop::Value) -> Value {
-        let result = self.fresh_variable();
-        self.push_inst(Instruction::BinaryOp(BinaryOp {
-            kind,
-            lhs,
-            rhs,
-            result,
-        }));
-        Value(interop::Value::Variable(result))
     }
 }
 
@@ -366,10 +379,10 @@ impl Builder {
 /// :param str name: The name of the module.
 /// :param int num_qubits: The number of statically allocated qubits.
 /// :param int num_results: The number of statically allocated results.
-#[pyclass]
+#[pyclass(unsendable)]
 #[pyo3(text_signature = "(name, num_qubits, num_results)")]
 struct SimpleModule {
-    model: SemanticModel,
+    module: Py<Module>,
     builder: Py<Builder>,
     num_qubits: u64,
     num_results: u64,
@@ -378,28 +391,57 @@ struct SimpleModule {
 #[pymethods]
 impl SimpleModule {
     #[new]
-    fn new(py: Python, name: String, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
-        let model = SemanticModel {
-            name,
-            external_functions: vec![],
-            instructions: vec![],
+    fn new(py: Python, name: &str, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
+        let context = Py::new(py, Context::new())?;
+        let context_ref = context.borrow(py);
+
+        let module = Module::new(py, context.clone(), name);
+        let module_ref = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
         };
+        let entry_point = qirlib::generation::qir::create_entry_point(&context_ref.0, module_ref);
+        let module = Py::new(py, module)?;
+
+        let builder = Builder::new(py, context.clone(), module.clone());
+        let entry = context_ref.append_basic_block(entry_point, "entry");
+        builder.builder.position_at_end(entry);
+        let builder = Py::new(py, builder)?;
 
         Ok(SimpleModule {
-            model,
-            builder: Py::new(py, Builder::new())?,
+            module,
+            builder,
             num_qubits,
             num_results,
         })
+    }
+
+    #[getter]
+    fn context(&self, py: Python) -> Py<Context> {
+        self.module.borrow(py).context.clone()
     }
 
     /// The global qubit register.
     ///
     /// :type: Tuple[Value, ...]
     #[getter]
-    fn qubits(&self) -> Vec<Value> {
+    fn qubits(&self, py: Python) -> Vec<Value> {
+        let module = self.module.borrow(py);
+        let builder = self.builder.borrow(py);
+        let context = module.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+        let ty = qirlib::codegen::types::qubit(&context.0, module)
+            .ptr_type(inkwell::AddressSpace::Generic);
+
         (0..self.num_qubits)
-            .map(|id| Value(interop::Value::Qubit(id)))
+            .map(|id| {
+                let id = qirlib::codegen::basicvalues::u64_to_i64(&context.0, id).into_int_value();
+                Value::new(
+                    builder.context.clone(),
+                    builder.builder.build_int_to_ptr(id, ty, ""),
+                )
+            })
             .collect()
     }
 
@@ -407,9 +449,24 @@ impl SimpleModule {
     ///
     /// :type: Tuple[Value, ...]
     #[getter]
-    fn results(&self) -> Vec<Value> {
+    fn results(&self, py: Python) -> Vec<Value> {
+        let module = self.module.borrow(py);
+        let builder = self.builder.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+        let ty = qirlib::codegen::types::result(&context.0, module)
+            .ptr_type(inkwell::AddressSpace::Generic);
+
         (0..self.num_results)
-            .map(|id| Value(interop::Value::Result(id)))
+            .map(|id| {
+                let id = qirlib::codegen::basicvalues::u64_to_i64(&context.0, id).into_int_value();
+                Value::new(
+                    builder.context.clone(),
+                    builder.builder.build_int_to_ptr(id, ty, ""),
+                )
+            })
             .collect()
     }
 
@@ -424,20 +481,18 @@ impl SimpleModule {
     /// Emits the LLVM IR for the module as plain text.
     ///
     /// :rtype: str
-    fn ir(&self, py: Python) -> PyResult<String> {
-        let model = self.model_from_builder(py);
-        emit::ir(&model).map_err(PyOSError::new_err)
+    fn ir(&self, py: Python) -> String {
+        self.builder.borrow(py).builder.build_return(None);
+        self.module.borrow(py).module.print_to_string().to_string()
     }
 
     /// Emits the LLVM bitcode for the module as a sequence of bytes.
     ///
     /// :rtype: bytes
-    fn bitcode<'a>(&self, py: Python<'a>) -> PyResult<&'a PyBytes> {
-        let model = self.model_from_builder(py);
-        match emit::bitcode(&model) {
-            Ok(bitcode) => Ok(PyBytes::new(py, &bitcode[..])),
-            Err(err) => Err(PyOSError::new_err(err)),
-        }
+    fn bitcode<'a>(&self, py: Python<'a>) -> &'a PyBytes {
+        self.builder.borrow(py).builder.build_return(None);
+        let bitcode = self.module.borrow(py).module.write_bitcode_to_memory();
+        PyBytes::new(py, bitcode.as_slice())
     }
 
     /// Adds a declaration for an externally linked function to the module.
@@ -447,44 +502,21 @@ impl SimpleModule {
     /// :return: The function value.
     /// :rtype: Function
     #[pyo3(text_signature = "(self, name, ty)")]
-    fn add_external_function(&mut self, py: Python, name: String, ty: &Type) -> Function {
-        todo!()
-        // let mut builder = self.builder.as_ref(py).borrow_mut();
-        // let ty = ty.into();
-        // let function = Function { name, ty };
-        // builder.external_functions.push(function.clone());
-        // function
-    }
-}
+    fn add_external_function(&mut self, py: Python, name: &str, ty: Py<Type>) -> PyResult<Value> {
+        let context = ty.borrow(py).context.clone();
+        let ty = any_type_enum(py, &ty)?.into_function_type();
+        let module = self.module.borrow(py);
+        let function = module
+            .module
+            .add_function(name, ty, Some(Linkage::External));
 
-impl SimpleModule {
-    fn model_from_builder(&self, py: Python) -> SemanticModel {
-        todo!()
-        // let builder = self.builder.as_ref(py).borrow();
-        // let external_functions = builder
-        //     .external_functions
-        //     .iter()
-        //     .map(|f| (f.name.clone(), f.ty.clone()))
-        //     .collect();
-
-        // let frames = builder.frames.borrow();
-        // match frames[..] {
-        //     [ref instructions] => SemanticModel {
-        //         external_functions,
-        //         instructions: instructions.clone(),
-        //         ..self.model.clone()
-        //     },
-        //     _ => panic!("Builder does not contain exactly one stack frame."),
-        // }
+        // TODO: Need to manually wrap in AnyValueEnum::FunctionValue. Going through the AnyValue
+        // trait seems to turn the FunctionValue into a PointerValue. Why?
+        Ok(Value::from_any(
+            context,
+            AnyValueEnum::FunctionValue(function),
+        ))
     }
-}
-
-fn build_frame(builder: &Builder, callback: Option<&PyAny>) -> PyResult<Vec<Instruction>> {
-    builder.push_frame();
-    if let Some(callback) = callback {
-        callback.call0()?;
-    }
-    Ok(builder.pop_frame().unwrap())
 }
 
 /// An instruction builder that generates instructions from the basic quantum instruction set.
@@ -510,8 +542,17 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, control, target)")]
     fn cx(&self, py: Python, control: Value, target: Value) {
-        let controlled = Controlled::new(control.0, target.0);
-        self.push_inst(py, Instruction::Cx(controlled));
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let control = any_to_meta(control.value).unwrap();
+        let target = any_to_meta(target.value).unwrap();
+        let function = qirlib::codegen::qis::cnot_body(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[control, target]);
     }
 
     /// Inserts a controlled Pauli :math:`Z` gate.
@@ -521,8 +562,17 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, control, target)")]
     fn cz(&self, py: Python, control: Value, target: Value) {
-        let controlled = Controlled::new(control.0, target.0);
-        self.push_inst(py, Instruction::Cz(controlled));
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let control = any_to_meta(control.value).unwrap();
+        let target = any_to_meta(target.value).unwrap();
+        let function = qirlib::codegen::qis::cz_body(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[control, target]);
     }
 
     /// Inserts a Hadamard gate.
@@ -531,8 +581,16 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
     fn h(&self, py: Python, qubit: Value) {
-        let single = Single::new(qubit.0);
-        self.push_inst(py, Instruction::H(single));
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let qubit = any_to_meta(qubit.value).unwrap();
+        let function = qirlib::codegen::qis::h_body(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a Z-basis measurement operation.
@@ -542,8 +600,17 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit, result)")]
     fn mz(&self, py: Python, qubit: Value, result: Value) {
-        let measured = Measured::new(qubit.0, result.0);
-        self.push_inst(py, Instruction::M(measured));
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let qubit = any_to_meta(qubit.value).unwrap();
+        let result = any_to_meta(result.value).unwrap();
+        let function = qirlib::codegen::qis::mz_body(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit, result]);
     }
 
     /// Inserts a reset operation.
@@ -552,8 +619,16 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
     fn reset(&self, py: Python, qubit: Value) {
-        let single = Single::new(qubit.0);
-        self.push_inst(py, Instruction::Reset(single));
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let qubit = any_to_meta(qubit.value).unwrap();
+        let function = qirlib::codegen::qis::reset_body(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a rotation gate about the :math:`x` axis.
@@ -563,11 +638,18 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn rx(&self, py: Python, theta: &PyAny, qubit: Value) -> PyResult<()> {
-        todo!()
-        // let theta = extract_value(&Type::Double, theta)?;
-        // let rotated = Rotated::new(theta, qubit.0);
-        // self.push_inst(py, Instruction::Rx(rotated));
-        // Ok(())
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let theta = any_to_meta(extract_value(context.f64_type(), theta)?).unwrap();
+        let qubit = any_to_meta(qubit.value).unwrap();
+        let function = qirlib::codegen::qis::rx_body(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
+        Ok(())
     }
 
     /// Inserts a rotation gate about the :math:`y` axis.
@@ -577,11 +659,18 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn ry(&self, py: Python, theta: &PyAny, qubit: Value) -> PyResult<()> {
-        todo!()
-        // let theta = extract_value(&Type::Double, theta)?;
-        // let rotated = Rotated::new(theta, qubit.0);
-        // self.push_inst(py, Instruction::Ry(rotated));
-        // Ok(())
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let theta = any_to_meta(extract_value(context.f64_type(), theta)?).unwrap();
+        let qubit = any_to_meta(qubit.value).unwrap();
+        let function = qirlib::codegen::qis::ry_body(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
+        Ok(())
     }
 
     /// Inserts a rotation gate about the :math:`z` axis.
@@ -591,11 +680,18 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn rz(&self, py: Python, theta: &PyAny, qubit: Value) -> PyResult<()> {
-        todo!()
-        // let theta = extract_value(&Type::Double, theta)?;
-        // let rotated = Rotated::new(theta, qubit.0);
-        // self.push_inst(py, Instruction::Rz(rotated));
-        // Ok(())
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let theta = any_to_meta(extract_value(context.f64_type(), theta)?).unwrap();
+        let qubit = any_to_meta(qubit.value).unwrap();
+        let function = qirlib::codegen::qis::rz_body(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
+        Ok(())
     }
 
     /// Inserts an :math:`S` gate.
@@ -604,8 +700,16 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
     fn s(&self, py: Python, qubit: Value) {
-        let single = Single::new(qubit.0);
-        self.push_inst(py, Instruction::S(single));
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let qubit = any_to_meta(qubit.value).unwrap();
+        let function = qirlib::codegen::qis::s_body(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts an adjoint :math:`S` gate.
@@ -614,8 +718,16 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
     fn s_adj(&self, py: Python, qubit: Value) {
-        let single = Single::new(qubit.0);
-        self.push_inst(py, Instruction::SAdj(single));
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let qubit = any_to_meta(qubit.value).unwrap();
+        let function = qirlib::codegen::qis::s_adj(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a :math:`T` gate.
@@ -624,8 +736,16 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
     fn t(&self, py: Python, qubit: Value) {
-        let single = Single::new(qubit.0);
-        self.push_inst(py, Instruction::T(single));
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let qubit = any_to_meta(qubit.value).unwrap();
+        let function = qirlib::codegen::qis::t_body(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts an adjoint :math:`T` gate.
@@ -634,8 +754,16 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
     fn t_adj(&self, py: Python, qubit: Value) {
-        let single = Single::new(qubit.0);
-        self.push_inst(py, Instruction::TAdj(single));
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let qubit = any_to_meta(qubit.value).unwrap();
+        let function = qirlib::codegen::qis::t_adj(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a Pauli :math:`X` gate.
@@ -644,8 +772,16 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
     fn x(&self, py: Python, qubit: Value) {
-        let single = Single::new(qubit.0);
-        self.push_inst(py, Instruction::X(single));
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let qubit = any_to_meta(qubit.value).unwrap();
+        let function = qirlib::codegen::qis::x_body(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a Pauli :math:`Y` gate.
@@ -654,8 +790,16 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
     fn y(&self, py: Python, qubit: Value) {
-        let single = Single::new(qubit.0);
-        self.push_inst(py, Instruction::Y(single));
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let qubit = any_to_meta(qubit.value).unwrap();
+        let function = qirlib::codegen::qis::y_body(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a Pauli :math:`Z` gate.
@@ -664,8 +808,16 @@ impl BasicQisBuilder {
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
     fn z(&self, py: Python, qubit: Value) {
-        let single = Single::new(qubit.0);
-        self.push_inst(py, Instruction::Z(single));
+        let builder = self.builder.borrow(py);
+        let module = builder.module.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+
+        let qubit = any_to_meta(qubit.value).unwrap();
+        let function = qirlib::codegen::qis::z_body(&context.0, module);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a branch conditioned on a measurement result.
@@ -688,21 +840,15 @@ impl BasicQisBuilder {
         one: Option<&PyAny>,
         zero: Option<&PyAny>,
     ) -> PyResult<()> {
-        let builder = self.builder.borrow(py);
-        let if_result = IfResult {
-            cond: cond.0,
-            if_one: build_frame(&builder, one)?,
-            if_zero: build_frame(&builder, zero)?,
-        };
-        builder.push_inst(Instruction::IfResult(if_result));
-        Ok(())
-    }
-}
-
-impl BasicQisBuilder {
-    fn push_inst(&self, py: Python, inst: Instruction) {
-        let builder = self.builder.as_ref(py).borrow();
-        builder.push_inst(inst);
+        todo!("BasicQisBuilder::if_result")
+        // let builder = self.builder.borrow(py);
+        // let if_result = IfResult {
+        //     cond: cond.0,
+        //     if_one: build_frame(&builder, one)?,
+        //     if_zero: build_frame(&builder, zero)?,
+        // };
+        // builder.push_inst(Instruction::IfResult(if_result));
+        // Ok(())
     }
 }
 
@@ -748,32 +894,36 @@ fn bitcode_to_ir<'a>(
     Ok(PyUnicode::new(py, ir.as_str()))
 }
 
-fn extract_sentinel(module_name: &str, type_name: &str, ob: &PyAny) -> PyResult<()> {
-    let module: &str = ob.get_type().getattr("__module__")?.extract()?;
-
-    if module == module_name && ob.get_type().name()? == type_name {
-        Ok(())
-    } else {
-        let message = format!("Expected {}.{}.", module_name, type_name);
-        Err(PyTypeError::new_err(message))
+fn extract_value<'ctx>(
+    ty: impl inkwell::types::AnyType<'ctx>,
+    ob: &PyAny,
+) -> PyResult<AnyValueEnum<'ctx>> {
+    match ob.extract::<Value>() {
+        Ok(value) => Ok(value.value),
+        Err(_) => match ty.as_any_type_enum() {
+            inkwell::types::AnyTypeEnum::IntType(int) => {
+                Ok(int.const_int(ob.extract()?, true).into())
+            }
+            inkwell::types::AnyTypeEnum::FloatType(float) => {
+                Ok(float.const_float(ob.extract()?).into())
+            }
+            _ => Err(PyTypeError::new_err(
+                "Can't convert Python value into this type.",
+            )),
+        },
     }
 }
 
-fn extract_value(ty: &Type, ob: &PyAny) -> PyResult<interop::Value> {
-    todo!()
-    // match ob.extract::<Value>() {
-    //     Ok(value) => Ok(value.0),
-    //     Err(_) => match ty {
-    //         &Type::Int { width } => Int::new(width, ob.extract()?)
-    //             .map(interop::Value::Int)
-    //             .ok_or_else(|| {
-    //                 let message = format!("Value too big for {}-bit integer.", width);
-    //                 PyOverflowError::new_err(message)
-    //             }),
-    //         Type::Double => Ok(interop::Value::Double(ob.extract()?)),
-    //         Type::Void | Type::Qubit | Type::Result | Type::Function { .. } => Err(
-    //             PyTypeError::new_err("Can't convert Python value into this type."),
-    //         ),
-    //     },
-    // }
+fn any_to_meta(value: AnyValueEnum) -> Option<BasicMetadataValueEnum> {
+    match value {
+        AnyValueEnum::ArrayValue(a) => Some(BasicMetadataValueEnum::ArrayValue(a)),
+        AnyValueEnum::IntValue(i) => Some(BasicMetadataValueEnum::IntValue(i)),
+        AnyValueEnum::FloatValue(f) => Some(BasicMetadataValueEnum::FloatValue(f)),
+        AnyValueEnum::PointerValue(p) => Some(BasicMetadataValueEnum::PointerValue(p)),
+        AnyValueEnum::StructValue(s) => Some(BasicMetadataValueEnum::StructValue(s)),
+        AnyValueEnum::VectorValue(v) => Some(BasicMetadataValueEnum::VectorValue(v)),
+        AnyValueEnum::PhiValue(_)
+        | AnyValueEnum::FunctionValue(_)
+        | AnyValueEnum::InstructionValue(_) => None,
+    }
 }

@@ -6,8 +6,8 @@ use inkwell::{
     values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, InstructionValue},
 };
 
-#[must_use]
-pub(crate) fn emit_void_call<'ctx>(
+#[allow(clippy::must_use_candidate)]
+pub fn emit_void_call<'ctx>(
     builder: &Builder<'ctx>,
     function: FunctionValue<'ctx>,
     args: &[BasicMetadataValueEnum<'ctx>],

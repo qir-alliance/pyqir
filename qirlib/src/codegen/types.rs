@@ -31,7 +31,7 @@ pub(crate) fn bool(context: &inkwell::context::Context) -> IntType {
 }
 
 #[must_use]
-pub(crate) fn qubit<'ctx>(
+pub fn qubit<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &inkwell::module::Module<'ctx>,
 ) -> StructType<'ctx> {
@@ -39,7 +39,7 @@ pub(crate) fn qubit<'ctx>(
 }
 
 #[must_use]
-pub(crate) fn result<'ctx>(
+pub fn result<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &inkwell::module::Module<'ctx>,
 ) -> StructType<'ctx> {

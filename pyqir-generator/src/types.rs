@@ -18,7 +18,7 @@ use std::{
 #[pyclass(subclass)]
 #[derive(Clone)]
 pub(crate) struct Type {
-    context: Py<Context>,
+    pub(crate) context: Py<Context>,
 }
 
 #[pyclass(extends = Type, unsendable)]
@@ -179,7 +179,7 @@ impl Pointer {
     }
 }
 
-fn any_type_enum(py: Python, ty: &Py<Type>) -> PyResult<AnyTypeEnum<'static>> {
+pub(crate) fn any_type_enum(py: Python, ty: &Py<Type>) -> PyResult<AnyTypeEnum<'static>> {
     if let Ok(void) = ty.extract::<Void>(py) {
         return Ok(AnyTypeEnum::VoidType(void.0));
     }

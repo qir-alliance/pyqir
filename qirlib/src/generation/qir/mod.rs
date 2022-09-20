@@ -5,7 +5,7 @@ use inkwell::{attributes::AttributeLoc, context::Context, module::Module, values
 
 pub mod instructions;
 
-pub(crate) fn create_entry_point<'ctx>(
+pub fn create_entry_point<'ctx>(
     context: &'ctx Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {

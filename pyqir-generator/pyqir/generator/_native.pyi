@@ -4,9 +4,7 @@
 from pyqir.generator._builder import IntPredicate
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
-class Context:
-    def __init__(self) -> None: ...
-
+class Context: ...
 class Type: ...
 
 class VoidType(Type):
@@ -60,6 +58,8 @@ class Builder:
 
 class SimpleModule:
     def __init__(self, name: str, num_qubits: int, num_results: int) -> None: ...
+    @property
+    def context(self) -> Context: ...
     @property
     def qubits(self) -> Tuple[Value, ...]: ...
     @property
