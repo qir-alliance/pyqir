@@ -34,11 +34,11 @@ class IntOperatorsTest(unittest.TestCase):
             with self.subTest(name):
                 mod = SimpleModule("test " + name, 0, 0)
                 source = mod.add_external_function(
-                    "source", types.Function([], types.Int(64))
+                    "source", types.Function(types.Integer(mod.context, 64), [])
                 )
-                ty = types.BOOL if name.startswith("icmp") else types.Int(64)
+                ty = types.Integer(mod.context, 1 if name.startswith("icmp") else 64)
                 sink = mod.add_external_function(
-                    "sink", types.Function([ty], types.VOID)
+                    "sink", types.Function(types.Void(mod.context), [ty])
                 )
 
                 x = mod.builder.call(source, [])
@@ -55,30 +55,33 @@ class IntOperatorsTest(unittest.TestCase):
             with self.subTest(name):
                 mod = SimpleModule("test " + name, 0, 0)
                 source = mod.add_external_function(
-                    "source", types.Function([], types.Int(64))
+                    "source", types.Function(types.Integer(mod.context, 64), [])
                 )
-                ty = types.BOOL if name.startswith("icmp") else types.Int(64)
+                ty = types.Integer(mod.context, 1 if name.startswith("icmp") else 64)
                 sink = mod.add_external_function(
-                    "sink", types.Function([ty], types.VOID)
+                    "sink", types.Function(types.Void(mod.context), [ty])
                 )
 
                 x = mod.builder.call(source, [])
                 assert x is not None
-                y = build(mod.builder)(const(types.Int(64), 1), x)
+                y = build(mod.builder)(const(types.Integer(mod.context, 64), 1), x)
                 mod.builder.call(sink, [y])
 
                 self.assertIn(f"%1 = {name} i64 1, %0", mod.ir())
 
     def test_type_mismatch(self) -> None:
         mod = SimpleModule("test_type_mismatch", 0, 0)
-        source = mod.add_external_function("source", types.Function([], types.Int(16)))
+        source = mod.add_external_function(
+            "source", types.Function(types.Integer(mod.context, 16), [])
+        )
         sink = mod.add_external_function(
-            "sink", types.Function([types.Int(16)], types.VOID)
+            "sink",
+            types.Function(types.Void(mod.context), [types.Integer(mod.context, 16)]),
         )
 
         x = mod.builder.call(source, [])
         assert x is not None
-        y = mod.builder.add(x, const(types.Int(18), 2))
+        y = mod.builder.add(x, const(types.Integer(mod.context, 18), 2))
         mod.builder.call(sink, [y])
 
         with self.assertRaises(OSError):

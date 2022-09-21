@@ -1,14 +1,18 @@
 #![allow(clippy::borrow_deref_ref)]
 #![allow(clippy::used_underscore_binding)]
 
-use crate::python::Context;
+use crate::python::{Context, Module};
 use pyo3::{
     exceptions::{PyTypeError, PyValueError},
     prelude::*,
 };
-use qirlib::inkwell::types::{
-    AnyTypeEnum, ArrayType, BasicType, BasicTypeEnum, FloatType, FunctionType, IntType,
-    PointerType, StructType, VoidType,
+use qirlib::inkwell::{
+    self,
+    types::{
+        AnyTypeEnum, ArrayType, BasicType, BasicTypeEnum, FloatType, FunctionType, IntType,
+        PointerType, StructType, VoidType,
+    },
+    AddressSpace,
 };
 use std::{
     convert::{TryFrom, TryInto},
@@ -177,6 +181,34 @@ impl Pointer {
         let context = pointee.borrow(py).context.clone();
         Ok((Self(ty), Type { context }))
     }
+}
+
+pub(crate) fn qubit_type(py: Python, module: &Py<Module>) -> PyResult<Py<Pointer>> {
+    let module = module.borrow(py);
+    let context = module.context.clone();
+    let context_ref = module.context.borrow(py);
+    let module =
+        unsafe { transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module) };
+    let ty = qirlib::codegen::types::qubit(&context_ref.0, module).ptr_type(AddressSpace::Generic);
+    let ty = unsafe { transmute::<PointerType, PointerType<'static>>(ty) };
+    Py::new(
+        py,
+        PyClassInitializer::from(Type { context }).add_subclass(Pointer(ty)),
+    )
+}
+
+pub(crate) fn result_type(py: Python, module: &Py<Module>) -> PyResult<Py<Pointer>> {
+    let module = module.borrow(py);
+    let context = module.context.clone();
+    let context_ref = module.context.borrow(py);
+    let module =
+        unsafe { transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module) };
+    let ty = qirlib::codegen::types::result(&context_ref.0, module).ptr_type(AddressSpace::Generic);
+    let ty = unsafe { transmute::<PointerType, PointerType<'static>>(ty) };
+    Py::new(
+        py,
+        PyClassInitializer::from(Type { context }).add_subclass(Pointer(ty)),
+    )
 }
 
 pub(crate) fn any_type_enum(py: Python, ty: &Py<Type>) -> PyResult<AnyTypeEnum<'static>> {

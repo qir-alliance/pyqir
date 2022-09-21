@@ -26,6 +26,7 @@ use std::{mem::transmute, ops::Deref};
 
 #[pymodule]
 fn _native(py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<Context>()?;
     m.add_class::<SimpleModule>()?;
     m.add_class::<Builder>()?;
     m.add_class::<BasicQisBuilder>()?;
@@ -48,7 +49,7 @@ fn _native(py: Python, m: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass]
-pub(crate) struct Context(inkwell::context::Context);
+pub(crate) struct Context(pub(crate) inkwell::context::Context);
 
 impl Deref for Context {
     type Target = inkwell::context::Context;
@@ -129,9 +130,9 @@ fn constant(py: Python, ty: Py<Type>, value: &PyAny) -> PyResult<Value> {
 }
 
 #[pyclass(unsendable)]
-struct Module {
-    module: inkwell::module::Module<'static>,
-    context: Py<Context>,
+pub(crate) struct Module {
+    pub(crate) module: inkwell::module::Module<'static>,
+    pub(crate) context: Py<Context>,
 }
 
 impl Module {
@@ -420,6 +421,16 @@ impl SimpleModule {
         self.module.borrow(py).context.clone()
     }
 
+    #[getter]
+    fn qubit_type(&self, py: Python) -> PyResult<Py<types::Pointer>> {
+        types::qubit_type(py, &self.module)
+    }
+
+    #[getter]
+    fn result_type(&self, py: Python) -> PyResult<Py<types::Pointer>> {
+        types::result_type(py, &self.module)
+    }
+
     /// The global qubit register.
     ///
     /// :type: Tuple[Value, ...]
@@ -481,9 +492,14 @@ impl SimpleModule {
     /// Emits the LLVM IR for the module as plain text.
     ///
     /// :rtype: str
-    fn ir(&self, py: Python) -> String {
+    fn ir(&self, py: Python) -> PyResult<String> {
         self.builder.borrow(py).builder.build_return(None);
-        self.module.borrow(py).module.print_to_string().to_string()
+        let module = self.module.borrow(py);
+        module
+            .module
+            .verify()
+            .map_err(|e| PyOSError::new_err(e.to_string()))?;
+        Ok(module.module.print_to_string().to_string())
     }
 
     /// Emits the LLVM bitcode for the module as a sequence of bytes.
@@ -649,7 +665,7 @@ impl BasicQisBuilder {
         let theta = any_to_meta(extract_value(context.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
         let function = qirlib::codegen::qis::rx_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
+        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
         Ok(())
     }
 
