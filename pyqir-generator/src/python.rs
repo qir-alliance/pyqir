@@ -11,7 +11,7 @@
 
 use crate::types::{self, any_type_enum, Type};
 use pyo3::{
-    exceptions::{PyOSError, PyTypeError, PyValueError},
+    exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
     prelude::*,
     type_object::PyTypeObject,
     types::{PyBytes, PySequence, PyString, PyUnicode},
@@ -919,7 +919,16 @@ fn extract_value<'ctx>(
         Ok(value) => Ok(value.value),
         Err(_) => match ty.as_any_type_enum() {
             inkwell::types::AnyTypeEnum::IntType(int) => {
-                Ok(int.const_int(ob.extract()?, true).into())
+                let value = ob.extract()?;
+                let value_width = u64::BITS - u64::leading_zeros(value);
+                if value_width > int.get_bit_width() {
+                    // TODO: LLVM doesn't seem to care. Should we check this?
+                    Err(PyOverflowError::new_err(
+                        "Constant integer uses more bits than its type has.",
+                    ))
+                } else {
+                    Ok(int.const_int(value, true).into())
+                }
             }
             inkwell::types::AnyTypeEnum::FloatType(float) => {
                 Ok(float.const_float(ob.extract()?).into())
