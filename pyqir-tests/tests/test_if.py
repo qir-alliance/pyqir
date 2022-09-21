@@ -74,7 +74,9 @@ class _BoolBrancher(_Brancher):
         self._brancher = _ResultBrancher(num_queries)
         self._read_result = self._brancher.module.add_external_function(
             "__quantum__qis__read_result__body",
-            types.Function([types.RESULT], types.BOOL),
+            types.Function(
+                types.Integer(self.module.context, 1), [self.module.result_type]
+            ),
         )
 
     @property
@@ -312,7 +314,6 @@ def test_nested_else_then_if(brancher: _Brancher) -> None:
         ),
     )
 
-    print(brancher.module.ir())
     logger = GateLogger()
     _eval(brancher.module, logger, [False, True])
     assert logger.instructions == [
@@ -341,7 +342,9 @@ def test_icmp_if_true() -> None:
     brancher = _BoolBrancher(1)
     x = brancher.oracle()
     module = brancher.module
-    cond = module.builder.icmp(IntPredicate.EQ, x, const(types.Int(1), 0))
+    cond = module.builder.icmp(
+        IntPredicate.EQ, x, const(types.Integer(module.context, 1), 0)
+    )
 
     qis = BasicQisBuilder(module.builder)
     brancher.if_(
@@ -359,7 +362,9 @@ def test_icmp_if_false() -> None:
     brancher = _BoolBrancher(1)
     x = brancher.oracle()
     module = brancher.module
-    cond = module.builder.icmp(IntPredicate.EQ, x, const(types.Int(1), 0))
+    cond = module.builder.icmp(
+        IntPredicate.EQ, x, const(types.Integer(module.context, 1), 0)
+    )
 
     qis = BasicQisBuilder(brancher.module.builder)
     brancher.if_(
@@ -379,7 +384,7 @@ def test_arithmetic_in_branch(result: bool) -> None:
     cond = brancher.oracle()
     module = brancher.module
     qis = BasicQisBuilder(module.builder)
-    i32 = types.Int(32)
+    i32 = types.Integer(module.context, 32)
 
     def true() -> None:
         four = module.builder.add(const(i32, 2), const(i32, 2))
@@ -399,7 +404,8 @@ def test_call_in_branch(result: bool) -> None:
     brancher = _BoolBrancher(1)
     module = brancher.module
     x = module.add_external_function(
-        "__quantum__qis__x__body", types.Function([types.QUBIT], types.VOID)
+        "__quantum__qis__x__body",
+        types.Function(types.Void(module.context), [module.qubit_type]),
     )
 
     cond = brancher.oracle()

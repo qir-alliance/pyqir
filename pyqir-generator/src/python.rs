@@ -11,7 +11,7 @@
 
 use crate::types::{self, any_type_enum, Type};
 use pyo3::{
-    exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
+    exceptions::{PyOSError, PyTypeError, PyValueError},
     prelude::*,
     type_object::PyTypeObject,
     types::{PyBytes, PySequence, PyString, PyUnicode},
@@ -341,14 +341,7 @@ impl Builder {
     ///     A callable that inserts instructions for the branch where the condition is false.
     #[pyo3(text_signature = "(self, cond, true, false)")]
     fn if_(&self, cond: Value, r#true: Option<&PyAny>, r#false: Option<&PyAny>) -> PyResult<()> {
-        todo!("Builder::if_")
-        // let if_ = If {
-        //     cond: cond.0,
-        //     if_true: build_frame(self, r#true)?,
-        //     if_false: build_frame(self, r#false)?,
-        // };
-        // self.push_inst(Instruction::If(if_));
-        // Ok(())
+        build_if(&self.builder, cond.value.into_int_value(), r#true, r#false)
     }
 }
 
@@ -493,6 +486,7 @@ impl SimpleModule {
     ///
     /// :rtype: str
     fn ir(&self, py: Python) -> PyResult<String> {
+        // TODO: Repeated calls to ir() keep adding returns.
         self.builder.borrow(py).builder.build_return(None);
         let module = self.module.borrow(py);
         module
@@ -506,6 +500,7 @@ impl SimpleModule {
     ///
     /// :rtype: bytes
     fn bitcode<'a>(&self, py: Python<'a>) -> &'a PyBytes {
+        // TODO: Repeated calls to bitcode() keep adding returns.
         self.builder.borrow(py).builder.build_return(None);
         let bitcode = self.module.borrow(py).module.write_bitcode_to_memory();
         PyBytes::new(py, bitcode.as_slice())
@@ -857,15 +852,20 @@ impl BasicQisBuilder {
         one: Option<&PyAny>,
         zero: Option<&PyAny>,
     ) -> PyResult<()> {
-        todo!("BasicQisBuilder::if_result")
-        // let builder = self.builder.borrow(py);
-        // let if_result = IfResult {
-        //     cond: cond.0,
-        //     if_one: build_frame(&builder, one)?,
-        //     if_zero: build_frame(&builder, zero)?,
-        // };
-        // builder.push_inst(Instruction::IfResult(if_result));
-        // Ok(())
+        let builder = self.builder.borrow(py);
+        let context = builder.context.borrow(py);
+        let module = builder.module.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+        let read_result = qirlib::codegen::qis::read_result(&context.0, module);
+        let cond = qirlib::codegen::calls::emit_call_with_return(
+            &builder.builder,
+            read_result,
+            &[any_to_meta(cond.value).unwrap()],
+            "",
+        );
+        build_if(&builder.builder, cond.into_int_value(), one, zero)
     }
 }
 
@@ -943,4 +943,36 @@ fn any_to_meta(value: AnyValueEnum) -> Option<BasicMetadataValueEnum> {
         | AnyValueEnum::FunctionValue(_)
         | AnyValueEnum::InstructionValue(_) => None,
     }
+}
+
+fn build_if(
+    builder: &inkwell::builder::Builder,
+    cond: inkwell::values::IntValue,
+    build_true: Option<&PyAny>,
+    build_false: Option<&PyAny>,
+) -> PyResult<()> {
+    let insert_block = builder.get_insert_block().unwrap();
+    let context = insert_block.get_context();
+    let function = insert_block.get_parent().unwrap();
+
+    let then_block = context.append_basic_block(function, "then");
+    let else_block = context.append_basic_block(function, "else");
+    builder.build_conditional_branch(cond, then_block, else_block);
+
+    let continue_block = context.append_basic_block(function, "continue");
+
+    builder.position_at_end(then_block);
+    if let Some(build_true) = build_true {
+        build_true.call0()?;
+    }
+    builder.build_unconditional_branch(continue_block);
+
+    builder.position_at_end(else_block);
+    if let Some(build_false) = build_false {
+        build_false.call0()?;
+    }
+    builder.build_unconditional_branch(continue_block);
+
+    builder.position_at_end(continue_block);
+    Ok(())
 }

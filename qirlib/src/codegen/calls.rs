@@ -20,7 +20,7 @@ pub fn emit_void_call<'ctx>(
 }
 
 #[must_use]
-pub(crate) fn emit_call_with_return<'ctx>(
+pub fn emit_call_with_return<'ctx>(
     builder: &Builder<'ctx>,
     function: FunctionValue<'ctx>,
     args: &[BasicMetadataValueEnum<'ctx>],

@@ -256,7 +256,7 @@ pub(crate) fn get_function<'ctx>(
 }
 
 /// `declare i1 @__quantum__qis__read_result__body(%Result*)`
-pub(crate) fn read_result<'ctx>(
+pub fn read_result<'ctx>(
     context: &'ctx inkwell::context::Context,
     module: &Module<'ctx>,
 ) -> FunctionValue<'ctx> {
