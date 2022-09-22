@@ -9,47 +9,37 @@
 // to resolve it until we move to a newer version of python.
 #![allow(clippy::format_push_string)]
 
-use crate::types::{self, any_type_enum, Type};
 use pyo3::{
     exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
     prelude::*,
-    type_object::PyTypeObject,
     types::{PyBytes, PySequence, PyString, PyUnicode},
     PyObjectProtocol,
 };
 use qirlib::inkwell::{
     self,
     module::Linkage,
+    types::{AnyTypeEnum, BasicType, BasicTypeEnum, FloatType, FunctionType, IntType, VoidType},
     values::{AnyValueEnum, BasicMetadataValueEnum},
+    AddressSpace,
 };
-use std::{mem::transmute, ops::Deref};
+use std::{convert::TryFrom, mem::transmute, ops::Deref};
 
 #[pymodule]
-fn _native(py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<Context>()?;
+fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<Type>()?;
+    m.add_class::<Types>()?;
     m.add_class::<SimpleModule>()?;
     m.add_class::<Builder>()?;
     m.add_class::<BasicQisBuilder>()?;
     m.add_class::<Value>()?;
-
     m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
     m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
     m.add("const", wrap_pyfunction!(constant, m)?)?;
-
-    m.add_class::<types::Type>()?;
-    m.add("VoidType", types::Void::type_object(py))?;
-    m.add("IntegerType", types::Integer::type_object(py))?;
-    m.add("DoubleType", types::Double::type_object(py))?;
-    m.add("FunctionType", types::Function::type_object(py))?;
-    m.add("StructType", types::Struct::type_object(py))?;
-    m.add("ArrayType", types::Array::type_object(py))?;
-    m.add("PointerType", types::Pointer::type_object(py))?;
-
     Ok(())
 }
 
 #[pyclass]
-pub(crate) struct Context(pub(crate) inkwell::context::Context);
+struct Context(inkwell::context::Context);
 
 impl Deref for Context {
     type Target = inkwell::context::Context;
@@ -59,11 +49,130 @@ impl Deref for Context {
     }
 }
 
+#[pyclass(unsendable)]
+struct Type {
+    ty: AnyTypeEnum<'static>,
+    context: Py<Context>,
+}
+
+#[pyclass]
+struct Types {
+    module: Py<Module>,
+}
+
 #[pymethods]
-impl Context {
-    #[new]
-    fn new() -> Self {
-        Self(inkwell::context::Context::create())
+impl Types {
+    #[getter]
+    fn void(&self, py: Python) -> PyResult<Py<Type>> {
+        let module = self.module.borrow(py);
+        let ty = {
+            let context = module.context.borrow(py);
+            let ty = context.void_type();
+            let ty = unsafe { transmute::<VoidType, VoidType<'static>>(ty) };
+            AnyTypeEnum::VoidType(ty)
+        };
+        let context = module.context.clone();
+        Py::new(py, Type { ty, context })
+    }
+
+    #[getter]
+    fn bool(&self, py: Python) -> PyResult<Py<Type>> {
+        let module = self.module.borrow(py);
+        let ty = {
+            let context = module.context.borrow(py);
+            let ty = context.bool_type();
+            let ty = unsafe { transmute::<IntType, IntType<'static>>(ty) };
+            AnyTypeEnum::IntType(ty)
+        };
+        let context = module.context.clone();
+        Py::new(py, Type { ty, context })
+    }
+
+    fn integer(&self, py: Python, width: u32) -> PyResult<Py<Type>> {
+        let module = self.module.borrow(py);
+        let ty = {
+            let context = module.context.borrow(py);
+            let ty = context.custom_width_int_type(width);
+            let ty = unsafe { transmute::<IntType, IntType<'static>>(ty) };
+            AnyTypeEnum::IntType(ty)
+        };
+        let context = module.context.clone();
+        Py::new(py, Type { ty, context })
+    }
+
+    #[getter]
+    fn double(&self, py: Python) -> PyResult<Py<Type>> {
+        let module = self.module.borrow(py);
+        let ty = {
+            let context = module.context.borrow(py);
+            let ty = context.f64_type();
+            let ty = unsafe { transmute::<FloatType, FloatType<'static>>(ty) };
+            AnyTypeEnum::FloatType(ty)
+        };
+        let context = module.context.clone();
+        Py::new(py, Type { ty, context })
+    }
+
+    fn function(&self, py: Python, return_: &Type, params: Vec<Py<Type>>) -> PyResult<Py<Type>> {
+        let ty = {
+            let params = params
+                .iter()
+                .map(|ty| {
+                    let ty = ty.borrow(py);
+                    let ty = BasicTypeEnum::try_from(ty.ty)
+                        .map_err(|()| PyTypeError::new_err("Invalid parameter type."))?;
+                    Ok(ty.into())
+                })
+                .collect::<PyResult<Vec<_>>>()?;
+
+            let ty = match return_.ty {
+                AnyTypeEnum::VoidType(void) => void.fn_type(&params, false),
+                ret => BasicTypeEnum::try_from(ret)
+                    .expect("Invalid return type.")
+                    .fn_type(&params, false),
+            };
+
+            unsafe { transmute::<FunctionType, FunctionType<'static>>(ty) }
+        };
+
+        // TODO (safety): What if not all types use the same context?
+        Py::new(
+            py,
+            Type {
+                ty: AnyTypeEnum::FunctionType(ty),
+                context: return_.context.clone(),
+            },
+        )
+    }
+
+    #[getter]
+    fn qubit(&self, py: Python) -> PyResult<Py<Type>> {
+        let module = self.module.borrow(py);
+        let context = module.context.clone();
+        let context_ref = module.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+        let ty = AnyTypeEnum::PointerType(
+            qirlib::codegen::types::qubit(&context_ref.0, module).ptr_type(AddressSpace::Generic),
+        );
+        let ty = unsafe { transmute::<AnyTypeEnum, AnyTypeEnum<'static>>(ty) };
+        Py::new(py, Type { ty, context })
+    }
+
+    #[getter]
+    fn result(&self, py: Python) -> PyResult<Py<Type>> {
+        let module = self.module.borrow(py);
+        let context = module.context.clone();
+        let context_ref = module.context.borrow(py);
+        let module = unsafe {
+            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
+        };
+        let ty = AnyTypeEnum::PointerType(
+            qirlib::codegen::types::result(&context_ref.0, module).ptr_type(AddressSpace::Generic),
+        );
+        let ty = unsafe { transmute::<AnyTypeEnum, AnyTypeEnum<'static>>(ty) };
+        Py::new(py, Type { ty, context })
     }
 }
 
@@ -125,14 +234,14 @@ impl Value {
 #[allow(clippy::needless_pass_by_value)]
 fn constant(py: Python, ty: Py<Type>, value: &PyAny) -> PyResult<Value> {
     let context = ty.borrow(py).context.clone();
-    let value = extract_value(any_type_enum(py, &ty)?, value)?;
+    let value = extract_value(ty.borrow(py).ty, value)?;
     Ok(Value::new(context, value))
 }
 
 #[pyclass(unsendable)]
-pub(crate) struct Module {
-    pub(crate) module: inkwell::module::Module<'static>,
-    pub(crate) context: Py<Context>,
+struct Module {
+    module: inkwell::module::Module<'static>,
+    context: Py<Context>,
 }
 
 impl Module {
@@ -378,6 +487,7 @@ impl Builder {
 struct SimpleModule {
     module: Py<Module>,
     builder: Py<Builder>,
+    types: Py<Types>,
     num_qubits: u64,
     num_results: u64,
 }
@@ -386,7 +496,7 @@ struct SimpleModule {
 impl SimpleModule {
     #[new]
     fn new(py: Python, name: &str, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
-        let context = Py::new(py, Context::new())?;
+        let context = Py::new(py, Context(inkwell::context::Context::create()))?;
         let context_ref = context.borrow(py);
 
         let module = Module::new(py, context.clone(), name);
@@ -401,27 +511,25 @@ impl SimpleModule {
         builder.builder.position_at_end(entry);
         let builder = Py::new(py, builder)?;
 
+        let types = Py::new(
+            py,
+            Types {
+                module: module.clone(),
+            },
+        )?;
+
         Ok(SimpleModule {
             module,
             builder,
+            types,
             num_qubits,
             num_results,
         })
     }
 
     #[getter]
-    fn context(&self, py: Python) -> Py<Context> {
-        self.module.borrow(py).context.clone()
-    }
-
-    #[getter]
-    fn qubit_type(&self, py: Python) -> PyResult<Py<types::Pointer>> {
-        types::qubit_type(py, &self.module)
-    }
-
-    #[getter]
-    fn result_type(&self, py: Python) -> PyResult<Py<types::Pointer>> {
-        types::result_type(py, &self.module)
+    fn types(&self) -> Py<Types> {
+        self.types.clone()
     }
 
     /// The global qubit register.
@@ -513,9 +621,10 @@ impl SimpleModule {
     /// :return: The function value.
     /// :rtype: Function
     #[pyo3(text_signature = "(self, name, ty)")]
-    fn add_external_function(&mut self, py: Python, name: &str, ty: Py<Type>) -> PyResult<Value> {
-        let context = ty.borrow(py).context.clone();
-        let ty = any_type_enum(py, &ty)?.into_function_type();
+    fn add_external_function(&mut self, py: Python, name: &str, ty: Py<Type>) -> Value {
+        let ty = ty.borrow(py);
+        let context = ty.context.clone();
+        let ty = ty.ty.into_function_type();
         let module = self.module.borrow(py);
         let function = module
             .module
@@ -523,10 +632,7 @@ impl SimpleModule {
 
         // TODO: Need to manually wrap in AnyValueEnum::FunctionValue. Going through the AnyValue
         // trait seems to turn the FunctionValue into a PointerValue. Why?
-        Ok(Value::from_any(
-            context,
-            AnyValueEnum::FunctionValue(function),
-        ))
+        Value::from_any(context, AnyValueEnum::FunctionValue(function))
     }
 }
 
@@ -918,7 +1024,7 @@ fn extract_value<'ctx>(
     match ob.extract::<Value>() {
         Ok(value) => Ok(value.value),
         Err(_) => match ty.as_any_type_enum() {
-            inkwell::types::AnyTypeEnum::IntType(int) => {
+            AnyTypeEnum::IntType(int) => {
                 let value = ob.extract()?;
                 let value_width = u64::BITS - u64::leading_zeros(value);
                 if value_width > int.get_bit_width() {
@@ -930,9 +1036,7 @@ fn extract_value<'ctx>(
                     Ok(int.const_int(value, true).into())
                 }
             }
-            inkwell::types::AnyTypeEnum::FloatType(float) => {
-                Ok(float.const_float(ob.extract()?).into())
-            }
+            AnyTypeEnum::FloatType(float) => Ok(float.const_float(ob.extract()?).into()),
             _ => Err(PyTypeError::new_err(
                 "Can't convert Python value into this type.",
             )),

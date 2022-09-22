@@ -3,12 +3,11 @@
 
 from pyqir.generator import (
     BasicQisBuilder,
-    Context,
     SimpleModule,
     Type,
+    Types,
     Value,
     const,
-    types,
 )
 import re
 from typing import Any, Callable, List, Tuple, Union
@@ -18,25 +17,26 @@ import unittest
 class ExternalFunctionsTest(unittest.TestCase):
     def test_call_no_params(self) -> None:
         mod = SimpleModule("test", 0, 0)
-        f = mod.add_external_function(
-            "test_function", types.Function(types.Void(mod.context), [])
-        )
+        types = mod.types
+        f = mod.add_external_function("test_function", types.function(types.void, []))
         mod.builder.call(f, [])
         self.assertIn("call void @test_function()", mod.ir())
 
     def test_call_single_qubit(self) -> None:
         mod = SimpleModule("test", 1, 0)
+        types = mod.types
         f = mod.add_external_function(
-            "test_function", types.Function(types.Void(mod.context), [mod.qubit_type])
+            "test_function", types.function(types.void, [types.qubit])
         )
         mod.builder.call(f, [mod.qubits[0]])
         self.assertIn("call void @test_function(%Qubit* null)", mod.ir())
 
     def test_call_two_qubits(self) -> None:
         mod = SimpleModule("test", 2, 0)
+        types = mod.types
         f = mod.add_external_function(
             "test_function",
-            types.Function(types.Void(mod.context), [mod.qubit_type, mod.qubit_type]),
+            types.function(types.void, [types.qubit, types.qubit]),
         )
         mod.builder.call(f, [mod.qubits[0], mod.qubits[1]])
         self.assertIn(
@@ -45,75 +45,71 @@ class ExternalFunctionsTest(unittest.TestCase):
         )
 
     def test_call_double(self) -> None:
-        values: List[Callable[[Context], Union[Value, float]]] = [
-            lambda ctx: const(types.Double(ctx), 23.25),
+        values: List[Callable[[Types], Union[Value, float]]] = [
+            lambda types: const(types.double, 23.25),
             lambda _: 23.25,
         ]
 
         for value in values:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
+                types = mod.types
                 f = mod.add_external_function(
                     "test_function",
-                    types.Function(
-                        types.Void(mod.context), [types.Double(mod.context)]
-                    ),
+                    types.function(types.void, [types.double]),
                 )
-                mod.builder.call(f, [value(mod.context)])
+                mod.builder.call(f, [value(types)])
                 self.assertIn("call void @test_function(double 2.325000e+01)", mod.ir())
 
     def test_call_int(self) -> None:
-        values: List[Callable[[Context], Union[Value, int]]] = [
-            lambda ctx: const(types.Integer(ctx, 64), 42),
+        values: List[Callable[[Types], Union[Value, int]]] = [
+            lambda types: const(types.integer(64), 42),
             lambda _: 42,
         ]
 
         for value in values:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
+                types = mod.types
                 f = mod.add_external_function(
                     "test_function",
-                    types.Function(
-                        types.Void(mod.context), [types.Integer(mod.context, 64)]
-                    ),
+                    types.function(types.void, [types.integer(64)]),
                 )
-                mod.builder.call(f, [value(mod.context)])
+                mod.builder.call(f, [value(types)])
                 self.assertIn("call void @test_function(i64 42)", mod.ir())
 
     def test_call_bool_true(self) -> None:
-        values: List[Callable[[Context], Union[Value, bool]]] = [
-            lambda ctx: const(types.Integer(ctx, 1), True),
+        values: List[Callable[[Types], Union[Value, bool]]] = [
+            lambda types: const(types.bool, True),
             lambda _: True,
         ]
 
         for value in values:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
+                types = mod.types
                 f = mod.add_external_function(
                     "test_function",
-                    types.Function(
-                        types.Void(mod.context), [types.Integer(mod.context, 1)]
-                    ),
+                    types.function(types.void, [types.bool]),
                 )
-                mod.builder.call(f, [value(mod.context)])
+                mod.builder.call(f, [value(types)])
                 self.assertIn("call void @test_function(i1 true)", mod.ir())
 
     def test_call_bool_false(self) -> None:
-        values: List[Callable[[Context], Union[Value, bool]]] = [
-            lambda ctx: const(types.Integer(ctx, 1), False),
+        values: List[Callable[[Types], Union[Value, bool]]] = [
+            lambda types: const(types.bool, False),
             lambda _: False,
         ]
 
         for value in values:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
+                types = mod.types
                 f = mod.add_external_function(
                     "test_function",
-                    types.Function(
-                        types.Void(mod.context), [types.Integer(mod.context, 1)]
-                    ),
+                    types.function(types.void, [types.bool]),
                 )
-                mod.builder.call(f, [value(mod.context)])
+                mod.builder.call(f, [value(types)])
                 self.assertIn("call void @test_function(i1 false)", mod.ir())
 
     def test_call_single_result(self) -> None:
@@ -121,8 +117,9 @@ class ExternalFunctionsTest(unittest.TestCase):
         qis = BasicQisBuilder(mod.builder)
         qis.mz(mod.qubits[0], mod.results[0])
 
+        types = mod.types
         f = mod.add_external_function(
-            "test_function", types.Function(types.Void(mod.context), [mod.result_type])
+            "test_function", types.function(types.void, [types.result])
         )
         mod.builder.call(f, [mod.results[0]])
         self.assertIn("call void @test_function(%Result* null)", mod.ir())
@@ -133,9 +130,10 @@ class ExternalFunctionsTest(unittest.TestCase):
         qis.mz(mod.qubits[0], mod.results[0])
         qis.mz(mod.qubits[0], mod.results[1])
 
+        types = mod.types
         f = mod.add_external_function(
             "test_function",
-            types.Function(types.Void(mod.context), [mod.result_type, mod.result_type]),
+            types.function(types.void, [types.result, types.result]),
         )
         mod.builder.call(f, [mod.results[1], mod.results[0]])
 
@@ -146,23 +144,20 @@ class ExternalFunctionsTest(unittest.TestCase):
 
     def test_call_numbers(self) -> None:
         mod = SimpleModule("test", 0, 0)
+        types = mod.types
 
-        b = const(types.Integer(mod.context, 1), True)
+        b = const(types.bool, True)
         bool_rep = f"i1 true"
-        i = const(types.Integer(mod.context, 64), 42)
+        i = const(types.integer(64), 42)
         int_rep = f"i64 42"
-        d = const(types.Double(mod.context), 42.42)
+        d = const(types.double, 42.42)
         double_rep = "double 4.242000e+01"
 
         f = mod.add_external_function(
             "test_function",
-            types.Function(
-                types.Void(mod.context),
-                [
-                    types.Integer(mod.context, 1),
-                    types.Integer(mod.context, 64),
-                    types.Double(mod.context),
-                ],
+            types.function(
+                types.void,
+                [types.bool, types.integer(64), types.double],
             ),
         )
         mod.builder.call(f, [b, i, d])
@@ -173,20 +168,21 @@ class ExternalFunctionsTest(unittest.TestCase):
         )
 
     def test_wrong_type_conversion(self) -> None:
-        cases: List[Tuple[Callable[[Context], List[Type]], List[Any]]] = [
-            (lambda ctx: [types.Integer(ctx, 1)], ["true"]),
-            (lambda ctx: [types.Integer(ctx, 64)], [1.23]),
-            (lambda ctx: [types.Integer(ctx, 64)], ["123"]),
-            (lambda ctx: [types.Double(ctx)], ["1.23"]),
+        cases: List[Tuple[Callable[[Types], List[Type]], List[Any]]] = [
+            (lambda types: [types.bool], ["true"]),
+            (lambda types: [types.integer(64)], [1.23]),
+            (lambda types: [types.integer(64)], ["123"]),
+            (lambda types: [types.double], ["1.23"]),
         ]
 
         for param_types, args in cases:
             mod = SimpleModule("test", 1, 1)
+            types = mod.types
 
             with self.subTest(repr(args)):
                 f = mod.add_external_function(
                     "test_function",
-                    types.Function(types.Void(mod.context), param_types(mod.context)),
+                    types.function(types.void, param_types(types)),
                 )
 
                 with self.assertRaises(TypeError):
@@ -195,49 +191,46 @@ class ExternalFunctionsTest(unittest.TestCase):
     def test_overflow_bool_value(self) -> None:
         mod = SimpleModule("test", 0, 0)
         with self.assertRaises(OverflowError):
-            const(types.Integer(mod.context, 1), 123)
+            const(mod.types.bool, 123)
 
     def test_overflow_int_value(self) -> None:
         mod = SimpleModule("test", 0, 0)
         with self.assertRaises(OverflowError):
-            const(types.Integer(mod.context, 64), 2**64)
+            const(mod.types.integer(64), 2**64)
 
     def test_overflow_conversion(self) -> None:
         for value in [123, 2**64]:
             with self.subTest(repr(value)):
                 mod = SimpleModule("test", 0, 0)
+                types = mod.types
                 f = mod.add_external_function(
                     "test_function",
-                    types.Function(
-                        types.Void(mod.context), [types.Integer(mod.context, 1)]
-                    ),
+                    types.function(types.void, [types.bool]),
                 )
 
                 with self.assertRaises(OverflowError):
                     mod.builder.call(f, [value])
 
     def test_wrong_number_of_args(self) -> None:
-        cases: List[Callable[[Context], List[Value]]] = [
+        cases: List[Callable[[Types], List[Value]]] = [
             lambda _: [],
-            lambda ctx: [const(types.Double(ctx), 1.23)],
-            lambda ctx: [
-                const(types.Double(ctx), 1.23),
-                const(types.Integer(ctx, 1), True),
-                const(types.Integer(ctx, 1), False),
+            lambda types: [const(types.double, 1.23)],
+            lambda types: [
+                const(types.double, 1.23),
+                const(types.bool, True),
+                const(types.bool, False),
             ],
         ]
 
         for get_args in cases:
             with self.subTest(repr(get_args)):
                 mod = SimpleModule("test", 0, 0)
-                args = get_args(mod.context)
-                param_types: List[Type] = [
-                    types.Double(mod.context),
-                    types.Integer(mod.context, 1),
-                ]
+                types = mod.types
+                args = get_args(types)
+                param_types: List[Type] = [types.double, types.bool]
                 f = mod.add_external_function(
                     "test_function",
-                    types.Function(types.Void(mod.context), param_types),
+                    types.function(types.void, param_types),
                 )
 
                 message = f"Expected {len(param_types)} arguments, got {len(args)}."
@@ -246,12 +239,11 @@ class ExternalFunctionsTest(unittest.TestCase):
 
     def test_variable(self) -> None:
         mod = SimpleModule("test", 0, 0)
-        foo = mod.add_external_function(
-            "foo", types.Function(types.Integer(mod.context, 64), [])
-        )
+        types = mod.types
+        foo = mod.add_external_function("foo", types.function(types.integer(64), []))
         bar = mod.add_external_function(
             "bar",
-            types.Function(types.Void(mod.context), [types.Integer(mod.context, 64)]),
+            types.function(types.void, [types.integer(64)]),
         )
 
         x = mod.builder.call(foo, [])
@@ -264,11 +256,10 @@ class ExternalFunctionsTest(unittest.TestCase):
 
     def test_variable_wrong_external_type(self) -> None:
         mod = SimpleModule("test", 0, 0)
-        foo = mod.add_external_function(
-            "foo", types.Function(types.Integer(mod.context, 64), [])
-        )
+        types = mod.types
+        foo = mod.add_external_function("foo", types.function(types.integer(64), []))
         bar = mod.add_external_function(
-            "bar", types.Function(types.Void(mod.context), [mod.qubit_type])
+            "bar", types.function(types.void, [types.qubit])
         )
 
         x = mod.builder.call(foo, [])
@@ -282,10 +273,9 @@ class ExternalFunctionsTest(unittest.TestCase):
 
     def test_variable_wrong_angle_type(self) -> None:
         mod = SimpleModule("test", 1, 0)
+        types = mod.types
         qis = BasicQisBuilder(mod.builder)
-        foo = mod.add_external_function(
-            "foo", types.Function(types.Integer(mod.context, 64), [])
-        )
+        foo = mod.add_external_function("foo", types.function(types.integer(64), []))
 
         x = mod.builder.call(foo, [])
         assert x is not None
@@ -298,14 +288,13 @@ class ExternalFunctionsTest(unittest.TestCase):
 
     def test_two_variables(self) -> None:
         mod = SimpleModule("test", 0, 0)
-        foo = mod.add_external_function(
-            "foo", types.Function(types.Integer(mod.context, 64), [])
-        )
+        types = mod.types
+        foo = mod.add_external_function("foo", types.function(types.integer(64), []))
         bar = mod.add_external_function(
             "bar",
-            types.Function(
-                types.Void(mod.context),
-                [types.Integer(mod.context, 64), types.Integer(mod.context, 64)],
+            types.function(
+                types.void,
+                [types.integer(64), types.integer(64)],
             ),
         )
 
@@ -322,10 +311,9 @@ class ExternalFunctionsTest(unittest.TestCase):
 
     def test_computed_rotation(self) -> None:
         mod = SimpleModule("test", 1, 0)
+        types = mod.types
         qis = BasicQisBuilder(mod.builder)
-        foo = mod.add_external_function(
-            "foo", types.Function(types.Double(mod.context), [])
-        )
+        foo = mod.add_external_function("foo", types.function(types.double, []))
 
         theta = mod.builder.call(foo, [])
         assert theta is not None

@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, Context, SimpleModule, Value, const, types
+from pyqir.generator import BasicQisBuilder, SimpleModule, Types, Value, const
 from typing import Callable, List, Tuple, Union
 import unittest
 
@@ -74,8 +74,8 @@ class QisTest(unittest.TestCase):
             ("rz", lambda qis: qis.rz),
         ]
 
-        values: List[Callable[[Context], Union[Value, float]]] = [
-            lambda ctx: const(types.Double(ctx), 1.0),
+        values: List[Callable[[Types], Union[Value, float]]] = [
+            lambda types: const(types.double, 1.0),
             lambda _: 1.0,
         ]
 
@@ -84,7 +84,7 @@ class QisTest(unittest.TestCase):
                 with self.subTest(f"{name} ({value})"):
                     mod = SimpleModule("test_rotated", 1, 0)
                     qis = BasicQisBuilder(mod.builder)
-                    gate(qis)(value(mod.context), mod.qubits[0])
+                    gate(qis)(value(mod.types), mod.qubits[0])
                     call = f"call void @__quantum__qis__{name}__body(double 1.000000e+00, %Qubit* null)"
                     self.assertIn(call, mod.ir())
 

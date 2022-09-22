@@ -15,9 +15,9 @@ from pyqir.generator._builder import IntPredicate as IntPredicate
 from pyqir.generator._native import (
     BasicQisBuilder as BasicQisBuilder,
     Builder as Builder,
-    Context as Context,
     SimpleModule as SimpleModule,
     Type as Type,
+    Types as Types,
     Value as Value,
     bitcode_to_ir as bitcode_to_ir,
     const as const,
