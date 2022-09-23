@@ -99,21 +99,43 @@ struct Types {
 impl Types {
     #[getter]
     fn void(&self, py: Python) -> PyResult<Py<Type>> {
-        self.with_context(py, |c| c.void_type().into())
+        self.type_from_context(py, |c| c.void_type().into())
     }
 
     #[getter]
     fn bool(&self, py: Python) -> PyResult<Py<Type>> {
-        self.with_context(py, |c| c.bool_type().into())
+        self.type_from_context(py, |c| c.bool_type().into())
     }
 
     fn integer(&self, py: Python, width: u32) -> PyResult<Py<Type>> {
-        self.with_context(py, |c| c.custom_width_int_type(width).into())
+        self.type_from_context(py, |c| c.custom_width_int_type(width).into())
     }
 
     #[getter]
     fn double(&self, py: Python) -> PyResult<Py<Type>> {
-        self.with_context(py, |c| c.f64_type().into())
+        self.type_from_context(py, |c| c.f64_type().into())
+    }
+
+    #[getter]
+    fn qubit(&self, py: Python) -> PyResult<Py<Type>> {
+        let module = self.module.borrow(py);
+        self.type_from_context(py, |context| {
+            // TODO (safety): When is it safe to shorten the invariant lifetime of Module?
+            let module =
+                unsafe { transmute::<&InkwellModule<'static>, &InkwellModule<'_>>(&module.module) };
+            codegen::types::qubit_ptr(context, module).into()
+        })
+    }
+
+    #[getter]
+    fn result(&self, py: Python) -> PyResult<Py<Type>> {
+        let module = self.module.borrow(py);
+        self.type_from_context(py, |context| {
+            // TODO (safety): When is it safe to shorten the invariant lifetime of Module?
+            let module =
+                unsafe { transmute::<&InkwellModule<'static>, &InkwellModule<'_>>(&module.module) };
+            codegen::types::result_ptr(context, module).into()
+        })
     }
 
     #[staticmethod]
@@ -128,32 +150,10 @@ impl Types {
         let context = return_.context.clone();
         Py::new(py, Type { ty, context })
     }
-
-    #[getter]
-    fn qubit(&self, py: Python) -> PyResult<Py<Type>> {
-        let module = self.module.borrow(py);
-        self.with_context(py, |context| {
-            // TODO (safety): When is it safe to shorten the invariant lifetime of Module?
-            let module =
-                unsafe { transmute::<&InkwellModule<'static>, &InkwellModule<'_>>(&module.module) };
-            codegen::types::qubit_ptr(context, module).into()
-        })
-    }
-
-    #[getter]
-    fn result(&self, py: Python) -> PyResult<Py<Type>> {
-        let module = self.module.borrow(py);
-        self.with_context(py, |context| {
-            // TODO (safety): When is it safe to shorten the invariant lifetime of Module?
-            let module =
-                unsafe { transmute::<&InkwellModule<'static>, &InkwellModule<'_>>(&module.module) };
-            codegen::types::result_ptr(context, module).into()
-        })
-    }
 }
 
 impl Types {
-    fn with_context(
+    fn type_from_context(
         &self,
         py: Python,
         get: impl Fn(&InkwellContext) -> AnyTypeEnum,
