@@ -1,56 +1,58 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::types::FloatType;
-use inkwell::types::IntType;
-use inkwell::types::StructType;
+use inkwell::{
+    context::Context,
+    module::Module,
+    types::{FloatType, IntType, PointerType, StructType},
+    AddressSpace,
+};
 
 #[must_use]
-pub(crate) fn int64(context: &inkwell::context::Context) -> IntType {
+pub(crate) fn int64(context: &Context) -> IntType {
     context.i64_type()
 }
 
 #[must_use]
-pub(crate) fn int32(context: &inkwell::context::Context) -> IntType {
+pub(crate) fn int32(context: &Context) -> IntType {
     context.i32_type()
 }
 
 #[must_use]
-pub(crate) fn int8(context: &inkwell::context::Context) -> IntType {
+pub(crate) fn int8(context: &Context) -> IntType {
     context.i8_type()
 }
 
 #[must_use]
-pub(crate) fn double(context: &inkwell::context::Context) -> FloatType {
+pub(crate) fn double(context: &Context) -> FloatType {
     context.f64_type()
 }
 
 #[must_use]
-pub(crate) fn bool(context: &inkwell::context::Context) -> IntType {
+pub(crate) fn bool(context: &Context) -> IntType {
     context.bool_type()
 }
 
 #[must_use]
-pub fn qubit<'ctx>(
-    context: &'ctx inkwell::context::Context,
-    module: &inkwell::module::Module<'ctx>,
-) -> StructType<'ctx> {
+pub(crate) fn qubit<'ctx>(context: &'ctx Context, module: &Module<'ctx>) -> StructType<'ctx> {
     get_or_define_struct(context, module, "Qubit")
 }
 
-#[must_use]
-pub fn result<'ctx>(
-    context: &'ctx inkwell::context::Context,
-    module: &inkwell::module::Module<'ctx>,
-) -> StructType<'ctx> {
-    get_or_define_struct(context, module, "Result")
+pub fn qubit_ptr<'ctx>(context: &'ctx Context, module: &Module<'ctx>) -> PointerType<'ctx> {
+    qubit(context, module).ptr_type(AddressSpace::Generic)
 }
 
 #[must_use]
-pub(crate) fn get_struct<'ctx>(
-    module: &inkwell::module::Module<'ctx>,
-    name: &str,
-) -> Option<StructType<'ctx>> {
+pub(crate) fn result<'ctx>(context: &'ctx Context, module: &Module<'ctx>) -> StructType<'ctx> {
+    get_or_define_struct(context, module, "Result")
+}
+
+pub fn result_ptr<'ctx>(context: &'ctx Context, module: &Module<'ctx>) -> PointerType<'ctx> {
+    result(context, module).ptr_type(AddressSpace::Generic)
+}
+
+#[must_use]
+pub(crate) fn get_struct<'ctx>(module: &Module<'ctx>, name: &str) -> Option<StructType<'ctx>> {
     let defined_struct = module.get_struct_type(name);
     match defined_struct {
         None => {
@@ -62,8 +64,8 @@ pub(crate) fn get_struct<'ctx>(
 }
 
 pub(crate) fn get_or_define_struct<'ctx>(
-    context: &'ctx inkwell::context::Context,
-    module: &inkwell::module::Module<'ctx>,
+    context: &'ctx Context,
+    module: &Module<'ctx>,
     name: &str,
 ) -> StructType<'ctx> {
     if let Some(struct_type) = get_struct(module, name) {

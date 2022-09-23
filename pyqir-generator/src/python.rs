@@ -22,7 +22,7 @@ use qirlib::{
         module::Module as InkwellModule,
         types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum},
         values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum, CallableValue},
-        AddressSpace, IntPredicate,
+        IntPredicate,
     },
 };
 use std::{
@@ -149,9 +149,7 @@ impl Types {
             // TODO (safety): When is it safe to shorten the invariant lifetime of Module?
             let module =
                 unsafe { transmute::<&InkwellModule<'static>, &InkwellModule<'_>>(&module.module) };
-            codegen::types::qubit(context, module)
-                .ptr_type(AddressSpace::Generic)
-                .into()
+            codegen::types::qubit_ptr(context, module).into()
         })
     }
 
@@ -162,9 +160,7 @@ impl Types {
             // TODO (safety): When is it safe to shorten the invariant lifetime of Module?
             let module =
                 unsafe { transmute::<&InkwellModule<'static>, &InkwellModule<'_>>(&module.module) };
-            codegen::types::result(context, module)
-                .ptr_type(AddressSpace::Generic)
-                .into()
+            codegen::types::result_ptr(context, module).into()
         })
     }
 }
@@ -510,7 +506,7 @@ impl SimpleModule {
         let module = unsafe {
             transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
         };
-        let ty = codegen::types::qubit(&context.0, module).ptr_type(inkwell::AddressSpace::Generic);
+        let ty = codegen::types::qubit_ptr(&context.0, module);
 
         (0..self.num_qubits)
             .map(|id| {
@@ -534,8 +530,7 @@ impl SimpleModule {
         let module = unsafe {
             transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
         };
-        let ty =
-            codegen::types::result(&context.0, module).ptr_type(inkwell::AddressSpace::Generic);
+        let ty = codegen::types::result_ptr(&context.0, module);
 
         (0..self.num_results)
             .map(|id| {
