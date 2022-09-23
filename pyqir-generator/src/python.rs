@@ -20,7 +20,7 @@ use qirlib::{
         self,
         context::Context as InkwellContext,
         module::Module as InkwellModule,
-        types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum},
+        types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FunctionType},
         values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum, CallableValue},
         IntPredicate,
     },
@@ -119,22 +119,9 @@ impl Types {
     #[staticmethod]
     #[allow(clippy::needless_pass_by_value)]
     fn function(py: Python, return_: &Type, params: Vec<Py<Type>>) -> PyResult<Py<Type>> {
-        let params = params
-            .iter()
-            .map(|ty| {
-                BasicTypeEnum::try_from(ty.borrow(py).ty)
-                    .map(Into::into)
-                    .map_err(|()| PyTypeError::new_err("Invalid parameter type."))
-            })
-            .collect::<PyResult<Vec<_>>>()?;
-
-        let ty = match return_.ty {
-            AnyTypeEnum::VoidType(void) => void.fn_type(&params, false).into(),
-            _ => BasicTypeEnum::try_from(return_.ty)
-                .expect("Invalid return type.")
-                .fn_type(&params, false)
-                .into(),
-        };
+        let ty = function_type(&return_.ty, params.iter().map(|ty| ty.borrow(py).ty))
+            .ok_or_else(|| PyValueError::new_err("Invalid return or parameter type."))?
+            .into();
 
         // TODO (safety): What if not all types use the same context?
         let ty = unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) };
@@ -182,6 +169,23 @@ impl Types {
     }
 }
 
+fn function_type<'ctx>(
+    return_type: &impl AnyType<'ctx>,
+    params: impl IntoIterator<Item = AnyTypeEnum<'ctx>>,
+) -> Option<FunctionType<'ctx>> {
+    let params = params
+        .into_iter()
+        .map(|ty| BasicTypeEnum::try_from(ty).map(Into::into).ok())
+        .collect::<Option<Vec<_>>>()?;
+
+    match return_type.as_any_type_enum() {
+        AnyTypeEnum::VoidType(void) => Some(void.fn_type(&params, false)),
+        any => BasicTypeEnum::try_from(any)
+            .map(|basic| basic.fn_type(&params, false))
+            .ok(),
+    }
+}
+
 /// A QIR value.
 #[pyclass(unsendable)]
 #[derive(Clone)]
@@ -193,7 +197,7 @@ struct Value {
 impl Value {
     fn new<'ctx>(context: Py<Context>, value: &impl AnyValue<'ctx>) -> Self {
         let value = value.as_any_value_enum();
-        let value = unsafe { transmute::<AnyValueEnum, AnyValueEnum>(value) };
+        let value = unsafe { transmute::<AnyValueEnum<'_>, AnyValueEnum<'static>>(value) };
         Self { value, context }
     }
 }
