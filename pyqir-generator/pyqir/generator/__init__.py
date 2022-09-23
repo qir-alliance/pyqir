@@ -17,7 +17,7 @@ from pyqir.generator._native import (
     Builder as Builder,
     SimpleModule as SimpleModule,
     Type as Type,
-    Types as Types,
+    TypeFactory as TypeFactory,
     Value as Value,
     bitcode_to_ir as bitcode_to_ir,
     const as const,

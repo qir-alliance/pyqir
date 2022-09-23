@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, SimpleModule, Types, Value, const
+from pyqir.generator import BasicQisBuilder, SimpleModule, TypeFactory, Value, const
 from typing import Callable, List, Tuple, Union
 import unittest
 
@@ -74,7 +74,7 @@ class QisTest(unittest.TestCase):
             ("rz", lambda qis: qis.rz),
         ]
 
-        values: List[Callable[[Types], Union[Value, float]]] = [
+        values: List[Callable[[TypeFactory], Union[Value, float]]] = [
             lambda types: const(types.double, 1.0),
             lambda _: 1.0,
         ]

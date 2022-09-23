@@ -36,7 +36,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Builder>()?;
     m.add_class::<SimpleModule>()?;
     m.add_class::<Type>()?;
-    m.add_class::<Types>()?;
+    m.add_class::<TypeFactory>()?;
     m.add_class::<Value>()?;
     m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
     m.add("const", wrap_pyfunction!(constant, m)?)?;
@@ -91,12 +91,12 @@ impl Module {
 }
 
 #[pyclass]
-struct Types {
+struct TypeFactory {
     module: Py<Module>,
 }
 
 #[pymethods]
-impl Types {
+impl TypeFactory {
     #[getter]
     fn void(&self, py: Python) -> PyResult<Py<Type>> {
         self.type_from_context(py, |c| c.void_type().into())
@@ -152,7 +152,7 @@ impl Types {
     }
 }
 
-impl Types {
+impl TypeFactory {
     fn type_from_context(
         &self,
         py: Python,
@@ -454,7 +454,7 @@ impl Builder {
 struct SimpleModule {
     module: Py<Module>,
     builder: Py<Builder>,
-    types: Py<Types>,
+    types: Py<TypeFactory>,
     num_qubits: u64,
     num_results: u64,
 }
@@ -480,7 +480,7 @@ impl SimpleModule {
 
         let types = Py::new(
             py,
-            Types {
+            TypeFactory {
                 module: module.clone(),
             },
         )?;
@@ -495,7 +495,7 @@ impl SimpleModule {
     }
 
     #[getter]
-    fn types(&self) -> Py<Types> {
+    fn types(&self) -> Py<TypeFactory> {
         self.types.clone()
     }
 

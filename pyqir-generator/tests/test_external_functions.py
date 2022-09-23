@@ -5,7 +5,7 @@ from pyqir.generator import (
     BasicQisBuilder,
     SimpleModule,
     Type,
-    Types,
+    TypeFactory,
     Value,
     const,
 )
@@ -45,7 +45,7 @@ class ExternalFunctionsTest(unittest.TestCase):
         )
 
     def test_call_double(self) -> None:
-        values: List[Callable[[Types], Union[Value, float]]] = [
+        values: List[Callable[[TypeFactory], Union[Value, float]]] = [
             lambda types: const(types.double, 23.25),
             lambda _: 23.25,
         ]
@@ -62,7 +62,7 @@ class ExternalFunctionsTest(unittest.TestCase):
                 self.assertIn("call void @test_function(double 2.325000e+01)", mod.ir())
 
     def test_call_int(self) -> None:
-        values: List[Callable[[Types], Union[Value, int]]] = [
+        values: List[Callable[[TypeFactory], Union[Value, int]]] = [
             lambda types: const(types.integer(64), 42),
             lambda _: 42,
         ]
@@ -79,7 +79,7 @@ class ExternalFunctionsTest(unittest.TestCase):
                 self.assertIn("call void @test_function(i64 42)", mod.ir())
 
     def test_call_bool_true(self) -> None:
-        values: List[Callable[[Types], Union[Value, bool]]] = [
+        values: List[Callable[[TypeFactory], Union[Value, bool]]] = [
             lambda types: const(types.bool, True),
             lambda _: True,
         ]
@@ -96,7 +96,7 @@ class ExternalFunctionsTest(unittest.TestCase):
                 self.assertIn("call void @test_function(i1 true)", mod.ir())
 
     def test_call_bool_false(self) -> None:
-        values: List[Callable[[Types], Union[Value, bool]]] = [
+        values: List[Callable[[TypeFactory], Union[Value, bool]]] = [
             lambda types: const(types.bool, False),
             lambda _: False,
         ]
@@ -168,7 +168,7 @@ class ExternalFunctionsTest(unittest.TestCase):
         )
 
     def test_wrong_type_conversion(self) -> None:
-        cases: List[Tuple[Callable[[Types], List[Type]], List[Any]]] = [
+        cases: List[Tuple[Callable[[TypeFactory], List[Type]], List[Any]]] = [
             (lambda types: [types.bool], ["true"]),
             (lambda types: [types.integer(64)], [1.23]),
             (lambda types: [types.integer(64)], ["123"]),
@@ -212,7 +212,7 @@ class ExternalFunctionsTest(unittest.TestCase):
                     mod.builder.call(f, [value])
 
     def test_wrong_number_of_args(self) -> None:
-        cases: List[Callable[[Types], List[Value]]] = [
+        cases: List[Callable[[TypeFactory], List[Value]]] = [
             lambda _: [],
             lambda types: [const(types.double, 1.23)],
             lambda types: [
