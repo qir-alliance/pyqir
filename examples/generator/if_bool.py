@@ -1,14 +1,14 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, IntPredicate, SimpleModule, const, types
+from pyqir.generator import BasicQisBuilder, IntPredicate, SimpleModule, const
 
 mod = SimpleModule("if_bool", num_qubits=2, num_results=2)
 qis = BasicQisBuilder(mod.builder)
 
 # Use an external function to generate integers that we can compare with icmp.
-i32 = types.Int(32)
-get_int = mod.add_external_function("get_int", types.Function([], i32))
+i32 = mod.types.integer(32)
+get_int = mod.add_external_function("get_int", mod.types.function(i32, []))
 
 # Apply X to the qubit if 'a' is 7.
 a = mod.builder.call(get_int, [])

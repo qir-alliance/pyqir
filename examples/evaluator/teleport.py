@@ -33,33 +33,28 @@ def teleport(
     qis.if_result(results[1], one=lambda: qis.x(target))
 
 
-def eval(module: SimpleModule, gates: GateSet, results: List[bool]) -> None:
-    with tempfile.NamedTemporaryFile(suffix=".ll") as f:
-        f.write(module.ir().encode("utf-8"))
-        f.flush()
-        NonadaptiveEvaluator().eval(f.name, gates, None, results)
+def eval(path: str, results: List[bool]) -> None:
+    logger = GateLogger()
+    NonadaptiveEvaluator().eval(path, logger, None, results)
+    logger.print()
 
 
-module = SimpleModule("teleport-example", num_qubits=3, num_results=2)
+module = SimpleModule("teleport", num_qubits=3, num_results=2)
 qis = BasicQisBuilder(module.builder)
 teleport(qis, module.qubits, module.results)
 
-print("# Evaluating both results as 0's", flush=True)
-logger = GateLogger()
-eval(module, logger, [False, False])
-logger.print()
+with tempfile.NamedTemporaryFile(suffix=".ll") as teleport_ll:
+    teleport_ll.write(module.ir().encode("utf-8"))
+    teleport_ll.flush()
 
-print("# Evaluating first result as 0, second as 1", flush=True)
-logger = GateLogger()
-eval(module, logger, [False, True])
-logger.print()
+    print("# Evaluating both results as 0's", flush=True)
+    eval(teleport_ll.name, [False, False])
 
-print("# Evaluating first result as 1, second as 0", flush=True)
-logger = GateLogger()
-eval(module, logger, [True, False])
-logger.print()
+    print("# Evaluating first result as 0, second as 1", flush=True)
+    eval(teleport_ll.name, [False, True])
 
-print("# Evaluating both results as 1's", flush=True)
-logger = GateLogger()
-eval(module, logger, [True, True])
-logger.print()
+    print("# Evaluating first result as 1, second as 0", flush=True)
+    eval(teleport_ll.name, [True, False])
+
+    print("# Evaluating both results as 1's", flush=True)
+    eval(teleport_ll.name, [True, True])

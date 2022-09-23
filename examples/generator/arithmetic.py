@@ -1,16 +1,17 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, SimpleModule, const, types
+from pyqir.generator import BasicQisBuilder, SimpleModule, const
 
 mod = SimpleModule("arithmetic", num_qubits=0, num_results=0)
 qis = BasicQisBuilder(mod.builder)
+types = mod.types
 
 # Declare functions that can produce and consume integers at runtime. See
 # external_functions.py.
-i32 = types.Int(32)
-get_int = mod.add_external_function("get_int", types.Function([], i32))
-take_int = mod.add_external_function("take_int", types.Function([i32], types.VOID))
+i32 = types.integer(32)
+get_int = mod.add_external_function("get_int", types.function(i32, []))
+take_int = mod.add_external_function("take_int", types.function(types.void, [i32]))
 
 # Add 3 to a number and multiply the result by 2.
 a = mod.builder.call(get_int, [])
