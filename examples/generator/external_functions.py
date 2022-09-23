@@ -16,11 +16,11 @@ mod.builder.call(my_function, [])
 
 # Declare a function that takes an integer and a qubit and returns void.
 my_gate = mod.add_external_function(
-    "my_gate", types.function(types.void, [types.integer(64), types.qubit])
+    "my_gate", types.function(types.void, [types.int(64), types.qubit])
 )
 
 # Call the functions with a list of arguments.
-mod.builder.call(my_gate, [const(types.integer(64), 123), mod.qubits[0]])
+mod.builder.call(my_gate, [const(types.int(64), 123), mod.qubits[0]])
 
 # Declare a function that returns a double.
 get_angle = mod.add_external_function("get_angle", types.function(types.double, []))

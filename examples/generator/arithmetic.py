@@ -9,7 +9,7 @@ types = mod.types
 
 # Declare functions that can produce and consume integers at runtime. See
 # external_functions.py.
-i32 = types.integer(32)
+i32 = types.int(32)
 get_int = mod.add_external_function("get_int", types.function(i32, []))
 take_int = mod.add_external_function("take_int", types.function(types.void, [i32]))
 

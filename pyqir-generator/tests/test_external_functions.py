@@ -63,7 +63,7 @@ class ExternalFunctionsTest(unittest.TestCase):
 
     def test_call_int(self) -> None:
         values: List[Callable[[TypeFactory], Union[Value, int]]] = [
-            lambda types: const(types.integer(64), 42),
+            lambda types: const(types.int(64), 42),
             lambda _: 42,
         ]
 
@@ -73,7 +73,7 @@ class ExternalFunctionsTest(unittest.TestCase):
                 types = mod.types
                 f = mod.add_external_function(
                     "test_function",
-                    types.function(types.void, [types.integer(64)]),
+                    types.function(types.void, [types.int(64)]),
                 )
                 mod.builder.call(f, [value(types)])
                 self.assertIn("call void @test_function(i64 42)", mod.ir())
@@ -148,7 +148,7 @@ class ExternalFunctionsTest(unittest.TestCase):
 
         b = const(types.bool, True)
         bool_rep = f"i1 true"
-        i = const(types.integer(64), 42)
+        i = const(types.int(64), 42)
         int_rep = f"i64 42"
         d = const(types.double, 42.42)
         double_rep = "double 4.242000e+01"
@@ -157,7 +157,7 @@ class ExternalFunctionsTest(unittest.TestCase):
             "test_function",
             types.function(
                 types.void,
-                [types.bool, types.integer(64), types.double],
+                [types.bool, types.int(64), types.double],
             ),
         )
         mod.builder.call(f, [b, i, d])
@@ -170,8 +170,8 @@ class ExternalFunctionsTest(unittest.TestCase):
     def test_wrong_type_conversion(self) -> None:
         cases: List[Tuple[Callable[[TypeFactory], List[Type]], List[Any]]] = [
             (lambda types: [types.bool], ["true"]),
-            (lambda types: [types.integer(64)], [1.23]),
-            (lambda types: [types.integer(64)], ["123"]),
+            (lambda types: [types.int(64)], [1.23]),
+            (lambda types: [types.int(64)], ["123"]),
             (lambda types: [types.double], ["1.23"]),
         ]
 
@@ -196,7 +196,7 @@ class ExternalFunctionsTest(unittest.TestCase):
     def test_overflow_int_value(self) -> None:
         mod = SimpleModule("test", 0, 0)
         with self.assertRaises(OverflowError):
-            const(mod.types.integer(64), 2**64)
+            const(mod.types.int(64), 2**64)
 
     def test_overflow_conversion(self) -> None:
         for value in [123, 2**64]:
@@ -240,10 +240,10 @@ class ExternalFunctionsTest(unittest.TestCase):
     def test_variable(self) -> None:
         mod = SimpleModule("test", 0, 0)
         types = mod.types
-        foo = mod.add_external_function("foo", types.function(types.integer(64), []))
+        foo = mod.add_external_function("foo", types.function(types.int(64), []))
         bar = mod.add_external_function(
             "bar",
-            types.function(types.void, [types.integer(64)]),
+            types.function(types.void, [types.int(64)]),
         )
 
         x = mod.builder.call(foo, [])
@@ -257,7 +257,7 @@ class ExternalFunctionsTest(unittest.TestCase):
     def test_variable_wrong_external_type(self) -> None:
         mod = SimpleModule("test", 0, 0)
         types = mod.types
-        foo = mod.add_external_function("foo", types.function(types.integer(64), []))
+        foo = mod.add_external_function("foo", types.function(types.int(64), []))
         bar = mod.add_external_function(
             "bar", types.function(types.void, [types.qubit])
         )
@@ -275,7 +275,7 @@ class ExternalFunctionsTest(unittest.TestCase):
         mod = SimpleModule("test", 1, 0)
         types = mod.types
         qis = BasicQisBuilder(mod.builder)
-        foo = mod.add_external_function("foo", types.function(types.integer(64), []))
+        foo = mod.add_external_function("foo", types.function(types.int(64), []))
 
         x = mod.builder.call(foo, [])
         assert x is not None
@@ -289,12 +289,12 @@ class ExternalFunctionsTest(unittest.TestCase):
     def test_two_variables(self) -> None:
         mod = SimpleModule("test", 0, 0)
         types = mod.types
-        foo = mod.add_external_function("foo", types.function(types.integer(64), []))
+        foo = mod.add_external_function("foo", types.function(types.int(64), []))
         bar = mod.add_external_function(
             "bar",
             types.function(
                 types.void,
-                [types.integer(64), types.integer(64)],
+                [types.int(64), types.int(64)],
             ),
         )
 

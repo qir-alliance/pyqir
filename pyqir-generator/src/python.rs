@@ -107,7 +107,7 @@ impl TypeFactory {
         self.type_from_context(py, |c| c.bool_type().into())
     }
 
-    fn integer(&self, py: Python, width: u32) -> PyResult<Py<Type>> {
+    fn int(&self, py: Python, width: u32) -> PyResult<Py<Type>> {
         self.type_from_context(py, |c| c.custom_width_int_type(width).into())
     }
 

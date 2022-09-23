@@ -7,7 +7,7 @@ mod = SimpleModule("if_bool", num_qubits=2, num_results=2)
 qis = BasicQisBuilder(mod.builder)
 
 # Use an external function to generate integers that we can compare with icmp.
-i32 = mod.types.integer(32)
+i32 = mod.types.int(32)
 get_int = mod.add_external_function("get_int", mod.types.function(i32, []))
 
 # Apply X to the qubit if 'a' is 7.

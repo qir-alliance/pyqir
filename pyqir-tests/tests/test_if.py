@@ -379,7 +379,7 @@ def test_arithmetic_in_branch(result: bool) -> None:
     cond = brancher.oracle()
     module = brancher.module
     qis = BasicQisBuilder(module.builder)
-    i32 = module.types.integer(32)
+    i32 = module.types.int(32)
 
     def true() -> None:
         four = module.builder.add(const(i32, 2), const(i32, 2))
