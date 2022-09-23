@@ -13,47 +13,81 @@ use pyo3::{
     exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
     prelude::*,
     types::{PyBytes, PySequence, PyString, PyUnicode},
-    PyObjectProtocol,
 };
-use qirlib::inkwell::{
-    self,
-    types::{
-        AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FloatType, FunctionType, IntType, VoidType,
+use qirlib::{
+    codegen,
+    inkwell::{
+        self,
+        context::Context as InkwellContext,
+        module::Module as InkwellModule,
+        types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum},
+        values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum, CallableValue},
+        AddressSpace, IntPredicate,
     },
-    values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum, CallableValue},
-    AddressSpace,
 };
-use std::{convert::TryFrom, mem::transmute, ops::Deref};
+use std::{
+    convert::{Into, TryFrom},
+    mem::transmute,
+};
 
 #[pymodule]
 fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<BasicQisBuilder>()?;
+    m.add_class::<Builder>()?;
+    m.add_class::<SimpleModule>()?;
     m.add_class::<Type>()?;
     m.add_class::<Types>()?;
-    m.add_class::<SimpleModule>()?;
-    m.add_class::<Builder>()?;
-    m.add_class::<BasicQisBuilder>()?;
     m.add_class::<Value>()?;
     m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
-    m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
     m.add("const", wrap_pyfunction!(constant, m)?)?;
+    m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
     Ok(())
 }
 
-#[pyclass]
-struct Context(inkwell::context::Context);
+struct PyIntPredicate(IntPredicate);
 
-impl Deref for Context {
-    type Target = inkwell::context::Context;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
+impl<'source> FromPyObject<'source> for PyIntPredicate {
+    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+        match ob.getattr("name")?.extract()? {
+            "EQ" => Ok(Self(IntPredicate::EQ)),
+            "NE" => Ok(Self(IntPredicate::NE)),
+            "UGT" => Ok(Self(IntPredicate::UGT)),
+            "UGE" => Ok(Self(IntPredicate::UGE)),
+            "ULT" => Ok(Self(IntPredicate::ULT)),
+            "ULE" => Ok(Self(IntPredicate::ULE)),
+            "SGT" => Ok(Self(IntPredicate::SGT)),
+            "SGE" => Ok(Self(IntPredicate::SGE)),
+            "SLT" => Ok(Self(IntPredicate::SLT)),
+            "SLE" => Ok(Self(IntPredicate::SLE)),
+            _ => Err(PyValueError::new_err("Invalid integer predicate.")),
+        }
     }
 }
+
+#[pyclass]
+struct Context(InkwellContext);
 
 #[pyclass(unsendable)]
 struct Type {
     ty: AnyTypeEnum<'static>,
     context: Py<Context>,
+}
+
+#[pyclass(unsendable)]
+struct Module {
+    module: InkwellModule<'static>,
+    context: Py<Context>,
+}
+
+impl Module {
+    fn new(py: Python, context: Py<Context>, name: &str) -> Module {
+        let module = {
+            let context = context.borrow(py);
+            let module = context.0.create_module(name);
+            unsafe { transmute::<InkwellModule<'_>, InkwellModule<'static>>(module) }
+        };
+        Module { module, context }
+    }
 }
 
 #[pyclass]
@@ -65,138 +99,90 @@ struct Types {
 impl Types {
     #[getter]
     fn void(&self, py: Python) -> PyResult<Py<Type>> {
-        let module = self.module.borrow(py);
-        let ty = {
-            let context = module.context.borrow(py);
-            let ty = context.void_type();
-            let ty = unsafe { transmute::<VoidType, VoidType<'static>>(ty) };
-            AnyTypeEnum::VoidType(ty)
-        };
-        let context = module.context.clone();
-        Py::new(py, Type { ty, context })
+        self.with_context(py, |c| c.void_type().into())
     }
 
     #[getter]
     fn bool(&self, py: Python) -> PyResult<Py<Type>> {
-        let module = self.module.borrow(py);
-        let ty = {
-            let context = module.context.borrow(py);
-            let ty = context.bool_type();
-            let ty = unsafe { transmute::<IntType, IntType<'static>>(ty) };
-            AnyTypeEnum::IntType(ty)
-        };
-        let context = module.context.clone();
-        Py::new(py, Type { ty, context })
+        self.with_context(py, |c| c.bool_type().into())
     }
 
     fn integer(&self, py: Python, width: u32) -> PyResult<Py<Type>> {
-        let module = self.module.borrow(py);
-        let ty = {
-            let context = module.context.borrow(py);
-            let ty = context.custom_width_int_type(width);
-            let ty = unsafe { transmute::<IntType, IntType<'static>>(ty) };
-            AnyTypeEnum::IntType(ty)
-        };
-        let context = module.context.clone();
-        Py::new(py, Type { ty, context })
+        self.with_context(py, |c| c.custom_width_int_type(width).into())
     }
 
     #[getter]
     fn double(&self, py: Python) -> PyResult<Py<Type>> {
-        let module = self.module.borrow(py);
-        let ty = {
-            let context = module.context.borrow(py);
-            let ty = context.f64_type();
-            let ty = unsafe { transmute::<FloatType, FloatType<'static>>(ty) };
-            AnyTypeEnum::FloatType(ty)
-        };
-        let context = module.context.clone();
-        Py::new(py, Type { ty, context })
+        self.with_context(py, |c| c.f64_type().into())
     }
 
     #[staticmethod]
     #[allow(clippy::needless_pass_by_value)]
     fn function(py: Python, return_: &Type, params: Vec<Py<Type>>) -> PyResult<Py<Type>> {
-        let ty = {
-            let params = params
-                .iter()
-                .map(|ty| {
-                    let ty = ty.borrow(py);
-                    let ty = BasicTypeEnum::try_from(ty.ty)
-                        .map_err(|()| PyTypeError::new_err("Invalid parameter type."))?;
-                    Ok(ty.into())
-                })
-                .collect::<PyResult<Vec<_>>>()?;
+        let params = params
+            .iter()
+            .map(|ty| {
+                BasicTypeEnum::try_from(ty.borrow(py).ty)
+                    .map(Into::into)
+                    .map_err(|()| PyTypeError::new_err("Invalid parameter type."))
+            })
+            .collect::<PyResult<Vec<_>>>()?;
 
-            let ty = match return_.ty {
-                AnyTypeEnum::VoidType(void) => void.fn_type(&params, false),
-                ret => BasicTypeEnum::try_from(ret)
-                    .expect("Invalid return type.")
-                    .fn_type(&params, false),
-            };
-
-            unsafe { transmute::<FunctionType, FunctionType<'static>>(ty) }
+        let ty = match return_.ty {
+            AnyTypeEnum::VoidType(void) => void.fn_type(&params, false).into(),
+            _ => BasicTypeEnum::try_from(return_.ty)
+                .expect("Invalid return type.")
+                .fn_type(&params, false)
+                .into(),
         };
 
         // TODO (safety): What if not all types use the same context?
-        Py::new(
-            py,
-            Type {
-                ty: AnyTypeEnum::FunctionType(ty),
-                context: return_.context.clone(),
-            },
-        )
+        let ty = unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) };
+        let context = return_.context.clone();
+        Py::new(py, Type { ty, context })
     }
 
     #[getter]
     fn qubit(&self, py: Python) -> PyResult<Py<Type>> {
         let module = self.module.borrow(py);
-        let context = module.context.clone();
-        let context_ref = module.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-        let ty = AnyTypeEnum::PointerType(
-            qirlib::codegen::types::qubit(&context_ref.0, module).ptr_type(AddressSpace::Generic),
-        );
-        let ty = unsafe { transmute::<AnyTypeEnum, AnyTypeEnum<'static>>(ty) };
-        Py::new(py, Type { ty, context })
+        self.with_context(py, |context| {
+            // TODO (safety): When is it safe to shorten the invariant lifetime of Module?
+            let module =
+                unsafe { transmute::<&InkwellModule<'static>, &InkwellModule<'_>>(&module.module) };
+            codegen::types::qubit(context, module)
+                .ptr_type(AddressSpace::Generic)
+                .into()
+        })
     }
 
     #[getter]
     fn result(&self, py: Python) -> PyResult<Py<Type>> {
         let module = self.module.borrow(py);
-        let context = module.context.clone();
-        let context_ref = module.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-        let ty = AnyTypeEnum::PointerType(
-            qirlib::codegen::types::result(&context_ref.0, module).ptr_type(AddressSpace::Generic),
-        );
-        let ty = unsafe { transmute::<AnyTypeEnum, AnyTypeEnum<'static>>(ty) };
-        Py::new(py, Type { ty, context })
+        self.with_context(py, |context| {
+            // TODO (safety): When is it safe to shorten the invariant lifetime of Module?
+            let module =
+                unsafe { transmute::<&InkwellModule<'static>, &InkwellModule<'_>>(&module.module) };
+            codegen::types::result(context, module)
+                .ptr_type(AddressSpace::Generic)
+                .into()
+        })
     }
 }
 
-struct PyIntPredicate(inkwell::IntPredicate);
-
-impl<'source> FromPyObject<'source> for PyIntPredicate {
-    fn extract(ob: &'source PyAny) -> PyResult<Self> {
-        match ob.getattr("name")?.extract()? {
-            "EQ" => Ok(inkwell::IntPredicate::EQ),
-            "NE" => Ok(inkwell::IntPredicate::NE),
-            "UGT" => Ok(inkwell::IntPredicate::UGT),
-            "UGE" => Ok(inkwell::IntPredicate::UGE),
-            "ULT" => Ok(inkwell::IntPredicate::ULT),
-            "ULE" => Ok(inkwell::IntPredicate::ULE),
-            "SGT" => Ok(inkwell::IntPredicate::SGT),
-            "SGE" => Ok(inkwell::IntPredicate::SGE),
-            "SLT" => Ok(inkwell::IntPredicate::SLT),
-            "SLE" => Ok(inkwell::IntPredicate::SLE),
-            _ => Err(PyValueError::new_err("Invalid predicate.")),
-        }
-        .map(Self)
+impl Types {
+    fn with_context(
+        &self,
+        py: Python,
+        get: impl Fn(&InkwellContext) -> AnyTypeEnum,
+    ) -> PyResult<Py<Type>> {
+        let module = self.module.borrow(py);
+        let context = module.context.clone();
+        let ty = {
+            let context = context.borrow(py);
+            let ty = get(&context.0);
+            unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
+        };
+        Py::new(py, Type { ty, context })
     }
 }
 
@@ -206,13 +192,6 @@ impl<'source> FromPyObject<'source> for PyIntPredicate {
 struct Value {
     value: AnyValueEnum<'static>,
     context: Py<Context>,
-}
-
-#[pyproto]
-impl PyObjectProtocol for Value {
-    fn __repr__(&self) -> String {
-        format!("{:?}", self.value)
-    }
 }
 
 impl Value {
@@ -235,26 +214,6 @@ fn constant(ty: &Type, value: &PyAny) -> PyResult<Value> {
     let context = ty.context.clone();
     let value = extract_value(&ty.ty, value)?;
     Ok(Value::new(context, &value))
-}
-
-#[pyclass(unsendable)]
-struct Module {
-    module: inkwell::module::Module<'static>,
-    context: Py<Context>,
-}
-
-impl Module {
-    fn new(py: Python, context: Py<Context>, name: &str) -> Module {
-        let module = {
-            let context = context.borrow(py);
-            let module = context.create_module(name);
-            unsafe {
-                transmute::<inkwell::module::Module, inkwell::module::Module<'static>>(module)
-            }
-        };
-
-        Module { module, context }
-    }
 }
 
 /// An instruction builder.
@@ -468,7 +427,7 @@ impl Builder {
             let context = context.borrow(py);
             unsafe {
                 transmute::<inkwell::builder::Builder, inkwell::builder::Builder<'static>>(
-                    context.create_builder(),
+                    context.0.create_builder(),
                 )
             }
         };
@@ -515,7 +474,7 @@ impl SimpleModule {
         let module = Py::new(py, module)?;
 
         let builder = Builder::new(py, context.clone(), module.clone());
-        let entry = context_ref.append_basic_block(entry_point, "entry");
+        let entry = context_ref.0.append_basic_block(entry_point, "entry");
         builder.builder.position_at_end(entry);
         let builder = Py::new(py, builder)?;
 
@@ -551,12 +510,11 @@ impl SimpleModule {
         let module = unsafe {
             transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
         };
-        let ty = qirlib::codegen::types::qubit(&context.0, module)
-            .ptr_type(inkwell::AddressSpace::Generic);
+        let ty = codegen::types::qubit(&context.0, module).ptr_type(inkwell::AddressSpace::Generic);
 
         (0..self.num_qubits)
             .map(|id| {
-                let id = qirlib::codegen::basicvalues::u64_to_i64(&context.0, id).into_int_value();
+                let id = codegen::basicvalues::u64_to_i64(&context.0, id).into_int_value();
                 Value::new(
                     builder.context.clone(),
                     &builder.builder.build_int_to_ptr(id, ty, ""),
@@ -576,12 +534,12 @@ impl SimpleModule {
         let module = unsafe {
             transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
         };
-        let ty = qirlib::codegen::types::result(&context.0, module)
-            .ptr_type(inkwell::AddressSpace::Generic);
+        let ty =
+            codegen::types::result(&context.0, module).ptr_type(inkwell::AddressSpace::Generic);
 
         (0..self.num_results)
             .map(|id| {
-                let id = qirlib::codegen::basicvalues::u64_to_i64(&context.0, id).into_int_value();
+                let id = codegen::basicvalues::u64_to_i64(&context.0, id).into_int_value();
                 Value::new(
                     builder.context.clone(),
                     &builder.builder.build_int_to_ptr(id, ty, ""),
@@ -671,8 +629,8 @@ impl BasicQisBuilder {
 
         let control = any_to_meta(control.value).unwrap();
         let target = any_to_meta(target.value).unwrap();
-        let function = qirlib::codegen::qis::cnot_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[control, target]);
+        let function = codegen::qis::cnot_body(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[control, target]);
     }
 
     /// Inserts a controlled Pauli :math:`Z` gate.
@@ -691,8 +649,8 @@ impl BasicQisBuilder {
 
         let control = any_to_meta(control.value).unwrap();
         let target = any_to_meta(target.value).unwrap();
-        let function = qirlib::codegen::qis::cz_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[control, target]);
+        let function = codegen::qis::cz_body(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[control, target]);
     }
 
     /// Inserts a Hadamard gate.
@@ -709,8 +667,8 @@ impl BasicQisBuilder {
         };
 
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = qirlib::codegen::qis::h_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
+        let function = codegen::qis::h_body(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a Z-basis measurement operation.
@@ -729,8 +687,8 @@ impl BasicQisBuilder {
 
         let qubit = any_to_meta(qubit.value).unwrap();
         let result = any_to_meta(result.value).unwrap();
-        let function = qirlib::codegen::qis::mz_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit, result]);
+        let function = codegen::qis::mz_body(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[qubit, result]);
     }
 
     /// Inserts a reset operation.
@@ -747,8 +705,8 @@ impl BasicQisBuilder {
         };
 
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = qirlib::codegen::qis::reset_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
+        let function = codegen::qis::reset_body(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a rotation gate about the :math:`x` axis.
@@ -765,10 +723,10 @@ impl BasicQisBuilder {
             transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
         };
 
-        let theta = any_to_meta(extract_value(&context.f64_type(), theta)?).unwrap();
+        let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = qirlib::codegen::qis::rx_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
+        let function = codegen::qis::rx_body(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
         Ok(())
     }
 
@@ -786,10 +744,10 @@ impl BasicQisBuilder {
             transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
         };
 
-        let theta = any_to_meta(extract_value(&context.f64_type(), theta)?).unwrap();
+        let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = qirlib::codegen::qis::ry_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
+        let function = codegen::qis::ry_body(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
         Ok(())
     }
 
@@ -807,10 +765,10 @@ impl BasicQisBuilder {
             transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
         };
 
-        let theta = any_to_meta(extract_value(&context.f64_type(), theta)?).unwrap();
+        let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = qirlib::codegen::qis::rz_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
+        let function = codegen::qis::rz_body(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
         Ok(())
     }
 
@@ -828,8 +786,8 @@ impl BasicQisBuilder {
         };
 
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = qirlib::codegen::qis::s_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
+        let function = codegen::qis::s_body(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts an adjoint :math:`S` gate.
@@ -846,8 +804,8 @@ impl BasicQisBuilder {
         };
 
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = qirlib::codegen::qis::s_adj(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
+        let function = codegen::qis::s_adj(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a :math:`T` gate.
@@ -864,8 +822,8 @@ impl BasicQisBuilder {
         };
 
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = qirlib::codegen::qis::t_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
+        let function = codegen::qis::t_body(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts an adjoint :math:`T` gate.
@@ -882,8 +840,8 @@ impl BasicQisBuilder {
         };
 
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = qirlib::codegen::qis::t_adj(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
+        let function = codegen::qis::t_adj(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a Pauli :math:`X` gate.
@@ -900,8 +858,8 @@ impl BasicQisBuilder {
         };
 
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = qirlib::codegen::qis::x_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
+        let function = codegen::qis::x_body(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a Pauli :math:`Y` gate.
@@ -918,8 +876,8 @@ impl BasicQisBuilder {
         };
 
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = qirlib::codegen::qis::y_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
+        let function = codegen::qis::y_body(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a Pauli :math:`Z` gate.
@@ -936,8 +894,8 @@ impl BasicQisBuilder {
         };
 
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = qirlib::codegen::qis::z_body(&context.0, module);
-        qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
+        let function = codegen::qis::z_body(&context.0, module);
+        codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
     /// Inserts a branch conditioned on a measurement result.
@@ -966,8 +924,8 @@ impl BasicQisBuilder {
         let module = unsafe {
             transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
         };
-        let read_result = qirlib::codegen::qis::read_result(&context.0, module);
-        let cond = qirlib::codegen::calls::emit_call_with_return(
+        let read_result = codegen::qis::read_result(&context.0, module);
+        let cond = codegen::calls::emit_call_with_return(
             &builder.builder,
             read_result,
             &[any_to_meta(cond.value).unwrap()],
