@@ -17,9 +17,10 @@ use pyo3::{
 };
 use qirlib::inkwell::{
     self,
-    module::Linkage,
-    types::{AnyTypeEnum, BasicType, BasicTypeEnum, FloatType, FunctionType, IntType, VoidType},
-    values::{AnyValueEnum, BasicMetadataValueEnum},
+    types::{
+        AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FloatType, FunctionType, IntType, VoidType,
+    },
+    values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum, CallableValue},
     AddressSpace,
 };
 use std::{convert::TryFrom, mem::transmute, ops::Deref};
@@ -113,7 +114,9 @@ impl Types {
         Py::new(py, Type { ty, context })
     }
 
-    fn function(&self, py: Python, return_: &Type, params: Vec<Py<Type>>) -> PyResult<Py<Type>> {
+    #[staticmethod]
+    #[allow(clippy::needless_pass_by_value)]
+    fn function(py: Python, return_: &Type, params: Vec<Py<Type>>) -> PyResult<Py<Type>> {
         let ty = {
             let params = params
                 .iter()
@@ -213,12 +216,9 @@ impl PyObjectProtocol for Value {
 }
 
 impl Value {
-    fn new<'ctx>(context: Py<Context>, value: impl inkwell::values::AnyValue<'ctx>) -> Self {
-        Self::from_any(context, value.as_any_value_enum())
-    }
-
-    fn from_any<'ctx>(context: Py<Context>, value: AnyValueEnum<'ctx>) -> Self {
-        let value = unsafe { transmute::<AnyValueEnum, AnyValueEnum<'static>>(value) };
+    fn new<'ctx>(context: Py<Context>, value: &impl AnyValue<'ctx>) -> Self {
+        let value = value.as_any_value_enum();
+        let value = unsafe { transmute::<AnyValueEnum, AnyValueEnum>(value) };
         Self { value, context }
     }
 }
@@ -231,11 +231,10 @@ impl Value {
 /// :rtype: Value
 #[pyfunction]
 #[pyo3(text_signature = "(ty, value)")]
-#[allow(clippy::needless_pass_by_value)]
-fn constant(py: Python, ty: Py<Type>, value: &PyAny) -> PyResult<Value> {
-    let context = ty.borrow(py).context.clone();
-    let value = extract_value(ty.borrow(py).ty, value)?;
-    Ok(Value::new(context, value))
+fn constant(ty: &Type, value: &PyAny) -> PyResult<Value> {
+    let context = ty.context.clone();
+    let value = extract_value(&ty.ty, value)?;
+    Ok(Value::new(context, &value))
 }
 
 #[pyclass(unsendable)]
@@ -275,11 +274,11 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn and_(&self, lhs: Value, rhs: Value) -> Value {
-        let context = lhs.context;
+    fn and_(&self, lhs: &Value, rhs: &Value) -> Value {
+        let context = lhs.context.clone();
         let lhs = lhs.value.into_int_value();
         let rhs = rhs.value.into_int_value();
-        Value::new(context, self.builder.build_and(lhs, rhs, ""))
+        Value::new(context, &self.builder.build_and(lhs, rhs, ""))
     }
 
     /// Inserts a bitwise logical or instruction.
@@ -289,11 +288,11 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn or_(&self, lhs: Value, rhs: Value) -> Value {
-        let context = lhs.context;
+    fn or_(&self, lhs: &Value, rhs: &Value) -> Value {
+        let context = lhs.context.clone();
         let lhs = lhs.value.into_int_value();
         let rhs = rhs.value.into_int_value();
-        Value::new(context, self.builder.build_or(lhs, rhs, ""))
+        Value::new(context, &self.builder.build_or(lhs, rhs, ""))
     }
 
     /// Inserts a bitwise logical exclusive or instruction.
@@ -303,11 +302,11 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn xor(&self, lhs: Value, rhs: Value) -> Value {
-        let context = lhs.context;
+    fn xor(&self, lhs: &Value, rhs: &Value) -> Value {
+        let context = lhs.context.clone();
         let lhs = lhs.value.into_int_value();
         let rhs = rhs.value.into_int_value();
-        Value::new(context, self.builder.build_xor(lhs, rhs, ""))
+        Value::new(context, &self.builder.build_xor(lhs, rhs, ""))
     }
 
     /// Inserts an addition instruction.
@@ -317,11 +316,11 @@ impl Builder {
     /// :returns: The sum.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn add(&self, lhs: Value, rhs: Value) -> Value {
-        let context = lhs.context;
+    fn add(&self, lhs: &Value, rhs: &Value) -> Value {
+        let context = lhs.context.clone();
         let lhs = lhs.value.into_int_value();
         let rhs = rhs.value.into_int_value();
-        Value::new(context, self.builder.build_int_add(lhs, rhs, ""))
+        Value::new(context, &self.builder.build_int_add(lhs, rhs, ""))
     }
 
     /// Inserts a subtraction instruction.
@@ -331,11 +330,11 @@ impl Builder {
     /// :returns: The difference.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn sub(&self, lhs: Value, rhs: Value) -> Value {
-        let context = lhs.context;
+    fn sub(&self, lhs: &Value, rhs: &Value) -> Value {
+        let context = lhs.context.clone();
         let lhs = lhs.value.into_int_value();
         let rhs = rhs.value.into_int_value();
-        Value::new(context, self.builder.build_int_sub(lhs, rhs, ""))
+        Value::new(context, &self.builder.build_int_sub(lhs, rhs, ""))
     }
 
     /// Inserts a multiplication instruction.
@@ -345,11 +344,11 @@ impl Builder {
     /// :returns: The product.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn mul(&self, lhs: Value, rhs: Value) -> Value {
-        let context = lhs.context;
+    fn mul(&self, lhs: &Value, rhs: &Value) -> Value {
+        let context = lhs.context.clone();
         let lhs = lhs.value.into_int_value();
         let rhs = rhs.value.into_int_value();
-        Value::new(context, self.builder.build_int_mul(lhs, rhs, ""))
+        Value::new(context, &self.builder.build_int_mul(lhs, rhs, ""))
     }
 
     /// Inserts a shift left instruction.
@@ -359,11 +358,11 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn shl(&self, lhs: Value, rhs: Value) -> Value {
-        let context = lhs.context;
+    fn shl(&self, lhs: &Value, rhs: &Value) -> Value {
+        let context = lhs.context.clone();
         let lhs = lhs.value.into_int_value();
         let rhs = rhs.value.into_int_value();
-        Value::new(context, self.builder.build_left_shift(lhs, rhs, ""))
+        Value::new(context, &self.builder.build_left_shift(lhs, rhs, ""))
     }
 
     /// Inserts a logical (zero fill) shift right instruction.
@@ -373,11 +372,14 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn lshr(&self, lhs: Value, rhs: Value) -> Value {
-        let context = lhs.context;
+    fn lshr(&self, lhs: &Value, rhs: &Value) -> Value {
+        let context = lhs.context.clone();
         let lhs = lhs.value.into_int_value();
         let rhs = rhs.value.into_int_value();
-        Value::new(context, self.builder.build_right_shift(lhs, rhs, false, ""))
+        Value::new(
+            context,
+            &self.builder.build_right_shift(lhs, rhs, false, ""),
+        )
     }
 
     /// Inserts an integer comparison instruction.
@@ -395,7 +397,7 @@ impl Builder {
         let rhs = rhs.value.into_int_value();
         Value::new(
             context,
-            self.builder.build_int_compare(pred.0, lhs, rhs, ""),
+            &self.builder.build_int_compare(pred.0, lhs, rhs, ""),
         )
     }
 
@@ -408,16 +410,22 @@ impl Builder {
     #[pyo3(text_signature = "(self, function, args)")]
     fn call(&self, function: &Value, args: &PySequence) -> PyResult<Option<Value>> {
         let context = function.context.clone();
-        let function = match function.value {
-            AnyValueEnum::FunctionValue(f) => Ok(f),
-            _ => Err(PyValueError::new_err("Not a function value.")),
-        }?;
+        let (callable, param_types) = match function.value {
+            AnyValueEnum::FunctionValue(f) => {
+                Some((CallableValue::from(f), f.get_type().get_param_types()))
+            }
+            AnyValueEnum::PointerValue(p) => match p.get_type().get_element_type() {
+                AnyTypeEnum::FunctionType(ty) => {
+                    Some((CallableValue::try_from(p).unwrap(), ty.get_param_types()))
+                }
+                _ => None,
+            },
+            _ => None,
+        }
+        .ok_or_else(|| PyValueError::new_err("Value is not callable."))?;
 
-        let ty = function.get_type();
-        let param_types = ty.get_param_types();
         let num_params = param_types.len();
         let num_args = args.len()?;
-
         if num_params != num_args {
             let message = format!("Expected {} arguments, got {}.", num_params, num_args);
             return Err(PyValueError::new_err(message));
@@ -426,15 +434,15 @@ impl Builder {
         let args = args
             .iter()?
             .zip(&param_types)
-            .map(|(arg, ty)| Ok(any_to_meta(extract_value(*ty, arg?)?).unwrap()))
+            .map(|(arg, ty)| Ok(any_to_meta(extract_value(ty, arg?)?).unwrap()))
             .collect::<PyResult<Vec<_>>>()?;
 
         Ok(self
             .builder
-            .build_call(function, &args, "")
+            .build_call(callable, &args, "")
             .try_as_basic_value()
             .left()
-            .map(|v| Value::new(context, v)))
+            .map(|v| Value::new(context, &v)))
     }
 
     /// Inserts a branch conditioned on a boolean.
@@ -449,7 +457,7 @@ impl Builder {
     /// :param Callable[[], None] false:
     ///     A callable that inserts instructions for the branch where the condition is false.
     #[pyo3(text_signature = "(self, cond, true, false)")]
-    fn if_(&self, cond: Value, r#true: Option<&PyAny>, r#false: Option<&PyAny>) -> PyResult<()> {
+    fn if_(&self, cond: &Value, r#true: Option<&PyAny>, r#false: Option<&PyAny>) -> PyResult<()> {
         build_if(&self.builder, cond.value.into_int_value(), r#true, r#false)
     }
 }
@@ -551,7 +559,7 @@ impl SimpleModule {
                 let id = qirlib::codegen::basicvalues::u64_to_i64(&context.0, id).into_int_value();
                 Value::new(
                     builder.context.clone(),
-                    builder.builder.build_int_to_ptr(id, ty, ""),
+                    &builder.builder.build_int_to_ptr(id, ty, ""),
                 )
             })
             .collect()
@@ -576,7 +584,7 @@ impl SimpleModule {
                 let id = qirlib::codegen::basicvalues::u64_to_i64(&context.0, id).into_int_value();
                 Value::new(
                     builder.context.clone(),
-                    builder.builder.build_int_to_ptr(id, ty, ""),
+                    &builder.builder.build_int_to_ptr(id, ty, ""),
                 )
             })
             .collect()
@@ -621,18 +629,12 @@ impl SimpleModule {
     /// :return: The function value.
     /// :rtype: Function
     #[pyo3(text_signature = "(self, name, ty)")]
-    fn add_external_function(&mut self, py: Python, name: &str, ty: Py<Type>) -> Value {
-        let ty = ty.borrow(py);
+    fn add_external_function(&mut self, py: Python, name: &str, ty: &Type) -> Value {
         let context = ty.context.clone();
         let ty = ty.ty.into_function_type();
         let module = self.module.borrow(py);
-        let function = module
-            .module
-            .add_function(name, ty, Some(Linkage::External));
-
-        // TODO: Need to manually wrap in AnyValueEnum::FunctionValue. Going through the AnyValue
-        // trait seems to turn the FunctionValue into a PointerValue. Why?
-        Value::from_any(context, AnyValueEnum::FunctionValue(function))
+        let function = module.module.add_function(name, ty, None);
+        Value::new(context, &function)
     }
 }
 
@@ -658,7 +660,7 @@ impl BasicQisBuilder {
     /// :param Value target: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, control, target)")]
-    fn cx(&self, py: Python, control: Value, target: Value) {
+    fn cx(&self, py: Python, control: &Value, target: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -679,7 +681,7 @@ impl BasicQisBuilder {
     /// :param Value target: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, control, target)")]
-    fn cz(&self, py: Python, control: Value, target: Value) {
+    fn cz(&self, py: Python, control: &Value, target: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -698,7 +700,7 @@ impl BasicQisBuilder {
     /// :param qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn h(&self, py: Python, qubit: Value) {
+    fn h(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -717,7 +719,7 @@ impl BasicQisBuilder {
     /// :param Value result: A result where the measurement result will be written to.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit, result)")]
-    fn mz(&self, py: Python, qubit: Value, result: Value) {
+    fn mz(&self, py: Python, qubit: &Value, result: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -736,7 +738,7 @@ impl BasicQisBuilder {
     /// :param Value qubit: The qubit to reset.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn reset(&self, py: Python, qubit: Value) {
+    fn reset(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -755,7 +757,7 @@ impl BasicQisBuilder {
     /// :param Value qubit: The qubit to rotate.
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
-    fn rx(&self, py: Python, theta: &PyAny, qubit: Value) -> PyResult<()> {
+    fn rx(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -763,7 +765,7 @@ impl BasicQisBuilder {
             transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
         };
 
-        let theta = any_to_meta(extract_value(context.f64_type(), theta)?).unwrap();
+        let theta = any_to_meta(extract_value(&context.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
         let function = qirlib::codegen::qis::rx_body(&context.0, module);
         qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
@@ -776,7 +778,7 @@ impl BasicQisBuilder {
     /// :param Value qubit: The qubit to rotate.
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
-    fn ry(&self, py: Python, theta: &PyAny, qubit: Value) -> PyResult<()> {
+    fn ry(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -784,7 +786,7 @@ impl BasicQisBuilder {
             transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
         };
 
-        let theta = any_to_meta(extract_value(context.f64_type(), theta)?).unwrap();
+        let theta = any_to_meta(extract_value(&context.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
         let function = qirlib::codegen::qis::ry_body(&context.0, module);
         qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
@@ -797,7 +799,7 @@ impl BasicQisBuilder {
     /// :param Value qubit: The qubit to rotate.
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
-    fn rz(&self, py: Python, theta: &PyAny, qubit: Value) -> PyResult<()> {
+    fn rz(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -805,7 +807,7 @@ impl BasicQisBuilder {
             transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
         };
 
-        let theta = any_to_meta(extract_value(context.f64_type(), theta)?).unwrap();
+        let theta = any_to_meta(extract_value(&context.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
         let function = qirlib::codegen::qis::rz_body(&context.0, module);
         qirlib::codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
@@ -817,7 +819,7 @@ impl BasicQisBuilder {
     /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn s(&self, py: Python, qubit: Value) {
+    fn s(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -835,7 +837,7 @@ impl BasicQisBuilder {
     /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn s_adj(&self, py: Python, qubit: Value) {
+    fn s_adj(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -853,7 +855,7 @@ impl BasicQisBuilder {
     /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn t(&self, py: Python, qubit: Value) {
+    fn t(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -871,7 +873,7 @@ impl BasicQisBuilder {
     /// :param qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn t_adj(&self, py: Python, qubit: Value) {
+    fn t_adj(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -889,7 +891,7 @@ impl BasicQisBuilder {
     /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn x(&self, py: Python, qubit: Value) {
+    fn x(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -907,7 +909,7 @@ impl BasicQisBuilder {
     /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn y(&self, py: Python, qubit: Value) {
+    fn y(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -925,7 +927,7 @@ impl BasicQisBuilder {
     /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn z(&self, py: Python, qubit: Value) {
+    fn z(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let context = builder.context.borrow(py);
@@ -954,7 +956,7 @@ impl BasicQisBuilder {
     fn if_result(
         &self,
         py: Python,
-        cond: Value,
+        cond: &Value,
         one: Option<&PyAny>,
         zero: Option<&PyAny>,
     ) -> PyResult<()> {
@@ -1017,10 +1019,7 @@ fn bitcode_to_ir<'a>(
     Ok(PyUnicode::new(py, ir.as_str()))
 }
 
-fn extract_value<'ctx>(
-    ty: impl inkwell::types::AnyType<'ctx>,
-    ob: &PyAny,
-) -> PyResult<AnyValueEnum<'ctx>> {
+fn extract_value<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyValueEnum<'ctx>> {
     match ob.extract::<Value>() {
         Ok(value) => Ok(value.value),
         Err(_) => match ty.as_any_type_enum() {
