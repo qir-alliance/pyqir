@@ -9103,7 +9103,7 @@ SOFTWARE.
 
 
 
-pyqir-generator 0.6.0 - SPDX: MIT - MIT License
+pyqir-generator 0.7.0a1 - SPDX: MIT - MIT License
 https://github.com/qir-alliance/pyqir
 
 MIT License
