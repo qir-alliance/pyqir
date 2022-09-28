@@ -63,7 +63,7 @@ class BasicQisBuilder:
     def z(self, qubit: Value) -> None: ...
     def if_result(
         self,
-        result: Value,
+        cond: Value,
         one: Callable[[], None] = ...,
         zero: Callable[[], None] = ...,
     ) -> None: ...
