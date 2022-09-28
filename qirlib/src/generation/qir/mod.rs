@@ -1,14 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::{attributes::AttributeLoc, context::Context, module::Module, values::FunctionValue};
+use inkwell::{attributes::AttributeLoc, module::Module, values::FunctionValue};
 
 pub mod instructions;
 
-pub fn create_entry_point<'ctx>(
-    context: &'ctx Context,
-    module: &Module<'ctx>,
-) -> FunctionValue<'ctx> {
+pub fn create_entry_point<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+    let context = module.get_context();
     let fn_type = context.void_type().fn_type(&[], false);
     let fn_value = module.add_function("main", fn_type, None);
 
@@ -29,7 +27,7 @@ mod tests {
         let module = context.create_module("test");
         let generator = CodeGenerator::new(&context, module).unwrap();
 
-        let entry_point = create_entry_point(generator.context, &generator.module);
+        let entry_point = create_entry_point(&generator.module);
         let entry = generator.context.append_basic_block(entry_point, "entry");
         generator.builder.position_at_end(entry);
         generator.builder.build_return(None);

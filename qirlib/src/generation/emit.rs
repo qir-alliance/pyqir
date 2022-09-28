@@ -56,7 +56,7 @@ pub fn populate_context<'a>(
 
 fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Result<(), String> {
     add_external_functions(generator, model.external_functions.iter());
-    let entry_point = qir::create_entry_point(generator.context, &generator.module);
+    let entry_point = qir::create_entry_point(&generator.module);
     let entry = generator.context.append_basic_block(entry_point, "entry");
     generator.builder.position_at_end(entry);
     write_instructions(model, generator, entry_point);

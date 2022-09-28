@@ -22,7 +22,7 @@ use qirlib::{
         context::Context as InkwellContext,
         module::Module as InkwellModule,
         types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FunctionType},
-        values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum, CallableValue},
+        values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum, CallableValue, PointerValue},
         IntPredicate,
     },
 };
@@ -120,23 +120,13 @@ impl TypeFactory {
     #[getter]
     fn qubit(&self, py: Python) -> PyResult<Py<Type>> {
         let module = self.module.borrow(py);
-        self.type_from_context(py, |context| {
-            // TODO (safety): When is it safe to shorten the invariant lifetime of Module?
-            let module =
-                unsafe { transmute::<&InkwellModule<'static>, &InkwellModule<'_>>(&module.module) };
-            codegen::types::qubit_ptr(context, module).into()
-        })
+        self.type_from_context(py, |_| codegen::types::qubit_ptr(&module.module).into())
     }
 
     #[getter]
     fn result(&self, py: Python) -> PyResult<Py<Type>> {
         let module = self.module.borrow(py);
-        self.type_from_context(py, |context| {
-            // TODO (safety): When is it safe to shorten the invariant lifetime of Module?
-            let module =
-                unsafe { transmute::<&InkwellModule<'static>, &InkwellModule<'_>>(&module.module) };
-            codegen::types::result_ptr(context, module).into()
-        })
+        self.type_from_context(py, |_| codegen::types::result_ptr(&module.module).into())
     }
 
     #[staticmethod]
@@ -167,23 +157,6 @@ impl TypeFactory {
             unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
         };
         Py::new(py, Type { ty, context })
-    }
-}
-
-fn function_type<'ctx>(
-    return_type: &impl AnyType<'ctx>,
-    params: impl IntoIterator<Item = AnyTypeEnum<'ctx>>,
-) -> Option<FunctionType<'ctx>> {
-    let params = params
-        .into_iter()
-        .map(|ty| BasicTypeEnum::try_from(ty).map(Into::into).ok())
-        .collect::<Option<Vec<_>>>()?;
-
-    match return_type.as_any_type_enum() {
-        AnyTypeEnum::VoidType(void) => Some(void.fn_type(&params, false)),
-        any => BasicTypeEnum::try_from(any)
-            .map(|basic| basic.fn_type(&params, false))
-            .ok(),
     }
 }
 
@@ -450,20 +423,10 @@ struct SimpleModule {
 impl SimpleModule {
     #[new]
     fn new(py: Python, name: &str, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
-        let context = Py::new(py, Context(inkwell::context::Context::create()))?;
-        let context_ref = context.borrow(py);
-
-        let module = Module::new(py, context.clone(), name);
-        let module_ref = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-        let entry_point = qirlib::generation::qir::create_entry_point(&context_ref.0, module_ref);
-        let module = Py::new(py, module)?;
-
-        let builder = Builder::new(py, context.clone(), module.clone());
-        let entry = context_ref.0.append_basic_block(entry_point, "entry");
-        builder.builder.position_at_end(entry);
-        let builder = Py::new(py, builder)?;
+        let context = Py::new(py, Context(InkwellContext::create()))?;
+        let module = Py::new(py, Module::new(py, context.clone(), name))?;
+        let builder = Py::new(py, Builder::new(py, context, module.clone()))?;
+        init_module_builder(&module.borrow(py).module, &builder.borrow(py).builder);
 
         let types = Py::new(
             py,
@@ -491,20 +454,14 @@ impl SimpleModule {
     /// :type: Tuple[Value, ...]
     #[getter]
     fn qubits(&self, py: Python) -> Vec<Value> {
-        let module = self.module.borrow(py);
         let builder = self.builder.borrow(py);
-        let context = module.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-        let ty = codegen::types::qubit_ptr(&context.0, module);
+        let module = self.module.borrow(py);
 
         (0..self.num_qubits)
             .map(|id| {
-                let id = codegen::basicvalues::u64_to_i64(&context.0, id).into_int_value();
                 Value::new(
-                    builder.context.clone(),
-                    &builder.builder.build_int_to_ptr(id, ty, ""),
+                    module.context.clone(),
+                    &qubit_id(&module.module, &builder.builder, id),
                 )
             })
             .collect()
@@ -515,20 +472,14 @@ impl SimpleModule {
     /// :type: Tuple[Value, ...]
     #[getter]
     fn results(&self, py: Python) -> Vec<Value> {
-        let module = self.module.borrow(py);
         let builder = self.builder.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-        let ty = codegen::types::result_ptr(&context.0, module);
+        let module = self.module.borrow(py);
 
         (0..self.num_results)
             .map(|id| {
-                let id = codegen::basicvalues::u64_to_i64(&context.0, id).into_int_value();
                 Value::new(
-                    builder.context.clone(),
-                    &builder.builder.build_int_to_ptr(id, ty, ""),
+                    module.context.clone(),
+                    &result_id(&module.module, &builder.builder, id),
                 )
             })
             .collect()
@@ -546,24 +497,27 @@ impl SimpleModule {
     ///
     /// :rtype: str
     fn ir(&self, py: Python) -> PyResult<String> {
-        // TODO: Repeated calls to ir() keep adding returns.
+        // TODO: Repeated calls to ir() will keep adding return instructions.
         self.builder.borrow(py).builder.build_return(None);
-        let module = self.module.borrow(py);
+        let module = &self.module.borrow(py).module;
         module
-            .module
             .verify()
             .map_err(|e| PyOSError::new_err(e.to_string()))?;
-        Ok(module.module.print_to_string().to_string())
+        Ok(module.print_to_string().to_string())
     }
 
     /// Emits the LLVM bitcode for the module as a sequence of bytes.
     ///
     /// :rtype: bytes
-    fn bitcode<'a>(&self, py: Python<'a>) -> &'a PyBytes {
-        // TODO: Repeated calls to bitcode() keep adding returns.
+    fn bitcode<'py>(&self, py: Python<'py>) -> PyResult<&'py PyBytes> {
+        // TODO: Repeated calls to bitcode() will keep adding return instructions.
         self.builder.borrow(py).builder.build_return(None);
+        let module = &self.module.borrow(py).module;
+        module
+            .verify()
+            .map_err(|e| PyOSError::new_err(e.to_string()))?;
         let bitcode = self.module.borrow(py).module.write_bitcode_to_memory();
-        PyBytes::new(py, bitcode.as_slice())
+        Ok(PyBytes::new(py, bitcode.as_slice()))
     }
 
     /// Adds a declaration for an externally linked function to the module.
@@ -576,8 +530,7 @@ impl SimpleModule {
     fn add_external_function(&mut self, py: Python, name: &str, ty: &Type) -> Value {
         let context = ty.context.clone();
         let ty = ty.ty.into_function_type();
-        let module = self.module.borrow(py);
-        let function = module.module.add_function(name, ty, None);
+        let function = self.module.borrow(py).module.add_function(name, ty, None);
         Value::new(context, &function)
     }
 }
@@ -998,6 +951,45 @@ fn extract_values<'ctx>(
         .collect::<PyResult<Vec<_>>>()
 }
 
+fn function_type<'ctx>(
+    return_type: &impl AnyType<'ctx>,
+    params: impl IntoIterator<Item = AnyTypeEnum<'ctx>>,
+) -> Option<FunctionType<'ctx>> {
+    let params = params
+        .into_iter()
+        .map(|ty| BasicTypeEnum::try_from(ty).map(Into::into).ok())
+        .collect::<Option<Vec<_>>>()?;
+
+    match return_type.as_any_type_enum() {
+        AnyTypeEnum::VoidType(void) => Some(void.fn_type(&params, false)),
+        any => BasicTypeEnum::try_from(any)
+            .map(|basic| basic.fn_type(&params, false))
+            .ok(),
+    }
+}
+
+fn qubit_id<'ctx>(
+    module: &InkwellModule<'ctx>,
+    builder: &InkwellBuilder<'ctx>,
+    id: u64,
+) -> PointerValue<'ctx> {
+    let ty = codegen::types::qubit_ptr(module);
+    let context = module.get_context();
+    let value = context.i64_type().const_int(id, false);
+    builder.build_int_to_ptr(value, ty, "")
+}
+
+fn result_id<'ctx>(
+    module: &InkwellModule<'ctx>,
+    builder: &InkwellBuilder<'ctx>,
+    id: u64,
+) -> PointerValue<'ctx> {
+    let ty = codegen::types::result_ptr(module);
+    let context = module.get_context();
+    let value = context.i64_type().const_int(id, false);
+    builder.build_int_to_ptr(value, ty, "")
+}
+
 fn try_callable_value(value: AnyValueEnum) -> Option<(CallableValue, Vec<BasicTypeEnum>)> {
     match value {
         AnyValueEnum::FunctionValue(f) => {
@@ -1026,6 +1018,13 @@ fn any_to_meta(value: AnyValueEnum) -> Option<BasicMetadataValueEnum> {
         | AnyValueEnum::FunctionValue(_)
         | AnyValueEnum::InstructionValue(_) => None,
     }
+}
+
+fn init_module_builder(module: &InkwellModule, builder: &InkwellBuilder) {
+    let context = module.get_context();
+    let entry_point = qirlib::generation::qir::create_entry_point(module);
+    let entry = context.append_basic_block(entry_point, "entry");
+    builder.position_at_end(entry);
 }
 
 fn build_if(

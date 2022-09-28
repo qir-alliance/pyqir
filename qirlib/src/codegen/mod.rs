@@ -171,7 +171,7 @@ impl<'ctx> CodeGenerator<'ctx> {
     }
 
     pub fn qis_m_body(&self) -> FunctionValue<'ctx> {
-        m_body(self.context, &self.module)
+        m_body(&self.module)
     }
 
     pub fn qis_mz_body(&self) -> FunctionValue<'ctx> {
@@ -207,11 +207,11 @@ impl<'ctx> CodeGenerator<'ctx> {
     }
 
     pub fn qubit_type(&self) -> StructType<'ctx> {
-        qubit(self.context, &self.module)
+        qubit(&self.module)
     }
 
     pub fn result_type(&self) -> StructType<'ctx> {
-        result(self.context, &self.module)
+        result(&self.module)
     }
 }
 

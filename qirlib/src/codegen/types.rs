@@ -34,21 +34,21 @@ pub(crate) fn bool(context: &Context) -> IntType {
 }
 
 #[must_use]
-pub(crate) fn qubit<'ctx>(context: &'ctx Context, module: &Module<'ctx>) -> StructType<'ctx> {
-    get_or_define_struct(context, module, "Qubit")
+pub(crate) fn qubit<'ctx>(module: &Module<'ctx>) -> StructType<'ctx> {
+    get_or_define_struct(module, "Qubit")
 }
 
-pub fn qubit_ptr<'ctx>(context: &'ctx Context, module: &Module<'ctx>) -> PointerType<'ctx> {
-    qubit(context, module).ptr_type(AddressSpace::Generic)
+pub fn qubit_ptr<'ctx>(module: &Module<'ctx>) -> PointerType<'ctx> {
+    qubit(module).ptr_type(AddressSpace::Generic)
 }
 
 #[must_use]
-pub(crate) fn result<'ctx>(context: &'ctx Context, module: &Module<'ctx>) -> StructType<'ctx> {
-    get_or_define_struct(context, module, "Result")
+pub(crate) fn result<'ctx>(module: &Module<'ctx>) -> StructType<'ctx> {
+    get_or_define_struct(module, "Result")
 }
 
-pub fn result_ptr<'ctx>(context: &'ctx Context, module: &Module<'ctx>) -> PointerType<'ctx> {
-    result(context, module).ptr_type(AddressSpace::Generic)
+pub fn result_ptr<'ctx>(module: &Module<'ctx>) -> PointerType<'ctx> {
+    result(module).ptr_type(AddressSpace::Generic)
 }
 
 #[must_use]
@@ -63,15 +63,11 @@ pub(crate) fn get_struct<'ctx>(module: &Module<'ctx>, name: &str) -> Option<Stru
     }
 }
 
-pub(crate) fn get_or_define_struct<'ctx>(
-    context: &'ctx Context,
-    module: &Module<'ctx>,
-    name: &str,
-) -> StructType<'ctx> {
+pub(crate) fn get_or_define_struct<'ctx>(module: &Module<'ctx>, name: &str) -> StructType<'ctx> {
     if let Some(struct_type) = get_struct(module, name) {
         struct_type
     } else {
-        context.opaque_struct_type(name)
+        module.get_context().opaque_struct_type(name)
     }
 }
 
@@ -87,7 +83,7 @@ mod tests {
         let module = context.create_module("test");
         let generator = CodeGenerator::new(&context, module).unwrap();
 
-        verify_opaque_struct("Qubit", qubit(generator.context, &generator.module));
+        verify_opaque_struct("Qubit", qubit(&generator.module));
     }
 
     #[test]
@@ -96,7 +92,7 @@ mod tests {
         let module = context.create_module("test");
         let generator = CodeGenerator::new(&context, module).unwrap();
 
-        verify_opaque_struct("Result", result(generator.context, &generator.module));
+        verify_opaque_struct("Result", result(&generator.module));
     }
 
     fn verify_opaque_struct(name: &str, struct_type: StructType) {
