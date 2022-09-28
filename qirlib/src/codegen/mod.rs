@@ -115,59 +115,59 @@ impl<'ctx> CodeGenerator<'ctx> {
 
 impl<'ctx> CodeGenerator<'ctx> {
     pub fn qis_cnot_body(&self) -> FunctionValue<'ctx> {
-        cnot_body(self.context, &self.module)
+        cnot_body(&self.module)
     }
 
     pub fn qis_cz_body(&self) -> FunctionValue<'ctx> {
-        cz_body(self.context, &self.module)
+        cz_body(&self.module)
     }
 
     pub fn qis_h_body(&self) -> FunctionValue<'ctx> {
-        h_body(self.context, &self.module)
+        h_body(&self.module)
     }
 
     pub fn qis_s_body(&self) -> FunctionValue<'ctx> {
-        s_body(self.context, &self.module)
+        s_body(&self.module)
     }
 
     pub fn qis_s_adj(&self) -> FunctionValue<'ctx> {
-        s_adj(self.context, &self.module)
+        s_adj(&self.module)
     }
 
     pub fn qis_t_body(&self) -> FunctionValue<'ctx> {
-        t_body(self.context, &self.module)
+        t_body(&self.module)
     }
 
     pub fn qis_t_adj(&self) -> FunctionValue<'ctx> {
-        t_adj(self.context, &self.module)
+        t_adj(&self.module)
     }
 
     pub fn qis_x_body(&self) -> FunctionValue<'ctx> {
-        x_body(self.context, &self.module)
+        x_body(&self.module)
     }
 
     pub fn qis_y_body(&self) -> FunctionValue<'ctx> {
-        y_body(self.context, &self.module)
+        y_body(&self.module)
     }
 
     pub fn qis_z_body(&self) -> FunctionValue<'ctx> {
-        z_body(self.context, &self.module)
+        z_body(&self.module)
     }
 
     pub fn qis_rx_body(&self) -> FunctionValue<'ctx> {
-        rx_body(self.context, &self.module)
+        rx_body(&self.module)
     }
 
     pub fn qis_ry_body(&self) -> FunctionValue<'ctx> {
-        ry_body(self.context, &self.module)
+        ry_body(&self.module)
     }
 
     pub fn qis_rz_body(&self) -> FunctionValue<'ctx> {
-        rz_body(self.context, &self.module)
+        rz_body(&self.module)
     }
 
     pub fn qis_reset_body(&self) -> FunctionValue<'ctx> {
-        reset_body(self.context, &self.module)
+        reset_body(&self.module)
     }
 
     pub fn qis_m_body(&self) -> FunctionValue<'ctx> {
@@ -175,13 +175,13 @@ impl<'ctx> CodeGenerator<'ctx> {
     }
 
     pub fn qis_mz_body(&self) -> FunctionValue<'ctx> {
-        mz_body(self.context, &self.module)
+        mz_body(&self.module)
     }
 }
 
 impl<'ctx> CodeGenerator<'ctx> {
     pub fn qis_read_result(&self) -> FunctionValue<'ctx> {
-        qis::read_result(self.context, &self.module)
+        qis::read_result(&self.module)
     }
 }
 

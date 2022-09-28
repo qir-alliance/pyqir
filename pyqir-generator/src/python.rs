@@ -559,16 +559,9 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, control, target)")]
     fn cx(&self, py: Python, control: &Value, target: &Value) {
         let builder = self.builder.borrow(py);
-        let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            // TODO (safety): Check invariance of Module lifetime.
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
+        let function = codegen::qis::cnot_body(&builder.module.borrow(py).module);
         let control = any_to_meta(control.value).unwrap();
         let target = any_to_meta(target.value).unwrap();
-        let function = codegen::qis::cnot_body(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[control, target]);
     }
 
@@ -580,15 +573,9 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, control, target)")]
     fn cz(&self, py: Python, control: &Value, target: &Value) {
         let builder = self.builder.borrow(py);
-        let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
+        let function = codegen::qis::cz_body(&builder.module.borrow(py).module);
         let control = any_to_meta(control.value).unwrap();
         let target = any_to_meta(target.value).unwrap();
-        let function = codegen::qis::cz_body(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[control, target]);
     }
 
@@ -599,14 +586,8 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn h(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
-        let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
+        let function = codegen::qis::h_body(&builder.module.borrow(py).module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = codegen::qis::h_body(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
@@ -618,15 +599,9 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit, result)")]
     fn mz(&self, py: Python, qubit: &Value, result: &Value) {
         let builder = self.builder.borrow(py);
-        let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
+        let function = codegen::qis::mz_body(&builder.module.borrow(py).module);
         let qubit = any_to_meta(qubit.value).unwrap();
         let result = any_to_meta(result.value).unwrap();
-        let function = codegen::qis::mz_body(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[qubit, result]);
     }
 
@@ -637,14 +612,8 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn reset(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
-        let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
+        let function = codegen::qis::reset_body(&builder.module.borrow(py).module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = codegen::qis::reset_body(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
@@ -657,14 +626,10 @@ impl BasicQisBuilder {
     fn rx(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
-        let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
+        let context = module.module.get_context();
+        let function = codegen::qis::rx_body(&module.module);
+        let theta = any_to_meta(extract_value(&context.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = codegen::qis::rx_body(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
         Ok(())
     }
@@ -678,14 +643,10 @@ impl BasicQisBuilder {
     fn ry(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
-        let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
+        let context = module.module.get_context();
+        let function = codegen::qis::ry_body(&module.module);
+        let theta = any_to_meta(extract_value(&context.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = codegen::qis::ry_body(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
         Ok(())
     }
@@ -699,14 +660,10 @@ impl BasicQisBuilder {
     fn rz(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
-        let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
+        let context = module.module.get_context();
+        let function = codegen::qis::rz_body(&module.module);
+        let theta = any_to_meta(extract_value(&context.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = codegen::qis::rz_body(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[theta, qubit]);
         Ok(())
     }
@@ -719,13 +676,8 @@ impl BasicQisBuilder {
     fn s(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
+        let function = codegen::qis::s_body(&module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = codegen::qis::s_body(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
@@ -737,13 +689,8 @@ impl BasicQisBuilder {
     fn s_adj(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
+        let function = codegen::qis::s_adj(&module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = codegen::qis::s_adj(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
@@ -755,13 +702,8 @@ impl BasicQisBuilder {
     fn t(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
+        let function = codegen::qis::t_body(&module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = codegen::qis::t_body(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
@@ -773,13 +715,8 @@ impl BasicQisBuilder {
     fn t_adj(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
+        let function = codegen::qis::t_adj(&module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = codegen::qis::t_adj(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
@@ -791,13 +728,8 @@ impl BasicQisBuilder {
     fn x(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
+        let function = codegen::qis::x_body(&module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = codegen::qis::x_body(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
@@ -809,13 +741,8 @@ impl BasicQisBuilder {
     fn y(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
+        let function = codegen::qis::y_body(&module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = codegen::qis::y_body(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
@@ -827,13 +754,8 @@ impl BasicQisBuilder {
     fn z(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let context = builder.context.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-
+        let function = codegen::qis::z_body(&module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        let function = codegen::qis::z_body(&context.0, module);
         codegen::calls::emit_void_call(&builder.builder, function, &[qubit]);
     }
 
@@ -858,12 +780,8 @@ impl BasicQisBuilder {
         zero: Option<&PyAny>,
     ) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        let context = builder.context.borrow(py);
         let module = builder.module.borrow(py);
-        let module = unsafe {
-            transmute::<&inkwell::module::Module, &inkwell::module::Module>(&module.module)
-        };
-        let read_result = codegen::qis::read_result(&context.0, module);
+        let read_result = codegen::qis::read_result(&module.module);
         let cond = codegen::calls::emit_call_with_return(
             &builder.builder,
             read_result,

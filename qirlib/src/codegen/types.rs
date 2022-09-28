@@ -29,11 +29,6 @@ pub(crate) fn double(context: &Context) -> FloatType {
 }
 
 #[must_use]
-pub(crate) fn bool(context: &Context) -> IntType {
-    context.bool_type()
-}
-
-#[must_use]
 pub(crate) fn qubit<'ctx>(module: &Module<'ctx>) -> StructType<'ctx> {
     get_or_define_struct(module, "Qubit")
 }
