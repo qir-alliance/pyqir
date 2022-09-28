@@ -7,7 +7,7 @@ IR string without errors. These tests are not meant to make detailed assertions
 about the generated IR.
 """
 
-from pyqir.generator import BasicQisBuilder, SimpleModule
+from pyqir.generator import BasicQisBuilder, SimpleModule, types
 
 
 def test_bell() -> None:
@@ -98,3 +98,35 @@ def test_all_gates() -> None:
 
     ir = module.ir()
     assert ir.startswith("; ModuleID = 'All Gates'")
+
+
+def test_if() -> None:
+    module = SimpleModule("If", num_qubits=1, num_results=1)
+    qis = BasicQisBuilder(module.builder)
+    f = module.add_external_function("f", types.Function([], types.Int(1)))
+
+    b = module.builder.call(f, [])
+    assert b is not None
+    module.builder.if_(
+        cond=b,
+        true=lambda: qis.x(module.qubits[0]),
+        false=lambda: qis.h(module.qubits[0]),
+    )
+
+    ir = module.ir()
+    assert ir.startswith("; ModuleID = 'If'")
+
+
+def test_if_result() -> None:
+    module = SimpleModule("If Result", num_qubits=1, num_results=1)
+    qis = BasicQisBuilder(module.builder)
+
+    qis.mz(module.qubits[0], module.results[0])
+    qis.if_result(
+        cond=module.results[0],
+        one=lambda: qis.x(module.qubits[0]),
+        zero=lambda: qis.h(module.qubits[0]),
+    )
+
+    ir = module.ir()
+    assert ir.startswith("; ModuleID = 'If Result'")
