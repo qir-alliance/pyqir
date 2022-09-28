@@ -1021,6 +1021,7 @@ fn any_to_meta(value: AnyValueEnum) -> Option<BasicMetadataValueEnum> {
         AnyValueEnum::PointerValue(p) => Some(BasicMetadataValueEnum::PointerValue(p)),
         AnyValueEnum::StructValue(s) => Some(BasicMetadataValueEnum::StructValue(s)),
         AnyValueEnum::VectorValue(v) => Some(BasicMetadataValueEnum::VectorValue(v)),
+        AnyValueEnum::MetadataValue(m) => Some(BasicMetadataValueEnum::MetadataValue(m)),
         AnyValueEnum::PhiValue(_)
         | AnyValueEnum::FunctionValue(_)
         | AnyValueEnum::InstructionValue(_) => None,
