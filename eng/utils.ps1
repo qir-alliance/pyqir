@@ -249,21 +249,30 @@ function Get-LLVMFeatureVersion {
     }
 }
 
+function Get-Wheel([string] $project) {
+    $wheel_project = $project.Replace('-', '_')
+    $pattern = Join-Path $repo.root "target" "wheels" "$wheel_project-*.whl"
+    $wheels = @(Get-Item $pattern)
+    if ($wheels.Length -eq 1) {
+        $wheels[0]
+    }
+    elseif ($wheels.Length -gt 1) {
+        throw "Multiple wheels matching $pattern. Clean the wheels directory."
+    }
+    else {
+        throw "No wheels matching $pattern."
+    }
+}
+
 function Build-PyQIR([string]$project) {
     $srcPath = $repo.root
 
     exec -workingDirectory (Join-Path $srcPath $project) {
         $build_extra_args = ""
         Invoke-LoggedCommand {
-            exec {
-                maturin build --release $build_extra_args --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)"
-            }
-            exec {
-                & $python -m pip install --force-reinstall --find-links (Join-Path $repo.root "target" "wheels") $project
-            }
-            exec {
-                pytest
-            }
+            exec { maturin build --release $build_extra_args --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)" }
+            exec { & $python -m pip install --force-reinstall (Get-Wheel $project) }
+            exec { pytest }
         }
     }
 }

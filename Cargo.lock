@@ -459,7 +459,7 @@ dependencies = [
 
 [[package]]
 name = "pyqir-evaluator"
-version = "0.6.0-alpha"
+version = "0.7.0-alpha.1"
 dependencies = [
  "pyo3",
  "qirlib",
@@ -468,7 +468,7 @@ dependencies = [
 
 [[package]]
 name = "pyqir-generator"
-version = "0.6.0-alpha"
+version = "0.7.0-alpha.1"
 dependencies = [
  "pyo3",
  "qirlib",
@@ -476,7 +476,7 @@ dependencies = [
 
 [[package]]
 name = "pyqir-parser"
-version = "0.6.0-alpha"
+version = "0.7.0-alpha.1"
 dependencies = [
  "inkwell",
  "llvm-ir",

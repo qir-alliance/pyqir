@@ -649,9 +649,7 @@ class QirInstr:
         Gets the name of the local operand that receives the output of this instruction, or
         None if the instruction does not return a value.
         """
-        output_name = self.instr.output_name
-        assert output_name is not None
-        return output_name
+        return self.instr.output_name
 
     @property
     def type(self) -> QirType:
