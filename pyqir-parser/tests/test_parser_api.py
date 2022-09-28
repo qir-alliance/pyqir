@@ -13,20 +13,24 @@ def test_parser() -> None:
     func = mod.get_func_by_name(func_name)
     assert func is not None
     assert func.name == func_name
+
     func_list = mod.functions
     assert len(func_list) == 1
     assert func_list[0].name == func_name
     assert hash(func_list[0]) == hash(mod.functions[0])
+
     interop_funcs = mod.get_funcs_by_attr("InteropFriendly")
     assert len(interop_funcs) == 1
     assert len(mod.interop_funcs) == 1
     assert mod.interop_funcs[0].name == interop_funcs[0].name
     assert len(mod.entrypoint_funcs) == 0
+
     blocks = func.blocks
     assert len(blocks) == 9
     assert hash(blocks[0]) == hash(func.blocks[0])
     assert hash(blocks[0].instructions[0]) == hash(func.blocks[0].instructions[0])
     assert blocks[0].name == "entry"
+
     term = blocks[0].terminator
     assert isinstance(term, QirTerminator)
     assert isinstance(term, QirCondBrTerminator)
@@ -40,15 +44,18 @@ def test_parser() -> None:
     assert isinstance(blocks[8].terminator.operand, QirLocalOperand)
     assert isinstance(blocks[8].terminator.operand.type, QirIntegerType)
     assert blocks[8].terminator.operand.type.width == 8
+
     block = func.get_block_by_name("then0__2.i.i3.i")
     assert block is not None
     assert isinstance(block.instructions[0], QirQisCallInstr)
     assert isinstance(block.instructions[0].func_args[0], QirQubitConstant)
     assert block.instructions[0].func_args[0].id == 5
+
     block = func.get_block_by_name("continue__1.i.i2.i")
     assert block is not None
     assert isinstance(block.terminator, QirCondBrTerminator)
     assert isinstance(block.terminator.condition, QirLocalOperand)
+
     var_name = block.terminator.condition.name
     instr = func.get_instruction_by_output_name(var_name)
     assert isinstance(instr, QirQirCallInstr)
@@ -58,6 +65,13 @@ def test_parser() -> None:
     assert instr.func_args[0].id == 3
     assert isinstance(instr.type, QirIntegerType)
     assert instr.type.width == 1
+
+    exit = func.blocks[-1]
+    call_mz = exit.instructions[0]
+    assert isinstance(call_mz, QirQisCallInstr)
+    assert call_mz.func_name == "__quantum__qis__mz__body"
+    assert isinstance(call_mz.type, QirVoidType)
+    assert call_mz.output_name is None
 
 
 def test_parser_select_support() -> None:
