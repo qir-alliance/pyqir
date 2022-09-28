@@ -7,7 +7,7 @@ IR string without errors. These tests are not meant to make detailed assertions
 about the generated IR.
 """
 
-from pyqir.generator import BasicQisBuilder, SimpleModule, types
+from pyqir.generator import BasicQisBuilder, SimpleModule
 
 
 def test_bell() -> None:
@@ -102,8 +102,9 @@ def test_all_gates() -> None:
 
 def test_if() -> None:
     module = SimpleModule("If", num_qubits=1, num_results=1)
+    types = module.types
     qis = BasicQisBuilder(module.builder)
-    f = module.add_external_function("f", types.Function([], types.Int(1)))
+    f = module.add_external_function("f", types.function(types.int(1), []))
 
     b = module.builder.call(f, [])
     assert b is not None
