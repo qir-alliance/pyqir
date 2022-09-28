@@ -18,6 +18,7 @@ use qirlib::{
     codegen,
     inkwell::{
         self,
+        builder::Builder as InkwellBuilder,
         context::Context as InkwellContext,
         module::Module as InkwellModule,
         types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FunctionType},
@@ -219,9 +220,11 @@ fn constant(ty: &Type, value: &PyAny) -> PyResult<Value> {
 /// An instruction builder.
 #[pyclass(unsendable)]
 struct Builder {
-    builder: inkwell::builder::Builder<'static>,
-    module: Py<Module>, // TODO: https://github.com/TheDan64/inkwell/issues/347
+    builder: InkwellBuilder<'static>,
     context: Py<Context>,
+    // TODO: In principle, the module could be extracted from the builder.
+    // See https://github.com/TheDan64/inkwell/issues/347.
+    module: Py<Module>,
 }
 
 #[pymethods]
@@ -234,10 +237,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn and_(&self, lhs: &Value, rhs: &Value) -> Value {
-        let context = lhs.context.clone();
-        let lhs = lhs.value.into_int_value();
-        let rhs = rhs.value.into_int_value();
-        Value::new(context, &self.builder.build_and(lhs, rhs, ""))
+        let value =
+            self.builder
+                .build_and(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
+        Value::new(self.context.clone(), &value)
     }
 
     /// Inserts a bitwise logical or instruction.
@@ -248,10 +251,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn or_(&self, lhs: &Value, rhs: &Value) -> Value {
-        let context = lhs.context.clone();
-        let lhs = lhs.value.into_int_value();
-        let rhs = rhs.value.into_int_value();
-        Value::new(context, &self.builder.build_or(lhs, rhs, ""))
+        let value =
+            self.builder
+                .build_or(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
+        Value::new(self.context.clone(), &value)
     }
 
     /// Inserts a bitwise logical exclusive or instruction.
@@ -262,10 +265,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn xor(&self, lhs: &Value, rhs: &Value) -> Value {
-        let context = lhs.context.clone();
-        let lhs = lhs.value.into_int_value();
-        let rhs = rhs.value.into_int_value();
-        Value::new(context, &self.builder.build_xor(lhs, rhs, ""))
+        let value =
+            self.builder
+                .build_xor(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
+        Value::new(self.context.clone(), &value)
     }
 
     /// Inserts an addition instruction.
@@ -276,10 +279,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn add(&self, lhs: &Value, rhs: &Value) -> Value {
-        let context = lhs.context.clone();
-        let lhs = lhs.value.into_int_value();
-        let rhs = rhs.value.into_int_value();
-        Value::new(context, &self.builder.build_int_add(lhs, rhs, ""))
+        let value =
+            self.builder
+                .build_int_add(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
+        Value::new(self.context.clone(), &value)
     }
 
     /// Inserts a subtraction instruction.
@@ -290,10 +293,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn sub(&self, lhs: &Value, rhs: &Value) -> Value {
-        let context = lhs.context.clone();
-        let lhs = lhs.value.into_int_value();
-        let rhs = rhs.value.into_int_value();
-        Value::new(context, &self.builder.build_int_sub(lhs, rhs, ""))
+        let value =
+            self.builder
+                .build_int_sub(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
+        Value::new(self.context.clone(), &value)
     }
 
     /// Inserts a multiplication instruction.
@@ -304,10 +307,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn mul(&self, lhs: &Value, rhs: &Value) -> Value {
-        let context = lhs.context.clone();
-        let lhs = lhs.value.into_int_value();
-        let rhs = rhs.value.into_int_value();
-        Value::new(context, &self.builder.build_int_mul(lhs, rhs, ""))
+        let value =
+            self.builder
+                .build_int_mul(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
+        Value::new(self.context.clone(), &value)
     }
 
     /// Inserts a shift left instruction.
@@ -318,10 +321,12 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn shl(&self, lhs: &Value, rhs: &Value) -> Value {
-        let context = lhs.context.clone();
-        let lhs = lhs.value.into_int_value();
-        let rhs = rhs.value.into_int_value();
-        Value::new(context, &self.builder.build_left_shift(lhs, rhs, ""))
+        let value = self.builder.build_left_shift(
+            lhs.value.into_int_value(),
+            rhs.value.into_int_value(),
+            "",
+        );
+        Value::new(self.context.clone(), &value)
     }
 
     /// Inserts a logical (zero fill) shift right instruction.
@@ -332,13 +337,13 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn lshr(&self, lhs: &Value, rhs: &Value) -> Value {
-        let context = lhs.context.clone();
-        let lhs = lhs.value.into_int_value();
-        let rhs = rhs.value.into_int_value();
-        Value::new(
-            context,
-            &self.builder.build_right_shift(lhs, rhs, false, ""),
-        )
+        let value = self.builder.build_right_shift(
+            lhs.value.into_int_value(),
+            rhs.value.into_int_value(),
+            false,
+            "",
+        );
+        Value::new(self.context.clone(), &value)
     }
 
     /// Inserts an integer comparison instruction.
@@ -351,13 +356,13 @@ impl Builder {
     #[pyo3(text_signature = "(self, pred, lhs, rhs)")]
     #[allow(clippy::needless_pass_by_value)]
     fn icmp(&self, pred: PyIntPredicate, lhs: Value, rhs: Value) -> Value {
-        let context = lhs.context;
-        let lhs = lhs.value.into_int_value();
-        let rhs = rhs.value.into_int_value();
-        Value::new(
-            context,
-            &self.builder.build_int_compare(pred.0, lhs, rhs, ""),
-        )
+        let value = self.builder.build_int_compare(
+            pred.0,
+            lhs.value.into_int_value(),
+            rhs.value.into_int_value(),
+            "",
+        );
+        Value::new(self.context.clone(), &value)
     }
 
     /// Inserts a call instruction.
@@ -368,40 +373,25 @@ impl Builder {
     /// :rtype: Optional[Value]
     #[pyo3(text_signature = "(self, function, args)")]
     fn call(&self, function: &Value, args: &PySequence) -> PyResult<Option<Value>> {
-        let context = function.context.clone();
-        let (callable, param_types) = match function.value {
-            AnyValueEnum::FunctionValue(f) => {
-                Some((CallableValue::from(f), f.get_type().get_param_types()))
-            }
-            AnyValueEnum::PointerValue(p) => match p.get_type().get_element_type() {
-                AnyTypeEnum::FunctionType(ty) => {
-                    Some((CallableValue::try_from(p).unwrap(), ty.get_param_types()))
-                }
-                _ => None,
-            },
-            _ => None,
-        }
-        .ok_or_else(|| PyValueError::new_err("Value is not callable."))?;
+        let (callable, param_types) = try_callable_value(function.value)
+            .ok_or_else(|| PyValueError::new_err("Value is not callable."))?;
 
-        let num_params = param_types.len();
-        let num_args = args.len()?;
-        if num_params != num_args {
-            let message = format!("Expected {} arguments, got {}.", num_params, num_args);
-            return Err(PyValueError::new_err(message));
+        if param_types.len() != args.len()? {
+            return Err(PyValueError::new_err(format!(
+                "Expected {} arguments, got {}.",
+                param_types.len(),
+                args.len()?
+            )));
         }
 
-        let args = args
-            .iter()?
-            .zip(&param_types)
-            .map(|(arg, ty)| Ok(any_to_meta(extract_value(ty, arg?)?).unwrap()))
+        let args = extract_values(param_types, args)?
+            .iter()
+            .map(|v| any_to_meta(*v).ok_or_else(|| PyValueError::new_err("Invalid argument.")))
             .collect::<PyResult<Vec<_>>>()?;
 
-        Ok(self
-            .builder
-            .build_call(callable, &args, "")
-            .try_as_basic_value()
-            .left()
-            .map(|v| Value::new(context, &v)))
+        let call = self.builder.build_call(callable, &args, "");
+        let value = call.try_as_basic_value().left();
+        Ok(value.map(|v| Value::new(function.context.clone(), &v)))
     }
 
     /// Inserts a branch conditioned on a boolean.
@@ -425,17 +415,14 @@ impl Builder {
     fn new(py: Python, context: Py<Context>, module: Py<Module>) -> Self {
         let builder = {
             let context = context.borrow(py);
-            unsafe {
-                transmute::<inkwell::builder::Builder, inkwell::builder::Builder<'static>>(
-                    context.0.create_builder(),
-                )
-            }
+            let builder = context.0.create_builder();
+            unsafe { transmute::<InkwellBuilder<'_>, InkwellBuilder<'static>>(builder) }
         };
 
         Self {
             builder,
-            module,
             context,
+            module,
         }
     }
 }
@@ -997,6 +984,32 @@ fn extract_value<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyValue
                 "Can't convert Python value into this type.",
             )),
         },
+    }
+}
+
+fn extract_values<'ctx>(
+    types: impl IntoIterator<Item = impl AnyType<'ctx>>,
+    values: &PySequence,
+) -> PyResult<Vec<AnyValueEnum<'ctx>>> {
+    values
+        .iter()?
+        .zip(types)
+        .map(|(v, t)| extract_value(&t, v?))
+        .collect::<PyResult<Vec<_>>>()
+}
+
+fn try_callable_value(value: AnyValueEnum) -> Option<(CallableValue, Vec<BasicTypeEnum>)> {
+    match value {
+        AnyValueEnum::FunctionValue(f) => {
+            Some((CallableValue::from(f), f.get_type().get_param_types()))
+        }
+        AnyValueEnum::PointerValue(p) => match p.get_type().get_element_type() {
+            AnyTypeEnum::FunctionType(ty) => {
+                Some((CallableValue::try_from(p).unwrap(), ty.get_param_types()))
+            }
+            _ => None,
+        },
+        _ => None,
     }
 }
 
