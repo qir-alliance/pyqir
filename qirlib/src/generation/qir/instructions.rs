@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    codegen::CodeGenerator,
+    codegen::{basicvalues, qis, types, CodeGenerator},
     generation::{
         env::Environment,
         interop::{
@@ -22,64 +22,64 @@ pub(crate) fn emit<'ctx>(
         Instruction::Cx(inst) => {
             let control = get_value(generator, env, &inst.control);
             let qubit = get_value(generator, env, &inst.target);
-            generator.emit_void_call(generator.qis_cnot_body(), &[control, qubit]);
+            generator.emit_void_call(qis::cnot_body(&generator.module), &[control, qubit]);
         }
         Instruction::Cz(inst) => {
             let control = get_value(generator, env, &inst.control);
             let qubit = get_value(generator, env, &inst.target);
-            generator.emit_void_call(generator.qis_cz_body(), &[control, qubit]);
+            generator.emit_void_call(qis::cz_body(&generator.module), &[control, qubit]);
         }
         Instruction::H(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(generator.qis_h_body(), &[qubit]);
+            generator.emit_void_call(qis::h_body(&generator.module), &[qubit]);
         }
         Instruction::M(inst) => emit_measured(generator, env, inst),
         Instruction::Reset(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(generator.qis_reset_body(), &[qubit]);
+            generator.emit_void_call(qis::reset_body(&generator.module), &[qubit]);
         }
         Instruction::Rx(inst) => {
             let theta = get_value(generator, env, &inst.theta);
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(generator.qis_rx_body(), &[theta, qubit]);
+            generator.emit_void_call(qis::rx_body(&generator.module), &[theta, qubit]);
         }
         Instruction::Ry(inst) => {
             let theta = get_value(generator, env, &inst.theta);
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(generator.qis_ry_body(), &[theta, qubit]);
+            generator.emit_void_call(qis::ry_body(&generator.module), &[theta, qubit]);
         }
         Instruction::Rz(inst) => {
             let theta = get_value(generator, env, &inst.theta);
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(generator.qis_rz_body(), &[theta, qubit]);
+            generator.emit_void_call(qis::rz_body(&generator.module), &[theta, qubit]);
         }
         Instruction::S(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(generator.qis_s_body(), &[qubit]);
+            generator.emit_void_call(qis::s_body(&generator.module), &[qubit]);
         }
         Instruction::SAdj(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(generator.qis_s_adj(), &[qubit]);
+            generator.emit_void_call(qis::s_adj(&generator.module), &[qubit]);
         }
         Instruction::T(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(generator.qis_t_body(), &[qubit]);
+            generator.emit_void_call(qis::t_body(&generator.module), &[qubit]);
         }
         Instruction::TAdj(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(generator.qis_t_adj(), &[qubit]);
+            generator.emit_void_call(qis::t_adj(&generator.module), &[qubit]);
         }
         Instruction::X(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(generator.qis_x_body(), &[qubit]);
+            generator.emit_void_call(qis::x_body(&generator.module), &[qubit]);
         }
         Instruction::Y(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(generator.qis_y_body(), &[qubit]);
+            generator.emit_void_call(qis::y_body(&generator.module), &[qubit]);
         }
         Instruction::Z(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(generator.qis_z_body(), &[qubit]);
+            generator.emit_void_call(qis::z_body(&generator.module), &[qubit]);
         }
         Instruction::BinaryOp(op) => emit_binary_op(generator, env, op),
         Instruction::Call(call) => emit_call(generator, env, call),
@@ -95,7 +95,7 @@ fn emit_measured<'ctx>(
 ) {
     let qubit = get_value(generator, env, &measured.qubit);
     let target = get_value(generator, env, &measured.target);
-    generator.emit_void_call(generator.qis_mz_body(), &[qubit, target]);
+    generator.emit_void_call(qis::mz_body(&generator.module), &[qubit, target]);
 }
 
 fn emit_binary_op<'ctx>(
@@ -186,7 +186,7 @@ fn emit_if_result<'ctx>(
     if_result: &IfResult,
 ) {
     let result = get_value(generator, env, &if_result.cond);
-    let cond = generator.emit_call_with_return(generator.qis_read_result(), &[result], "");
+    let cond = generator.emit_call_with_return(qis::read_result(&generator.module), &[result], "");
     emit_if(
         generator,
         env,
@@ -242,15 +242,15 @@ fn get_value<'ctx>(
             .custom_width_int_type(i.width())
             .const_int(i.value(), false)
             .into(),
-        &Value::Double(d) => generator.f64_to_f64(d),
+        &Value::Double(d) => basicvalues::f64_to_f64(generator.context, d),
         &Value::Qubit(id) => {
-            let value = generator.u64_to_i64(id).into_int_value();
-            let ty = generator.qubit_type();
+            let value = basicvalues::u64_to_i64(generator.context, id).into_int_value();
+            let ty = types::qubit(&generator.module);
             generator.builder.build_int_to_ptr(value, ty, "").into()
         }
         &Value::Result(id) => {
-            let value = generator.u64_to_i64(id).into_int_value();
-            let ty = generator.result_type();
+            let value = basicvalues::u64_to_i64(generator.context, id).into_int_value();
+            let ty = types::result(&generator.module);
             generator.builder.build_int_to_ptr(value, ty, "").into()
         }
         &Value::Variable(v) => env

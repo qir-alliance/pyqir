@@ -25,7 +25,7 @@ mod tests {
     fn entry_point_function_has_correct_signature_and_default_attribute() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module).unwrap();
+        let generator = CodeGenerator::new(&context, module);
 
         let entry_point = create_entry_point(&generator.module);
         let entry = generator.context.append_basic_block(entry_point, "entry");
