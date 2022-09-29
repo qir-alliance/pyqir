@@ -25,7 +25,7 @@ pub fn ir(model: &SemanticModel) -> Result<String, String> {
     let ctx = Context::create();
     let generator = populate_context(&ctx, model)?;
     run_basic_passes_on(generator.module());
-    Ok(generator.get_ir())
+    Ok(generator.module().print_to_string().to_string())
 }
 
 /// # Errors
@@ -35,7 +35,11 @@ pub fn bitcode(model: &SemanticModel) -> Result<Vec<u8>, String> {
     let ctx = Context::create();
     let generator = populate_context(&ctx, model)?;
     run_basic_passes_on(generator.module());
-    Ok(generator.get_bitcode().as_slice().to_vec())
+    Ok(generator
+        .module()
+        .write_bitcode_to_memory()
+        .as_slice()
+        .to_vec())
 }
 
 /// # Errors

@@ -31,7 +31,7 @@ mod tests {
         let entry = generator.context().append_basic_block(entry_point, "entry");
         generator.builder().position_at_end(entry);
         generator.builder().build_return(None);
-        let ir_string = generator.get_ir();
+        let ir_string = generator.module().print_to_string().to_string();
         let expected = "; ModuleID = 'test'\nsource_filename = \"test\"\n\ndefine void @main() #0 {\nentry:\n  ret void\n}\n\nattributes #0 = { \"EntryPoint\" }\n";
         assert_eq!(expected, ir_string);
     }
