@@ -2,108 +2,98 @@
 // Licensed under the MIT License.
 
 use crate::{
-    codegen::{qis, types},
+    codegen::{qis, types, BuilderRef},
     generation::{
         env::Environment,
         interop::{BinaryKind, BinaryOp, Call, If, IfResult, Instruction, IntPredicate, Value},
     },
 };
-use inkwell::{
-    builder::Builder,
-    module::Module,
-    values::{BasicMetadataValueEnum, IntValue},
-};
+use inkwell::values::{BasicMetadataValueEnum, IntValue};
 
 pub(crate) fn emit<'ctx>(
-    module: &Module<'ctx>,
-    builder: &Builder<'ctx>,
+    builder: BuilderRef<'ctx, '_>,
     env: &mut Environment<'ctx>,
     inst: &Instruction,
 ) {
     match inst {
         Instruction::Cx(inst) => {
-            let control = get_value(module, builder, env, &inst.control);
-            let qubit = get_value(module, builder, env, &inst.target);
-            qis::call_cnot(module, builder, control, qubit);
+            let control = get_value(builder, env, &inst.control);
+            let qubit = get_value(builder, env, &inst.target);
+            qis::call_cnot(builder, control, qubit);
         }
         Instruction::Cz(inst) => {
-            let control = get_value(module, builder, env, &inst.control);
-            let qubit = get_value(module, builder, env, &inst.target);
-            qis::call_cz(module, builder, control, qubit);
+            let control = get_value(builder, env, &inst.control);
+            let qubit = get_value(builder, env, &inst.target);
+            qis::call_cz(builder, control, qubit);
         }
         Instruction::H(inst) => {
-            let qubit = get_value(module, builder, env, &inst.qubit);
-            qis::call_h(module, builder, qubit);
+            let qubit = get_value(builder, env, &inst.qubit);
+            qis::call_h(builder, qubit);
         }
         Instruction::M(inst) => {
-            let qubit = get_value(module, builder, env, &inst.qubit);
-            let target = get_value(module, builder, env, &inst.target);
-            qis::call_mz(module, builder, qubit, target);
+            let qubit = get_value(builder, env, &inst.qubit);
+            let target = get_value(builder, env, &inst.target);
+            qis::call_mz(builder, qubit, target);
         }
         Instruction::Reset(inst) => {
-            let qubit = get_value(module, builder, env, &inst.qubit);
-            qis::call_reset(module, builder, qubit);
+            let qubit = get_value(builder, env, &inst.qubit);
+            qis::call_reset(builder, qubit);
         }
         Instruction::Rx(inst) => {
-            let theta = get_value(module, builder, env, &inst.theta);
-            let qubit = get_value(module, builder, env, &inst.qubit);
-            qis::call_rx(module, builder, theta, qubit);
+            let theta = get_value(builder, env, &inst.theta);
+            let qubit = get_value(builder, env, &inst.qubit);
+            qis::call_rx(builder, theta, qubit);
         }
         Instruction::Ry(inst) => {
-            let theta = get_value(module, builder, env, &inst.theta);
-            let qubit = get_value(module, builder, env, &inst.qubit);
-            qis::call_ry(module, builder, theta, qubit);
+            let theta = get_value(builder, env, &inst.theta);
+            let qubit = get_value(builder, env, &inst.qubit);
+            qis::call_ry(builder, theta, qubit);
         }
         Instruction::Rz(inst) => {
-            let theta = get_value(module, builder, env, &inst.theta);
-            let qubit = get_value(module, builder, env, &inst.qubit);
-            qis::call_rz(module, builder, theta, qubit);
+            let theta = get_value(builder, env, &inst.theta);
+            let qubit = get_value(builder, env, &inst.qubit);
+            qis::call_rz(builder, theta, qubit);
         }
         Instruction::S(inst) => {
-            let qubit = get_value(module, builder, env, &inst.qubit);
-            qis::call_s(module, builder, qubit);
+            let qubit = get_value(builder, env, &inst.qubit);
+            qis::call_s(builder, qubit);
         }
         Instruction::SAdj(inst) => {
-            let qubit = get_value(module, builder, env, &inst.qubit);
-            qis::call_s_adj(module, builder, qubit);
+            let qubit = get_value(builder, env, &inst.qubit);
+            qis::call_s_adj(builder, qubit);
         }
         Instruction::T(inst) => {
-            let qubit = get_value(module, builder, env, &inst.qubit);
-            qis::call_t(module, builder, qubit);
+            let qubit = get_value(builder, env, &inst.qubit);
+            qis::call_t(builder, qubit);
         }
         Instruction::TAdj(inst) => {
-            let qubit = get_value(module, builder, env, &inst.qubit);
-            qis::call_t_adj(module, builder, qubit);
+            let qubit = get_value(builder, env, &inst.qubit);
+            qis::call_t_adj(builder, qubit);
         }
         Instruction::X(inst) => {
-            let qubit = get_value(module, builder, env, &inst.qubit);
-            qis::call_x(module, builder, qubit);
+            let qubit = get_value(builder, env, &inst.qubit);
+            qis::call_x(builder, qubit);
         }
         Instruction::Y(inst) => {
-            let qubit = get_value(module, builder, env, &inst.qubit);
-            qis::call_y(module, builder, qubit);
+            let qubit = get_value(builder, env, &inst.qubit);
+            qis::call_y(builder, qubit);
         }
         Instruction::Z(inst) => {
-            let qubit = get_value(module, builder, env, &inst.qubit);
-            qis::call_z(module, builder, qubit);
+            let qubit = get_value(builder, env, &inst.qubit);
+            qis::call_z(builder, qubit);
         }
-        Instruction::BinaryOp(op) => emit_binary_op(module, builder, env, op),
-        Instruction::Call(call) => emit_call(module, builder, env, call),
-        Instruction::If(if_bool) => emit_if_bool(module, builder, env, if_bool),
+        Instruction::BinaryOp(op) => emit_binary_op(builder, env, op),
+        Instruction::Call(call) => emit_call(builder, env, call),
+        Instruction::If(if_bool) => emit_if_bool(builder, env, if_bool),
         Instruction::IfResult(if_result) => {
-            emit_if_result(module, builder, env, if_result);
+            emit_if_result(builder, env, if_result);
         }
     }
 }
 
-fn emit_binary_op<'ctx>(
-    module: &Module<'ctx>,
-    builder: &Builder<'ctx>,
-    env: &mut Environment<'ctx>,
-    op: &BinaryOp,
-) {
-    let lhs = get_value(module, builder, env, &op.lhs).into_int_value();
-    let rhs = get_value(module, builder, env, &op.rhs).into_int_value();
+fn emit_binary_op<'ctx>(builder: BuilderRef<'ctx, '_>, env: &mut Environment<'ctx>, op: &BinaryOp) {
+    let lhs = get_value(builder, env, &op.lhs).into_int_value();
+    let rhs = get_value(builder, env, &op.rhs).into_int_value();
     let result = match op.kind {
         BinaryKind::And => builder.build_and(lhs, rhs, ""),
         BinaryKind::Or => builder.build_or(lhs, rhs, ""),
@@ -135,21 +125,17 @@ fn to_inkwell_predicate(pred: IntPredicate) -> inkwell::IntPredicate {
     }
 }
 
-fn emit_call<'ctx>(
-    module: &Module<'ctx>,
-    builder: &Builder<'ctx>,
-    env: &mut Environment<'ctx>,
-    call: &Call,
-) {
+fn emit_call<'ctx>(builder: BuilderRef<'ctx, '_>, env: &mut Environment<'ctx>, call: &Call) {
     let args: Vec<_> = call
         .args
         .iter()
-        .map(|value| get_value(module, builder, env, value))
+        .map(|value| get_value(builder, env, value))
         .collect();
 
     // TODO: Panicking can be unfriendly to Python clients.
     // See: https://github.com/qir-alliance/pyqir/issues/31
-    let function = module
+    let function = builder
+        .module()
         .get_function(&call.name)
         .unwrap_or_else(|| panic!("Function {} not found.", &call.name));
 
@@ -165,32 +151,24 @@ fn emit_call<'ctx>(
     }
 }
 
-fn emit_if_bool<'ctx>(
-    module: &Module<'ctx>,
-    builder: &Builder<'ctx>,
-    env: &mut Environment<'ctx>,
-    if_bool: &If,
-) {
+fn emit_if_bool<'ctx>(builder: BuilderRef<'ctx, '_>, env: &mut Environment<'ctx>, if_bool: &If) {
     emit_if(
-        module,
         builder,
         env,
-        get_value(module, builder, env, &if_bool.cond).into_int_value(),
+        get_value(builder, env, &if_bool.cond).into_int_value(),
         &if_bool.if_true,
         &if_bool.if_false,
     );
 }
 
 fn emit_if_result<'ctx>(
-    module: &Module<'ctx>,
-    builder: &Builder<'ctx>,
+    builder: BuilderRef<'ctx, '_>,
     env: &mut Environment<'ctx>,
     if_result: &IfResult,
 ) {
-    let result_cond = get_value(module, builder, env, &if_result.cond);
-    let bool_cond = qis::call_read_result(module, builder, result_cond);
+    let result_cond = get_value(builder, env, &if_result.cond);
+    let bool_cond = qis::call_read_result(builder, result_cond);
     emit_if(
-        module,
         builder,
         env,
         bool_cond,
@@ -200,14 +178,13 @@ fn emit_if_result<'ctx>(
 }
 
 fn emit_if<'ctx>(
-    module: &Module<'ctx>,
-    builder: &Builder<'ctx>,
+    builder: BuilderRef<'ctx, '_>,
     env: &mut Environment<'ctx>,
     cond: IntValue<'ctx>,
     then_insts: &[Instruction],
     else_insts: &[Instruction],
 ) {
-    let context = module.get_context();
+    let context = builder.module().get_context();
     let function = builder.get_insert_block().unwrap().get_parent().unwrap();
     let then_block = context.append_basic_block(function, "then");
     let else_block = context.append_basic_block(function, "else");
@@ -217,7 +194,7 @@ fn emit_if<'ctx>(
     let mut emit_block = |block, insts| {
         builder.position_at_end(block);
         for inst in insts {
-            emit(module, builder, env, inst);
+            emit(builder, env, inst);
         }
         builder.build_unconditional_branch(continue_block);
     };
@@ -228,20 +205,25 @@ fn emit_if<'ctx>(
 }
 
 fn get_value<'ctx>(
-    module: &Module<'ctx>,
-    builder: &Builder<'ctx>,
+    builder: BuilderRef<'ctx, '_>,
     env: &Environment<'ctx>,
     value: &Value,
 ) -> BasicMetadataValueEnum<'ctx> {
     match value {
-        Value::Int(i) => module
+        Value::Int(i) => builder
+            .module()
             .get_context()
             .custom_width_int_type(i.width())
             .const_int(i.value(), false)
             .into(),
-        &Value::Double(d) => module.get_context().f64_type().const_float(d).into(),
-        &Value::Qubit(id) => types::qubit_id(module, builder, id).into(),
-        &Value::Result(id) => types::result_id(module, builder, id).into(),
+        &Value::Double(d) => builder
+            .module()
+            .get_context()
+            .f64_type()
+            .const_float(d)
+            .into(),
+        &Value::Qubit(id) => types::qubit_id(builder, id).into(),
+        &Value::Result(id) => types::result_id(builder, id).into(),
         &Value::Variable(v) => env
             .variable(v)
             .unwrap_or_else(|| panic!("Variable {:?} not found.", v))

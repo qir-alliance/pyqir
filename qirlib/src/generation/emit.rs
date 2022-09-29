@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    codegen::types,
+    codegen::{types, BuilderRef},
     generation::{
         env::Environment,
         interop::{self, SemanticModel, Type},
@@ -11,7 +11,6 @@ use crate::{
     passes::run_basic_passes_on,
 };
 use inkwell::{
-    builder::Builder,
     context::Context,
     module::{Linkage, Module},
     types::{AnyTypeEnum, BasicType, BasicTypeEnum},
@@ -47,7 +46,7 @@ fn build_entry_function(model: &SemanticModel, module: &Module) -> Result<(), St
     let entry = context.append_basic_block(entry_point, "entry");
     let builder = context.create_builder();
     builder.position_at_end(entry);
-    write_instructions(model, module, &builder);
+    write_instructions(model, BuilderRef::new(&builder, module));
     builder.build_return(None);
     module.verify().map_err(|e| e.to_string())
 }
@@ -91,10 +90,10 @@ fn get_type<'ctx>(module: &Module<'ctx>, ty: &Type) -> AnyTypeEnum<'ctx> {
     }
 }
 
-fn write_instructions<'ctx>(model: &SemanticModel, module: &Module<'ctx>, builder: &Builder<'ctx>) {
+fn write_instructions<'ctx>(model: &SemanticModel, builder: BuilderRef<'ctx, '_>) {
     let mut env = Environment::new();
     for inst in &model.instructions {
-        instructions::emit(module, builder, &mut env, inst);
+        instructions::emit(builder, &mut env, inst);
     }
 }
 

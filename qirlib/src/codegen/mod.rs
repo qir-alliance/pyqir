@@ -1,8 +1,38 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use inkwell::{builder::Builder, module::Module};
+use std::ops::Deref;
+
 pub mod qis;
 pub mod types;
+
+// TODO: With LLVM, it's possible to get the module that a builder is positioned in using only the
+// builder itself. But it's not possible with Inkwell, so we have to bundle the references together.
+// See https://github.com/TheDan64/inkwell/issues/347
+#[derive(Clone, Copy)]
+pub struct BuilderRef<'ctx, 'a> {
+    builder: &'a Builder<'ctx>,
+    module: &'a Module<'ctx>,
+}
+
+impl<'ctx, 'a> Deref for BuilderRef<'ctx, 'a> {
+    type Target = Builder<'ctx>;
+
+    fn deref(&self) -> &Self::Target {
+        self.builder
+    }
+}
+
+impl<'ctx, 'a> BuilderRef<'ctx, 'a> {
+    pub fn new(builder: &'a Builder<'ctx>, module: &'a Module<'ctx>) -> Self {
+        Self { builder, module }
+    }
+
+    pub(crate) fn module(&self) -> &'a Module<'ctx> {
+        self.module
+    }
+}
 
 #[cfg(test)]
 mod tests {

@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use super::BuilderRef;
 use inkwell::{
-    builder::Builder,
     module::Module,
     types::{PointerType, StructType},
     values::PointerValue,
@@ -17,20 +17,16 @@ pub fn result<'ctx>(module: &Module<'ctx>) -> PointerType<'ctx> {
     get_or_define_struct(module, "Result").ptr_type(AddressSpace::Generic)
 }
 
-pub fn qubit_id<'ctx>(
-    module: &Module<'ctx>,
-    builder: &Builder<'ctx>,
-    id: u64,
-) -> PointerValue<'ctx> {
+#[must_use]
+pub fn qubit_id<'ctx>(builder: BuilderRef<'ctx, '_>, id: u64) -> PointerValue<'ctx> {
+    let module = builder.module();
     let value = module.get_context().i64_type().const_int(id, false);
     builder.build_int_to_ptr(value, qubit(module), "")
 }
 
-pub fn result_id<'ctx>(
-    module: &Module<'ctx>,
-    builder: &Builder<'ctx>,
-    id: u64,
-) -> PointerValue<'ctx> {
+#[must_use]
+pub fn result_id<'ctx>(builder: BuilderRef<'ctx, '_>, id: u64) -> PointerValue<'ctx> {
+    let module = builder.module();
     let value = module.get_context().i64_type().const_int(id, false);
     builder.build_int_to_ptr(value, result(module), "")
 }

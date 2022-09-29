@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::codegen::types;
+use super::{types, BuilderRef};
 use inkwell::{
-    builder::Builder,
     module::{Linkage, Module},
     types::BasicMetadataTypeEnum,
     values::{BasicMetadataValueEnum, FunctionValue, IntValue},
@@ -11,103 +10,81 @@ use inkwell::{
 use log;
 
 pub fn call_cnot(
-    module: &Module,
-    builder: &Builder,
+    builder: BuilderRef,
     control: BasicMetadataValueEnum,
     qubit: BasicMetadataValueEnum,
 ) {
-    builder.build_call(cnot_body(module), &[control, qubit], "");
+    builder.build_call(cnot_body(builder.module()), &[control, qubit], "");
 }
 
 pub fn call_cz(
-    module: &Module,
-    builder: &Builder,
+    builder: BuilderRef,
     control: BasicMetadataValueEnum,
     qubit: BasicMetadataValueEnum,
 ) {
-    builder.build_call(cz_body(module), &[control, qubit], "");
+    builder.build_call(cz_body(builder.module()), &[control, qubit], "");
 }
 
-pub fn call_h(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
-    builder.build_call(h_body(module), &[qubit], "");
+pub fn call_h(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+    builder.build_call(h_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_s(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
-    builder.build_call(s_body(module), &[qubit], "");
+pub fn call_s(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+    builder.build_call(s_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_s_adj(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
-    builder.build_call(s_adj(module), &[qubit], "");
+pub fn call_s_adj(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+    builder.build_call(s_adj(builder.module()), &[qubit], "");
 }
 
-pub fn call_t(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
-    builder.build_call(t_body(module), &[qubit], "");
+pub fn call_t(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+    builder.build_call(t_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_t_adj(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
-    builder.build_call(t_adj(module), &[qubit], "");
+pub fn call_t_adj(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+    builder.build_call(t_adj(builder.module()), &[qubit], "");
 }
 
-pub fn call_x(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
-    builder.build_call(x_body(module), &[qubit], "");
+pub fn call_x(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+    builder.build_call(x_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_y(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
-    builder.build_call(y_body(module), &[qubit], "");
+pub fn call_y(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+    builder.build_call(y_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_z(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
-    builder.build_call(z_body(module), &[qubit], "");
+pub fn call_z(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+    builder.build_call(z_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_rx(
-    module: &Module,
-    builder: &Builder,
-    theta: BasicMetadataValueEnum,
-    qubit: BasicMetadataValueEnum,
-) {
-    builder.build_call(rx_body(module), &[theta, qubit], "");
+pub fn call_rx(builder: BuilderRef, theta: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum) {
+    builder.build_call(rx_body(builder.module()), &[theta, qubit], "");
 }
 
-pub fn call_ry(
-    module: &Module,
-    builder: &Builder,
-    theta: BasicMetadataValueEnum,
-    qubit: BasicMetadataValueEnum,
-) {
-    builder.build_call(ry_body(module), &[theta, qubit], "");
+pub fn call_ry(builder: BuilderRef, theta: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum) {
+    builder.build_call(ry_body(builder.module()), &[theta, qubit], "");
 }
 
-pub fn call_rz(
-    module: &Module,
-    builder: &Builder,
-    theta: BasicMetadataValueEnum,
-    qubit: BasicMetadataValueEnum,
-) {
-    builder.build_call(rz_body(module), &[theta, qubit], "");
+pub fn call_rz(builder: BuilderRef, theta: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum) {
+    builder.build_call(rz_body(builder.module()), &[theta, qubit], "");
 }
 
-pub fn call_reset(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
-    builder.build_call(reset_body(module), &[qubit], "");
+pub fn call_reset(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+    builder.build_call(reset_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_mz(
-    module: &Module,
-    builder: &Builder,
-    qubit: BasicMetadataValueEnum,
-    result: BasicMetadataValueEnum,
-) {
-    builder.build_call(mz_body(module), &[qubit, result], "");
+pub fn call_mz(builder: BuilderRef, qubit: BasicMetadataValueEnum, result: BasicMetadataValueEnum) {
+    builder.build_call(mz_body(builder.module()), &[qubit, result], "");
 }
 
 #[allow(clippy::missing_panics_doc)]
+#[must_use]
 pub fn call_read_result<'ctx>(
-    module: &Module<'ctx>,
-    builder: &Builder<'ctx>,
+    builder: BuilderRef<'ctx, '_>,
     result: BasicMetadataValueEnum<'ctx>,
 ) -> IntValue<'ctx> {
     builder
-        .build_call(read_result(module), &[result], "")
+        .build_call(read_result(builder.module()), &[result], "")
         .try_as_basic_value()
         .left()
         .unwrap()
