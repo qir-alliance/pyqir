@@ -1,17 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::codegen::calls::{emit_call_with_return, emit_void_call};
-use inkwell::{
-    builder::Builder,
-    context::ContextRef,
-    memory_buffer::MemoryBuffer,
-    module::Module,
-    values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, InstructionValue},
-};
+use inkwell::{builder::Builder, context::ContextRef, memory_buffer::MemoryBuffer, module::Module};
 use std::path::Path;
 
-pub mod calls;
 pub mod qis;
 pub mod types;
 
@@ -58,23 +50,6 @@ impl<'ctx> CodeGenerator<'ctx> {
 
     pub fn get_bitcode(&self) -> MemoryBuffer {
         self.module.write_bitcode_to_memory()
-    }
-
-    pub fn emit_void_call(
-        &self,
-        function: FunctionValue<'ctx>,
-        args: &[BasicMetadataValueEnum<'ctx>],
-    ) -> InstructionValue<'ctx> {
-        emit_void_call(&self.builder, function, args)
-    }
-
-    pub fn emit_call_with_return(
-        &self,
-        function: FunctionValue<'ctx>,
-        args: &[BasicMetadataValueEnum<'ctx>],
-        name: &str,
-    ) -> BasicValueEnum<'ctx> {
-        emit_call_with_return(&self.builder, function, args, name)
     }
 }
 

@@ -3,74 +3,179 @@
 
 use crate::codegen::types;
 use inkwell::{
+    builder::Builder,
     module::{Linkage, Module},
     types::BasicMetadataTypeEnum,
-    values::FunctionValue,
+    values::{BasicMetadataValueEnum, FunctionValue, IntValue},
 };
 use log;
 
-pub fn cnot_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+pub fn call_cnot(
+    module: &Module,
+    builder: &Builder,
+    control: BasicMetadataValueEnum,
+    qubit: BasicMetadataValueEnum,
+) {
+    builder.build_call(cnot_body(module), &[control, qubit], "");
+}
+
+pub fn call_cz(
+    module: &Module,
+    builder: &Builder,
+    control: BasicMetadataValueEnum,
+    qubit: BasicMetadataValueEnum,
+) {
+    builder.build_call(cz_body(module), &[control, qubit], "");
+}
+
+pub fn call_h(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
+    builder.build_call(h_body(module), &[qubit], "");
+}
+
+pub fn call_s(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
+    builder.build_call(s_body(module), &[qubit], "");
+}
+
+pub fn call_s_adj(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
+    builder.build_call(s_adj(module), &[qubit], "");
+}
+
+pub fn call_t(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
+    builder.build_call(t_body(module), &[qubit], "");
+}
+
+pub fn call_t_adj(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
+    builder.build_call(t_adj(module), &[qubit], "");
+}
+
+pub fn call_x(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
+    builder.build_call(x_body(module), &[qubit], "");
+}
+
+pub fn call_y(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
+    builder.build_call(y_body(module), &[qubit], "");
+}
+
+pub fn call_z(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
+    builder.build_call(z_body(module), &[qubit], "");
+}
+
+pub fn call_rx(
+    module: &Module,
+    builder: &Builder,
+    theta: BasicMetadataValueEnum,
+    qubit: BasicMetadataValueEnum,
+) {
+    builder.build_call(rx_body(module), &[theta, qubit], "");
+}
+
+pub fn call_ry(
+    module: &Module,
+    builder: &Builder,
+    theta: BasicMetadataValueEnum,
+    qubit: BasicMetadataValueEnum,
+) {
+    builder.build_call(ry_body(module), &[theta, qubit], "");
+}
+
+pub fn call_rz(
+    module: &Module,
+    builder: &Builder,
+    theta: BasicMetadataValueEnum,
+    qubit: BasicMetadataValueEnum,
+) {
+    builder.build_call(rz_body(module), &[theta, qubit], "");
+}
+
+pub fn call_reset(module: &Module, builder: &Builder, qubit: BasicMetadataValueEnum) {
+    builder.build_call(reset_body(module), &[qubit], "");
+}
+
+pub fn call_mz(
+    module: &Module,
+    builder: &Builder,
+    qubit: BasicMetadataValueEnum,
+    result: BasicMetadataValueEnum,
+) {
+    builder.build_call(mz_body(module), &[qubit, result], "");
+}
+
+#[allow(clippy::missing_panics_doc)]
+pub fn call_read_result<'ctx>(
+    module: &Module<'ctx>,
+    builder: &Builder<'ctx>,
+    result: BasicMetadataValueEnum<'ctx>,
+) -> IntValue<'ctx> {
+    builder
+        .build_call(read_result(module), &[result], "")
+        .try_as_basic_value()
+        .left()
+        .unwrap()
+        .into_int_value()
+}
+
+fn cnot_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_controlled_intrinsic_function_body(module, "cnot")
 }
 
-pub fn cz_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn cz_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_controlled_intrinsic_function_body(module, "cz")
 }
 
-pub fn h_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn h_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(module, "h")
 }
 
-pub fn s_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn s_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(module, "s")
 }
 
-pub fn s_adj<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn s_adj<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_intrinsic_function_adj(module, "s")
 }
 
-pub fn t_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn t_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(module, "t")
 }
 
-pub fn t_adj<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn t_adj<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_intrinsic_function_adj(module, "t")
 }
 
-pub fn x_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn x_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(module, "x")
 }
 
-pub fn y_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn y_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(module, "y")
 }
 
-pub fn z_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn z_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(module, "z")
 }
 
-pub fn rx_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn rx_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_rotated_intrinsic_function_body(module, "rx")
 }
 
-pub fn ry_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn ry_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_rotated_intrinsic_function_body(module, "ry")
 }
 
-pub fn rz_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn rz_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_rotated_intrinsic_function_body(module, "rz")
 }
 
-pub fn reset_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn reset_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_intrinsic_function_body(module, "reset")
 }
 
-pub fn mz_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn mz_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     get_intrinsic_mz_function_body(module, "mz")
 }
 
 /// `declare void @__quantum__qis__{}__body(%Qubit*, %Qubit*)`
-pub(crate) fn get_controlled_intrinsic_function_body<'ctx>(
+fn get_controlled_intrinsic_function_body<'ctx>(
     module: &Module<'ctx>,
     name: &str,
 ) -> FunctionValue<'ctx> {
@@ -83,7 +188,7 @@ pub(crate) fn get_controlled_intrinsic_function_body<'ctx>(
 }
 
 /// `declare void @__quantum__qis__{}__body(double, %Qubit*)`
-pub(crate) fn get_rotated_intrinsic_function_body<'ctx>(
+fn get_rotated_intrinsic_function_body<'ctx>(
     module: &Module<'ctx>,
     name: &str,
 ) -> FunctionValue<'ctx> {
@@ -99,10 +204,7 @@ pub(crate) fn get_rotated_intrinsic_function_body<'ctx>(
 }
 
 /// `declare void @__quantum__qis__{}__body(%Qubit*)`
-pub(crate) fn get_intrinsic_function_body<'ctx>(
-    module: &Module<'ctx>,
-    name: &str,
-) -> FunctionValue<'ctx> {
+fn get_intrinsic_function_body<'ctx>(module: &Module<'ctx>, name: &str) -> FunctionValue<'ctx> {
     let qubit_ptr_type = types::qubit(module);
     get_intrinsic_function_body_impl(module, name, &[qubit_ptr_type.into()])
 }
@@ -125,10 +227,7 @@ fn get_intrinsic_function_body_impl<'ctx>(
 }
 
 /// `declare void @__quantum__qis__{}__body(%Qubit*, %Result*)`
-pub(crate) fn get_intrinsic_mz_function_body<'ctx>(
-    module: &Module<'ctx>,
-    name: &str,
-) -> FunctionValue<'ctx> {
+fn get_intrinsic_mz_function_body<'ctx>(module: &Module<'ctx>, name: &str) -> FunctionValue<'ctx> {
     let function_name = format!("__quantum__qis__{}__body", name.to_lowercase());
     if let Some(function) = get_function(module, function_name.as_str()) {
         function
@@ -144,10 +243,7 @@ pub(crate) fn get_intrinsic_mz_function_body<'ctx>(
 }
 
 /// `declare void @__quantum__qis__{}__adj(%Qubit*)`
-pub(crate) fn get_intrinsic_function_adj<'ctx>(
-    module: &Module<'ctx>,
-    name: &str,
-) -> FunctionValue<'ctx> {
+fn get_intrinsic_function_adj<'ctx>(module: &Module<'ctx>, name: &str) -> FunctionValue<'ctx> {
     let function_name = format!("__quantum__qis__{}__adj", name.to_lowercase());
     if let Some(function) = get_function(module, function_name.as_str()) {
         function
@@ -161,10 +257,7 @@ pub(crate) fn get_intrinsic_function_adj<'ctx>(
     }
 }
 
-pub(crate) fn get_function<'ctx>(
-    module: &Module<'ctx>,
-    function_name: &str,
-) -> Option<FunctionValue<'ctx>> {
+fn get_function<'ctx>(module: &Module<'ctx>, function_name: &str) -> Option<FunctionValue<'ctx>> {
     let defined_function = module.get_function(function_name);
     match defined_function {
         None => {
@@ -179,7 +272,7 @@ pub(crate) fn get_function<'ctx>(
 }
 
 /// `declare i1 @__quantum__qis__read_result__body(%Result*)`
-pub fn read_result<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+fn read_result<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     let function_name = format!("__quantum__qis__{}__body", "read_result");
     if let Some(function) = get_function(module, function_name.as_str()) {
         function

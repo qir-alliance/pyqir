@@ -5,9 +5,7 @@ use crate::{
     codegen::{qis, types, CodeGenerator},
     generation::{
         env::Environment,
-        interop::{
-            BinaryKind, BinaryOp, Call, If, IfResult, Instruction, IntPredicate, Measured, Value,
-        },
+        interop::{BinaryKind, BinaryOp, Call, If, IfResult, Instruction, IntPredicate, Value},
     },
 };
 use inkwell::values::{BasicMetadataValueEnum, FunctionValue, IntValue};
@@ -22,80 +20,74 @@ pub(crate) fn emit<'ctx>(
         Instruction::Cx(inst) => {
             let control = get_value(generator, env, &inst.control);
             let qubit = get_value(generator, env, &inst.target);
-            generator.emit_void_call(qis::cnot_body(generator.module()), &[control, qubit]);
+            qis::call_cnot(generator.module(), generator.builder(), control, qubit);
         }
         Instruction::Cz(inst) => {
             let control = get_value(generator, env, &inst.control);
             let qubit = get_value(generator, env, &inst.target);
-            generator.emit_void_call(qis::cz_body(generator.module()), &[control, qubit]);
+            qis::call_cz(generator.module(), generator.builder(), control, qubit);
         }
         Instruction::H(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(qis::h_body(generator.module()), &[qubit]);
+            qis::call_h(generator.module(), generator.builder(), qubit);
         }
-        Instruction::M(inst) => emit_measured(generator, env, inst),
+        Instruction::M(inst) => {
+            let qubit = get_value(generator, env, &inst.qubit);
+            let target = get_value(generator, env, &inst.target);
+            qis::call_mz(generator.module(), generator.builder(), qubit, target);
+        }
         Instruction::Reset(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(qis::reset_body(generator.module()), &[qubit]);
+            qis::call_reset(generator.module(), generator.builder(), qubit);
         }
         Instruction::Rx(inst) => {
             let theta = get_value(generator, env, &inst.theta);
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(qis::rx_body(generator.module()), &[theta, qubit]);
+            qis::call_rx(generator.module(), generator.builder(), theta, qubit);
         }
         Instruction::Ry(inst) => {
             let theta = get_value(generator, env, &inst.theta);
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(qis::ry_body(generator.module()), &[theta, qubit]);
+            qis::call_ry(generator.module(), generator.builder(), theta, qubit);
         }
         Instruction::Rz(inst) => {
             let theta = get_value(generator, env, &inst.theta);
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(qis::rz_body(generator.module()), &[theta, qubit]);
+            qis::call_rz(generator.module(), generator.builder(), theta, qubit);
         }
         Instruction::S(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(qis::s_body(generator.module()), &[qubit]);
+            qis::call_s(generator.module(), generator.builder(), qubit);
         }
         Instruction::SAdj(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(qis::s_adj(generator.module()), &[qubit]);
+            qis::call_s_adj(generator.module(), generator.builder(), qubit);
         }
         Instruction::T(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(qis::t_body(generator.module()), &[qubit]);
+            qis::call_t(generator.module(), generator.builder(), qubit);
         }
         Instruction::TAdj(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(qis::t_adj(generator.module()), &[qubit]);
+            qis::call_t_adj(generator.module(), generator.builder(), qubit);
         }
         Instruction::X(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(qis::x_body(generator.module()), &[qubit]);
+            qis::call_x(generator.module(), generator.builder(), qubit);
         }
         Instruction::Y(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(qis::y_body(generator.module()), &[qubit]);
+            qis::call_y(generator.module(), generator.builder(), qubit);
         }
         Instruction::Z(inst) => {
             let qubit = get_value(generator, env, &inst.qubit);
-            generator.emit_void_call(qis::z_body(generator.module()), &[qubit]);
+            qis::call_z(generator.module(), generator.builder(), qubit);
         }
         Instruction::BinaryOp(op) => emit_binary_op(generator, env, op),
         Instruction::Call(call) => emit_call(generator, env, call),
         Instruction::If(if_bool) => emit_if_bool(generator, env, entry_point, if_bool),
         Instruction::IfResult(if_result) => emit_if_result(generator, env, entry_point, if_result),
     }
-}
-
-fn emit_measured<'ctx>(
-    generator: &CodeGenerator<'ctx>,
-    env: &mut Environment<'ctx>,
-    measured: &Measured,
-) {
-    let qubit = get_value(generator, env, &measured.qubit);
-    let target = get_value(generator, env, &measured.target);
-    generator.emit_void_call(qis::mz_body(generator.module()), &[qubit, target]);
 }
 
 fn emit_binary_op<'ctx>(
@@ -154,10 +146,11 @@ fn emit_call<'ctx>(generator: &CodeGenerator<'ctx>, env: &mut Environment<'ctx>,
 
     match call.result {
         None => {
-            generator.emit_void_call(function, args.as_slice());
+            generator.builder().build_call(function, &args, "");
         }
         Some(var) => {
-            let value = generator.emit_call_with_return(function, args.as_slice(), "");
+            let call = generator.builder().build_call(function, &args, "");
+            let value = call.try_as_basic_value().left().unwrap();
             env.set_variable(var, value).unwrap();
         }
     }
@@ -185,13 +178,13 @@ fn emit_if_result<'ctx>(
     entry_point: FunctionValue,
     if_result: &IfResult,
 ) {
-    let result = get_value(generator, env, &if_result.cond);
-    let cond = generator.emit_call_with_return(qis::read_result(generator.module()), &[result], "");
+    let result_cond = get_value(generator, env, &if_result.cond);
+    let bool_cond = qis::call_read_result(generator.module(), generator.builder(), result_cond);
     emit_if(
         generator,
         env,
         entry_point,
-        cond.into_int_value(),
+        bool_cond,
         &if_result.if_one,
         &if_result.if_zero,
     );
