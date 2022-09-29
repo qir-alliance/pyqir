@@ -15,7 +15,6 @@ use inkwell::{
     context::Context,
     module::{Linkage, Module},
     types::{AnyTypeEnum, BasicType, BasicTypeEnum},
-    values::FunctionValue,
 };
 use std::convert::{Into, TryFrom};
 
@@ -48,7 +47,7 @@ fn build_entry_function(model: &SemanticModel, module: &Module) -> Result<(), St
     let entry = context.append_basic_block(entry_point, "entry");
     let builder = context.create_builder();
     builder.position_at_end(entry);
-    write_instructions(model, module, &builder, entry_point);
+    write_instructions(model, module, &builder);
     builder.build_return(None);
     module.verify().map_err(|e| e.to_string())
 }
@@ -92,15 +91,10 @@ fn get_type<'ctx>(module: &Module<'ctx>, ty: &Type) -> AnyTypeEnum<'ctx> {
     }
 }
 
-fn write_instructions<'ctx>(
-    model: &SemanticModel,
-    module: &Module<'ctx>,
-    builder: &Builder<'ctx>,
-    entry_point: FunctionValue,
-) {
+fn write_instructions<'ctx>(model: &SemanticModel, module: &Module<'ctx>, builder: &Builder<'ctx>) {
     let mut env = Environment::new();
     for inst in &model.instructions {
-        instructions::emit(module, builder, &mut env, inst, entry_point);
+        instructions::emit(module, builder, &mut env, inst);
     }
 }
 

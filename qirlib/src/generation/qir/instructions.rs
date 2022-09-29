@@ -11,7 +11,7 @@ use crate::{
 use inkwell::{
     builder::Builder,
     module::Module,
-    values::{BasicMetadataValueEnum, FunctionValue, IntValue},
+    values::{BasicMetadataValueEnum, IntValue},
 };
 
 pub(crate) fn emit<'ctx>(
@@ -19,7 +19,6 @@ pub(crate) fn emit<'ctx>(
     builder: &Builder<'ctx>,
     env: &mut Environment<'ctx>,
     inst: &Instruction,
-    entry_point: FunctionValue,
 ) {
     match inst {
         Instruction::Cx(inst) => {
@@ -90,9 +89,9 @@ pub(crate) fn emit<'ctx>(
         }
         Instruction::BinaryOp(op) => emit_binary_op(module, builder, env, op),
         Instruction::Call(call) => emit_call(module, builder, env, call),
-        Instruction::If(if_bool) => emit_if_bool(module, builder, env, entry_point, if_bool),
+        Instruction::If(if_bool) => emit_if_bool(module, builder, env, if_bool),
         Instruction::IfResult(if_result) => {
-            emit_if_result(module, builder, env, entry_point, if_result);
+            emit_if_result(module, builder, env, if_result);
         }
     }
 }
@@ -170,14 +169,12 @@ fn emit_if_bool<'ctx>(
     module: &Module<'ctx>,
     builder: &Builder<'ctx>,
     env: &mut Environment<'ctx>,
-    entry_point: FunctionValue,
     if_bool: &If,
 ) {
     emit_if(
         module,
         builder,
         env,
-        entry_point,
         get_value(module, builder, env, &if_bool.cond).into_int_value(),
         &if_bool.if_true,
         &if_bool.if_false,
@@ -188,7 +185,6 @@ fn emit_if_result<'ctx>(
     module: &Module<'ctx>,
     builder: &Builder<'ctx>,
     env: &mut Environment<'ctx>,
-    entry_point: FunctionValue,
     if_result: &IfResult,
 ) {
     let result_cond = get_value(module, builder, env, &if_result.cond);
@@ -197,7 +193,6 @@ fn emit_if_result<'ctx>(
         module,
         builder,
         env,
-        entry_point,
         bool_cond,
         &if_result.if_one,
         &if_result.if_zero,
@@ -208,21 +203,21 @@ fn emit_if<'ctx>(
     module: &Module<'ctx>,
     builder: &Builder<'ctx>,
     env: &mut Environment<'ctx>,
-    entry_point: FunctionValue,
     cond: IntValue<'ctx>,
     then_insts: &[Instruction],
     else_insts: &[Instruction],
 ) {
     let context = module.get_context();
-    let then_block = context.append_basic_block(entry_point, "then");
-    let else_block = context.append_basic_block(entry_point, "else");
+    let function = builder.get_insert_block().unwrap().get_parent().unwrap();
+    let then_block = context.append_basic_block(function, "then");
+    let else_block = context.append_basic_block(function, "else");
     builder.build_conditional_branch(cond, then_block, else_block);
 
-    let continue_block = context.append_basic_block(entry_point, "continue");
+    let continue_block = context.append_basic_block(function, "continue");
     let mut emit_block = |block, insts| {
         builder.position_at_end(block);
         for inst in insts {
-            emit(module, builder, env, inst, entry_point);
+            emit(module, builder, env, inst);
         }
         builder.build_unconditional_branch(continue_block);
     };
