@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    codegen::{basicvalues, qis, types, CodeGenerator},
+    codegen::{qis, types, CodeGenerator},
     generation::{
         env::Environment,
         interop::{
@@ -242,17 +242,9 @@ fn get_value<'ctx>(
             .custom_width_int_type(i.width())
             .const_int(i.value(), false)
             .into(),
-        &Value::Double(d) => basicvalues::f64_to_f64(generator.context, d),
-        &Value::Qubit(id) => {
-            let value = basicvalues::u64_to_i64(generator.context, id).into_int_value();
-            let ty = types::qubit(&generator.module);
-            generator.builder.build_int_to_ptr(value, ty, "").into()
-        }
-        &Value::Result(id) => {
-            let value = basicvalues::u64_to_i64(generator.context, id).into_int_value();
-            let ty = types::result(&generator.module);
-            generator.builder.build_int_to_ptr(value, ty, "").into()
-        }
+        &Value::Double(d) => generator.context.f64_type().const_float(d).into(),
+        &Value::Qubit(id) => types::qubit_id(&generator.module, &generator.builder, id).into(),
+        &Value::Result(id) => types::result_id(&generator.module, &generator.builder, id).into(),
         &Value::Variable(v) => env
             .variable(v)
             .unwrap_or_else(|| panic!("Variable {:?} not found.", v))

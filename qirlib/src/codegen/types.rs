@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 
 use inkwell::{
+    builder::Builder,
     module::Module,
     types::{PointerType, StructType},
+    values::PointerValue,
     AddressSpace,
 };
 
@@ -13,6 +15,24 @@ pub fn qubit<'ctx>(module: &Module<'ctx>) -> PointerType<'ctx> {
 
 pub fn result<'ctx>(module: &Module<'ctx>) -> PointerType<'ctx> {
     get_or_define_struct(module, "Result").ptr_type(AddressSpace::Generic)
+}
+
+pub fn qubit_id<'ctx>(
+    module: &Module<'ctx>,
+    builder: &Builder<'ctx>,
+    id: u64,
+) -> PointerValue<'ctx> {
+    let value = module.get_context().i64_type().const_int(id, false);
+    builder.build_int_to_ptr(value, qubit(module), "")
+}
+
+pub fn result_id<'ctx>(
+    module: &Module<'ctx>,
+    builder: &Builder<'ctx>,
+    id: u64,
+) -> PointerValue<'ctx> {
+    let value = module.get_context().i64_type().const_int(id, false);
+    builder.build_int_to_ptr(value, result(module), "")
 }
 
 fn get_or_define_struct<'ctx>(module: &Module<'ctx>, name: &str) -> StructType<'ctx> {

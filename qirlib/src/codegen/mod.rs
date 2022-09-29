@@ -11,7 +11,6 @@ use inkwell::{
 };
 use std::path::Path;
 
-pub mod basicvalues;
 pub mod calls;
 pub mod qis;
 pub mod types;

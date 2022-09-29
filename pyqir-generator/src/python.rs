@@ -22,7 +22,7 @@ use qirlib::{
         context::Context as InkwellContext,
         module::Module as InkwellModule,
         types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FunctionType},
-        values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum, CallableValue, PointerValue},
+        values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum, CallableValue},
         IntPredicate,
     },
 };
@@ -461,7 +461,7 @@ impl SimpleModule {
             .map(|id| {
                 Value::new(
                     module.context.clone(),
-                    &qubit_id(&module.module, &builder.builder, id),
+                    &codegen::types::qubit_id(&module.module, &builder.builder, id),
                 )
             })
             .collect()
@@ -479,7 +479,7 @@ impl SimpleModule {
             .map(|id| {
                 Value::new(
                     module.context.clone(),
-                    &result_id(&module.module, &builder.builder, id),
+                    &codegen::types::result_id(&module.module, &builder.builder, id),
                 )
             })
             .collect()
@@ -884,24 +884,6 @@ fn function_type<'ctx>(
             .map(|basic| basic.fn_type(&params, false))
             .ok(),
     }
-}
-
-fn qubit_id<'ctx>(
-    module: &InkwellModule<'ctx>,
-    builder: &InkwellBuilder<'ctx>,
-    id: u64,
-) -> PointerValue<'ctx> {
-    let value = module.get_context().i64_type().const_int(id, false);
-    builder.build_int_to_ptr(value, codegen::types::qubit(module), "")
-}
-
-fn result_id<'ctx>(
-    module: &InkwellModule<'ctx>,
-    builder: &InkwellBuilder<'ctx>,
-    id: u64,
-) -> PointerValue<'ctx> {
-    let value = module.get_context().i64_type().const_int(id, false);
-    builder.build_int_to_ptr(value, codegen::types::result(module), "")
 }
 
 fn try_callable_value(value: AnyValueEnum) -> Option<(CallableValue, Vec<BasicTypeEnum>)> {
