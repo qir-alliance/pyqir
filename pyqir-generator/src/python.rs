@@ -18,7 +18,6 @@ use qirlib::{
     codegen::{qis, types, BuilderRef},
     generation::qir,
     inkwell::{
-        self,
         builder::Builder as InkwellBuilder,
         context::Context as InkwellContext,
         module::Module as InkwellModule,
@@ -397,7 +396,12 @@ impl Builder {
     ///     A callable that inserts instructions for the branch where the condition is false.
     #[pyo3(text_signature = "(self, cond, true, false)")]
     fn if_(&self, cond: &Value, r#true: Option<&PyAny>, r#false: Option<&PyAny>) -> PyResult<()> {
-        build_if(&self.builder, cond.value.into_int_value(), r#true, r#false)
+        qir::build_if(
+            &self.builder,
+            cond.value.into_int_value(),
+            || call_if_some(r#true),
+            || call_if_some(r#false),
+        )
     }
 }
 
@@ -780,7 +784,12 @@ impl BasicQisBuilder {
         let builder = BuilderRef::new(&builder.builder, &module.module);
         let result_cond = any_to_meta(cond.value).unwrap();
         let bool_cond = qis::call_read_result(builder, result_cond);
-        build_if(&builder, bool_cond, one, zero)
+        qir::build_if(
+            &builder,
+            bool_cond,
+            || call_if_some(one),
+            || call_if_some(zero),
+        )
     }
 }
 
@@ -908,34 +917,9 @@ fn any_to_meta(value: AnyValueEnum) -> Option<BasicMetadataValueEnum> {
     }
 }
 
-fn build_if(
-    builder: &inkwell::builder::Builder,
-    cond: inkwell::values::IntValue,
-    build_true: Option<&PyAny>,
-    build_false: Option<&PyAny>,
-) -> PyResult<()> {
-    let insert_block = builder.get_insert_block().unwrap();
-    let context = insert_block.get_context();
-    let function = insert_block.get_parent().unwrap();
-
-    let then_block = context.append_basic_block(function, "then");
-    let else_block = context.append_basic_block(function, "else");
-    builder.build_conditional_branch(cond, then_block, else_block);
-
-    let continue_block = context.append_basic_block(function, "continue");
-
-    builder.position_at_end(then_block);
-    if let Some(build_true) = build_true {
-        build_true.call0()?;
+fn call_if_some(f: Option<&PyAny>) -> PyResult<()> {
+    match f {
+        Some(f) => f.call0().map(|_| ()),
+        None => Ok(()),
     }
-    builder.build_unconditional_branch(continue_block);
-
-    builder.position_at_end(else_block);
-    if let Some(build_false) = build_false {
-        build_false.call0()?;
-    }
-    builder.build_unconditional_branch(continue_block);
-
-    builder.position_at_end(continue_block);
-    Ok(())
 }

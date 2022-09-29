@@ -1,7 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::{attributes::AttributeLoc, builder::Builder, module::Module, values::FunctionValue};
+use inkwell::{
+    attributes::AttributeLoc,
+    builder::Builder,
+    module::Module,
+    values::{FunctionValue, IntValue},
+};
 
 pub mod instructions;
 
@@ -10,6 +15,36 @@ pub fn init_module_builder(module: &Module, builder: &Builder) {
     let entry_point = create_entry_point(module);
     let entry = context.append_basic_block(entry_point, "entry");
     builder.position_at_end(entry);
+}
+
+#[allow(clippy::missing_errors_doc)]
+#[allow(clippy::missing_panics_doc)]
+pub fn build_if<E>(
+    builder: &Builder,
+    cond: IntValue,
+    build_true: impl Fn() -> Result<(), E>,
+    build_false: impl Fn() -> Result<(), E>,
+) -> Result<(), E> {
+    let insert_block = builder.get_insert_block().unwrap();
+    let context = insert_block.get_context();
+    let function = insert_block.get_parent().unwrap();
+
+    let then_block = context.append_basic_block(function, "then");
+    let else_block = context.append_basic_block(function, "else");
+    builder.build_conditional_branch(cond, then_block, else_block);
+
+    let continue_block = context.append_basic_block(function, "continue");
+
+    builder.position_at_end(then_block);
+    build_true()?;
+    builder.build_unconditional_branch(continue_block);
+
+    builder.position_at_end(else_block);
+    build_false()?;
+    builder.build_unconditional_branch(continue_block);
+
+    builder.position_at_end(continue_block);
+    Ok(())
 }
 
 fn create_entry_point<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
