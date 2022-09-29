@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use super::qir::init_module_builder;
 use crate::{
     codegen::{types, BuilderRef},
     generation::{
         env::Environment,
         interop::{self, SemanticModel, Type},
-        qir::{self, instructions},
+        qir::instructions,
     },
     passes::run_basic_passes_on,
 };
@@ -40,12 +41,10 @@ pub fn bitcode(model: &SemanticModel) -> Result<Vec<u8>, String> {
 }
 
 fn build_entry_function(model: &SemanticModel, module: &Module) -> Result<(), String> {
-    add_external_functions(module, model.external_functions.iter());
-    let entry_point = qir::create_entry_point(module);
     let context = module.get_context();
-    let entry = context.append_basic_block(entry_point, "entry");
     let builder = context.create_builder();
-    builder.position_at_end(entry);
+    add_external_functions(module, model.external_functions.iter());
+    init_module_builder(module, &builder);
     write_instructions(model, BuilderRef::new(&builder, module));
     builder.build_return(None);
     module.verify().map_err(|e| e.to_string())

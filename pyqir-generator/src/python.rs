@@ -16,6 +16,7 @@ use pyo3::{
 };
 use qirlib::{
     codegen::{qis, types, BuilderRef},
+    generation::qir,
     inkwell::{
         self,
         builder::Builder as InkwellBuilder,
@@ -426,7 +427,7 @@ impl SimpleModule {
         let context = Py::new(py, Context(InkwellContext::create()))?;
         let module = Py::new(py, Module::new(py, context.clone(), name))?;
         let builder = Py::new(py, Builder::new(py, context, module.clone()))?;
-        init_module_builder(&module.borrow(py).module, &builder.borrow(py).builder);
+        qir::init_module_builder(&module.borrow(py).module, &builder.borrow(py).builder);
 
         let types = Py::new(
             py,
@@ -905,13 +906,6 @@ fn any_to_meta(value: AnyValueEnum) -> Option<BasicMetadataValueEnum> {
         | AnyValueEnum::FunctionValue(_)
         | AnyValueEnum::InstructionValue(_) => None,
     }
-}
-
-fn init_module_builder(module: &InkwellModule, builder: &InkwellBuilder) {
-    let context = module.get_context();
-    let entry_point = qirlib::generation::qir::create_entry_point(module);
-    let entry = context.append_basic_block(entry_point, "entry");
-    builder.position_at_end(entry);
 }
 
 fn build_if(

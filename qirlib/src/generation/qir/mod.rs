@@ -1,11 +1,18 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::{attributes::AttributeLoc, module::Module, values::FunctionValue};
+use inkwell::{attributes::AttributeLoc, builder::Builder, module::Module, values::FunctionValue};
 
 pub mod instructions;
 
-pub fn create_entry_point<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+pub fn init_module_builder(module: &Module, builder: &Builder) {
+    let context = module.get_context();
+    let entry_point = create_entry_point(module);
+    let entry = context.append_basic_block(entry_point, "entry");
+    builder.position_at_end(entry);
+}
+
+fn create_entry_point<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     let context = module.get_context();
     let fn_type = context.void_type().fn_type(&[], false);
     let fn_value = module.add_function("main", fn_type, None);
