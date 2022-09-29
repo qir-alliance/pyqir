@@ -24,7 +24,7 @@ use std::convert::{Into, TryFrom};
 pub fn ir(model: &SemanticModel) -> Result<String, String> {
     let ctx = Context::create();
     let generator = populate_context(&ctx, model)?;
-    run_basic_passes_on(&generator.module);
+    run_basic_passes_on(generator.module());
     Ok(generator.get_ir())
 }
 
@@ -34,7 +34,7 @@ pub fn ir(model: &SemanticModel) -> Result<String, String> {
 pub fn bitcode(model: &SemanticModel) -> Result<Vec<u8>, String> {
     let ctx = Context::create();
     let generator = populate_context(&ctx, model)?;
-    run_basic_passes_on(&generator.module);
+    run_basic_passes_on(generator.module());
     Ok(generator.get_bitcode().as_slice().to_vec())
 }
 
@@ -48,19 +48,19 @@ pub fn populate_context<'a>(
     model: &'a SemanticModel,
 ) -> Result<CodeGenerator<'a>, String> {
     let module = ctx.create_module(&model.name);
-    let generator = CodeGenerator::new(ctx, module);
+    let generator = CodeGenerator::new(module);
     build_entry_function(&generator, model)?;
     Ok(generator)
 }
 
 fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Result<(), String> {
     add_external_functions(generator, model.external_functions.iter());
-    let entry_point = qir::create_entry_point(&generator.module);
-    let entry = generator.context.append_basic_block(entry_point, "entry");
-    generator.builder.position_at_end(entry);
+    let entry_point = qir::create_entry_point(generator.module());
+    let entry = generator.context().append_basic_block(entry_point, "entry");
+    generator.builder().position_at_end(entry);
     write_instructions(model, generator, entry_point);
-    generator.builder.build_return(None);
-    generator.module.verify().map_err(|e| e.to_string())
+    generator.builder().build_return(None);
+    generator.module().verify().map_err(|e| e.to_string())
 }
 
 fn add_external_functions<'a>(
@@ -70,18 +70,18 @@ fn add_external_functions<'a>(
     for (name, ty) in functions {
         let ty = get_type(generator, ty).into_function_type();
         generator
-            .module
+            .module()
             .add_function(name, ty, Some(Linkage::External));
     }
 }
 
 fn get_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &Type) -> AnyTypeEnum<'ctx> {
     match ty {
-        Type::Void => generator.context.void_type().into(),
-        &Type::Int { width } => generator.context.custom_width_int_type(width).into(),
-        Type::Double => generator.context.f64_type().into(),
-        Type::Qubit => types::qubit(&generator.module).into(),
-        Type::Result => types::result(&generator.module).into(),
+        Type::Void => generator.context().void_type().into(),
+        &Type::Int { width } => generator.context().custom_width_int_type(width).into(),
+        Type::Double => generator.context().f64_type().into(),
+        Type::Qubit => types::qubit(generator.module()).into(),
+        Type::Result => types::result(generator.module()).into(),
         Type::Function { params, result } => {
             let params = params
                 .iter()

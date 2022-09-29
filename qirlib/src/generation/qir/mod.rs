@@ -25,12 +25,12 @@ mod tests {
     fn entry_point_function_has_correct_signature_and_default_attribute() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module);
+        let generator = CodeGenerator::new(module);
 
-        let entry_point = create_entry_point(&generator.module);
-        let entry = generator.context.append_basic_block(entry_point, "entry");
-        generator.builder.position_at_end(entry);
-        generator.builder.build_return(None);
+        let entry_point = create_entry_point(generator.module());
+        let entry = generator.context().append_basic_block(entry_point, "entry");
+        generator.builder().position_at_end(entry);
+        generator.builder().build_return(None);
         let ir_string = generator.get_ir();
         let expected = "; ModuleID = 'test'\nsource_filename = \"test\"\n\ndefine void @main() #0 {\nentry:\n  ret void\n}\n\nattributes #0 = { \"EntryPoint\" }\n";
         assert_eq!(expected, ir_string);

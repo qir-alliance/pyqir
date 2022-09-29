@@ -4,7 +4,7 @@
 use crate::codegen::calls::{emit_call_with_return, emit_void_call};
 use inkwell::{
     builder::Builder,
-    context::Context,
+    context::ContextRef,
     memory_buffer::MemoryBuffer,
     module::Module,
     values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, InstructionValue},
@@ -16,21 +16,29 @@ pub mod qis;
 pub mod types;
 
 pub struct CodeGenerator<'ctx> {
-    pub context: &'ctx Context,
-    pub module: Module<'ctx>,
-    pub builder: Builder<'ctx>,
+    module: Module<'ctx>,
+    builder: Builder<'ctx>,
 }
 
 impl<'ctx> CodeGenerator<'ctx> {
     /// # Errors
     ///
     /// Will return `Err` if module fails to load
-    pub fn new(context: &'ctx Context, module: Module<'ctx>) -> Self {
-        Self {
-            context,
-            module,
-            builder: context.create_builder(),
-        }
+    pub fn new(module: Module<'ctx>) -> Self {
+        let builder = module.get_context().create_builder();
+        Self { module, builder }
+    }
+
+    pub(crate) fn module(&self) -> &Module<'ctx> {
+        &self.module
+    }
+
+    pub(crate) fn builder(&self) -> &Builder<'ctx> {
+        &self.builder
+    }
+
+    pub(crate) fn context(&self) -> ContextRef<'ctx> {
+        self.module.get_context()
     }
 
     pub fn emit_bitcode(&self, path: impl AsRef<Path>) {
@@ -87,7 +95,7 @@ mod tests {
 
         let context = Context::create();
         let module = context.create_module(name);
-        let generator = CodeGenerator::new(&context, module);
+        let generator = CodeGenerator::new(module);
         generator.emit_bitcode(file_path_string.as_str());
 
         let mut emitted_bitcode_file =

@@ -58,7 +58,7 @@ mod tests {
     fn qubit_can_be_declared() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module);
+        let generator = CodeGenerator::new(module);
 
         verify_opaque_pointer("Qubit", qubit(&generator.module));
     }
@@ -67,7 +67,7 @@ mod tests {
     fn result_can_be_declared() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(&context, module);
+        let generator = CodeGenerator::new(module);
 
         verify_opaque_pointer("Result", result(&generator.module));
     }
