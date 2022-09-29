@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use crate::codegen::{qis, BuilderRef};
 use inkwell::{
     attributes::AttributeLoc,
     builder::Builder,
     module::Module,
-    values::{FunctionValue, IntValue},
+    values::{BasicMetadataValueEnum, FunctionValue, IntValue},
 };
 
 pub mod instructions;
@@ -45,6 +46,17 @@ pub fn build_if<E>(
 
     builder.position_at_end(continue_block);
     Ok(())
+}
+
+#[allow(clippy::missing_errors_doc)]
+pub fn build_if_result<'ctx, E>(
+    builder: BuilderRef<'ctx, '_>,
+    cond: BasicMetadataValueEnum<'ctx>,
+    build_one: impl Fn() -> Result<(), E>,
+    build_zero: impl Fn() -> Result<(), E>,
+) -> Result<(), E> {
+    let bool_cond = qis::call_read_result(builder, cond);
+    build_if(&builder, bool_cond, build_one, build_zero)
 }
 
 fn create_entry_point<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {

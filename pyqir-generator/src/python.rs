@@ -782,11 +782,9 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = BuilderRef::new(&builder.builder, &module.module);
-        let result_cond = any_to_meta(cond.value).unwrap();
-        let bool_cond = qis::call_read_result(builder, result_cond);
-        qir::build_if(
-            &builder,
-            bool_cond,
+        qir::build_if_result(
+            builder,
+            any_to_meta(cond.value).unwrap(),
             || call_if_some(one),
             || call_if_some(zero),
         )
