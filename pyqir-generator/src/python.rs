@@ -120,13 +120,13 @@ impl TypeFactory {
     #[getter]
     fn qubit(&self, py: Python) -> PyResult<Py<Type>> {
         let module = self.module.borrow(py);
-        self.type_from_context(py, |_| codegen::types::qubit_ptr(&module.module).into())
+        self.type_from_context(py, |_| codegen::types::qubit(&module.module).into())
     }
 
     #[getter]
     fn result(&self, py: Python) -> PyResult<Py<Type>> {
         let module = self.module.borrow(py);
-        self.type_from_context(py, |_| codegen::types::result_ptr(&module.module).into())
+        self.type_from_context(py, |_| codegen::types::result(&module.module).into())
     }
 
     #[staticmethod]
@@ -891,10 +891,8 @@ fn qubit_id<'ctx>(
     builder: &InkwellBuilder<'ctx>,
     id: u64,
 ) -> PointerValue<'ctx> {
-    let ty = codegen::types::qubit_ptr(module);
-    let context = module.get_context();
-    let value = context.i64_type().const_int(id, false);
-    builder.build_int_to_ptr(value, ty, "")
+    let value = module.get_context().i64_type().const_int(id, false);
+    builder.build_int_to_ptr(value, codegen::types::qubit(module), "")
 }
 
 fn result_id<'ctx>(
@@ -902,10 +900,8 @@ fn result_id<'ctx>(
     builder: &InkwellBuilder<'ctx>,
     id: u64,
 ) -> PointerValue<'ctx> {
-    let ty = codegen::types::result_ptr(module);
-    let context = module.get_context();
-    let value = context.i64_type().const_int(id, false);
-    builder.build_int_to_ptr(value, ty, "")
+    let value = module.get_context().i64_type().const_int(id, false);
+    builder.build_int_to_ptr(value, codegen::types::result(module), "")
 }
 
 fn try_callable_value(value: AnyValueEnum) -> Option<(CallableValue, Vec<BasicTypeEnum>)> {

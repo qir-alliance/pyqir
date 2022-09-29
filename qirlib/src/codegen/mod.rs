@@ -1,23 +1,21 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::{
-    memory_buffer::MemoryBuffer,
-    module::Module,
-    types::{FloatType, IntType, StructType},
-    values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, InstructionValue},
-};
-use std::path::Path;
-
-use self::{
+use crate::codegen::{
     basicvalues::{f64_to_f64, i64_to_i32, i8_null_ptr, u64_to_i32, u64_to_i64},
     calls::{emit_call_with_return, emit_void_call},
     qis::{
         cnot_body, cz_body, h_body, m_body, mz_body, reset_body, rx_body, ry_body, rz_body, s_adj,
         s_body, t_adj, t_body, x_body, y_body, z_body,
     },
-    types::{int32, int64, int8, qubit, result},
 };
+use inkwell::{
+    memory_buffer::MemoryBuffer,
+    module::Module,
+    types::{FloatType, IntType, PointerType},
+    values::{BasicMetadataValueEnum, BasicValueEnum, FunctionValue, InstructionValue},
+};
+use std::path::Path;
 
 pub mod basicvalues;
 pub mod calls;
@@ -187,15 +185,15 @@ impl<'ctx> CodeGenerator<'ctx> {
 
 impl<'ctx> CodeGenerator<'ctx> {
     pub fn int64_type(&self) -> IntType<'ctx> {
-        int64(self.context)
+        self.context.i64_type()
     }
 
     pub fn int32_type(&self) -> IntType<'ctx> {
-        int32(self.context)
+        self.context.i32_type()
     }
 
     pub fn int8_type(&self) -> IntType<'ctx> {
-        int8(self.context)
+        self.context.i8_type()
     }
 
     pub fn double_type(&self) -> FloatType<'ctx> {
@@ -206,12 +204,12 @@ impl<'ctx> CodeGenerator<'ctx> {
         self.context.bool_type()
     }
 
-    pub fn qubit_type(&self) -> StructType<'ctx> {
-        qubit(&self.module)
+    pub fn qubit_type(&self) -> PointerType<'ctx> {
+        types::qubit(&self.module)
     }
 
-    pub fn result_type(&self) -> StructType<'ctx> {
-        result(&self.module)
+    pub fn result_type(&self) -> PointerType<'ctx> {
+        types::result(&self.module)
     }
 }
 
@@ -263,7 +261,7 @@ mod types_tests {
         let module = context.create_module("test");
         let generator = CodeGenerator::new(&context, module).unwrap();
 
-        verify_opaque_struct("Qubit", generator.qubit_type());
+        verify_opaque_pointer("Qubit", generator.qubit_type());
     }
 
     #[test]
@@ -272,12 +270,13 @@ mod types_tests {
         let module = context.create_module("test");
         let generator = CodeGenerator::new(&context, module).unwrap();
 
-        verify_opaque_struct("Result", generator.result_type());
+        verify_opaque_pointer("Result", generator.result_type());
     }
 
-    fn verify_opaque_struct(name: &str, struct_type: StructType) {
-        assert_eq!(struct_type.get_name().unwrap().to_str(), Ok(name));
-        assert!(struct_type.is_opaque());
-        assert_eq!(struct_type.get_field_types(), &[]);
+    fn verify_opaque_pointer(name: &str, ty: PointerType) {
+        let pointee = ty.get_element_type().into_struct_type();
+        assert_eq!(pointee.get_name().unwrap().to_str(), Ok(name));
+        assert!(pointee.is_opaque());
+        assert_eq!(pointee.get_field_types(), &[]);
     }
 }

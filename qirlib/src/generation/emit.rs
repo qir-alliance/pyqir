@@ -15,7 +15,6 @@ use inkwell::{
     module::Linkage,
     types::{AnyTypeEnum, BasicType, BasicTypeEnum},
     values::FunctionValue,
-    AddressSpace,
 };
 use std::convert::{Into, TryFrom};
 
@@ -81,14 +80,8 @@ fn get_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &Type) -> AnyTypeEnum<'ct
         Type::Void => generator.context.void_type().into(),
         &Type::Int { width } => generator.context.custom_width_int_type(width).into(),
         Type::Double => generator.context.f64_type().into(),
-        Type::Qubit => generator
-            .qubit_type()
-            .ptr_type(AddressSpace::Generic)
-            .into(),
-        Type::Result => generator
-            .result_type()
-            .ptr_type(AddressSpace::Generic)
-            .into(),
+        Type::Qubit => generator.qubit_type().into(),
+        Type::Result => generator.result_type().into(),
         Type::Function { params, result } => {
             let params = params
                 .iter()

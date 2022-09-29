@@ -10,10 +10,7 @@ use crate::{
         },
     },
 };
-use inkwell::{
-    values::{BasicMetadataValueEnum, FunctionValue, IntValue},
-    AddressSpace,
-};
+use inkwell::values::{BasicMetadataValueEnum, FunctionValue, IntValue};
 
 pub(crate) fn emit<'ctx>(
     generator: &CodeGenerator<'ctx>,
@@ -248,12 +245,12 @@ fn get_value<'ctx>(
         &Value::Double(d) => generator.f64_to_f64(d),
         &Value::Qubit(id) => {
             let value = generator.u64_to_i64(id).into_int_value();
-            let ty = generator.qubit_type().ptr_type(AddressSpace::Generic);
+            let ty = generator.qubit_type();
             generator.builder.build_int_to_ptr(value, ty, "").into()
         }
         &Value::Result(id) => {
             let value = generator.u64_to_i64(id).into_int_value();
-            let ty = generator.result_type().ptr_type(AddressSpace::Generic);
+            let ty = generator.result_type();
             generator.builder.build_int_to_ptr(value, ty, "").into()
         }
         &Value::Variable(v) => env

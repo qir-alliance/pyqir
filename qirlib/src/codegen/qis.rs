@@ -6,7 +6,6 @@ use inkwell::{
     module::{Linkage, Module},
     types::BasicMetadataTypeEnum,
     values::FunctionValue,
-    AddressSpace,
 };
 use log;
 
@@ -79,7 +78,7 @@ pub(crate) fn get_controlled_intrinsic_function_body<'ctx>(
     module: &Module<'ctx>,
     name: &str,
 ) -> FunctionValue<'ctx> {
-    let qubit_ptr_type = types::qubit(module).ptr_type(AddressSpace::Generic);
+    let qubit_ptr_type = types::qubit(module);
     get_intrinsic_function_body_impl(
         module,
         name,
@@ -92,7 +91,7 @@ pub(crate) fn get_rotated_intrinsic_function_body<'ctx>(
     module: &Module<'ctx>,
     name: &str,
 ) -> FunctionValue<'ctx> {
-    let qubit_ptr_type = types::qubit(module).ptr_type(AddressSpace::Generic);
+    let qubit_ptr_type = types::qubit(module);
     get_intrinsic_function_body_impl(
         module,
         name,
@@ -108,7 +107,7 @@ pub(crate) fn get_intrinsic_function_body<'ctx>(
     module: &Module<'ctx>,
     name: &str,
 ) -> FunctionValue<'ctx> {
-    let qubit_ptr_type = types::qubit(module).ptr_type(AddressSpace::Generic);
+    let qubit_ptr_type = types::qubit(module);
     get_intrinsic_function_body_impl(module, name, &[qubit_ptr_type.into()])
 }
 
@@ -138,8 +137,8 @@ pub(crate) fn get_intrinsic_mz_function_body<'ctx>(
     if let Some(function) = get_function(module, function_name.as_str()) {
         function
     } else {
-        let result_ptr_type = types::result(module).ptr_type(AddressSpace::Generic);
-        let qubit_ptr_type = types::qubit(module).ptr_type(AddressSpace::Generic);
+        let result_ptr_type = types::result(module);
+        let qubit_ptr_type = types::qubit(module);
         let void_type = module.get_context().void_type();
         let fn_type = void_type.fn_type(&[qubit_ptr_type.into(), result_ptr_type.into()], false);
         let fn_value =
@@ -157,8 +156,8 @@ pub(crate) fn get_intrinsic_m_function_body<'ctx>(
     if let Some(function) = get_function(module, function_name.as_str()) {
         function
     } else {
-        let result_ptr_type = types::result(module).ptr_type(AddressSpace::Generic);
-        let qubit_ptr_type = types::qubit(module).ptr_type(AddressSpace::Generic);
+        let result_ptr_type = types::result(module);
+        let qubit_ptr_type = types::qubit(module);
         let fn_type = result_ptr_type.fn_type(&[qubit_ptr_type.into()], false);
         let fn_value =
             module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
@@ -176,7 +175,7 @@ pub(crate) fn get_intrinsic_function_adj<'ctx>(
         function
     } else {
         let void_type = module.get_context().void_type();
-        let qubit_ptr_type = types::qubit(module).ptr_type(AddressSpace::Generic);
+        let qubit_ptr_type = types::qubit(module);
         let fn_type = void_type.fn_type(&[qubit_ptr_type.into()], false);
         let fn_value =
             module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
@@ -207,7 +206,7 @@ pub fn read_result<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     if let Some(function) = get_function(module, function_name.as_str()) {
         function
     } else {
-        let result_ptr_type = types::result(module).ptr_type(AddressSpace::Generic);
+        let result_ptr_type = types::result(module);
         let bool_type = module.get_context().bool_type();
         let fn_type = bool_type.fn_type(&[result_ptr_type.into()], false);
         let fn_value =
