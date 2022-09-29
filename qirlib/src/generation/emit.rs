@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    codegen::{types, CodeGenerator},
+    codegen::types,
     generation::{
         env::Environment,
         interop::{self, SemanticModel, Type},
@@ -11,8 +11,9 @@ use crate::{
     passes::run_basic_passes_on,
 };
 use inkwell::{
+    builder::Builder,
     context::Context,
-    module::Linkage,
+    module::{Linkage, Module},
     types::{AnyTypeEnum, BasicType, BasicTypeEnum},
     values::FunctionValue,
 };
@@ -22,81 +23,65 @@ use std::convert::{Into, TryFrom};
 ///
 /// Will return `Err` if module fails verification that the current `Module` is valid.
 pub fn ir(model: &SemanticModel) -> Result<String, String> {
-    let ctx = Context::create();
-    let generator = populate_context(&ctx, model)?;
-    run_basic_passes_on(generator.module());
-    Ok(generator.module().print_to_string().to_string())
+    let context = Context::create();
+    let module = context.create_module(&model.name);
+    build_entry_function(model, &module)?;
+    run_basic_passes_on(&module);
+    Ok(module.print_to_string().to_string())
 }
 
 /// # Errors
 ///
 /// Will return `Err` if module fails verification that the current `Module` is valid.
 pub fn bitcode(model: &SemanticModel) -> Result<Vec<u8>, String> {
-    let ctx = Context::create();
-    let generator = populate_context(&ctx, model)?;
-    run_basic_passes_on(generator.module());
-    Ok(generator
-        .module()
-        .write_bitcode_to_memory()
-        .as_slice()
-        .to_vec())
+    let context = Context::create();
+    let module = context.create_module(&model.name);
+    build_entry_function(model, &module)?;
+    run_basic_passes_on(&module);
+    Ok(module.write_bitcode_to_memory().as_slice().to_vec())
 }
 
-/// # Errors
-///
-/// Will return `Err` if
-///  - module cannot be loaded.
-///  - module fails verification that the current `Module` is valid.
-pub fn populate_context<'a>(
-    ctx: &'a Context,
-    model: &'a SemanticModel,
-) -> Result<CodeGenerator<'a>, String> {
-    let module = ctx.create_module(&model.name);
-    let generator = CodeGenerator::new(module);
-    build_entry_function(&generator, model)?;
-    Ok(generator)
-}
-
-fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Result<(), String> {
-    add_external_functions(generator, model.external_functions.iter());
-    let entry_point = qir::create_entry_point(generator.module());
-    let entry = generator.context().append_basic_block(entry_point, "entry");
-    generator.builder().position_at_end(entry);
-    write_instructions(model, generator, entry_point);
-    generator.builder().build_return(None);
-    generator.module().verify().map_err(|e| e.to_string())
+fn build_entry_function(model: &SemanticModel, module: &Module) -> Result<(), String> {
+    add_external_functions(module, model.external_functions.iter());
+    let entry_point = qir::create_entry_point(module);
+    let context = module.get_context();
+    let entry = context.append_basic_block(entry_point, "entry");
+    let builder = context.create_builder();
+    builder.position_at_end(entry);
+    write_instructions(model, module, &builder, entry_point);
+    builder.build_return(None);
+    module.verify().map_err(|e| e.to_string())
 }
 
 fn add_external_functions<'a>(
-    generator: &CodeGenerator,
+    module: &Module,
     functions: impl Iterator<Item = &'a (String, interop::Type)>,
 ) {
     for (name, ty) in functions {
-        let ty = get_type(generator, ty).into_function_type();
-        generator
-            .module()
-            .add_function(name, ty, Some(Linkage::External));
+        let ty = get_type(module, ty).into_function_type();
+        module.add_function(name, ty, Some(Linkage::External));
     }
 }
 
-fn get_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &Type) -> AnyTypeEnum<'ctx> {
+fn get_type<'ctx>(module: &Module<'ctx>, ty: &Type) -> AnyTypeEnum<'ctx> {
+    let context = module.get_context();
     match ty {
-        Type::Void => generator.context().void_type().into(),
-        &Type::Int { width } => generator.context().custom_width_int_type(width).into(),
-        Type::Double => generator.context().f64_type().into(),
-        Type::Qubit => types::qubit(generator.module()).into(),
-        Type::Result => types::result(generator.module()).into(),
+        Type::Void => context.void_type().into(),
+        &Type::Int { width } => context.custom_width_int_type(width).into(),
+        Type::Double => context.f64_type().into(),
+        Type::Qubit => types::qubit(module).into(),
+        Type::Result => types::result(module).into(),
         Type::Function { params, result } => {
             let params = params
                 .iter()
                 .map(|ty| {
-                    BasicTypeEnum::try_from(get_type(generator, ty))
+                    BasicTypeEnum::try_from(get_type(module, ty))
                         .unwrap()
                         .into()
                 })
                 .collect::<Vec<_>>();
 
-            match get_type(generator, result) {
+            match get_type(module, result) {
                 AnyTypeEnum::VoidType(void) => void.fn_type(&params, false),
                 result => BasicTypeEnum::try_from(result)
                     .expect("Invalid return type.")
@@ -109,12 +94,13 @@ fn get_type<'ctx>(generator: &CodeGenerator<'ctx>, ty: &Type) -> AnyTypeEnum<'ct
 
 fn write_instructions<'ctx>(
     model: &SemanticModel,
-    generator: &CodeGenerator<'ctx>,
+    module: &Module<'ctx>,
+    builder: &Builder<'ctx>,
     entry_point: FunctionValue,
 ) {
     let mut env = Environment::new();
     for inst in &model.instructions {
-        instructions::emit(generator, &mut env, inst, entry_point);
+        instructions::emit(module, builder, &mut env, inst, entry_point);
     }
 }
 

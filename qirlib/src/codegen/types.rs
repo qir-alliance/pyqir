@@ -51,25 +51,20 @@ fn get_struct<'ctx>(module: &Module<'ctx>, name: &str) -> Option<StructType<'ctx
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::codegen::CodeGenerator;
     use inkwell::context::Context;
 
     #[test]
     fn qubit_can_be_declared() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(module);
-
-        verify_opaque_pointer("Qubit", qubit(&generator.module));
+        verify_opaque_pointer("Qubit", qubit(&module));
     }
 
     #[test]
     fn result_can_be_declared() {
         let context = Context::create();
         let module = context.create_module("test");
-        let generator = CodeGenerator::new(module);
-
-        verify_opaque_pointer("Result", result(&generator.module));
+        verify_opaque_pointer("Result", result(&module));
     }
 
     fn verify_opaque_pointer(name: &str, ty: PointerType) {
