@@ -152,10 +152,7 @@ mod tests {
         let module = context.create_module("test");
         let builder = ModuleBuilder::new(&module);
         super::build_entry_point(&module, &builder);
-        builder.build_mz(
-            builder.build_qubit(0).into(),
-            builder.build_result(0).into(),
-        );
+        builder.build_mz(builder.build_qubit(0), builder.build_result(0));
         builder.build_return(None);
         module.print_to_string().to_string()
     }

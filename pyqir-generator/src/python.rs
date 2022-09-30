@@ -562,9 +562,10 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let control = any_to_meta(control.value).unwrap();
-        let target = any_to_meta(target.value).unwrap();
-        builder.build_cx(control, target);
+        builder.build_cx(
+            control.value.into_pointer_value(),
+            target.value.into_pointer_value(),
+        );
     }
 
     /// Inserts a controlled Pauli :math:`Z` gate.
@@ -577,9 +578,10 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let control = any_to_meta(control.value).unwrap();
-        let target = any_to_meta(target.value).unwrap();
-        builder.build_cz(control, target);
+        builder.build_cz(
+            control.value.into_pointer_value(),
+            target.value.into_pointer_value(),
+        );
     }
 
     /// Inserts a Hadamard gate.
@@ -590,9 +592,8 @@ impl BasicQisBuilder {
     fn h(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let qubit = any_to_meta(qubit.value).unwrap();
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        builder.build_h(qubit);
+        builder.build_h(qubit.value.into_pointer_value());
     }
 
     /// Inserts a Z-basis measurement operation.
@@ -605,9 +606,10 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let qubit = any_to_meta(qubit.value).unwrap();
-        let result = any_to_meta(result.value).unwrap();
-        builder.build_mz(qubit, result);
+        builder.build_mz(
+            qubit.value.into_pointer_value(),
+            result.value.into_pointer_value(),
+        );
     }
 
     /// Inserts a reset operation.
@@ -619,8 +621,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let qubit = any_to_meta(qubit.value).unwrap();
-        builder.build_reset(qubit);
+        builder.build_reset(qubit.value.into_pointer_value());
     }
 
     /// Inserts a rotation gate about the :math:`x` axis.
@@ -631,12 +632,11 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn rx(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        let context = builder.context.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let context = module.context.borrow(py);
-        let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
-        let qubit = any_to_meta(qubit.value).unwrap();
-        builder.build_rx(theta, qubit);
+        let theta = extract_value(&context.0.f64_type(), theta)?;
+        builder.build_rx(theta.into_float_value(), qubit.value.into_pointer_value());
         Ok(())
     }
 
@@ -648,12 +648,11 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn ry(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        let context = builder.context.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let context = module.context.borrow(py);
-        let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
-        let qubit = any_to_meta(qubit.value).unwrap();
-        builder.build_ry(theta, qubit);
+        let theta = extract_value(&context.0.f64_type(), theta)?;
+        builder.build_ry(theta.into_float_value(), qubit.value.into_pointer_value());
         Ok(())
     }
 
@@ -665,12 +664,11 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn rz(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        let context = builder.context.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let context = module.context.borrow(py);
-        let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
-        let qubit = any_to_meta(qubit.value).unwrap();
-        builder.build_rz(theta, qubit);
+        let theta = extract_value(&context.0.f64_type(), theta)?;
+        builder.build_rz(theta.into_float_value(), qubit.value.into_pointer_value());
         Ok(())
     }
 
@@ -683,8 +681,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let qubit = any_to_meta(qubit.value).unwrap();
-        builder.build_s(qubit);
+        builder.build_s(qubit.value.into_pointer_value());
     }
 
     /// Inserts an adjoint :math:`S` gate.
@@ -696,8 +693,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let qubit = any_to_meta(qubit.value).unwrap();
-        builder.build_s_adj(qubit);
+        builder.build_s_adj(qubit.value.into_pointer_value());
     }
 
     /// Inserts a :math:`T` gate.
@@ -709,8 +705,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let qubit = any_to_meta(qubit.value).unwrap();
-        builder.build_t(qubit);
+        builder.build_t(qubit.value.into_pointer_value());
     }
 
     /// Inserts an adjoint :math:`T` gate.
@@ -722,8 +717,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let qubit = any_to_meta(qubit.value).unwrap();
-        builder.build_t_adj(qubit);
+        builder.build_t_adj(qubit.value.into_pointer_value());
     }
 
     /// Inserts a Pauli :math:`X` gate.
@@ -735,8 +729,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let qubit = any_to_meta(qubit.value).unwrap();
-        builder.build_x(qubit);
+        builder.build_x(qubit.value.into_pointer_value());
     }
 
     /// Inserts a Pauli :math:`Y` gate.
@@ -748,8 +741,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let qubit = any_to_meta(qubit.value).unwrap();
-        builder.build_y(qubit);
+        builder.build_y(qubit.value.into_pointer_value());
     }
 
     /// Inserts a Pauli :math:`Z` gate.
@@ -761,8 +753,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let qubit = any_to_meta(qubit.value).unwrap();
-        builder.build_z(qubit);
+        builder.build_z(qubit.value.into_pointer_value());
     }
 
     /// Inserts a branch conditioned on a measurement result.
@@ -789,7 +780,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.try_build_if_result(
-            any_to_meta(cond.value).unwrap(),
+            cond.value.into_pointer_value(),
             || call_if_some(one),
             || call_if_some(zero),
         )

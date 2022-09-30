@@ -7,45 +7,45 @@ use inkwell::{
     builder::Builder,
     module::{Linkage, Module},
     types::BasicMetadataTypeEnum,
-    values::{BasicMetadataValueEnum, FunctionValue, IntValue},
+    values::{FloatValue, FunctionValue, IntValue, PointerValue},
 };
 use log;
 use std::borrow::Borrow;
 
 pub trait BuilderBasicExt<'ctx> {
-    fn build_cx(&self, control: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum);
+    fn build_cx(&self, control: PointerValue, qubit: PointerValue);
 
-    fn build_cz(&self, control: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum);
+    fn build_cz(&self, control: PointerValue, qubit: PointerValue);
 
-    fn build_h(&self, qubit: BasicMetadataValueEnum);
+    fn build_h(&self, qubit: PointerValue);
 
-    fn build_s(&self, qubit: BasicMetadataValueEnum);
+    fn build_s(&self, qubit: PointerValue);
 
-    fn build_s_adj(&self, qubit: BasicMetadataValueEnum);
+    fn build_s_adj(&self, qubit: PointerValue);
 
-    fn build_t(&self, qubit: BasicMetadataValueEnum);
+    fn build_t(&self, qubit: PointerValue);
 
-    fn build_t_adj(&self, qubit: BasicMetadataValueEnum);
+    fn build_t_adj(&self, qubit: PointerValue);
 
-    fn build_x(&self, qubit: BasicMetadataValueEnum);
+    fn build_x(&self, qubit: PointerValue);
 
-    fn build_y(&self, qubit: BasicMetadataValueEnum);
+    fn build_y(&self, qubit: PointerValue);
 
-    fn build_z(&self, qubit: BasicMetadataValueEnum);
+    fn build_z(&self, qubit: PointerValue);
 
-    fn build_rx(&self, theta: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum);
+    fn build_rx(&self, theta: FloatValue, qubit: PointerValue);
 
-    fn build_ry(&self, theta: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum);
+    fn build_ry(&self, theta: FloatValue, qubit: PointerValue);
 
-    fn build_rz(&self, theta: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum);
+    fn build_rz(&self, theta: FloatValue, qubit: PointerValue);
 
-    fn build_reset(&self, qubit: BasicMetadataValueEnum);
+    fn build_reset(&self, qubit: PointerValue);
 
-    fn build_mz(&self, qubit: BasicMetadataValueEnum, result: BasicMetadataValueEnum);
+    fn build_mz(&self, qubit: PointerValue, result: PointerValue);
 
     fn build_if_result(
         &self,
-        cond: BasicMetadataValueEnum<'ctx>,
+        cond: PointerValue<'ctx>,
         build_one: impl Fn(),
         build_zero: impl Fn(),
     );
@@ -53,76 +53,80 @@ pub trait BuilderBasicExt<'ctx> {
     #[allow(clippy::missing_errors_doc)]
     fn try_build_if_result<E>(
         &self,
-        cond: BasicMetadataValueEnum<'ctx>,
+        cond: PointerValue<'ctx>,
         build_one: impl Fn() -> Result<(), E>,
         build_zero: impl Fn() -> Result<(), E>,
     ) -> Result<(), E>;
 }
 
 impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> BuilderBasicExt<'ctx> for ModuleBuilder<'ctx, 'm, B> {
-    fn build_cx(&self, control: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum) {
-        self.build_call(cnot_body(self.module()), &[control, qubit], "");
+    fn build_cx(&self, control: PointerValue, qubit: PointerValue) {
+        self.build_call(
+            cnot_body(self.module()),
+            &[control.into(), qubit.into()],
+            "",
+        );
     }
 
-    fn build_cz(&self, control: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum) {
-        self.build_call(cz_body(self.module()), &[control, qubit], "");
+    fn build_cz(&self, control: PointerValue, qubit: PointerValue) {
+        self.build_call(cz_body(self.module()), &[control.into(), qubit.into()], "");
     }
 
-    fn build_h(&self, qubit: BasicMetadataValueEnum) {
-        self.build_call(h_body(self.module()), &[qubit], "");
+    fn build_h(&self, qubit: PointerValue) {
+        self.build_call(h_body(self.module()), &[qubit.into()], "");
     }
 
-    fn build_s(&self, qubit: BasicMetadataValueEnum) {
-        self.build_call(s_body(self.module()), &[qubit], "");
+    fn build_s(&self, qubit: PointerValue) {
+        self.build_call(s_body(self.module()), &[qubit.into()], "");
     }
 
-    fn build_s_adj(&self, qubit: BasicMetadataValueEnum) {
-        self.build_call(s_adj(self.module()), &[qubit], "");
+    fn build_s_adj(&self, qubit: PointerValue) {
+        self.build_call(s_adj(self.module()), &[qubit.into()], "");
     }
 
-    fn build_t(&self, qubit: BasicMetadataValueEnum) {
-        self.build_call(t_body(self.module()), &[qubit], "");
+    fn build_t(&self, qubit: PointerValue) {
+        self.build_call(t_body(self.module()), &[qubit.into()], "");
     }
 
-    fn build_t_adj(&self, qubit: BasicMetadataValueEnum) {
-        self.build_call(t_adj(self.module()), &[qubit], "");
+    fn build_t_adj(&self, qubit: PointerValue) {
+        self.build_call(t_adj(self.module()), &[qubit.into()], "");
     }
 
-    fn build_x(&self, qubit: BasicMetadataValueEnum) {
-        self.build_call(x_body(self.module()), &[qubit], "");
+    fn build_x(&self, qubit: PointerValue) {
+        self.build_call(x_body(self.module()), &[qubit.into()], "");
     }
 
-    fn build_y(&self, qubit: BasicMetadataValueEnum) {
-        self.build_call(y_body(self.module()), &[qubit], "");
+    fn build_y(&self, qubit: PointerValue) {
+        self.build_call(y_body(self.module()), &[qubit.into()], "");
     }
 
-    fn build_z(&self, qubit: BasicMetadataValueEnum) {
-        self.build_call(z_body(self.module()), &[qubit], "");
+    fn build_z(&self, qubit: PointerValue) {
+        self.build_call(z_body(self.module()), &[qubit.into()], "");
     }
 
-    fn build_rx(&self, theta: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum) {
-        self.build_call(rx_body(self.module()), &[theta, qubit], "");
+    fn build_rx(&self, theta: FloatValue, qubit: PointerValue) {
+        self.build_call(rx_body(self.module()), &[theta.into(), qubit.into()], "");
     }
 
-    fn build_ry(&self, theta: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum) {
-        self.build_call(ry_body(self.module()), &[theta, qubit], "");
+    fn build_ry(&self, theta: FloatValue, qubit: PointerValue) {
+        self.build_call(ry_body(self.module()), &[theta.into(), qubit.into()], "");
     }
 
-    fn build_rz(&self, theta: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum) {
-        self.build_call(rz_body(self.module()), &[theta, qubit], "");
+    fn build_rz(&self, theta: FloatValue, qubit: PointerValue) {
+        self.build_call(rz_body(self.module()), &[theta.into(), qubit.into()], "");
     }
 
-    fn build_reset(&self, qubit: BasicMetadataValueEnum) {
-        self.build_call(reset_body(self.module()), &[qubit], "");
+    fn build_reset(&self, qubit: PointerValue) {
+        self.build_call(reset_body(self.module()), &[qubit.into()], "");
     }
 
-    fn build_mz(&self, qubit: BasicMetadataValueEnum, result: BasicMetadataValueEnum) {
-        self.build_call(mz_body(self.module()), &[qubit, result], "");
+    fn build_mz(&self, qubit: PointerValue, result: PointerValue) {
+        self.build_call(mz_body(self.module()), &[qubit.into(), result.into()], "");
     }
 
     fn build_if_result(
         &self,
-        cond: BasicMetadataValueEnum<'ctx>,
+        cond: PointerValue<'ctx>,
         build_one: impl Fn(),
         build_zero: impl Fn(),
     ) {
@@ -132,7 +136,7 @@ impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> BuilderBasicExt<'ctx> for ModuleBuilder
 
     fn try_build_if_result<E>(
         &self,
-        cond: BasicMetadataValueEnum<'ctx>,
+        cond: PointerValue<'ctx>,
         build_one: impl Fn() -> Result<(), E>,
         build_zero: impl Fn() -> Result<(), E>,
     ) -> Result<(), E> {
@@ -143,10 +147,10 @@ impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> BuilderBasicExt<'ctx> for ModuleBuilder
 
 fn build_read_result<'ctx>(
     builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
-    result: BasicMetadataValueEnum<'ctx>,
+    result: PointerValue<'ctx>,
 ) -> IntValue<'ctx> {
     builder
-        .build_call(read_result(builder.module()), &[result], "")
+        .build_call(read_result(builder.module()), &[result.into()], "")
         .try_as_basic_value()
         .left()
         .unwrap()

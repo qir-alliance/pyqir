@@ -279,12 +279,8 @@ class ExternalFunctionsTest(unittest.TestCase):
 
         x = mod.builder.call(foo, [])
         assert x is not None
-        qis.rz(x, mod.qubits[0])
-
-        with self.assertRaisesRegex(
-            OSError, "^Call parameter type does not match function signature!"
-        ):
-            mod.ir()
+        with self.assertRaisesRegex(BaseException, "^Found IntValue"):
+            qis.rz(x, mod.qubits[0])
 
     def test_two_variables(self) -> None:
         mod = SimpleModule("test", 0, 0)
