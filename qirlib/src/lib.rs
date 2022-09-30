@@ -7,16 +7,14 @@
 pub use inkwell;
 
 #[cfg(not(any(feature = "no-llvm-linking")))]
-pub mod codegen;
-
+pub mod build;
 #[cfg(not(any(feature = "no-llvm-linking")))]
 pub mod evaluation;
-
-#[cfg(not(any(feature = "no-llvm-linking")))]
-pub mod generation;
-
 #[cfg(not(any(feature = "no-llvm-linking")))]
 pub mod module;
-
 #[cfg(not(any(feature = "no-llvm-linking")))]
 pub mod passes;
+#[cfg(not(any(feature = "no-llvm-linking")))]
+pub mod qis;
+#[cfg(not(any(feature = "no-llvm-linking")))]
+pub mod types;

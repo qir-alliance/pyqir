@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use super::{types, BuilderRef};
+use super::{build::BuilderRef, types};
 use inkwell::{
     module::{Linkage, Module},
     types::BasicMetadataTypeEnum,

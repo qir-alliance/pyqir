@@ -15,8 +15,7 @@ use pyo3::{
     types::{PyBytes, PySequence, PyString, PyUnicode},
 };
 use qirlib::{
-    codegen::{qis, types, BuilderRef},
-    generation::qir,
+    build::{self, BuilderRef},
     inkwell::{
         builder::Builder as InkwellBuilder,
         context::Context as InkwellContext,
@@ -25,6 +24,7 @@ use qirlib::{
         values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum, CallableValue},
         IntPredicate,
     },
+    module, qis, types,
 };
 use std::{
     convert::{Into, TryFrom},
@@ -396,7 +396,7 @@ impl Builder {
     ///     A callable that inserts instructions for the branch where the condition is false.
     #[pyo3(text_signature = "(self, cond, true, false)")]
     fn if_(&self, cond: &Value, r#true: Option<&PyAny>, r#false: Option<&PyAny>) -> PyResult<()> {
-        qir::build_if(
+        build::if_then(
             &self.builder,
             cond.value.into_int_value(),
             || call_if_some(r#true),
@@ -431,7 +431,13 @@ impl SimpleModule {
         let context = Py::new(py, Context(InkwellContext::create()))?;
         let module = Py::new(py, Module::new(py, context.clone(), name))?;
         let builder = Py::new(py, Builder::new(py, context, module.clone()))?;
-        qir::init_module_builder(&module.borrow(py).module, &builder.borrow(py).builder);
+
+        {
+            let builder = builder.borrow(py);
+            let module = module.borrow(py);
+            let builder = BuilderRef::new(&builder.builder, &module.module);
+            build::init(builder);
+        }
 
         let types = Py::new(
             py,
@@ -782,7 +788,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = BuilderRef::new(&builder.builder, &module.module);
-        qir::build_if_result(
+        build::if_result(
             builder,
             any_to_meta(cond.value).unwrap(),
             || call_if_some(one),
@@ -807,8 +813,8 @@ fn ir_to_bitcode<'a>(
     module_name: Option<String>,
     source_file_name: Option<String>,
 ) -> PyResult<&'a PyBytes> {
-    let bitcode = qirlib::generation::ir_to_bitcode(ir, &module_name, &source_file_name)
-        .map_err(PyOSError::new_err)?;
+    let bitcode =
+        module::ir_to_bitcode(ir, &module_name, &source_file_name).map_err(PyOSError::new_err)?;
     Ok(PyBytes::new(py, &bitcode))
 }
 
@@ -828,7 +834,7 @@ fn bitcode_to_ir<'a>(
     module_name: Option<String>,
     source_file_name: Option<String>,
 ) -> PyResult<&'a PyString> {
-    let ir = qirlib::generation::bitcode_to_ir(bitcode.as_bytes(), &module_name, &source_file_name)
+    let ir = module::bitcode_to_ir(bitcode.as_bytes(), &module_name, &source_file_name)
         .map_err(PyOSError::new_err)?;
     Ok(PyUnicode::new(py, ir.as_str()))
 }

@@ -1,16 +1,95 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
+use crate::{module, qis};
+use inkwell::{
+    builder::Builder,
+    module::Module,
+    values::{BasicMetadataValueEnum, IntValue},
+};
+use std::ops::Deref;
+
+// TODO: With LLVM, it's possible to get the module that a builder is positioned in using only the
+// builder itself. But it's not possible with Inkwell, so we have to bundle the references together.
+// See https://github.com/TheDan64/inkwell/issues/347
+#[allow(clippy::module_name_repetitions)]
+#[derive(Clone, Copy)]
+pub struct BuilderRef<'ctx, 'a> {
+    builder: &'a Builder<'ctx>,
+    module: &'a Module<'ctx>,
+}
+
+impl<'ctx, 'a> Deref for BuilderRef<'ctx, 'a> {
+    type Target = Builder<'ctx>;
+
+    fn deref(&self) -> &Self::Target {
+        self.builder
+    }
+}
+
+impl<'ctx, 'a> BuilderRef<'ctx, 'a> {
+    pub fn new(builder: &'a Builder<'ctx>, module: &'a Module<'ctx>) -> Self {
+        Self { builder, module }
+    }
+
+    pub(crate) fn module(&self) -> &'a Module<'ctx> {
+        self.module
+    }
+}
+
+pub fn init(builder: BuilderRef) {
+    let module = builder.module();
+    let context = module.get_context();
+    let entry_point = module::create_entry_point(module);
+    let entry = context.append_basic_block(entry_point, "entry");
+    builder.position_at_end(entry);
+}
+
+#[allow(clippy::missing_errors_doc)]
+#[allow(clippy::missing_panics_doc)]
+pub fn if_then<E>(
+    builder: &Builder,
+    cond: IntValue,
+    build_true: impl Fn() -> Result<(), E>,
+    build_false: impl Fn() -> Result<(), E>,
+) -> Result<(), E> {
+    let insert_block = builder.get_insert_block().unwrap();
+    let context = insert_block.get_context();
+    let function = insert_block.get_parent().unwrap();
+
+    let then_block = context.append_basic_block(function, "then");
+    let else_block = context.append_basic_block(function, "else");
+    builder.build_conditional_branch(cond, then_block, else_block);
+
+    let continue_block = context.append_basic_block(function, "continue");
+
+    builder.position_at_end(then_block);
+    build_true()?;
+    builder.build_unconditional_branch(continue_block);
+
+    builder.position_at_end(else_block);
+    build_false()?;
+    builder.build_unconditional_branch(continue_block);
+
+    builder.position_at_end(continue_block);
+    Ok(())
+}
+
+#[allow(clippy::missing_errors_doc)]
+pub fn if_result<'ctx, E>(
+    builder: BuilderRef<'ctx, '_>,
+    cond: BasicMetadataValueEnum<'ctx>,
+    build_one: impl Fn() -> Result<(), E>,
+    build_zero: impl Fn() -> Result<(), E>,
+) -> Result<(), E> {
+    let bool_cond = qis::call_read_result(builder, cond);
+    if_then(&builder, bool_cond, build_one, build_zero)
+}
 
 #[cfg(test)]
 mod tests {
     use crate::{
-        codegen::{
-            qis,
-            types::{qubit_id, result_id},
-            BuilderRef,
-        },
-        generation::qir,
+        build::{self, BuilderRef},
         passes::run_basic_passes_on,
+        qis,
+        types::{qubit_id, result_id},
     };
     use inkwell::context::Context;
     use normalize_line_endings::normalized;
@@ -24,13 +103,8 @@ mod tests {
                 qubit_id(builder, 0).into(),
                 result_id(builder, 0).into(),
             );
-            qir::build_if_result::<String>(
-                builder,
-                result_id(builder, 0).into(),
-                || Ok(()),
-                || Ok(()),
-            )
-            .unwrap();
+            build::if_result::<String>(builder, result_id(builder, 0).into(), || Ok(()), || Ok(()))
+                .unwrap();
         })
     }
 
@@ -42,7 +116,7 @@ mod tests {
                 qubit_id(builder, 0).into(),
                 result_id(builder, 0).into(),
             );
-            qir::build_if_result::<String>(
+            build::if_result::<String>(
                 builder,
                 result_id(builder, 0).into(),
                 || {
@@ -63,7 +137,7 @@ mod tests {
                 qubit_id(builder, 0).into(),
                 result_id(builder, 0).into(),
             );
-            qir::build_if_result::<String>(
+            build::if_result::<String>(
                 builder,
                 result_id(builder, 0).into(),
                 || Ok(()),
@@ -84,7 +158,7 @@ mod tests {
                 qubit_id(builder, 0).into(),
                 result_id(builder, 0).into(),
             );
-            qir::build_if_result::<String>(
+            build::if_result::<String>(
                 builder,
                 result_id(builder, 0).into(),
                 || {
@@ -106,7 +180,7 @@ mod tests {
                 qubit_id(builder, 0).into(),
                 result_id(builder, 0).into(),
             );
-            qir::build_if_result::<String>(
+            build::if_result::<String>(
                 builder,
                 result_id(builder, 0).into(),
                 || Ok(()),
@@ -128,7 +202,7 @@ mod tests {
                 qubit_id(builder, 0).into(),
                 result_id(builder, 0).into(),
             );
-            qir::build_if_result::<String>(
+            build::if_result::<String>(
                 builder,
                 result_id(builder, 0).into(),
                 || {
@@ -158,11 +232,11 @@ mod tests {
                 qubit_id(builder, 0).into(),
                 result_id(builder, 1).into(),
             );
-            qir::build_if_result::<()>(
+            build::if_result::<()>(
                 builder,
                 result_id(builder, 0).into(),
                 || {
-                    qir::build_if_result::<()>(
+                    build::if_result::<()>(
                         builder,
                         result_id(builder, 1).into(),
                         || {
@@ -193,12 +267,12 @@ mod tests {
                 qubit_id(builder, 0).into(),
                 result_id(builder, 1).into(),
             );
-            qir::build_if_result::<()>(
+            build::if_result::<()>(
                 builder,
                 result_id(builder, 0).into(),
                 || Ok(()),
                 || {
-                    qir::build_if_result::<()>(
+                    build::if_result::<()>(
                         builder,
                         result_id(builder, 1).into(),
                         || Ok(()),
@@ -228,11 +302,11 @@ mod tests {
                 qubit_id(builder, 0).into(),
                 result_id(builder, 1).into(),
             );
-            qir::build_if_result::<()>(
+            build::if_result::<()>(
                 builder,
                 result_id(builder, 0).into(),
                 || {
-                    qir::build_if_result::<()>(
+                    build::if_result::<()>(
                         builder,
                         result_id(builder, 1).into(),
                         || Ok(()),
@@ -263,12 +337,12 @@ mod tests {
                 qubit_id(builder, 0).into(),
                 result_id(builder, 1).into(),
             );
-            qir::build_if_result::<()>(
+            build::if_result::<()>(
                 builder,
                 result_id(builder, 0).into(),
                 || Ok(()),
                 || {
-                    qir::build_if_result::<()>(
+                    build::if_result::<()>(
                         builder,
                         result_id(builder, 1).into(),
                         || {
@@ -288,7 +362,7 @@ mod tests {
     #[test]
     fn test_allows_unmeasured_result_condition() -> Result<(), String> {
         check_or_save_reference_ir("test_allows_unmeasured_result_condition", |builder| {
-            qir::build_if_result::<()>(
+            build::if_result::<()>(
                 builder,
                 result_id(builder, 0).into(),
                 || {
@@ -341,8 +415,9 @@ mod tests {
         let context = Context::create();
         let module = context.create_module(name);
         let builder = context.create_builder();
-        qir::init_module_builder(&module, &builder);
-        build(BuilderRef::new(&builder, &module));
+        let builder = BuilderRef::new(&builder, &module);
+        build::init(builder);
+        build(builder);
         builder.build_return(None);
         run_basic_passes_on(&module);
         module.verify().map_err(|e| e.to_string())?;
