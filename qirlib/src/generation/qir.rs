@@ -9,8 +9,6 @@ use inkwell::{
     values::{BasicMetadataValueEnum, FunctionValue, IntValue},
 };
 
-pub mod instructions;
-
 pub fn init_module_builder(module: &Module, builder: &Builder) {
     let context = module.get_context();
     let entry_point = create_entry_point(module);

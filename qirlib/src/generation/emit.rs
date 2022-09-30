@@ -1,454 +1,306 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use super::qir::init_module_builder;
-use crate::{
-    codegen::{types, BuilderRef},
-    generation::{
-        env::Environment,
-        interop::{self, SemanticModel, Type},
-        qir::instructions,
-    },
-    passes::run_basic_passes_on,
-};
-use inkwell::{
-    context::Context,
-    module::{Linkage, Module},
-    types::{AnyTypeEnum, BasicType, BasicTypeEnum},
-};
-use std::convert::{Into, TryFrom};
-
-/// # Errors
-///
-/// Will return `Err` if module fails verification that the current `Module` is valid.
-pub fn ir(model: &SemanticModel) -> Result<String, String> {
-    let context = Context::create();
-    let module = context.create_module(&model.name);
-    build_entry_function(model, &module)?;
-    run_basic_passes_on(&module);
-    Ok(module.print_to_string().to_string())
-}
-
-/// # Errors
-///
-/// Will return `Err` if module fails verification that the current `Module` is valid.
-pub fn bitcode(model: &SemanticModel) -> Result<Vec<u8>, String> {
-    let context = Context::create();
-    let module = context.create_module(&model.name);
-    build_entry_function(model, &module)?;
-    run_basic_passes_on(&module);
-    Ok(module.write_bitcode_to_memory().as_slice().to_vec())
-}
-
-fn build_entry_function(model: &SemanticModel, module: &Module) -> Result<(), String> {
-    let context = module.get_context();
-    let builder = context.create_builder();
-    add_external_functions(module, model.external_functions.iter());
-    init_module_builder(module, &builder);
-    write_instructions(model, BuilderRef::new(&builder, module));
-    builder.build_return(None);
-    module.verify().map_err(|e| e.to_string())
-}
-
-fn add_external_functions<'a>(
-    module: &Module,
-    functions: impl Iterator<Item = &'a (String, interop::Type)>,
-) {
-    for (name, ty) in functions {
-        let ty = get_type(module, ty).into_function_type();
-        module.add_function(name, ty, Some(Linkage::External));
-    }
-}
-
-fn get_type<'ctx>(module: &Module<'ctx>, ty: &Type) -> AnyTypeEnum<'ctx> {
-    let context = module.get_context();
-    match ty {
-        Type::Void => context.void_type().into(),
-        &Type::Int { width } => context.custom_width_int_type(width).into(),
-        Type::Double => context.f64_type().into(),
-        Type::Qubit => types::qubit(module).into(),
-        Type::Result => types::result(module).into(),
-        Type::Function { params, result } => {
-            let params = params
-                .iter()
-                .map(|ty| {
-                    BasicTypeEnum::try_from(get_type(module, ty))
-                        .unwrap()
-                        .into()
-                })
-                .collect::<Vec<_>>();
-
-            match get_type(module, result) {
-                AnyTypeEnum::VoidType(void) => void.fn_type(&params, false),
-                result => BasicTypeEnum::try_from(result)
-                    .expect("Invalid return type.")
-                    .fn_type(&params, false),
-            }
-            .into()
-        }
-    }
-}
-
-fn write_instructions<'ctx>(model: &SemanticModel, builder: BuilderRef<'ctx, '_>) {
-    let mut env = Environment::new();
-    for inst in &model.instructions {
-        instructions::emit(builder, &mut env, inst);
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::generation::{
-        emit,
-        interop::{
-            BinaryKind, BinaryOp, Call, IfResult, Instruction, IntPredicate, Measured,
-            SemanticModel, Single, Type, Value, Variable,
+    use crate::{
+        codegen::{
+            qis,
+            types::{qubit_id, result_id},
+            BuilderRef,
         },
+        generation::qir,
+        passes::run_basic_passes_on,
     };
+    use inkwell::context::Context;
     use normalize_line_endings::normalized;
     use std::{env, fs, path::PathBuf};
 
     #[test]
     fn test_empty_if() -> Result<(), String> {
-        let model = SemanticModel {
-            name: "test_empty_if".to_string(),
-            external_functions: vec![],
-            instructions: vec![
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
-                Instruction::IfResult(IfResult {
-                    cond: Value::Result(0),
-                    if_one: vec![],
-                    if_zero: vec![],
-                }),
-            ],
-        };
-
-        check_or_save_reference_ir(&model)
-    }
-
-    #[test]
-    fn test_if_then() -> Result<(), String> {
-        let model = SemanticModel {
-            name: "test_if_then".to_string(),
-            external_functions: vec![],
-            instructions: vec![
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
-                Instruction::IfResult(IfResult {
-                    cond: Value::Result(0),
-                    if_one: vec![Instruction::X(Single::new(Value::Qubit(0)))],
-                    if_zero: vec![],
-                }),
-            ],
-        };
-
-        check_or_save_reference_ir(&model)
-    }
-
-    #[test]
-    fn test_if_else() -> Result<(), String> {
-        let model = SemanticModel {
-            name: "test_if_else".to_string(),
-            external_functions: vec![],
-            instructions: vec![
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
-                Instruction::IfResult(IfResult {
-                    cond: Value::Result(0),
-                    if_one: vec![],
-                    if_zero: vec![Instruction::X(Single::new(Value::Qubit(0)))],
-                }),
-            ],
-        };
-
-        check_or_save_reference_ir(&model)
-    }
-
-    #[test]
-    fn test_if_then_continue() -> Result<(), String> {
-        let model = SemanticModel {
-            name: "test_if_then_continue".to_string(),
-            external_functions: vec![],
-            instructions: vec![
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
-                Instruction::IfResult(IfResult {
-                    cond: Value::Result(0),
-                    if_one: vec![Instruction::X(Single::new(Value::Qubit(0)))],
-                    if_zero: vec![],
-                }),
-                Instruction::H(Single::new(Value::Qubit(0))),
-            ],
-        };
-
-        check_or_save_reference_ir(&model)
-    }
-
-    #[test]
-    fn test_if_else_continue() -> Result<(), String> {
-        let model = SemanticModel {
-            name: "test_if_else_continue".to_string(),
-            external_functions: vec![],
-            instructions: vec![
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
-                Instruction::IfResult(IfResult {
-                    cond: Value::Result(0),
-                    if_one: vec![],
-                    if_zero: vec![Instruction::X(Single::new(Value::Qubit(0)))],
-                }),
-                Instruction::H(Single::new(Value::Qubit(0))),
-            ],
-        };
-
-        check_or_save_reference_ir(&model)
-    }
-
-    #[test]
-    fn test_if_then_else_continue() -> Result<(), String> {
-        let model = SemanticModel {
-            name: "test_if_then_else_continue".to_string(),
-            external_functions: vec![],
-            instructions: vec![
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
-                Instruction::IfResult(IfResult {
-                    cond: Value::Result(0),
-                    if_one: vec![Instruction::X(Single::new(Value::Qubit(0)))],
-                    if_zero: vec![Instruction::Y(Single::new(Value::Qubit(0)))],
-                }),
-                Instruction::H(Single::new(Value::Qubit(0))),
-            ],
-        };
-
-        check_or_save_reference_ir(&model)
-    }
-
-    #[test]
-    fn test_if_then_then() -> Result<(), String> {
-        let model = SemanticModel {
-            name: "test_if_then_then".to_string(),
-            external_functions: vec![],
-            instructions: vec![
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(1))),
-                Instruction::IfResult(IfResult {
-                    cond: Value::Result(0),
-                    if_one: vec![Instruction::IfResult(IfResult {
-                        cond: Value::Result(1),
-                        if_one: vec![Instruction::X(Single::new(Value::Qubit(0)))],
-                        if_zero: vec![],
-                    })],
-                    if_zero: vec![],
-                }),
-            ],
-        };
-
-        check_or_save_reference_ir(&model)
-    }
-
-    #[test]
-    fn test_if_else_else() -> Result<(), String> {
-        let model = SemanticModel {
-            name: "test_if_else_else".to_string(),
-            external_functions: vec![],
-            instructions: vec![
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(1))),
-                Instruction::IfResult(IfResult {
-                    cond: Value::Result(0),
-                    if_one: vec![],
-                    if_zero: vec![Instruction::IfResult(IfResult {
-                        cond: Value::Result(1),
-                        if_one: vec![],
-                        if_zero: vec![Instruction::X(Single::new(Value::Qubit(0)))],
-                    })],
-                }),
-            ],
-        };
-
-        check_or_save_reference_ir(&model)
-    }
-
-    #[test]
-    fn test_if_then_else() -> Result<(), String> {
-        let model = SemanticModel {
-            name: "test_if_then_else".to_string(),
-            external_functions: vec![],
-            instructions: vec![
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(1))),
-                Instruction::IfResult(IfResult {
-                    cond: Value::Result(0),
-                    if_one: vec![Instruction::IfResult(IfResult {
-                        cond: Value::Result(1),
-                        if_one: vec![],
-                        if_zero: vec![Instruction::X(Single::new(Value::Qubit(0)))],
-                    })],
-                    if_zero: vec![],
-                }),
-            ],
-        };
-
-        check_or_save_reference_ir(&model)
-    }
-
-    #[test]
-    fn test_if_else_then() -> Result<(), String> {
-        let model = SemanticModel {
-            name: "test_if_else_then".to_string(),
-            external_functions: vec![],
-            instructions: vec![
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
-                Instruction::M(Measured::new(Value::Qubit(0), Value::Result(1))),
-                Instruction::IfResult(IfResult {
-                    cond: Value::Result(0),
-                    if_one: vec![],
-                    if_zero: vec![Instruction::IfResult(IfResult {
-                        cond: Value::Result(1),
-                        if_one: vec![Instruction::X(Single::new(Value::Qubit(0)))],
-                        if_zero: vec![],
-                    })],
-                }),
-            ],
-        };
-
-        check_or_save_reference_ir(&model)
-    }
-
-    #[test]
-    fn test_allows_unmeasured_result_condition() -> Result<(), String> {
-        let model = SemanticModel {
-            name: "test_allows_unmeasured_result_condition".to_string(),
-            external_functions: vec![],
-            instructions: vec![Instruction::IfResult(IfResult {
-                cond: Value::Result(0),
-                if_one: vec![Instruction::X(Single::new(Value::Qubit(0)))],
-                if_zero: vec![Instruction::H(Single::new(Value::Qubit(0)))],
-            })],
-        };
-
-        check_or_save_reference_ir(&model)
-    }
-
-    #[test]
-    fn test_call_variable() -> Result<(), String> {
-        let i64 = Type::Int { width: 64 };
-        let x = Variable::new();
-
-        check_or_save_reference_ir(&SemanticModel {
-            name: "test_call_variable".to_string(),
-            external_functions: vec![
-                (
-                    "foo".to_string(),
-                    Type::Function {
-                        params: vec![],
-                        result: Box::new(i64.clone()),
-                    },
-                ),
-                (
-                    "bar".to_string(),
-                    Type::Function {
-                        params: vec![i64],
-                        result: Box::new(Type::Void),
-                    },
-                ),
-            ],
-            instructions: vec![
-                Instruction::Call(Call {
-                    name: "foo".to_string(),
-                    args: vec![],
-                    result: Some(x),
-                }),
-                Instruction::Call(Call {
-                    name: "bar".to_string(),
-                    args: vec![Value::Variable(x)],
-                    result: None,
-                }),
-            ],
+        check_or_save_reference_ir("test_empty_if", |builder| {
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 0).into(),
+            );
+            qir::build_if_result::<String>(
+                builder,
+                result_id(builder, 0).into(),
+                || Ok(()),
+                || Ok(()),
+            )
+            .unwrap();
         })
     }
 
     #[test]
-    fn test_int_binary_operators() -> Result<(), String> {
-        let mut instructions = vec![];
-        let lhs = Variable::new();
-        let rhs = lhs.next();
+    fn test_if_then() -> Result<(), String> {
+        check_or_save_reference_ir("test_if_then", |builder| {
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 0).into(),
+            );
+            qir::build_if_result::<String>(
+                builder,
+                result_id(builder, 0).into(),
+                || {
+                    qis::call_x(builder, qubit_id(builder, 0).into());
+                    Ok(())
+                },
+                || Ok(()),
+            )
+            .unwrap();
+        })
+    }
 
-        for result in [lhs, rhs] {
-            instructions.push(Instruction::Call(Call {
-                name: "source".to_string(),
-                args: vec![],
-                result: Some(result),
-            }));
-        }
+    #[test]
+    fn test_if_else() -> Result<(), String> {
+        check_or_save_reference_ir("test_if_else", |builder| {
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 0).into(),
+            );
+            qir::build_if_result::<String>(
+                builder,
+                result_id(builder, 0).into(),
+                || Ok(()),
+                || {
+                    qis::call_x(builder, qubit_id(builder, 0).into());
+                    Ok(())
+                },
+            )
+            .unwrap();
+        })
+    }
 
-        let kinds = [
-            BinaryKind::And,
-            BinaryKind::Or,
-            BinaryKind::Xor,
-            BinaryKind::Add,
-            BinaryKind::Sub,
-            BinaryKind::Mul,
-            BinaryKind::Shl,
-            BinaryKind::LShr,
-            BinaryKind::ICmp(IntPredicate::EQ),
-            BinaryKind::ICmp(IntPredicate::NE),
-            BinaryKind::ICmp(IntPredicate::UGT),
-            BinaryKind::ICmp(IntPredicate::UGE),
-            BinaryKind::ICmp(IntPredicate::ULT),
-            BinaryKind::ICmp(IntPredicate::ULE),
-            BinaryKind::ICmp(IntPredicate::SGT),
-            BinaryKind::ICmp(IntPredicate::SGE),
-            BinaryKind::ICmp(IntPredicate::SLT),
-            BinaryKind::ICmp(IntPredicate::SLE),
-        ];
+    #[test]
+    fn test_if_then_continue() -> Result<(), String> {
+        check_or_save_reference_ir("test_if_then_continue", |builder| {
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 0).into(),
+            );
+            qir::build_if_result::<String>(
+                builder,
+                result_id(builder, 0).into(),
+                || {
+                    qis::call_x(builder, qubit_id(builder, 0).into());
+                    Ok(())
+                },
+                || Ok(()),
+            )
+            .unwrap();
+            qis::call_h(builder, qubit_id(builder, 0).into());
+        })
+    }
 
-        let mut result = rhs;
-        for kind in kinds {
-            let sink = if matches!(kind, BinaryKind::ICmp(_)) {
-                result = result.next();
-                "sink_i1".to_string()
-            } else {
-                result = result.next();
-                "sink_i32".to_string()
-            };
+    #[test]
+    fn test_if_else_continue() -> Result<(), String> {
+        check_or_save_reference_ir("test_if_else_continue", |builder| {
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 0).into(),
+            );
+            qir::build_if_result::<String>(
+                builder,
+                result_id(builder, 0).into(),
+                || Ok(()),
+                || {
+                    qis::call_x(builder, qubit_id(builder, 0).into());
+                    Ok(())
+                },
+            )
+            .unwrap();
+            qis::call_h(builder, qubit_id(builder, 0).into());
+        })
+    }
 
-            instructions.push(Instruction::BinaryOp(BinaryOp {
-                kind,
-                lhs: Value::Variable(lhs),
-                rhs: Value::Variable(rhs),
-                result,
-            }));
+    #[test]
+    fn test_if_then_else_continue() -> Result<(), String> {
+        check_or_save_reference_ir("test_if_then_else_continue", |builder| {
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 0).into(),
+            );
+            qir::build_if_result::<String>(
+                builder,
+                result_id(builder, 0).into(),
+                || {
+                    qis::call_x(builder, qubit_id(builder, 0).into());
+                    Ok(())
+                },
+                || {
+                    qis::call_y(builder, qubit_id(builder, 0).into());
+                    Ok(())
+                },
+            )
+            .unwrap();
+            qis::call_h(builder, qubit_id(builder, 0).into());
+        })
+    }
 
-            instructions.push(Instruction::Call(Call {
-                name: sink,
-                args: vec![Value::Variable(result)],
-                result: None,
-            }));
-        }
+    #[test]
+    fn test_if_then_then() -> Result<(), String> {
+        check_or_save_reference_ir("test_if_then_then", |builder| {
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 0).into(),
+            );
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 1).into(),
+            );
+            qir::build_if_result::<()>(
+                builder,
+                result_id(builder, 0).into(),
+                || {
+                    qir::build_if_result::<()>(
+                        builder,
+                        result_id(builder, 1).into(),
+                        || {
+                            qis::call_x(builder, qubit_id(builder, 0).into());
+                            Ok(())
+                        },
+                        || Ok(()),
+                    )
+                    .unwrap();
+                    Ok(())
+                },
+                || Ok(()),
+            )
+            .unwrap();
+        })
+    }
 
-        check_or_save_reference_ir(&SemanticModel {
-            name: "test_int_binary_operators".to_string(),
-            external_functions: vec![
-                (
-                    "source".to_string(),
-                    Type::Function {
-                        params: vec![],
-                        result: Box::new(Type::Int { width: 32 }),
-                    },
-                ),
-                (
-                    "sink_i1".to_string(),
-                    Type::Function {
-                        params: vec![Type::Int { width: 1 }],
-                        result: Box::new(Type::Void),
-                    },
-                ),
-                (
-                    "sink_i32".to_string(),
-                    Type::Function {
-                        params: vec![Type::Int { width: 32 }],
-                        result: Box::new(Type::Void),
-                    },
-                ),
-            ],
-            instructions,
+    #[test]
+    fn test_if_else_else() -> Result<(), String> {
+        check_or_save_reference_ir("test_if_else_else", |builder| {
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 0).into(),
+            );
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 1).into(),
+            );
+            qir::build_if_result::<()>(
+                builder,
+                result_id(builder, 0).into(),
+                || Ok(()),
+                || {
+                    qir::build_if_result::<()>(
+                        builder,
+                        result_id(builder, 1).into(),
+                        || Ok(()),
+                        || {
+                            qis::call_x(builder, qubit_id(builder, 0).into());
+                            Ok(())
+                        },
+                    )
+                    .unwrap();
+                    Ok(())
+                },
+            )
+            .unwrap();
+        })
+    }
+
+    #[test]
+    fn test_if_then_else() -> Result<(), String> {
+        check_or_save_reference_ir("test_if_then_else", |builder| {
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 0).into(),
+            );
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 1).into(),
+            );
+            qir::build_if_result::<()>(
+                builder,
+                result_id(builder, 0).into(),
+                || {
+                    qir::build_if_result::<()>(
+                        builder,
+                        result_id(builder, 1).into(),
+                        || Ok(()),
+                        || {
+                            qis::call_x(builder, qubit_id(builder, 0).into());
+                            Ok(())
+                        },
+                    )
+                    .unwrap();
+                    Ok(())
+                },
+                || Ok(()),
+            )
+            .unwrap();
+        })
+    }
+
+    #[test]
+    fn test_if_else_then() -> Result<(), String> {
+        check_or_save_reference_ir("test_if_else_then", |builder| {
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 0).into(),
+            );
+            qis::call_mz(
+                builder,
+                qubit_id(builder, 0).into(),
+                result_id(builder, 1).into(),
+            );
+            qir::build_if_result::<()>(
+                builder,
+                result_id(builder, 0).into(),
+                || Ok(()),
+                || {
+                    qir::build_if_result::<()>(
+                        builder,
+                        result_id(builder, 1).into(),
+                        || {
+                            qis::call_x(builder, qubit_id(builder, 0).into());
+                            Ok(())
+                        },
+                        || Ok(()),
+                    )
+                    .unwrap();
+                    Ok(())
+                },
+            )
+            .unwrap();
+        })
+    }
+
+    #[test]
+    fn test_allows_unmeasured_result_condition() -> Result<(), String> {
+        check_or_save_reference_ir("test_allows_unmeasured_result_condition", |builder| {
+            qir::build_if_result::<()>(
+                builder,
+                result_id(builder, 0).into(),
+                || {
+                    qis::call_x(builder, qubit_id(builder, 0).into());
+                    Ok(())
+                },
+                || {
+                    qis::call_h(builder, qubit_id(builder, 0).into());
+                    Ok(())
+                },
+            )
+            .unwrap();
         })
     }
 
@@ -459,16 +311,15 @@ mod tests {
     ///    regenerate the reference files.
     /// 2. Review the changes and make sure they look reasonable.
     /// 3. Unset the environment variable and run the tests again to confirm that they pass.
-    fn check_or_save_reference_ir(model: &SemanticModel) -> Result<(), String> {
+    fn check_or_save_reference_ir(name: &str, build: impl Fn(BuilderRef)) -> Result<(), String> {
         const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
+        let actual_ir = build_ir(name, build)?;
 
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("resources");
         path.push("tests");
-        path.push(&model.name);
+        path.push(name);
         path.set_extension("ll");
-
-        let actual_ir: String = normalized(emit::ir(model)?.chars()).collect();
 
         if env::var(PYQIR_TEST_SAVE_REFERENCES).is_ok() {
             fs::create_dir_all(path.parent().unwrap()).map_err(|e| e.to_string())?;
@@ -484,5 +335,17 @@ mod tests {
             assert_eq!(expected_ir, actual_ir);
             Ok(())
         }
+    }
+
+    fn build_ir(name: &str, build: impl Fn(BuilderRef)) -> Result<String, String> {
+        let context = Context::create();
+        let module = context.create_module(name);
+        let builder = context.create_builder();
+        qir::init_module_builder(&module, &builder);
+        build(BuilderRef::new(&builder, &module));
+        builder.build_return(None);
+        run_basic_passes_on(&module);
+        module.verify().map_err(|e| e.to_string())?;
+        Ok(module.print_to_string().to_string())
     }
 }

@@ -6,8 +6,6 @@ use inkwell::{context::Context, memory_buffer::MemoryBuffer};
 use crate::module;
 
 pub mod emit;
-mod env;
-pub mod interop;
 pub mod qir;
 
 /// # Errors
@@ -63,46 +61,36 @@ pub fn bitcode_to_ir(
 
 #[cfg(test)]
 mod module_conversion_tests {
-    use super::{
-        interop::{Instruction, Measured, SemanticModel, Value},
-        *,
+    use super::{qir::init_module_builder, *};
+    use crate::codegen::{
+        qis,
+        types::{qubit_id, result_id},
+        BuilderRef,
     };
-    use crate::generation::emit;
 
-    fn get_model(name: String) -> SemanticModel {
-        SemanticModel {
-            name,
-            external_functions: vec![],
-            instructions: vec![Instruction::M(Measured::new(
-                Value::Qubit(0),
-                Value::Result(0),
-            ))],
-        }
+    fn example_ir() -> String {
+        let context = Context::create();
+        let module = context.create_module("test");
+        let builder = context.create_builder();
+        let builder = BuilderRef::new(&builder, &module);
+        init_module_builder(&module, &builder);
+        qis::call_mz(
+            builder,
+            qubit_id(builder, 0).into(),
+            result_id(builder, 0).into(),
+        );
+        builder.build_return(None);
+        module.print_to_string().to_string()
     }
 
     #[test]
     fn ir_round_trip_is_identical() -> Result<(), String> {
-        let model = get_model("test".to_owned());
-        let actual_ir: String = emit::ir(&model)?;
+        let actual_ir = example_ir();
         let bitcode = ir_to_bitcode(actual_ir.as_str(), &None, &None)?;
         let converted_ir = bitcode_to_ir(
             bitcode.as_slice(),
             &Some("test".to_owned()),
             &Some("test".to_owned()),
-        )?;
-        assert_eq!(actual_ir, converted_ir);
-        Ok(())
-    }
-
-    #[test]
-    fn module_name_is_normalized() -> Result<(), String> {
-        let model = get_model("tests".to_owned());
-        let actual_ir: String = emit::ir(&model)?;
-        let bitcode = ir_to_bitcode(actual_ir.as_str(), &None, &None)?;
-        let converted_ir = bitcode_to_ir(
-            bitcode.as_slice(),
-            &Some("tests".to_owned()),
-            &Some("tests".to_owned()),
         )?;
         assert_eq!(actual_ir, converted_ir);
         Ok(())
