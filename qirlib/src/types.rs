@@ -1,13 +1,15 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use super::builder::BuilderRef;
+use super::builder::ModuleBuilder;
 use inkwell::{
+    builder::Builder,
     module::Module,
     types::{PointerType, StructType},
     values::PointerValue,
     AddressSpace,
 };
+use std::borrow::Borrow;
 
 pub fn qubit<'ctx>(module: &Module<'ctx>) -> PointerType<'ctx> {
     get_or_define_struct(module, "Qubit").ptr_type(AddressSpace::Generic)
@@ -18,14 +20,20 @@ pub fn result<'ctx>(module: &Module<'ctx>) -> PointerType<'ctx> {
 }
 
 #[must_use]
-pub fn qubit_id<'ctx>(builder: BuilderRef<'ctx, '_>, id: u64) -> PointerValue<'ctx> {
+pub fn qubit_id<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    id: u64,
+) -> PointerValue<'ctx> {
     let module = builder.module();
     let value = module.get_context().i64_type().const_int(id, false);
     builder.build_int_to_ptr(value, qubit(module), "")
 }
 
 #[must_use]
-pub fn result_id<'ctx>(builder: BuilderRef<'ctx, '_>, id: u64) -> PointerValue<'ctx> {
+pub fn result_id<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    id: u64,
+) -> PointerValue<'ctx> {
     let module = builder.module();
     let value = module.get_context().i64_type().const_int(id, false);
     builder.build_int_to_ptr(value, result(module), "")

@@ -1,86 +1,131 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use super::{builder::BuilderRef, types};
+use super::{builder::ModuleBuilder, types};
 use inkwell::{
+    builder::Builder,
     module::{Linkage, Module},
     types::BasicMetadataTypeEnum,
     values::{BasicMetadataValueEnum, FunctionValue, IntValue},
 };
 use log;
+use std::borrow::Borrow;
 
-pub fn call_cnot(
-    builder: BuilderRef,
+pub fn call_cnot<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
     control: BasicMetadataValueEnum,
     qubit: BasicMetadataValueEnum,
 ) {
     builder.build_call(cnot_body(builder.module()), &[control, qubit], "");
 }
 
-pub fn call_cz(
-    builder: BuilderRef,
+pub fn call_cz<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
     control: BasicMetadataValueEnum,
     qubit: BasicMetadataValueEnum,
 ) {
     builder.build_call(cz_body(builder.module()), &[control, qubit], "");
 }
 
-pub fn call_h(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+pub fn call_h<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    qubit: BasicMetadataValueEnum,
+) {
     builder.build_call(h_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_s(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+pub fn call_s<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    qubit: BasicMetadataValueEnum,
+) {
     builder.build_call(s_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_s_adj(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+pub fn call_s_adj<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    qubit: BasicMetadataValueEnum,
+) {
     builder.build_call(s_adj(builder.module()), &[qubit], "");
 }
 
-pub fn call_t(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+pub fn call_t<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    qubit: BasicMetadataValueEnum,
+) {
     builder.build_call(t_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_t_adj(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+pub fn call_t_adj<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    qubit: BasicMetadataValueEnum,
+) {
     builder.build_call(t_adj(builder.module()), &[qubit], "");
 }
 
-pub fn call_x(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+pub fn call_x<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    qubit: BasicMetadataValueEnum,
+) {
     builder.build_call(x_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_y(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+pub fn call_y<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    qubit: BasicMetadataValueEnum,
+) {
     builder.build_call(y_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_z(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+pub fn call_z<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    qubit: BasicMetadataValueEnum,
+) {
     builder.build_call(z_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_rx(builder: BuilderRef, theta: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum) {
+pub fn call_rx<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    theta: BasicMetadataValueEnum,
+    qubit: BasicMetadataValueEnum,
+) {
     builder.build_call(rx_body(builder.module()), &[theta, qubit], "");
 }
 
-pub fn call_ry(builder: BuilderRef, theta: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum) {
+pub fn call_ry<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    theta: BasicMetadataValueEnum,
+    qubit: BasicMetadataValueEnum,
+) {
     builder.build_call(ry_body(builder.module()), &[theta, qubit], "");
 }
 
-pub fn call_rz(builder: BuilderRef, theta: BasicMetadataValueEnum, qubit: BasicMetadataValueEnum) {
+pub fn call_rz<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    theta: BasicMetadataValueEnum,
+    qubit: BasicMetadataValueEnum,
+) {
     builder.build_call(rz_body(builder.module()), &[theta, qubit], "");
 }
 
-pub fn call_reset(builder: BuilderRef, qubit: BasicMetadataValueEnum) {
+pub fn call_reset<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    qubit: BasicMetadataValueEnum,
+) {
     builder.build_call(reset_body(builder.module()), &[qubit], "");
 }
 
-pub fn call_mz(builder: BuilderRef, qubit: BasicMetadataValueEnum, result: BasicMetadataValueEnum) {
+pub fn call_mz<'ctx>(
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    qubit: BasicMetadataValueEnum,
+    result: BasicMetadataValueEnum,
+) {
     builder.build_call(mz_body(builder.module()), &[qubit, result], "");
 }
 
 #[allow(clippy::missing_panics_doc)]
 #[must_use]
 pub fn call_read_result<'ctx>(
-    builder: BuilderRef<'ctx, '_>,
+    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
     result: BasicMetadataValueEnum<'ctx>,
 ) -> IntValue<'ctx> {
     builder

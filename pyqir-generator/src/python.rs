@@ -15,7 +15,7 @@ use pyo3::{
     types::{PyBytes, PySequence, PyString, PyUnicode},
 };
 use qirlib::{
-    builder::{BuilderExt, BuilderRef},
+    builder::{BuilderExt, ModuleBuilder},
     inkwell::{
         builder::Builder as InkwellBuilder,
         context::Context as InkwellContext,
@@ -434,7 +434,7 @@ impl SimpleModule {
         {
             let builder = builder.borrow(py);
             let module = module.borrow(py);
-            let builder = BuilderRef::new(&builder.builder, &module.module);
+            let builder = ModuleBuilder::from(&builder.builder, &module.module);
             builder.build_entry_point();
         }
 
@@ -466,9 +466,9 @@ impl SimpleModule {
     fn qubits(&self, py: Python) -> Vec<Value> {
         let builder = self.builder.borrow(py);
         let module = self.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         (0..self.num_qubits)
-            .map(|id| Value::new(module.context.clone(), &types::qubit_id(builder, id)))
+            .map(|id| Value::new(module.context.clone(), &types::qubit_id(&builder, id)))
             .collect()
     }
 
@@ -479,9 +479,9 @@ impl SimpleModule {
     fn results(&self, py: Python) -> Vec<Value> {
         let builder = self.builder.borrow(py);
         let module = self.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         (0..self.num_results)
-            .map(|id| Value::new(module.context.clone(), &types::result_id(builder, id)))
+            .map(|id| Value::new(module.context.clone(), &types::result_id(&builder, id)))
             .collect()
     }
 
@@ -560,10 +560,10 @@ impl BasicQisBuilder {
     fn cx(&self, py: Python, control: &Value, target: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let control = any_to_meta(control.value).unwrap();
         let target = any_to_meta(target.value).unwrap();
-        qis::call_cnot(builder, control, target);
+        qis::call_cnot(&builder, control, target);
     }
 
     /// Inserts a controlled Pauli :math:`Z` gate.
@@ -575,10 +575,10 @@ impl BasicQisBuilder {
     fn cz(&self, py: Python, control: &Value, target: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let control = any_to_meta(control.value).unwrap();
         let target = any_to_meta(target.value).unwrap();
-        qis::call_cz(builder, control, target);
+        qis::call_cz(&builder, control, target);
     }
 
     /// Inserts a Hadamard gate.
@@ -590,8 +590,8 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let qubit = any_to_meta(qubit.value).unwrap();
-        let builder = BuilderRef::new(&builder.builder, &module.module);
-        qis::call_h(builder, qubit);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
+        qis::call_h(&builder, qubit);
     }
 
     /// Inserts a Z-basis measurement operation.
@@ -603,10 +603,10 @@ impl BasicQisBuilder {
     fn mz(&self, py: Python, qubit: &Value, result: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
         let result = any_to_meta(result.value).unwrap();
-        qis::call_mz(builder, qubit, result);
+        qis::call_mz(&builder, qubit, result);
     }
 
     /// Inserts a reset operation.
@@ -617,9 +617,9 @@ impl BasicQisBuilder {
     fn reset(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_reset(builder, qubit);
+        qis::call_reset(&builder, qubit);
     }
 
     /// Inserts a rotation gate about the :math:`x` axis.
@@ -631,11 +631,11 @@ impl BasicQisBuilder {
     fn rx(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let context = module.context.borrow(py);
         let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_rx(builder, theta, qubit);
+        qis::call_rx(&builder, theta, qubit);
         Ok(())
     }
 
@@ -648,11 +648,11 @@ impl BasicQisBuilder {
     fn ry(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let context = module.context.borrow(py);
         let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_ry(builder, theta, qubit);
+        qis::call_ry(&builder, theta, qubit);
         Ok(())
     }
 
@@ -665,11 +665,11 @@ impl BasicQisBuilder {
     fn rz(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let context = module.context.borrow(py);
         let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_rz(builder, theta, qubit);
+        qis::call_rz(&builder, theta, qubit);
         Ok(())
     }
 
@@ -681,9 +681,9 @@ impl BasicQisBuilder {
     fn s(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_s(builder, qubit);
+        qis::call_s(&builder, qubit);
     }
 
     /// Inserts an adjoint :math:`S` gate.
@@ -694,9 +694,9 @@ impl BasicQisBuilder {
     fn s_adj(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_s_adj(builder, qubit);
+        qis::call_s_adj(&builder, qubit);
     }
 
     /// Inserts a :math:`T` gate.
@@ -707,9 +707,9 @@ impl BasicQisBuilder {
     fn t(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_t(builder, qubit);
+        qis::call_t(&builder, qubit);
     }
 
     /// Inserts an adjoint :math:`T` gate.
@@ -720,9 +720,9 @@ impl BasicQisBuilder {
     fn t_adj(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_t_adj(builder, qubit);
+        qis::call_t_adj(&builder, qubit);
     }
 
     /// Inserts a Pauli :math:`X` gate.
@@ -733,9 +733,9 @@ impl BasicQisBuilder {
     fn x(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_x(builder, qubit);
+        qis::call_x(&builder, qubit);
     }
 
     /// Inserts a Pauli :math:`Y` gate.
@@ -746,9 +746,9 @@ impl BasicQisBuilder {
     fn y(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_y(builder, qubit);
+        qis::call_y(&builder, qubit);
     }
 
     /// Inserts a Pauli :math:`Z` gate.
@@ -759,9 +759,9 @@ impl BasicQisBuilder {
     fn z(&self, py: Python, qubit: &Value) {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_z(builder, qubit);
+        qis::call_z(&builder, qubit);
     }
 
     /// Inserts a branch conditioned on a measurement result.
@@ -786,7 +786,7 @@ impl BasicQisBuilder {
     ) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
-        let builder = BuilderRef::new(&builder.builder, &module.module);
+        let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.try_build_if_result(
             any_to_meta(cond.value).unwrap(),
             || call_if_some(one),

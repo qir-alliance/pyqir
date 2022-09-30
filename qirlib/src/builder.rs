@@ -4,44 +4,54 @@ use inkwell::{
     module::Module,
     values::{BasicMetadataValueEnum, IntValue},
 };
-use std::ops::Deref;
+use std::{borrow::Borrow, ops::Deref};
 
 // TODO: With LLVM, it's possible to get the module that a builder is positioned in using only the
 // builder itself. But it's not possible with Inkwell, so we have to bundle the references together.
 // See https://github.com/TheDan64/inkwell/issues/347
 #[allow(clippy::module_name_repetitions)]
-#[derive(Clone, Copy)]
-pub struct BuilderRef<'ctx, 'a> {
-    builder: &'a Builder<'ctx>,
-    module: &'a Module<'ctx>,
+pub struct ModuleBuilder<'ctx, 'm, B> {
+    builder: B,
+    module: &'m Module<'ctx>,
 }
 
-impl<'ctx, 'a> Deref for BuilderRef<'ctx, 'a> {
+impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> Deref for ModuleBuilder<'ctx, 'm, B> {
     type Target = Builder<'ctx>;
 
     fn deref(&self) -> &Self::Target {
-        self.builder
+        self.builder.borrow()
     }
 }
 
-impl<'ctx, 'a> BuilderRef<'ctx, 'a> {
-    pub fn new(builder: &'a Builder<'ctx>, module: &'a Module<'ctx>) -> Self {
+impl<'ctx, 'm> ModuleBuilder<'ctx, 'm, Builder<'ctx>> {
+    pub fn new(module: &'m Module<'ctx>) -> Self {
+        Self {
+            builder: module.get_context().create_builder(),
+            module,
+        }
+    }
+}
+
+impl<'ctx, 'b, 'm> ModuleBuilder<'ctx, 'm, &'b Builder<'ctx>> {
+    pub fn from(builder: &'b Builder<'ctx>, module: &'m Module<'ctx>) -> Self {
         Self { builder, module }
     }
+}
 
-    pub(crate) fn module(&self) -> &'a Module<'ctx> {
-        self.module
+impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> ModuleBuilder<'ctx, 'm, B> {
+    pub(crate) fn module(&self) -> &Module<'ctx> {
+        self.module.borrow()
     }
 
-    pub fn build_entry_point(self) {
-        let context = self.module.get_context();
-        let entry_point = module::create_entry_point(self.module);
+    pub fn build_entry_point(&self) {
+        let context = self.module().get_context();
+        let entry_point = module::create_entry_point(self.module());
         let entry = context.append_basic_block(entry_point, "entry");
-        self.position_at_end(entry);
+        self.deref().position_at_end(entry);
     }
 
     pub fn build_if_result(
-        self,
+        &self,
         cond: BasicMetadataValueEnum<'ctx>,
         build_one: impl Fn(),
         build_zero: impl Fn(),
@@ -52,7 +62,7 @@ impl<'ctx, 'a> BuilderRef<'ctx, 'a> {
 
     #[allow(clippy::missing_errors_doc)]
     pub fn try_build_if_result<E>(
-        self,
+        &self,
         cond: BasicMetadataValueEnum<'ctx>,
         build_one: impl Fn() -> Result<(), E>,
         build_zero: impl Fn() -> Result<(), E>,
@@ -122,13 +132,13 @@ impl<'ctx> BuilderExt for Builder<'ctx> {
 
 #[cfg(test)]
 mod tests {
-    use super::BuilderRef;
+    use super::ModuleBuilder;
     use crate::{
         passes::run_basic_passes_on,
         qis,
         types::{qubit_id, result_id},
     };
-    use inkwell::context::Context;
+    use inkwell::{builder::Builder, context::Context};
     use normalize_line_endings::normalized;
     use std::{env, fs, path::PathBuf};
 
@@ -353,7 +363,10 @@ mod tests {
     ///    regenerate the reference files.
     /// 2. Review the changes and make sure they look reasonable.
     /// 3. Unset the environment variable and run the tests again to confirm that they pass.
-    fn check_or_save_reference_ir(name: &str, build: impl Fn(BuilderRef)) -> Result<(), String> {
+    fn check_or_save_reference_ir(
+        name: &str,
+        build: impl for<'ctx> Fn(&ModuleBuilder<'ctx, '_, Builder<'ctx>>),
+    ) -> Result<(), String> {
         const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
         let actual_ir = build_ir(name, build)?;
 
@@ -379,15 +392,17 @@ mod tests {
         }
     }
 
-    fn build_ir(name: &str, build: impl Fn(BuilderRef)) -> Result<String, String> {
+    fn build_ir(
+        name: &str,
+        build: impl for<'ctx> Fn(&ModuleBuilder<'ctx, '_, Builder<'ctx>>),
+    ) -> Result<String, String> {
         let context = Context::create();
         let module = context.create_module(name);
-        let builder = context.create_builder();
-        let builder = BuilderRef::new(&builder, &module);
+        let builder = ModuleBuilder::new(&module);
         builder.build_entry_point();
-        build(builder);
+        build(&builder);
         builder.build_return(None);
-        run_basic_passes_on(&module);
+        run_basic_passes_on(builder.module());
         module.verify().map_err(|e| e.to_string())?;
         Ok(module.print_to_string().to_string())
     }
