@@ -1,9 +1,5 @@
-use crate::{module, qis};
-use inkwell::{
-    builder::Builder,
-    module::Module,
-    values::{BasicMetadataValueEnum, IntValue},
-};
+use crate::module;
+use inkwell::{builder::Builder, module::Module, values::IntValue};
 use std::{borrow::Borrow, ops::Deref};
 
 // TODO: With LLVM, it's possible to get the module that a builder is positioned in using only the
@@ -48,27 +44,6 @@ impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> ModuleBuilder<'ctx, 'm, B> {
         let entry_point = module::create_entry_point(self.module());
         let entry = context.append_basic_block(entry_point, "entry");
         self.deref().position_at_end(entry);
-    }
-
-    pub fn build_if_result(
-        &self,
-        cond: BasicMetadataValueEnum<'ctx>,
-        build_one: impl Fn(),
-        build_zero: impl Fn(),
-    ) {
-        let bool_cond = qis::call_read_result(self, cond);
-        self.build_if(bool_cond, build_one, build_zero);
-    }
-
-    #[allow(clippy::missing_errors_doc)]
-    pub fn try_build_if_result<E>(
-        &self,
-        cond: BasicMetadataValueEnum<'ctx>,
-        build_one: impl Fn() -> Result<(), E>,
-        build_zero: impl Fn() -> Result<(), E>,
-    ) -> Result<(), E> {
-        let bool_cond = qis::call_read_result(self, cond);
-        self.try_build_if(bool_cond, build_one, build_zero)
     }
 }
 
@@ -135,7 +110,7 @@ mod tests {
     use super::ModuleBuilder;
     use crate::{
         passes::run_basic_passes_on,
-        qis,
+        qis::BuilderBasicExt,
         types::{qubit_id, result_id},
     };
     use inkwell::{builder::Builder, context::Context};
@@ -145,11 +120,7 @@ mod tests {
     #[test]
     fn test_empty_if() -> Result<(), String> {
         check_or_save_reference_ir("test_empty_if", |builder| {
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 0).into(),
-            );
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
             builder.build_if_result(result_id(builder, 0).into(), || (), || ());
         })
     }
@@ -157,14 +128,10 @@ mod tests {
     #[test]
     fn test_if_then() -> Result<(), String> {
         check_or_save_reference_ir("test_if_then", |builder| {
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 0).into(),
-            );
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
             builder.build_if_result(
                 result_id(builder, 0).into(),
-                || qis::call_x(builder, qubit_id(builder, 0).into()),
+                || builder.build_x(qubit_id(builder, 0).into()),
                 || (),
             );
         })
@@ -173,15 +140,11 @@ mod tests {
     #[test]
     fn test_if_else() -> Result<(), String> {
         check_or_save_reference_ir("test_if_else", |builder| {
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 0).into(),
-            );
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
             builder.build_if_result(
                 result_id(builder, 0).into(),
                 || (),
-                || qis::call_x(builder, qubit_id(builder, 0).into()),
+                || builder.build_x(qubit_id(builder, 0).into()),
             );
         })
     }
@@ -189,73 +152,53 @@ mod tests {
     #[test]
     fn test_if_then_continue() -> Result<(), String> {
         check_or_save_reference_ir("test_if_then_continue", |builder| {
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 0).into(),
-            );
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
             builder.build_if_result(
                 result_id(builder, 0).into(),
-                || qis::call_x(builder, qubit_id(builder, 0).into()),
+                || builder.build_x(qubit_id(builder, 0).into()),
                 || (),
             );
-            qis::call_h(builder, qubit_id(builder, 0).into());
+            builder.build_h(qubit_id(builder, 0).into());
         })
     }
 
     #[test]
     fn test_if_else_continue() -> Result<(), String> {
         check_or_save_reference_ir("test_if_else_continue", |builder| {
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 0).into(),
-            );
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
             builder.build_if_result(
                 result_id(builder, 0).into(),
                 || (),
-                || qis::call_x(builder, qubit_id(builder, 0).into()),
+                || builder.build_x(qubit_id(builder, 0).into()),
             );
-            qis::call_h(builder, qubit_id(builder, 0).into());
+            builder.build_h(qubit_id(builder, 0).into());
         })
     }
 
     #[test]
     fn test_if_then_else_continue() -> Result<(), String> {
         check_or_save_reference_ir("test_if_then_else_continue", |builder| {
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 0).into(),
-            );
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
             builder.build_if_result(
                 result_id(builder, 0).into(),
-                || qis::call_x(builder, qubit_id(builder, 0).into()),
-                || qis::call_y(builder, qubit_id(builder, 0).into()),
+                || builder.build_x(qubit_id(builder, 0).into()),
+                || builder.build_y(qubit_id(builder, 0).into()),
             );
-            qis::call_h(builder, qubit_id(builder, 0).into());
+            builder.build_h(qubit_id(builder, 0).into());
         })
     }
 
     #[test]
     fn test_if_then_then() -> Result<(), String> {
         check_or_save_reference_ir("test_if_then_then", |builder| {
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 0).into(),
-            );
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 1).into(),
-            );
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 1).into());
             builder.build_if_result(
                 result_id(builder, 0).into(),
                 || {
                     builder.build_if_result(
                         result_id(builder, 1).into(),
-                        || qis::call_x(builder, qubit_id(builder, 0).into()),
+                        || builder.build_x(qubit_id(builder, 0).into()),
                         || (),
                     );
                 },
@@ -267,16 +210,8 @@ mod tests {
     #[test]
     fn test_if_else_else() -> Result<(), String> {
         check_or_save_reference_ir("test_if_else_else", |builder| {
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 0).into(),
-            );
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 1).into(),
-            );
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 1).into());
             builder.build_if_result(
                 result_id(builder, 0).into(),
                 || (),
@@ -284,7 +219,7 @@ mod tests {
                     builder.build_if_result(
                         result_id(builder, 1).into(),
                         || (),
-                        || qis::call_x(builder, qubit_id(builder, 0).into()),
+                        || builder.build_x(qubit_id(builder, 0).into()),
                     );
                 },
             );
@@ -294,23 +229,15 @@ mod tests {
     #[test]
     fn test_if_then_else() -> Result<(), String> {
         check_or_save_reference_ir("test_if_then_else", |builder| {
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 0).into(),
-            );
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 1).into(),
-            );
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 1).into());
             builder.build_if_result(
                 result_id(builder, 0).into(),
                 || {
                     builder.build_if_result(
                         result_id(builder, 1).into(),
                         || (),
-                        || qis::call_x(builder, qubit_id(builder, 0).into()),
+                        || builder.build_x(qubit_id(builder, 0).into()),
                     );
                 },
                 || (),
@@ -321,23 +248,15 @@ mod tests {
     #[test]
     fn test_if_else_then() -> Result<(), String> {
         check_or_save_reference_ir("test_if_else_then", |builder| {
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 0).into(),
-            );
-            qis::call_mz(
-                builder,
-                qubit_id(builder, 0).into(),
-                result_id(builder, 1).into(),
-            );
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
+            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 1).into());
             builder.build_if_result(
                 result_id(builder, 0).into(),
                 || (),
                 || {
                     builder.build_if_result(
                         result_id(builder, 1).into(),
-                        || qis::call_x(builder, qubit_id(builder, 0).into()),
+                        || builder.build_x(qubit_id(builder, 0).into()),
                         || (),
                     );
                 },
@@ -350,8 +269,8 @@ mod tests {
         check_or_save_reference_ir("test_allows_unmeasured_result_condition", |builder| {
             builder.build_if_result(
                 result_id(builder, 0).into(),
-                || qis::call_x(builder, qubit_id(builder, 0).into()),
-                || qis::call_h(builder, qubit_id(builder, 0).into()),
+                || builder.build_x(qubit_id(builder, 0).into()),
+                || builder.build_h(qubit_id(builder, 0).into()),
             );
         })
     }

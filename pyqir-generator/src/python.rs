@@ -24,7 +24,9 @@ use qirlib::{
         values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum, CallableValue},
         IntPredicate,
     },
-    module, qis, types,
+    module,
+    qis::BuilderBasicExt,
+    types,
 };
 use std::{
     convert::{Into, TryFrom},
@@ -563,7 +565,7 @@ impl BasicQisBuilder {
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let control = any_to_meta(control.value).unwrap();
         let target = any_to_meta(target.value).unwrap();
-        qis::call_cnot(&builder, control, target);
+        builder.build_cx(control, target);
     }
 
     /// Inserts a controlled Pauli :math:`Z` gate.
@@ -578,7 +580,7 @@ impl BasicQisBuilder {
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let control = any_to_meta(control.value).unwrap();
         let target = any_to_meta(target.value).unwrap();
-        qis::call_cz(&builder, control, target);
+        builder.build_cz(control, target);
     }
 
     /// Inserts a Hadamard gate.
@@ -591,7 +593,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let qubit = any_to_meta(qubit.value).unwrap();
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        qis::call_h(&builder, qubit);
+        builder.build_h(qubit);
     }
 
     /// Inserts a Z-basis measurement operation.
@@ -606,7 +608,7 @@ impl BasicQisBuilder {
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
         let result = any_to_meta(result.value).unwrap();
-        qis::call_mz(&builder, qubit, result);
+        builder.build_mz(qubit, result);
     }
 
     /// Inserts a reset operation.
@@ -619,7 +621,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_reset(&builder, qubit);
+        builder.build_reset(qubit);
     }
 
     /// Inserts a rotation gate about the :math:`x` axis.
@@ -635,7 +637,7 @@ impl BasicQisBuilder {
         let context = module.context.borrow(py);
         let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_rx(&builder, theta, qubit);
+        builder.build_rx(theta, qubit);
         Ok(())
     }
 
@@ -652,7 +654,7 @@ impl BasicQisBuilder {
         let context = module.context.borrow(py);
         let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_ry(&builder, theta, qubit);
+        builder.build_ry(theta, qubit);
         Ok(())
     }
 
@@ -669,7 +671,7 @@ impl BasicQisBuilder {
         let context = module.context.borrow(py);
         let theta = any_to_meta(extract_value(&context.0.f64_type(), theta)?).unwrap();
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_rz(&builder, theta, qubit);
+        builder.build_rz(theta, qubit);
         Ok(())
     }
 
@@ -683,7 +685,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_s(&builder, qubit);
+        builder.build_s(qubit);
     }
 
     /// Inserts an adjoint :math:`S` gate.
@@ -696,7 +698,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_s_adj(&builder, qubit);
+        builder.build_s_adj(qubit);
     }
 
     /// Inserts a :math:`T` gate.
@@ -709,7 +711,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_t(&builder, qubit);
+        builder.build_t(qubit);
     }
 
     /// Inserts an adjoint :math:`T` gate.
@@ -722,7 +724,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_t_adj(&builder, qubit);
+        builder.build_t_adj(qubit);
     }
 
     /// Inserts a Pauli :math:`X` gate.
@@ -735,7 +737,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_x(&builder, qubit);
+        builder.build_x(qubit);
     }
 
     /// Inserts a Pauli :math:`Y` gate.
@@ -748,7 +750,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_y(&builder, qubit);
+        builder.build_y(qubit);
     }
 
     /// Inserts a Pauli :math:`Z` gate.
@@ -761,7 +763,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         let qubit = any_to_meta(qubit.value).unwrap();
-        qis::call_z(&builder, qubit);
+        builder.build_z(qubit);
     }
 
     /// Inserts a branch conditioned on a measurement result.

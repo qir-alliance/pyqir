@@ -102,7 +102,7 @@ mod tests {
     use crate::{
         builder::ModuleBuilder,
         module::{self, create_entry_point},
-        qis,
+        qis::BuilderBasicExt,
         types::{qubit_id, result_id},
     };
     use inkwell::context::Context;
@@ -129,11 +129,7 @@ mod tests {
         let module = context.create_module("test");
         let builder = ModuleBuilder::new(&module);
         builder.build_entry_point();
-        qis::call_mz(
-            &builder,
-            qubit_id(&builder, 0).into(),
-            result_id(&builder, 0).into(),
-        );
+        builder.build_mz(qubit_id(&builder, 0).into(), result_id(&builder, 0).into());
         builder.build_return(None);
         module.print_to_string().to_string()
     }
