@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use super::build::BuilderRef;
+use super::builder::BuilderRef;
 use inkwell::{
     module::Module,
     types::{PointerType, StructType},

@@ -99,15 +99,14 @@ pub(crate) fn create_entry_point<'ctx>(module: &Module<'ctx>) -> FunctionValue<'
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::File, io::Read, path::Path};
-
     use crate::{
-        build::{self, BuilderRef},
+        builder::BuilderRef,
         module::{self, create_entry_point},
         qis,
         types::{qubit_id, result_id},
     };
     use inkwell::context::Context;
+    use std::{fs::File, io::Read, path::Path};
     use tempfile::tempdir;
 
     #[test]
@@ -130,7 +129,7 @@ mod tests {
         let module = context.create_module("test");
         let builder = context.create_builder();
         let builder = BuilderRef::new(&builder, &module);
-        build::init(builder);
+        builder.build_entry_point();
         qis::call_mz(
             builder,
             qubit_id(builder, 0).into(),

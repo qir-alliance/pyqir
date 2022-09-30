@@ -7,7 +7,7 @@
 pub use inkwell;
 
 #[cfg(not(any(feature = "no-llvm-linking")))]
-pub mod build;
+pub mod builder;
 #[cfg(not(any(feature = "no-llvm-linking")))]
 pub mod evaluation;
 #[cfg(not(any(feature = "no-llvm-linking")))]

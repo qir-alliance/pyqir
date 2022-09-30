@@ -15,7 +15,7 @@ use pyo3::{
     types::{PyBytes, PySequence, PyString, PyUnicode},
 };
 use qirlib::{
-    build::{self, BuilderRef},
+    builder::{BuilderExt, BuilderRef},
     inkwell::{
         builder::Builder as InkwellBuilder,
         context::Context as InkwellContext,
@@ -396,8 +396,7 @@ impl Builder {
     ///     A callable that inserts instructions for the branch where the condition is false.
     #[pyo3(text_signature = "(self, cond, true, false)")]
     fn if_(&self, cond: &Value, r#true: Option<&PyAny>, r#false: Option<&PyAny>) -> PyResult<()> {
-        build::if_then(
-            &self.builder,
+        self.builder.try_build_if(
             cond.value.into_int_value(),
             || call_if_some(r#true),
             || call_if_some(r#false),
@@ -436,7 +435,7 @@ impl SimpleModule {
             let builder = builder.borrow(py);
             let module = module.borrow(py);
             let builder = BuilderRef::new(&builder.builder, &module.module);
-            build::init(builder);
+            builder.build_entry_point();
         }
 
         let types = Py::new(
@@ -788,8 +787,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         let module = builder.module.borrow(py);
         let builder = BuilderRef::new(&builder.builder, &module.module);
-        build::if_result(
-            builder,
+        builder.try_build_if_result(
             any_to_meta(cond.value).unwrap(),
             || call_if_some(one),
             || call_if_some(zero),
