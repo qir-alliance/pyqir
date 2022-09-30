@@ -469,7 +469,7 @@ impl SimpleModule {
         let module = self.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         (0..self.num_qubits)
-            .map(|id| Value::new(module.context.clone(), &types::qubit_id(&builder, id)))
+            .map(|id| Value::new(module.context.clone(), &builder.build_qubit(id)))
             .collect()
     }
 
@@ -482,7 +482,7 @@ impl SimpleModule {
         let module = self.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         (0..self.num_results)
-            .map(|id| Value::new(module.context.clone(), &types::result_id(&builder, id)))
+            .map(|id| Value::new(module.context.clone(), &builder.build_result(id)))
             .collect()
     }
 

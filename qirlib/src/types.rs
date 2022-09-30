@@ -1,55 +1,25 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use super::builder::ModuleBuilder;
 use inkwell::{
-    builder::Builder,
     module::Module,
     types::{PointerType, StructType},
-    values::PointerValue,
     AddressSpace,
 };
-use std::borrow::Borrow;
 
 pub fn qubit<'ctx>(module: &Module<'ctx>) -> PointerType<'ctx> {
-    get_or_define_struct(module, "Qubit").ptr_type(AddressSpace::Generic)
+    get_or_create_struct(module, "Qubit").ptr_type(AddressSpace::Generic)
 }
 
 pub fn result<'ctx>(module: &Module<'ctx>) -> PointerType<'ctx> {
-    get_or_define_struct(module, "Result").ptr_type(AddressSpace::Generic)
+    get_or_create_struct(module, "Result").ptr_type(AddressSpace::Generic)
 }
 
-#[must_use]
-pub fn qubit_id<'ctx>(
-    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
-    id: u64,
-) -> PointerValue<'ctx> {
-    let module = builder.module();
-    let value = module.get_context().i64_type().const_int(id, false);
-    builder.build_int_to_ptr(value, qubit(module), "")
-}
-
-#[must_use]
-pub fn result_id<'ctx>(
-    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
-    id: u64,
-) -> PointerValue<'ctx> {
-    let module = builder.module();
-    let value = module.get_context().i64_type().const_int(id, false);
-    builder.build_int_to_ptr(value, result(module), "")
-}
-
-fn get_or_define_struct<'ctx>(module: &Module<'ctx>, name: &str) -> StructType<'ctx> {
-    get_struct(module, name).unwrap_or_else(|| module.get_context().opaque_struct_type(name))
-}
-
-#[must_use]
-fn get_struct<'ctx>(module: &Module<'ctx>, name: &str) -> Option<StructType<'ctx>> {
-    let struct_type = module.get_struct_type(name);
-    if struct_type.is_none() {
+fn get_or_create_struct<'ctx>(module: &Module<'ctx>, name: &str) -> StructType<'ctx> {
+    module.get_struct_type(name).unwrap_or_else(|| {
         log::debug!("{} was not defined in the module", name);
-    }
-    struct_type
+        module.get_context().opaque_struct_type(name)
+    })
 }
 
 #[cfg(test)]

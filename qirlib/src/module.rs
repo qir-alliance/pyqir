@@ -127,7 +127,6 @@ mod tests {
         builder::ModuleBuilder,
         module::{self, create_entry_point},
         qis::BuilderBasicExt,
-        types::{qubit_id, result_id},
     };
     use inkwell::context::Context;
     use std::{fs::File, io::Read, path::Path};
@@ -153,7 +152,10 @@ mod tests {
         let module = context.create_module("test");
         let builder = ModuleBuilder::new(&module);
         super::build_entry_point(&module, &builder);
-        builder.build_mz(qubit_id(&builder, 0).into(), result_id(&builder, 0).into());
+        builder.build_mz(
+            builder.build_qubit(0).into(),
+            builder.build_result(0).into(),
+        );
         builder.build_return(None);
         module.print_to_string().to_string()
     }

@@ -1,4 +1,9 @@
-use inkwell::{builder::Builder, module::Module, values::IntValue};
+use crate::types;
+use inkwell::{
+    builder::Builder,
+    module::Module,
+    values::{IntValue, PointerValue},
+};
 use std::{borrow::Borrow, ops::Deref};
 
 // TODO: With LLVM, it's possible to get the module that a builder is positioned in using only the
@@ -34,8 +39,18 @@ impl<'ctx, 'b, 'm> ModuleBuilder<'ctx, 'm, &'b Builder<'ctx>> {
 }
 
 impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> ModuleBuilder<'ctx, 'm, B> {
-    pub(crate) fn module(&self) -> &Module<'ctx> {
+    pub fn module(&self) -> &Module<'ctx> {
         self.module.borrow()
+    }
+
+    pub fn build_qubit(&self, id: u64) -> PointerValue<'ctx> {
+        let value = self.module().get_context().i64_type().const_int(id, false);
+        self.build_int_to_ptr(value, types::qubit(self.module()), "")
+    }
+
+    pub fn build_result(&self, id: u64) -> PointerValue<'ctx> {
+        let value = self.module().get_context().i64_type().const_int(id, false);
+        self.build_int_to_ptr(value, types::result(self.module()), "")
     }
 }
 
@@ -100,11 +115,7 @@ impl<'ctx> BuilderExt for Builder<'ctx> {
 #[cfg(test)]
 mod tests {
     use super::ModuleBuilder;
-    use crate::{
-        module,
-        qis::BuilderBasicExt,
-        types::{qubit_id, result_id},
-    };
+    use crate::{module, qis::BuilderBasicExt};
     use inkwell::{builder::Builder, context::Context};
     use normalize_line_endings::normalized;
     use std::{env, fs, path::PathBuf};
@@ -112,18 +123,24 @@ mod tests {
     #[test]
     fn test_empty_if() -> Result<(), String> {
         check_or_save_reference_ir("test_empty_if", |builder| {
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
-            builder.build_if_result(result_id(builder, 0).into(), || (), || ());
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(0).into(),
+            );
+            builder.build_if_result(builder.build_result(0).into(), || (), || ());
         })
     }
 
     #[test]
     fn test_if_then() -> Result<(), String> {
         check_or_save_reference_ir("test_if_then", |builder| {
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(0).into(),
+            );
             builder.build_if_result(
-                result_id(builder, 0).into(),
-                || builder.build_x(qubit_id(builder, 0).into()),
+                builder.build_result(0).into(),
+                || builder.build_x(builder.build_qubit(0).into()),
                 || (),
             );
         })
@@ -132,11 +149,14 @@ mod tests {
     #[test]
     fn test_if_else() -> Result<(), String> {
         check_or_save_reference_ir("test_if_else", |builder| {
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(0).into(),
+            );
             builder.build_if_result(
-                result_id(builder, 0).into(),
+                builder.build_result(0).into(),
                 || (),
-                || builder.build_x(qubit_id(builder, 0).into()),
+                || builder.build_x(builder.build_qubit(0).into()),
             );
         })
     }
@@ -144,53 +164,68 @@ mod tests {
     #[test]
     fn test_if_then_continue() -> Result<(), String> {
         check_or_save_reference_ir("test_if_then_continue", |builder| {
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(0).into(),
+            );
             builder.build_if_result(
-                result_id(builder, 0).into(),
-                || builder.build_x(qubit_id(builder, 0).into()),
+                builder.build_result(0).into(),
+                || builder.build_x(builder.build_qubit(0).into()),
                 || (),
             );
-            builder.build_h(qubit_id(builder, 0).into());
+            builder.build_h(builder.build_qubit(0).into());
         })
     }
 
     #[test]
     fn test_if_else_continue() -> Result<(), String> {
         check_or_save_reference_ir("test_if_else_continue", |builder| {
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
-            builder.build_if_result(
-                result_id(builder, 0).into(),
-                || (),
-                || builder.build_x(qubit_id(builder, 0).into()),
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(0).into(),
             );
-            builder.build_h(qubit_id(builder, 0).into());
+            builder.build_if_result(
+                builder.build_result(0).into(),
+                || (),
+                || builder.build_x(builder.build_qubit(0).into()),
+            );
+            builder.build_h(builder.build_qubit(0).into());
         })
     }
 
     #[test]
     fn test_if_then_else_continue() -> Result<(), String> {
         check_or_save_reference_ir("test_if_then_else_continue", |builder| {
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
-            builder.build_if_result(
-                result_id(builder, 0).into(),
-                || builder.build_x(qubit_id(builder, 0).into()),
-                || builder.build_y(qubit_id(builder, 0).into()),
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(0).into(),
             );
-            builder.build_h(qubit_id(builder, 0).into());
+            builder.build_if_result(
+                builder.build_result(0).into(),
+                || builder.build_x(builder.build_qubit(0).into()),
+                || builder.build_y(builder.build_qubit(0).into()),
+            );
+            builder.build_h(builder.build_qubit(0).into());
         })
     }
 
     #[test]
     fn test_if_then_then() -> Result<(), String> {
         check_or_save_reference_ir("test_if_then_then", |builder| {
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 1).into());
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(0).into(),
+            );
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(1).into(),
+            );
             builder.build_if_result(
-                result_id(builder, 0).into(),
+                builder.build_result(0).into(),
                 || {
                     builder.build_if_result(
-                        result_id(builder, 1).into(),
-                        || builder.build_x(qubit_id(builder, 0).into()),
+                        builder.build_result(1).into(),
+                        || builder.build_x(builder.build_qubit(0).into()),
                         || (),
                     );
                 },
@@ -202,16 +237,22 @@ mod tests {
     #[test]
     fn test_if_else_else() -> Result<(), String> {
         check_or_save_reference_ir("test_if_else_else", |builder| {
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 1).into());
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(0).into(),
+            );
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(1).into(),
+            );
             builder.build_if_result(
-                result_id(builder, 0).into(),
+                builder.build_result(0).into(),
                 || (),
                 || {
                     builder.build_if_result(
-                        result_id(builder, 1).into(),
+                        builder.build_result(1).into(),
                         || (),
-                        || builder.build_x(qubit_id(builder, 0).into()),
+                        || builder.build_x(builder.build_qubit(0).into()),
                     );
                 },
             );
@@ -221,15 +262,21 @@ mod tests {
     #[test]
     fn test_if_then_else() -> Result<(), String> {
         check_or_save_reference_ir("test_if_then_else", |builder| {
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 1).into());
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(0).into(),
+            );
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(1).into(),
+            );
             builder.build_if_result(
-                result_id(builder, 0).into(),
+                builder.build_result(0).into(),
                 || {
                     builder.build_if_result(
-                        result_id(builder, 1).into(),
+                        builder.build_result(1).into(),
                         || (),
-                        || builder.build_x(qubit_id(builder, 0).into()),
+                        || builder.build_x(builder.build_qubit(0).into()),
                     );
                 },
                 || (),
@@ -240,15 +287,21 @@ mod tests {
     #[test]
     fn test_if_else_then() -> Result<(), String> {
         check_or_save_reference_ir("test_if_else_then", |builder| {
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 0).into());
-            builder.build_mz(qubit_id(builder, 0).into(), result_id(builder, 1).into());
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(0).into(),
+            );
+            builder.build_mz(
+                builder.build_qubit(0).into(),
+                builder.build_result(1).into(),
+            );
             builder.build_if_result(
-                result_id(builder, 0).into(),
+                builder.build_result(0).into(),
                 || (),
                 || {
                     builder.build_if_result(
-                        result_id(builder, 1).into(),
-                        || builder.build_x(qubit_id(builder, 0).into()),
+                        builder.build_result(1).into(),
+                        || builder.build_x(builder.build_qubit(0).into()),
                         || (),
                     );
                 },
@@ -260,9 +313,9 @@ mod tests {
     fn test_allows_unmeasured_result_condition() -> Result<(), String> {
         check_or_save_reference_ir("test_allows_unmeasured_result_condition", |builder| {
             builder.build_if_result(
-                result_id(builder, 0).into(),
-                || builder.build_x(qubit_id(builder, 0).into()),
-                || builder.build_h(qubit_id(builder, 0).into()),
+                builder.build_result(0).into(),
+                || builder.build_x(builder.build_qubit(0).into()),
+                || builder.build_h(builder.build_qubit(0).into()),
             );
         })
     }
