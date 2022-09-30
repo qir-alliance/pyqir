@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use inkwell::{
-    attributes::AttributeLoc, context::Context, memory_buffer::MemoryBuffer, module::Module,
-    values::FunctionValue,
+    attributes::AttributeLoc, builder::Builder, context::Context, memory_buffer::MemoryBuffer,
+    module::Module, values::FunctionValue,
 };
 use std::{ffi::OsStr, path::Path};
 
@@ -87,7 +87,14 @@ pub fn bitcode_to_ir(
     Ok(ir)
 }
 
-pub(crate) fn create_entry_point<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+pub fn build_entry_point(module: &Module, builder: &Builder) {
+    let context = module.get_context();
+    let entry_point = create_entry_point(module);
+    let entry = context.append_basic_block(entry_point, "entry");
+    builder.position_at_end(entry);
+}
+
+fn create_entry_point<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     let context = module.get_context();
     let fn_type = context.void_type().fn_type(&[], false);
     let fn_value = module.add_function("main", fn_type, None);
@@ -128,7 +135,7 @@ mod tests {
         let context = Context::create();
         let module = context.create_module("test");
         let builder = ModuleBuilder::new(&module);
-        builder.build_entry_point();
+        super::build_entry_point(&module, &builder);
         builder.build_mz(qubit_id(&builder, 0).into(), result_id(&builder, 0).into());
         builder.build_return(None);
         module.print_to_string().to_string()

@@ -1,4 +1,3 @@
-use crate::module;
 use inkwell::{builder::Builder, module::Module, values::IntValue};
 use std::{borrow::Borrow, ops::Deref};
 
@@ -37,13 +36,6 @@ impl<'ctx, 'b, 'm> ModuleBuilder<'ctx, 'm, &'b Builder<'ctx>> {
 impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> ModuleBuilder<'ctx, 'm, B> {
     pub(crate) fn module(&self) -> &Module<'ctx> {
         self.module.borrow()
-    }
-
-    pub fn build_entry_point(&self) {
-        let context = self.module().get_context();
-        let entry_point = module::create_entry_point(self.module());
-        let entry = context.append_basic_block(entry_point, "entry");
-        self.deref().position_at_end(entry);
     }
 }
 
@@ -109,6 +101,7 @@ impl<'ctx> BuilderExt for Builder<'ctx> {
 mod tests {
     use super::ModuleBuilder;
     use crate::{
+        module,
         passes::run_basic_passes_on,
         qis::BuilderBasicExt,
         types::{qubit_id, result_id},
@@ -318,7 +311,7 @@ mod tests {
         let context = Context::create();
         let module = context.create_module(name);
         let builder = ModuleBuilder::new(&module);
-        builder.build_entry_point();
+        module::build_entry_point(&module, &builder);
         build(&builder);
         builder.build_return(None);
         run_basic_passes_on(builder.module());

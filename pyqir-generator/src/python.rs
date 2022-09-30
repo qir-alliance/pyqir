@@ -436,8 +436,7 @@ impl SimpleModule {
         {
             let builder = builder.borrow(py);
             let module = module.borrow(py);
-            let builder = ModuleBuilder::from(&builder.builder, &module.module);
-            builder.build_entry_point();
+            module::build_entry_point(&module.module, &builder.builder);
         }
 
         let types = Py::new(
