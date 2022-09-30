@@ -102,7 +102,6 @@ mod tests {
     use super::ModuleBuilder;
     use crate::{
         module,
-        passes::run_basic_passes_on,
         qis::BuilderBasicExt,
         types::{qubit_id, result_id},
     };
@@ -314,7 +313,7 @@ mod tests {
         module::build_entry_point(&module, &builder);
         build(&builder);
         builder.build_return(None);
-        run_basic_passes_on(builder.module());
+        module::run_basic_passes_on(builder.module());
         module.verify().map_err(|e| e.to_string())?;
         Ok(module.print_to_string().to_string())
     }
