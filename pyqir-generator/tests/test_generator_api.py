@@ -137,5 +137,7 @@ def test_if_result() -> None:
 def test_multiple_contexts() -> None:
     m1 = SimpleModule("m1", 0, 0)
     m2 = SimpleModule("m2", 0, 0)
-    with pytest.raises(ValueError, match=r"^Not all objects use the same context\.$"):
+    with pytest.raises(
+        ValueError, match=r"^Some objects come from a different context\.$"
+    ):
         m1.add_external_function("f", m1.types.function(m2.types.result, []))

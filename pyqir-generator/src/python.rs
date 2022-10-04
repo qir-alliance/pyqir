@@ -13,6 +13,7 @@ use pyo3::{
     exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
     prelude::*,
     types::{PyBytes, PySequence, PyString, PyUnicode},
+    PyClass,
 };
 use qirlib::{
     builder::{BuilderExt, ModuleBuilder},
@@ -387,7 +388,12 @@ impl Builder {
     /// :returns: The return value, or None if the function has a void return type.
     /// :rtype: Optional[Value]
     #[pyo3(text_signature = "(self, function, args)")]
-    fn call(&self, function: &Value, args: &PySequence) -> PyResult<Option<Value>> {
+    fn call(&self, py: Python, function: &Value, args: &PySequence) -> PyResult<Option<Value>> {
+        require_same_contexts(
+            py,
+            value_contexts(args.iter()?).chain([self.context.clone(), function.context.clone()]),
+        )?;
+
         let (callable, param_types) = try_callable_value(function.value)
             .ok_or_else(|| PyValueError::new_err("Value is not callable."))?;
 
@@ -399,7 +405,6 @@ impl Builder {
             )));
         }
 
-        // TODO: Check contexts.
         let args = extract_values(param_types, args)?
             .iter()
             .map(|v| any_to_meta(*v).ok_or_else(|| PyValueError::new_err("Invalid argument.")))
@@ -580,7 +585,6 @@ struct BasicQisBuilder {
     builder: Py<Builder>,
 }
 
-// TODO: Check contexts.
 #[pymethods]
 impl BasicQisBuilder {
     #[new]
@@ -594,14 +598,16 @@ impl BasicQisBuilder {
     /// :param Value target: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, control, target)")]
-    fn cx(&self, py: Python, control: &Value, target: &Value) {
+    fn cx(&self, py: Python, control: &Value, target: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(py, [&builder.context, &control.context, &target.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_cx(
             control.value.into_pointer_value(),
             target.value.into_pointer_value(),
         );
+        Ok(())
     }
 
     /// Inserts a controlled Pauli :math:`Z` gate.
@@ -610,14 +616,16 @@ impl BasicQisBuilder {
     /// :param Value target: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, control, target)")]
-    fn cz(&self, py: Python, control: &Value, target: &Value) {
+    fn cz(&self, py: Python, control: &Value, target: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(py, [&builder.context, &control.context, &target.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_cz(
             control.value.into_pointer_value(),
             target.value.into_pointer_value(),
         );
+        Ok(())
     }
 
     /// Inserts a Hadamard gate.
@@ -625,11 +633,13 @@ impl BasicQisBuilder {
     /// :param qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn h(&self, py: Python, qubit: &Value) {
+    fn h(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_h(qubit.value.into_pointer_value());
+        Ok(())
     }
 
     /// Inserts a Z-basis measurement operation.
@@ -638,14 +648,16 @@ impl BasicQisBuilder {
     /// :param Value result: A result where the measurement result will be written to.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit, result)")]
-    fn mz(&self, py: Python, qubit: &Value, result: &Value) {
+    fn mz(&self, py: Python, qubit: &Value, result: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(py, [&builder.context, &qubit.context, &result.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_mz(
             qubit.value.into_pointer_value(),
             result.value.into_pointer_value(),
         );
+        Ok(())
     }
 
     /// Inserts a reset operation.
@@ -653,11 +665,13 @@ impl BasicQisBuilder {
     /// :param Value qubit: The qubit to reset.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn reset(&self, py: Python, qubit: &Value) {
+    fn reset(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_reset(qubit.value.into_pointer_value());
+        Ok(())
     }
 
     /// Inserts a rotation gate about the :math:`x` axis.
@@ -668,6 +682,11 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn rx(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(
+            py,
+            value_contexts([Ok(theta)]).chain([builder.context.clone(), qubit.context.clone()]),
+        )?;
+
         let context = builder.context.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
@@ -684,6 +703,11 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn ry(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(
+            py,
+            value_contexts([Ok(theta)]).chain([builder.context.clone(), qubit.context.clone()]),
+        )?;
+
         let context = builder.context.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
@@ -700,6 +724,11 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn rz(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(
+            py,
+            value_contexts([Ok(theta)]).chain([builder.context.clone(), qubit.context.clone()]),
+        )?;
+
         let context = builder.context.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
@@ -713,11 +742,13 @@ impl BasicQisBuilder {
     /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn s(&self, py: Python, qubit: &Value) {
+    fn s(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_s(qubit.value.into_pointer_value());
+        Ok(())
     }
 
     /// Inserts an adjoint :math:`S` gate.
@@ -725,11 +756,13 @@ impl BasicQisBuilder {
     /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn s_adj(&self, py: Python, qubit: &Value) {
+    fn s_adj(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_s_adj(qubit.value.into_pointer_value());
+        Ok(())
     }
 
     /// Inserts a :math:`T` gate.
@@ -737,11 +770,13 @@ impl BasicQisBuilder {
     /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn t(&self, py: Python, qubit: &Value) {
+    fn t(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_t(qubit.value.into_pointer_value());
+        Ok(())
     }
 
     /// Inserts an adjoint :math:`T` gate.
@@ -749,11 +784,13 @@ impl BasicQisBuilder {
     /// :param qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn t_adj(&self, py: Python, qubit: &Value) {
+    fn t_adj(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_t_adj(qubit.value.into_pointer_value());
+        Ok(())
     }
 
     /// Inserts a Pauli :math:`X` gate.
@@ -761,11 +798,13 @@ impl BasicQisBuilder {
     /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn x(&self, py: Python, qubit: &Value) {
+    fn x(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_x(qubit.value.into_pointer_value());
+        Ok(())
     }
 
     /// Inserts a Pauli :math:`Y` gate.
@@ -773,11 +812,13 @@ impl BasicQisBuilder {
     /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn y(&self, py: Python, qubit: &Value) {
+    fn y(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_y(qubit.value.into_pointer_value());
+        Ok(())
     }
 
     /// Inserts a Pauli :math:`Z` gate.
@@ -785,11 +826,13 @@ impl BasicQisBuilder {
     /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
-    fn z(&self, py: Python, qubit: &Value) {
+    fn z(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_z(qubit.value.into_pointer_value());
+        Ok(())
     }
 
     /// Inserts a branch conditioned on a measurement result.
@@ -813,6 +856,7 @@ impl BasicQisBuilder {
         zero: Option<&PyAny>,
     ) -> PyResult<()> {
         let builder = self.builder.borrow(py);
+        require_same_contexts(py, [&builder.context, &cond.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.try_build_if_result(
@@ -954,22 +998,34 @@ fn call_if_some(f: Option<&PyAny>) -> PyResult<()> {
     }
 }
 
+fn is_all_same<T>(py: Python, items: impl IntoIterator<Item = impl Borrow<Py<T>>>) -> bool
+where
+    T: Eq + PyClass,
+{
+    let mut items = items.into_iter();
+    if let Some(mut prev) = items.next() {
+        for item in items {
+            if *item.borrow().borrow(py) != *prev.borrow().borrow(py) {
+                return false;
+            }
+            prev = item;
+        }
+    };
+    true
+}
+
 fn require_same_contexts(
     py: Python,
     contexts: impl IntoIterator<Item = impl Borrow<Py<Context>>>,
 ) -> PyResult<()> {
-    let mut contexts = contexts.into_iter();
-    if let Some(mut prev) = contexts.next() {
-        for context in contexts {
-            if *context.borrow().borrow(py) != *prev.borrow().borrow(py) {
-                return Err(PyValueError::new_err(
-                    "Not all objects use the same context.",
-                ));
-            }
+    is_all_same(py, contexts)
+        .then_some(())
+        .ok_or_else(|| PyValueError::new_err("Some objects come from a different context."))
+}
 
-            prev = context;
-        }
-    };
-
-    Ok(())
+fn value_contexts<'a>(
+    obs: impl IntoIterator<Item = PyResult<&'a PyAny>> + 'a,
+) -> impl Iterator<Item = Py<Context>> + 'a {
+    obs.into_iter()
+        .filter_map(|a| Some(a.ok()?.extract::<Value>().ok()?.context))
 }
