@@ -5663,7 +5663,7 @@ SOFTWARE.
 
 
 
-pyqir-parser 0.6.1 - SPDX: MIT - MIT License
+pyqir-parser 0.6.2 - SPDX: MIT - MIT License
 https://github.com/qir-alliance/pyqir
 
 MIT License
