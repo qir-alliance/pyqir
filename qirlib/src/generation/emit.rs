@@ -144,6 +144,50 @@ mod tests {
     use std::{env, fs, path::PathBuf};
 
     #[test]
+    fn test_zero_required_qubits_results() -> Result<(), String> {
+        check_or_save_reference_ir(&SemanticModel {
+            name: "test_zero_required_qubits_results".to_string(),
+            required_num_qubits: 0,
+            required_num_results: 0,
+            external_functions: vec![],
+            instructions: vec![],
+        })
+    }
+
+    #[test]
+    fn test_one_required_qubit() -> Result<(), String> {
+        check_or_save_reference_ir(&SemanticModel {
+            name: "test_one_required_qubit".to_string(),
+            required_num_qubits: 1,
+            required_num_results: 0,
+            external_functions: vec![],
+            instructions: vec![],
+        })
+    }
+
+    #[test]
+    fn test_one_required_result() -> Result<(), String> {
+        check_or_save_reference_ir(&SemanticModel {
+            name: "test_one_required_result".to_string(),
+            required_num_qubits: 0,
+            required_num_results: 1,
+            external_functions: vec![],
+            instructions: vec![],
+        })
+    }
+
+    #[test]
+    fn test_many_required_qubits_results() -> Result<(), String> {
+        check_or_save_reference_ir(&SemanticModel {
+            name: "test_many_required_qubits_results".to_string(),
+            required_num_qubits: 5,
+            required_num_results: 7,
+            external_functions: vec![],
+            instructions: vec![],
+        })
+    }
+
+    #[test]
     fn test_empty_if() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_empty_if".to_string(),
