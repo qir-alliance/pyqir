@@ -8,6 +8,7 @@ about the generated IR.
 """
 
 from pyqir.generator import BasicQisBuilder, SimpleModule
+import pytest
 
 
 def test_bell() -> None:
@@ -131,3 +132,10 @@ def test_if_result() -> None:
 
     ir = module.ir()
     assert ir.startswith("; ModuleID = 'If Result'")
+
+
+def test_multiple_contexts() -> None:
+    m1 = SimpleModule("m1", 0, 0)
+    m2 = SimpleModule("m2", 0, 0)
+    with pytest.raises(ValueError, match=r"^Not all objects use the same context\.$"):
+        m1.add_external_function("f", m1.types.function(m2.types.result, []))

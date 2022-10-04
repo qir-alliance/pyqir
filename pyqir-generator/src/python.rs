@@ -29,6 +29,7 @@ use qirlib::{
     types,
 };
 use std::{
+    borrow::Borrow,
     convert::{Into, TryFrom},
     mem::transmute,
 };
@@ -68,6 +69,7 @@ impl<'source> FromPyObject<'source> for PyIntPredicate {
 }
 
 #[pyclass]
+#[derive(Eq, PartialEq)]
 struct Context(InkwellContext);
 
 #[pyclass(unsendable)]
@@ -134,11 +136,18 @@ impl TypeFactory {
     #[staticmethod]
     #[allow(clippy::needless_pass_by_value)]
     fn function(py: Python, return_: &Type, params: Vec<Py<Type>>) -> PyResult<Py<Type>> {
-        let ty = function_type(&return_.ty, params.iter().map(|ty| ty.borrow(py).ty))
+        require_same_contexts(
+            py,
+            params
+                .iter()
+                .map(|t| t.borrow(py).context.clone())
+                .chain([return_.context.clone()]),
+        )?;
+
+        let ty = function_type(&return_.ty, params.iter().map(|t| t.borrow(py).ty))
             .ok_or_else(|| PyValueError::new_err("Invalid return or parameter type."))?
             .into();
 
-        // TODO (safety): What if not all types use the same context?
         let ty = unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) };
         let context = return_.context.clone();
         Py::new(py, Type { ty, context })
@@ -204,6 +213,12 @@ struct Builder {
 
 impl Builder {
     fn new(py: Python, context: Py<Context>, module: Py<Module>) -> Self {
+        {
+            let module = module.borrow(py);
+            require_same_contexts(py, [&context, &module.context])
+                .expect("Module context doesn't match.");
+        }
+
         let builder = {
             let context = context.borrow(py);
             let builder = context.0.create_builder();
@@ -227,11 +242,12 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn and_(&self, lhs: &Value, rhs: &Value) -> Value {
+    fn and_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_and(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Value::new(self.context.clone(), &value)
+        Ok(Value::new(self.context.clone(), &value))
     }
 
     /// Inserts a bitwise logical or instruction.
@@ -241,11 +257,12 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn or_(&self, lhs: &Value, rhs: &Value) -> Value {
+    fn or_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_or(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Value::new(self.context.clone(), &value)
+        Ok(Value::new(self.context.clone(), &value))
     }
 
     /// Inserts a bitwise logical exclusive or instruction.
@@ -255,11 +272,12 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn xor(&self, lhs: &Value, rhs: &Value) -> Value {
+    fn xor(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_xor(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Value::new(self.context.clone(), &value)
+        Ok(Value::new(self.context.clone(), &value))
     }
 
     /// Inserts an addition instruction.
@@ -269,11 +287,12 @@ impl Builder {
     /// :returns: The sum.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn add(&self, lhs: &Value, rhs: &Value) -> Value {
+    fn add(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_int_add(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Value::new(self.context.clone(), &value)
+        Ok(Value::new(self.context.clone(), &value))
     }
 
     /// Inserts a subtraction instruction.
@@ -283,11 +302,12 @@ impl Builder {
     /// :returns: The difference.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn sub(&self, lhs: &Value, rhs: &Value) -> Value {
+    fn sub(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_int_sub(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Value::new(self.context.clone(), &value)
+        Ok(Value::new(self.context.clone(), &value))
     }
 
     /// Inserts a multiplication instruction.
@@ -297,11 +317,12 @@ impl Builder {
     /// :returns: The product.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn mul(&self, lhs: &Value, rhs: &Value) -> Value {
+    fn mul(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_int_mul(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Value::new(self.context.clone(), &value)
+        Ok(Value::new(self.context.clone(), &value))
     }
 
     /// Inserts a shift left instruction.
@@ -311,13 +332,14 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn shl(&self, lhs: &Value, rhs: &Value) -> Value {
+    fn shl(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
         let value = self.builder.build_left_shift(
             lhs.value.into_int_value(),
             rhs.value.into_int_value(),
             "",
         );
-        Value::new(self.context.clone(), &value)
+        Ok(Value::new(self.context.clone(), &value))
     }
 
     /// Inserts a logical (zero fill) shift right instruction.
@@ -327,14 +349,15 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn lshr(&self, lhs: &Value, rhs: &Value) -> Value {
+    fn lshr(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
         let value = self.builder.build_right_shift(
             lhs.value.into_int_value(),
             rhs.value.into_int_value(),
             false,
             "",
         );
-        Value::new(self.context.clone(), &value)
+        Ok(Value::new(self.context.clone(), &value))
     }
 
     /// Inserts an integer comparison instruction.
@@ -346,14 +369,15 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, pred, lhs, rhs)")]
     #[allow(clippy::needless_pass_by_value)]
-    fn icmp(&self, pred: PyIntPredicate, lhs: Value, rhs: Value) -> Value {
+    fn icmp(&self, py: Python, pred: PyIntPredicate, lhs: Value, rhs: Value) -> PyResult<Value> {
+        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
         let value = self.builder.build_int_compare(
             pred.0,
             lhs.value.into_int_value(),
             rhs.value.into_int_value(),
             "",
         );
-        Value::new(self.context.clone(), &value)
+        Ok(Value::new(self.context.clone(), &value))
     }
 
     /// Inserts a call instruction.
@@ -375,6 +399,7 @@ impl Builder {
             )));
         }
 
+        // TODO: Check contexts.
         let args = extract_values(param_types, args)?
             .iter()
             .map(|v| any_to_meta(*v).ok_or_else(|| PyValueError::new_err("Invalid argument.")))
@@ -397,7 +422,14 @@ impl Builder {
     /// :param Callable[[], None] false:
     ///     A callable that inserts instructions for the branch where the condition is false.
     #[pyo3(text_signature = "(self, cond, true, false)")]
-    fn if_(&self, cond: &Value, r#true: Option<&PyAny>, r#false: Option<&PyAny>) -> PyResult<()> {
+    fn if_(
+        &self,
+        py: Python,
+        cond: &Value,
+        r#true: Option<&PyAny>,
+        r#false: Option<&PyAny>,
+    ) -> PyResult<()> {
+        require_same_contexts(py, [&self.context, &cond.context])?;
         self.builder.try_build_if(
             cond.value.into_int_value(),
             || call_if_some(r#true),
@@ -528,11 +560,14 @@ impl SimpleModule {
     /// :return: The function value.
     /// :rtype: Function
     #[pyo3(text_signature = "(self, name, ty)")]
-    fn add_external_function(&mut self, py: Python, name: &str, ty: &Type) -> Value {
+    fn add_external_function(&mut self, py: Python, name: &str, ty: &Type) -> PyResult<Value> {
+        let module = self.module.borrow(py);
+        require_same_contexts(py, [&module.context, &ty.context])?;
+
         let context = ty.context.clone();
         let ty = ty.ty.into_function_type();
-        let function = self.module.borrow(py).module.add_function(name, ty, None);
-        Value::new(context, &function)
+        let function = module.module.add_function(name, ty, None);
+        Ok(Value::new(context, &function))
     }
 }
 
@@ -545,6 +580,7 @@ struct BasicQisBuilder {
     builder: Py<Builder>,
 }
 
+// TODO: Check contexts.
 #[pymethods]
 impl BasicQisBuilder {
     #[new]
@@ -916,4 +952,24 @@ fn call_if_some(f: Option<&PyAny>) -> PyResult<()> {
         Some(f) => f.call0().map(|_| ()),
         None => Ok(()),
     }
+}
+
+fn require_same_contexts(
+    py: Python,
+    contexts: impl IntoIterator<Item = impl Borrow<Py<Context>>>,
+) -> PyResult<()> {
+    let mut contexts = contexts.into_iter();
+    if let Some(mut prev) = contexts.next() {
+        for context in contexts {
+            if *context.borrow().borrow(py) != *prev.borrow().borrow(py) {
+                return Err(PyValueError::new_err(
+                    "Not all objects use the same context.",
+                ));
+            }
+
+            prev = context;
+        }
+    };
+
+    Ok(())
 }
