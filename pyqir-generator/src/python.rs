@@ -423,6 +423,8 @@ impl SimpleModule {
     fn new(py: Python, name: String, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
         let model = SemanticModel {
             name,
+            required_num_qubits: num_qubits,
+            required_num_results: num_results,
             external_functions: vec![],
             instructions: vec![],
         };

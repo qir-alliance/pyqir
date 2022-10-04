@@ -217,6 +217,8 @@ impl Int {
 #[derive(Clone)]
 pub struct SemanticModel {
     pub name: String,
+    pub required_num_qubits: u64,
+    pub required_num_results: u64,
     pub external_functions: Vec<(String, Type)>,
     pub instructions: Vec<Instruction>,
 }
