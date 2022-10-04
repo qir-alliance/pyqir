@@ -11,6 +11,7 @@ use crate::{
     passes::run_basic_passes_on,
 };
 use inkwell::{
+    attributes::AttributeLoc,
     context::Context,
     module::Linkage,
     types::{AnyTypeEnum, BasicType, BasicTypeEnum},
@@ -50,18 +51,27 @@ pub fn populate_context<'a>(
 ) -> Result<CodeGenerator<'a>, String> {
     let module = ctx.create_module(&model.name);
     let generator = CodeGenerator::new(ctx, module)?;
+    add_external_functions(&generator, model.external_functions.iter());
     build_entry_function(&generator, model)?;
     Ok(generator)
 }
 
 fn build_entry_function(generator: &CodeGenerator, model: &SemanticModel) -> Result<(), String> {
-    add_external_functions(generator, model.external_functions.iter());
     let entry_point = qir::create_entry_point(generator.context, &generator.module);
+    add_num_attribute(entry_point, "requiredQubits", model.required_num_qubits);
+    add_num_attribute(entry_point, "requiredResults", model.required_num_results);
+
     let entry = generator.context.append_basic_block(entry_point, "entry");
     generator.builder.position_at_end(entry);
     write_instructions(model, generator, entry_point);
     generator.builder.build_return(None);
     generator.module.verify().map_err(|e| e.to_string())
+}
+
+fn add_num_attribute(function: FunctionValue, key: &str, value: u64) {
+    let context = function.get_type().get_context();
+    let attribute = context.create_string_attribute(key, &value.to_string());
+    function.add_attribute(AttributeLoc::Function, attribute);
 }
 
 fn add_external_functions<'a>(
@@ -137,6 +147,8 @@ mod tests {
     fn test_empty_if() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_empty_if".to_string(),
+            required_num_qubits: 1,
+            required_num_results: 1,
             external_functions: vec![],
             instructions: vec![
                 Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
@@ -155,6 +167,8 @@ mod tests {
     fn test_if_then() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then".to_string(),
+            required_num_qubits: 1,
+            required_num_results: 1,
             external_functions: vec![],
             instructions: vec![
                 Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
@@ -173,6 +187,8 @@ mod tests {
     fn test_if_else() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else".to_string(),
+            required_num_qubits: 1,
+            required_num_results: 1,
             external_functions: vec![],
             instructions: vec![
                 Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
@@ -191,6 +207,8 @@ mod tests {
     fn test_if_then_continue() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_continue".to_string(),
+            required_num_qubits: 1,
+            required_num_results: 1,
             external_functions: vec![],
             instructions: vec![
                 Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
@@ -210,6 +228,8 @@ mod tests {
     fn test_if_else_continue() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else_continue".to_string(),
+            required_num_qubits: 1,
+            required_num_results: 1,
             external_functions: vec![],
             instructions: vec![
                 Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
@@ -229,6 +249,8 @@ mod tests {
     fn test_if_then_else_continue() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_else_continue".to_string(),
+            required_num_qubits: 1,
+            required_num_results: 1,
             external_functions: vec![],
             instructions: vec![
                 Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
@@ -248,6 +270,8 @@ mod tests {
     fn test_if_then_then() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_then".to_string(),
+            required_num_qubits: 1,
+            required_num_results: 2,
             external_functions: vec![],
             instructions: vec![
                 Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
@@ -271,6 +295,8 @@ mod tests {
     fn test_if_else_else() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else_else".to_string(),
+            required_num_qubits: 1,
+            required_num_results: 2,
             external_functions: vec![],
             instructions: vec![
                 Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
@@ -294,6 +320,8 @@ mod tests {
     fn test_if_then_else() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_then_else".to_string(),
+            required_num_qubits: 1,
+            required_num_results: 2,
             external_functions: vec![],
             instructions: vec![
                 Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
@@ -317,6 +345,8 @@ mod tests {
     fn test_if_else_then() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_if_else_then".to_string(),
+            required_num_qubits: 1,
+            required_num_results: 2,
             external_functions: vec![],
             instructions: vec![
                 Instruction::M(Measured::new(Value::Qubit(0), Value::Result(0))),
@@ -340,6 +370,8 @@ mod tests {
     fn test_allows_unmeasured_result_condition() -> Result<(), String> {
         let model = SemanticModel {
             name: "test_allows_unmeasured_result_condition".to_string(),
+            required_num_qubits: 1,
+            required_num_results: 1,
             external_functions: vec![],
             instructions: vec![Instruction::IfResult(IfResult {
                 cond: Value::Result(0),
@@ -358,6 +390,8 @@ mod tests {
 
         check_or_save_reference_ir(&SemanticModel {
             name: "test_call_variable".to_string(),
+            required_num_qubits: 0,
+            required_num_results: 0,
             external_functions: vec![
                 (
                     "foo".to_string(),
@@ -450,6 +484,8 @@ mod tests {
 
         check_or_save_reference_ir(&SemanticModel {
             name: "test_int_binary_operators".to_string(),
+            required_num_qubits: 0,
+            required_num_results: 0,
             external_functions: vec![
                 (
                     "source".to_string(),

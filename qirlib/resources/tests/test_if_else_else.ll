@@ -38,4 +38,4 @@ declare i1 @__quantum__qis__read_result__body(%Result*)
 
 declare void @__quantum__qis__x__body(%Qubit*)
 
-attributes #0 = { "EntryPoint" }
+attributes #0 = { "EntryPoint" "requiredQubits"="1" "requiredResults"="2" }
