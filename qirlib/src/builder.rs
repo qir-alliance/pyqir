@@ -324,7 +324,7 @@ mod tests {
         module::build_entry_point(&module, &builder);
         build(&builder);
         builder.build_return(None);
-        module::run_basic_passes_on(builder.module());
+        module::run_basic_passes(builder.module());
         module.verify().map_err(|e| e.to_string())?;
         Ok(module.print_to_string().to_string())
     }

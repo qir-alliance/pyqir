@@ -61,7 +61,7 @@ pub fn run_module(
         return Err("Target doesn't have a target machine.".to_owned());
     }
 
-    module::run_basic_passes_on(module);
+    module::run_basic_passes(module);
     let entry_point = choose_entry_point(module_functions(module), entry_point)?;
 
     // load the symbols for the current process (empty/null string)

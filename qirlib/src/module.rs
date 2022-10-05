@@ -17,26 +17,21 @@ use inkwell::{
 /// Will return `Err` if a module cannot be created from the supplied IR
 pub fn ir_to_bitcode(
     value: &str,
-    module_name: &Option<String>,
-    source_file_name: &Option<String>,
+    module_name: Option<&str>,
+    source_file_name: Option<&str>,
 ) -> Result<Vec<u8>, String> {
     let context = Context::create();
-    let bytes = value.as_bytes();
-    let buffer_name = match module_name {
-        Some(name) => name.as_str(),
-        None => "",
-    };
-    let memory_buffer = MemoryBuffer::create_from_memory_range_copy(bytes, buffer_name);
+    let buffer = MemoryBuffer::create_from_memory_range_copy(
+        value.as_bytes(),
+        module_name.unwrap_or_default(),
+    );
     let module = context
-        .create_module_from_ir(memory_buffer)
-        .map_err(|err| err.to_string())?;
-
-    if let Some(source_name) = source_file_name {
-        module.set_source_file_name(source_name.as_str());
+        .create_module_from_ir(buffer)
+        .map_err(|e| e.to_string())?;
+    if let Some(name) = source_file_name {
+        module.set_source_file_name(name);
     }
-
-    let bitcode = module.write_bitcode_to_memory().as_slice().to_owned();
-    Ok(bitcode)
+    Ok(module.write_bitcode_to_memory().as_slice().to_owned())
 }
 
 /// # Errors
@@ -44,23 +39,15 @@ pub fn ir_to_bitcode(
 /// Will return `Err` if a module cannot be created from the supplied bitcode
 pub fn bitcode_to_ir(
     value: &[u8],
-    module_name: &Option<String>,
-    source_file_name: &Option<String>,
+    module_name: Option<&str>,
+    source_file_name: Option<&str>,
 ) -> Result<String, String> {
     let context = Context::create();
-    let buffer_name = match module_name.as_ref() {
-        Some(name) => name.as_str(),
-        None => "",
-    };
-    let module = load_memory(value, buffer_name, &context)?;
-
-    if let Some(source_name) = source_file_name.as_ref() {
-        module.set_source_file_name(source_name.as_str());
+    let module = load_memory(value, module_name.unwrap_or_default(), &context)?;
+    if let Some(name) = source_file_name {
+        module.set_source_file_name(name);
     }
-
-    let ir = module.print_to_string().to_string();
-
-    Ok(ir)
+    Ok(module.print_to_string().to_string())
 }
 
 pub fn build_entry_point(module: &Module, builder: &Builder) {
@@ -83,7 +70,7 @@ pub(crate) fn load_memory<'a>(
 }
 
 // This method returns true if any of the passes modified the function or module and false otherwise.
-pub(crate) fn run_basic_passes_on(module: &Module) -> bool {
+pub(crate) fn run_basic_passes(module: &Module) -> bool {
     let pass_manager_builder = PassManagerBuilder::create();
     pass_manager_builder.set_optimization_level(OptimizationLevel::None);
     let fpm = PassManager::create(());
@@ -142,12 +129,8 @@ mod tests {
     #[test]
     fn ir_round_trip_is_identical() -> Result<(), String> {
         let actual_ir = example_ir();
-        let bitcode = module::ir_to_bitcode(actual_ir.as_str(), &None, &None)?;
-        let converted_ir = module::bitcode_to_ir(
-            bitcode.as_slice(),
-            &Some("test".to_owned()),
-            &Some("test".to_owned()),
-        )?;
+        let bitcode = module::ir_to_bitcode(actual_ir.as_str(), None, None)?;
+        let converted_ir = module::bitcode_to_ir(bitcode.as_slice(), Some("test"), Some("test"))?;
         assert_eq!(actual_ir, converted_ir);
         Ok(())
     }

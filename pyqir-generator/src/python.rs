@@ -880,11 +880,11 @@ impl BasicQisBuilder {
 fn ir_to_bitcode<'a>(
     py: Python<'a>,
     ir: &str,
-    module_name: Option<String>,
-    source_file_name: Option<String>,
+    module_name: Option<&str>,
+    source_file_name: Option<&str>,
 ) -> PyResult<&'a PyBytes> {
     let bitcode =
-        module::ir_to_bitcode(ir, &module_name, &source_file_name).map_err(PyOSError::new_err)?;
+        module::ir_to_bitcode(ir, module_name, source_file_name).map_err(PyOSError::new_err)?;
     Ok(PyBytes::new(py, &bitcode))
 }
 
@@ -901,12 +901,12 @@ fn ir_to_bitcode<'a>(
 fn bitcode_to_ir<'a>(
     py: Python<'a>,
     bitcode: &PyBytes,
-    module_name: Option<String>,
-    source_file_name: Option<String>,
+    module_name: Option<&str>,
+    source_file_name: Option<&str>,
 ) -> PyResult<&'a PyString> {
-    let ir = module::bitcode_to_ir(bitcode.as_bytes(), &module_name, &source_file_name)
+    let ir = module::bitcode_to_ir(bitcode.as_bytes(), module_name, source_file_name)
         .map_err(PyOSError::new_err)?;
-    Ok(PyUnicode::new(py, ir.as_str()))
+    Ok(PyUnicode::new(py, &ir))
 }
 
 fn extract_constant<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyValueEnum<'ctx>> {
