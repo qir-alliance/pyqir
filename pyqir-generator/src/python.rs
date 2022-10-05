@@ -105,33 +105,31 @@ struct TypeFactory {
 impl TypeFactory {
     #[getter]
     fn void(&self, py: Python) -> PyResult<Py<Type>> {
-        self.type_from_context(py, |c| c.void_type().into())
+        self.create_type(py, |m| m.get_context().void_type().into())
     }
 
     #[getter]
     fn bool(&self, py: Python) -> PyResult<Py<Type>> {
-        self.type_from_context(py, |c| c.bool_type().into())
+        self.create_type(py, |m| m.get_context().bool_type().into())
     }
 
     fn int(&self, py: Python, width: u32) -> PyResult<Py<Type>> {
-        self.type_from_context(py, |c| c.custom_width_int_type(width).into())
+        self.create_type(py, |m| m.get_context().custom_width_int_type(width).into())
     }
 
     #[getter]
     fn double(&self, py: Python) -> PyResult<Py<Type>> {
-        self.type_from_context(py, |c| c.f64_type().into())
+        self.create_type(py, |m| m.get_context().f64_type().into())
     }
 
     #[getter]
     fn qubit(&self, py: Python) -> PyResult<Py<Type>> {
-        let module = self.module.borrow(py);
-        self.type_from_context(py, |_| types::qubit(&module.module).into())
+        self.create_type(py, |m| types::qubit(m).into())
     }
 
     #[getter]
     fn result(&self, py: Python) -> PyResult<Py<Type>> {
-        let module = self.module.borrow(py);
-        self.type_from_context(py, |_| types::result(&module.module).into())
+        self.create_type(py, |m| types::result(m).into())
     }
 
     #[staticmethod]
@@ -156,16 +154,15 @@ impl TypeFactory {
 }
 
 impl TypeFactory {
-    fn type_from_context(
+    fn create_type(
         &self,
         py: Python,
-        get: impl Fn(&InkwellContext) -> AnyTypeEnum,
+        f: impl for<'ctx> Fn(&InkwellModule<'ctx>) -> AnyTypeEnum<'ctx>,
     ) -> PyResult<Py<Type>> {
         let module = self.module.borrow(py);
         let context = module.context.clone();
         let ty = {
-            let context = context.borrow(py);
-            let ty = get(&context.0);
+            let ty = f(&module.module);
             unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
         };
         Py::new(py, Type { ty, context })
@@ -213,13 +210,8 @@ struct Builder {
 }
 
 impl Builder {
-    fn new(py: Python, context: Py<Context>, module: Py<Module>) -> Self {
-        {
-            let module = module.borrow(py);
-            require_same_contexts(py, [&context, &module.context])
-                .expect("Module context doesn't match.");
-        }
-
+    fn new(py: Python, module: Py<Module>) -> Self {
+        let context = module.borrow(py).context.clone();
         let builder = {
             let context = context.borrow(py);
             let builder = context.0.create_builder();
@@ -467,8 +459,8 @@ impl SimpleModule {
     #[new]
     fn new(py: Python, name: &str, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
         let context = Py::new(py, Context(InkwellContext::create()))?;
-        let module = Py::new(py, Module::new(py, context.clone(), name))?;
-        let builder = Py::new(py, Builder::new(py, context, module.clone()))?;
+        let module = Py::new(py, Module::new(py, context, name))?;
+        let builder = Py::new(py, Builder::new(py, module.clone()))?;
 
         {
             let builder = builder.borrow(py);
