@@ -181,9 +181,9 @@ struct Value {
 }
 
 impl Value {
-    fn new<'ctx>(context: Py<Context>, value: &impl AnyValue<'ctx>) -> Self {
+    unsafe fn new<'ctx>(context: Py<Context>, value: &impl AnyValue<'ctx>) -> Self {
         let value = value.as_any_value_enum();
-        let value = unsafe { transmute::<AnyValueEnum<'_>, AnyValueEnum<'static>>(value) };
+        let value = transmute::<AnyValueEnum<'_>, AnyValueEnum<'static>>(value);
         Self { value, context }
     }
 }
@@ -198,8 +198,8 @@ impl Value {
 #[pyo3(text_signature = "(ty, value)")]
 fn constant(ty: &Type, value: &PyAny) -> PyResult<Value> {
     let context = ty.context.clone();
-    let value = extract_value(&ty.ty, value)?;
-    Ok(Value::new(context, &value))
+    let value = extract_constant(&ty.ty, value)?;
+    Ok(unsafe { Value::new(context, &value) })
 }
 
 /// An instruction builder.
@@ -248,7 +248,7 @@ impl Builder {
         let value =
             self.builder
                 .build_and(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Ok(Value::new(self.context.clone(), &value))
+        Ok(unsafe { Value::new(self.context.clone(), &value) })
     }
 
     /// Inserts a bitwise logical or instruction.
@@ -263,7 +263,7 @@ impl Builder {
         let value =
             self.builder
                 .build_or(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Ok(Value::new(self.context.clone(), &value))
+        Ok(unsafe { Value::new(self.context.clone(), &value) })
     }
 
     /// Inserts a bitwise logical exclusive or instruction.
@@ -278,7 +278,7 @@ impl Builder {
         let value =
             self.builder
                 .build_xor(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Ok(Value::new(self.context.clone(), &value))
+        Ok(unsafe { Value::new(self.context.clone(), &value) })
     }
 
     /// Inserts an addition instruction.
@@ -293,7 +293,7 @@ impl Builder {
         let value =
             self.builder
                 .build_int_add(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Ok(Value::new(self.context.clone(), &value))
+        Ok(unsafe { Value::new(self.context.clone(), &value) })
     }
 
     /// Inserts a subtraction instruction.
@@ -308,7 +308,7 @@ impl Builder {
         let value =
             self.builder
                 .build_int_sub(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Ok(Value::new(self.context.clone(), &value))
+        Ok(unsafe { Value::new(self.context.clone(), &value) })
     }
 
     /// Inserts a multiplication instruction.
@@ -323,7 +323,7 @@ impl Builder {
         let value =
             self.builder
                 .build_int_mul(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Ok(Value::new(self.context.clone(), &value))
+        Ok(unsafe { Value::new(self.context.clone(), &value) })
     }
 
     /// Inserts a shift left instruction.
@@ -340,7 +340,7 @@ impl Builder {
             rhs.value.into_int_value(),
             "",
         );
-        Ok(Value::new(self.context.clone(), &value))
+        Ok(unsafe { Value::new(self.context.clone(), &value) })
     }
 
     /// Inserts a logical (zero fill) shift right instruction.
@@ -358,7 +358,7 @@ impl Builder {
             false,
             "",
         );
-        Ok(Value::new(self.context.clone(), &value))
+        Ok(unsafe { Value::new(self.context.clone(), &value) })
     }
 
     /// Inserts an integer comparison instruction.
@@ -378,7 +378,7 @@ impl Builder {
             rhs.value.into_int_value(),
             "",
         );
-        Ok(Value::new(self.context.clone(), &value))
+        Ok(unsafe { Value::new(self.context.clone(), &value) })
     }
 
     /// Inserts a call instruction.
@@ -412,7 +412,7 @@ impl Builder {
 
         let call = self.builder.build_call(callable, &args, "");
         let value = call.try_as_basic_value().left();
-        Ok(value.map(|v| Value::new(function.context.clone(), &v)))
+        Ok(value.map(|v| unsafe { Value::new(function.context.clone(), &v) }))
     }
 
     /// Inserts a branch conditioned on a boolean.
@@ -506,7 +506,7 @@ impl SimpleModule {
         let module = self.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         (0..self.num_qubits)
-            .map(|id| Value::new(module.context.clone(), &builder.build_qubit(id)))
+            .map(|id| unsafe { Value::new(module.context.clone(), &builder.build_qubit(id)) })
             .collect()
     }
 
@@ -519,7 +519,7 @@ impl SimpleModule {
         let module = self.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         (0..self.num_results)
-            .map(|id| Value::new(module.context.clone(), &builder.build_result(id)))
+            .map(|id| unsafe { Value::new(module.context.clone(), &builder.build_result(id)) })
             .collect()
     }
 
@@ -572,7 +572,7 @@ impl SimpleModule {
         let context = ty.context.clone();
         let ty = ty.ty.into_function_type();
         let function = module.module.add_function(name, ty, None);
-        Ok(Value::new(context, &function))
+        Ok(unsafe { Value::new(context, &function) })
     }
 }
 
@@ -909,27 +909,31 @@ fn bitcode_to_ir<'a>(
     Ok(PyUnicode::new(py, ir.as_str()))
 }
 
+fn extract_constant<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyValueEnum<'ctx>> {
+    match ty.as_any_type_enum() {
+        AnyTypeEnum::IntType(int) => {
+            let value = ob.extract()?;
+            let value_width = u64::BITS - u64::leading_zeros(value);
+            if value_width > int.get_bit_width() {
+                // TODO: LLVM doesn't seem to care. Should we check this?
+                Err(PyOverflowError::new_err(
+                    "Constant integer uses more bits than its type has.",
+                ))
+            } else {
+                Ok(int.const_int(value, true).into())
+            }
+        }
+        AnyTypeEnum::FloatType(float) => Ok(float.const_float(ob.extract()?).into()),
+        _ => Err(PyTypeError::new_err(
+            "Can't convert Python value into this type.",
+        )),
+    }
+}
+
 fn extract_value<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyValueEnum<'ctx>> {
     match ob.extract::<Value>() {
         Ok(value) => Ok(value.value),
-        Err(_) => match ty.as_any_type_enum() {
-            AnyTypeEnum::IntType(int) => {
-                let value = ob.extract()?;
-                let value_width = u64::BITS - u64::leading_zeros(value);
-                if value_width > int.get_bit_width() {
-                    // TODO: LLVM doesn't seem to care. Should we check this?
-                    Err(PyOverflowError::new_err(
-                        "Constant integer uses more bits than its type has.",
-                    ))
-                } else {
-                    Ok(int.const_int(value, true).into())
-                }
-            }
-            AnyTypeEnum::FloatType(float) => Ok(float.const_float(ob.extract()?).into()),
-            _ => Err(PyTypeError::new_err(
-                "Can't convert Python value into this type.",
-            )),
-        },
+        Err(_) => extract_constant(ty, ob),
     }
 }
 
