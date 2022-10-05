@@ -190,26 +190,33 @@ class ExternalFunctionsTest(unittest.TestCase):
 
     def test_overflow_bool_value(self) -> None:
         mod = SimpleModule("test", 0, 0)
-        with self.assertRaises(OverflowError):
-            const(mod.types.bool, 123)
+        types = mod.types
+        f = mod.add_external_function("f", types.function(types.void, [types.bool]))
+        b = const(mod.types.bool, 123)
+        mod.builder.call(f, [b])
+        self.assertIn("call void @f(i1 true)", mod.ir())
+
+    def test_overflow_bool_literal(self) -> None:
+        mod = SimpleModule("test", 0, 0)
+        types = mod.types
+        f = mod.add_external_function("f", types.function(types.void, [types.bool]))
+        mod.builder.call(f, [123])
+        self.assertIn("call void @f(i1 true)", mod.ir())
 
     def test_overflow_int_value(self) -> None:
         mod = SimpleModule("test", 0, 0)
-        with self.assertRaises(OverflowError):
-            const(mod.types.int(64), 2**64)
+        types = mod.types
+        f = mod.add_external_function("f", types.function(types.void, [types.int(32)]))
+        i = const(mod.types.int(32), 2**32 + 123)
+        mod.builder.call(f, [i])
+        self.assertIn("call void @f(i32 123)", mod.ir())
 
-    def test_overflow_conversion(self) -> None:
-        for value in [123, 2**64]:
-            with self.subTest(repr(value)):
-                mod = SimpleModule("test", 0, 0)
-                types = mod.types
-                f = mod.add_external_function(
-                    "test_function",
-                    types.function(types.void, [types.bool]),
-                )
-
-                with self.assertRaises(OverflowError):
-                    mod.builder.call(f, [value])
+    def test_overflow_int_literal(self) -> None:
+        mod = SimpleModule("test", 0, 0)
+        types = mod.types
+        f = mod.add_external_function("f", types.function(types.void, [types.int(32)]))
+        mod.builder.call(f, [2**32 + 123])
+        self.assertIn("call void @f(i32 123)", mod.ir())
 
     def test_wrong_number_of_args(self) -> None:
         cases: List[Callable[[TypeFactory], List[Value]]] = [

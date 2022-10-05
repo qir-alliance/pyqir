@@ -10,7 +10,7 @@
 #![allow(clippy::format_push_string)]
 
 use pyo3::{
-    exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
+    exceptions::{PyOSError, PyTypeError, PyValueError},
     prelude::*,
     types::{PyBytes, PySequence, PyString, PyUnicode},
     PyClass,
@@ -911,18 +911,7 @@ fn bitcode_to_ir<'a>(
 
 fn extract_constant<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyValueEnum<'ctx>> {
     match ty.as_any_type_enum() {
-        AnyTypeEnum::IntType(int) => {
-            let value = ob.extract()?;
-            let value_width = u64::BITS - u64::leading_zeros(value);
-            if value_width > int.get_bit_width() {
-                // TODO: LLVM doesn't seem to care. Should we check this?
-                Err(PyOverflowError::new_err(
-                    "Constant integer uses more bits than its type has.",
-                ))
-            } else {
-                Ok(int.const_int(value, true).into())
-            }
-        }
+        AnyTypeEnum::IntType(int) => Ok(int.const_int(ob.extract()?, true).into()),
         AnyTypeEnum::FloatType(float) => Ok(float.const_float(ob.extract()?).into()),
         _ => Err(PyTypeError::new_err(
             "Can't convert Python value into this type.",
