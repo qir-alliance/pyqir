@@ -122,7 +122,7 @@ mod tests {
 
     #[test]
     fn test_empty_if() -> Result<(), String> {
-        check_or_save_reference_ir("test_empty_if", |builder| {
+        check_or_save_reference_ir("test_empty_if", 1, 1, |builder| {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_if_result(builder.build_result(0), || (), || ());
         })
@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn test_if_then() -> Result<(), String> {
-        check_or_save_reference_ir("test_if_then", |builder| {
+        check_or_save_reference_ir("test_if_then", 1, 1, |builder| {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_if_result(
                 builder.build_result(0),
@@ -142,7 +142,7 @@ mod tests {
 
     #[test]
     fn test_if_else() -> Result<(), String> {
-        check_or_save_reference_ir("test_if_else", |builder| {
+        check_or_save_reference_ir("test_if_else", 1, 1, |builder| {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_if_result(
                 builder.build_result(0),
@@ -154,7 +154,7 @@ mod tests {
 
     #[test]
     fn test_if_then_continue() -> Result<(), String> {
-        check_or_save_reference_ir("test_if_then_continue", |builder| {
+        check_or_save_reference_ir("test_if_then_continue", 1, 1, |builder| {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_if_result(
                 builder.build_result(0),
@@ -167,7 +167,7 @@ mod tests {
 
     #[test]
     fn test_if_else_continue() -> Result<(), String> {
-        check_or_save_reference_ir("test_if_else_continue", |builder| {
+        check_or_save_reference_ir("test_if_else_continue", 1, 1, |builder| {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_if_result(
                 builder.build_result(0),
@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn test_if_then_else_continue() -> Result<(), String> {
-        check_or_save_reference_ir("test_if_then_else_continue", |builder| {
+        check_or_save_reference_ir("test_if_then_else_continue", 1, 1, |builder| {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_if_result(
                 builder.build_result(0),
@@ -193,7 +193,7 @@ mod tests {
 
     #[test]
     fn test_if_then_then() -> Result<(), String> {
-        check_or_save_reference_ir("test_if_then_then", |builder| {
+        check_or_save_reference_ir("test_if_then_then", 1, 2, |builder| {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_mz(builder.build_qubit(0), builder.build_result(1));
             builder.build_if_result(
@@ -212,7 +212,7 @@ mod tests {
 
     #[test]
     fn test_if_else_else() -> Result<(), String> {
-        check_or_save_reference_ir("test_if_else_else", |builder| {
+        check_or_save_reference_ir("test_if_else_else", 1, 2, |builder| {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_mz(builder.build_qubit(0), builder.build_result(1));
             builder.build_if_result(
@@ -231,7 +231,7 @@ mod tests {
 
     #[test]
     fn test_if_then_else() -> Result<(), String> {
-        check_or_save_reference_ir("test_if_then_else", |builder| {
+        check_or_save_reference_ir("test_if_then_else", 1, 2, |builder| {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_mz(builder.build_qubit(0), builder.build_result(1));
             builder.build_if_result(
@@ -250,7 +250,7 @@ mod tests {
 
     #[test]
     fn test_if_else_then() -> Result<(), String> {
-        check_or_save_reference_ir("test_if_else_then", |builder| {
+        check_or_save_reference_ir("test_if_else_then", 1, 2, |builder| {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_mz(builder.build_qubit(0), builder.build_result(1));
             builder.build_if_result(
@@ -269,7 +269,7 @@ mod tests {
 
     #[test]
     fn test_allows_unmeasured_result_condition() -> Result<(), String> {
-        check_or_save_reference_ir("test_allows_unmeasured_result_condition", |builder| {
+        check_or_save_reference_ir("test_allows_unmeasured_result_condition", 1, 1, |builder| {
             builder.build_if_result(
                 builder.build_result(0),
                 || builder.build_x(builder.build_qubit(0)),
@@ -287,10 +287,12 @@ mod tests {
     /// 3. Unset the environment variable and run the tests again to confirm that they pass.
     fn check_or_save_reference_ir(
         name: &str,
+        required_num_qubits: u64,
+        required_num_results: u64,
         build: impl for<'ctx> Fn(&ModuleBuilder<'ctx, '_, Builder<'ctx>>),
     ) -> Result<(), String> {
         const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
-        let actual_ir = build_ir(name, build)?;
+        let actual_ir = build_ir(name, required_num_qubits, required_num_results, build)?;
 
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("resources");
@@ -316,12 +318,14 @@ mod tests {
 
     fn build_ir(
         name: &str,
+        required_num_qubits: u64,
+        required_num_results: u64,
         build: impl for<'ctx> Fn(&ModuleBuilder<'ctx, '_, Builder<'ctx>>),
     ) -> Result<String, String> {
         let context = Context::create();
         let module = context.create_module(name);
         let builder = ModuleBuilder::new(&module);
-        module::simple_init(&module, &builder);
+        module::simple_init(&module, &builder, required_num_qubits, required_num_results);
         build(&builder);
         builder.build_return(None);
         module::simple_finalize(&module)?;

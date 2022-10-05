@@ -465,7 +465,7 @@ impl SimpleModule {
         {
             let builder = builder.borrow(py);
             let module = module.borrow(py);
-            module::simple_init(&module.module, &builder.builder);
+            module::simple_init(&module.module, &builder.builder, num_qubits, num_results);
         }
 
         let types = Py::new(

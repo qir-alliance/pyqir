@@ -50,9 +50,16 @@ pub fn bitcode_to_ir(
     Ok(module.print_to_string().to_string())
 }
 
-pub fn simple_init(module: &Module, builder: &Builder) {
+pub fn simple_init(
+    module: &Module,
+    builder: &Builder,
+    required_num_qubits: u64,
+    required_num_results: u64,
+) {
     let context = module.get_context();
     let entry_point = create_entry_point(module);
+    add_num_attribute(entry_point, "requiredQubits", required_num_qubits);
+    add_num_attribute(entry_point, "requiredResults", required_num_results);
     let entry = context.append_basic_block(entry_point, "entry");
     builder.position_at_end(entry);
 }
@@ -96,6 +103,12 @@ fn create_entry_point<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
     fn_value
 }
 
+fn add_num_attribute(function: FunctionValue, key: &str, value: u64) {
+    let context = function.get_type().get_context();
+    let attribute = context.create_string_attribute(key, &value.to_string());
+    function.add_attribute(AttributeLoc::Function, attribute);
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -126,7 +139,7 @@ mod tests {
         let context = Context::create();
         let module = context.create_module("test");
         let builder = ModuleBuilder::new(&module);
-        super::simple_init(&module, &builder);
+        super::simple_init(&module, &builder, 1, 1);
         builder.build_mz(builder.build_qubit(0), builder.build_result(0));
         builder.build_return(None);
         module.print_to_string().to_string()
