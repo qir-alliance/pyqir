@@ -50,11 +50,17 @@ pub fn bitcode_to_ir(
     Ok(module.print_to_string().to_string())
 }
 
-pub fn build_entry_point(module: &Module, builder: &Builder) {
+pub fn simple_init(module: &Module, builder: &Builder) {
     let context = module.get_context();
     let entry_point = create_entry_point(module);
     let entry = context.append_basic_block(entry_point, "entry");
     builder.position_at_end(entry);
+}
+
+#[allow(clippy::missing_errors_doc)]
+pub fn simple_finalize(module: &Module) -> Result<(), String> {
+    run_basic_passes(module);
+    module.verify().map_err(|e| e.to_string())
 }
 
 /// # Errors
@@ -120,7 +126,7 @@ mod tests {
         let context = Context::create();
         let module = context.create_module("test");
         let builder = ModuleBuilder::new(&module);
-        super::build_entry_point(&module, &builder);
+        super::simple_init(&module, &builder);
         builder.build_mz(builder.build_qubit(0), builder.build_result(0));
         builder.build_return(None);
         module.print_to_string().to_string()

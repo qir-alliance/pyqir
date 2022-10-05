@@ -321,11 +321,10 @@ mod tests {
         let context = Context::create();
         let module = context.create_module(name);
         let builder = ModuleBuilder::new(&module);
-        module::build_entry_point(&module, &builder);
+        module::simple_init(&module, &builder);
         build(&builder);
         builder.build_return(None);
-        module::run_basic_passes(builder.module());
-        module.verify().map_err(|e| e.to_string())?;
+        module::simple_finalize(&module)?;
         Ok(module.print_to_string().to_string())
     }
 }

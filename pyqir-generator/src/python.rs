@@ -10,7 +10,7 @@
 #![allow(clippy::format_push_string)]
 
 use pyo3::{
-    exceptions::{PyOSError, PyTypeError, PyValueError},
+    exceptions::{PyOSError, PyTypeError, PyUnicodeDecodeError, PyValueError},
     prelude::*,
     types::{PyBytes, PySequence, PyString, PyUnicode},
     PyClass,
@@ -465,7 +465,7 @@ impl SimpleModule {
         {
             let builder = builder.borrow(py);
             let module = module.borrow(py);
-            module::build_entry_point(&module.module, &builder.builder);
+            module::simple_init(&module.module, &builder.builder);
         }
 
         let types = Py::new(
@@ -527,27 +527,16 @@ impl SimpleModule {
     ///
     /// :rtype: str
     fn ir(&self, py: Python) -> PyResult<String> {
-        // TODO: Repeated calls to ir() will keep adding return instructions.
-        self.builder.borrow(py).builder.build_return(None);
-        let module = &self.module.borrow(py).module;
-        module
-            .verify()
-            .map_err(|e| PyOSError::new_err(e.to_string()))?;
-        Ok(module.print_to_string().to_string())
+        self.emit(py, |m| m.print_to_string().to_string())
     }
 
     /// Emits the LLVM bitcode for the module as a sequence of bytes.
     ///
     /// :rtype: bytes
     fn bitcode<'py>(&self, py: Python<'py>) -> PyResult<&'py PyBytes> {
-        // TODO: Repeated calls to bitcode() will keep adding return instructions.
-        self.builder.borrow(py).builder.build_return(None);
-        let module = &self.module.borrow(py).module;
-        module
-            .verify()
-            .map_err(|e| PyOSError::new_err(e.to_string()))?;
-        let bitcode = self.module.borrow(py).module.write_bitcode_to_memory();
-        Ok(PyBytes::new(py, bitcode.as_slice()))
+        self.emit(py, |m| {
+            PyBytes::new(py, m.write_bitcode_to_memory().as_slice())
+        })
     }
 
     /// Adds a declaration for an externally linked function to the module.
@@ -565,6 +554,19 @@ impl SimpleModule {
         let ty = ty.ty.into_function_type();
         let function = module.module.add_function(name, ty, None);
         Ok(unsafe { Value::new(context, &function) })
+    }
+}
+
+impl SimpleModule {
+    fn emit<T>(&self, py: Python, f: impl Fn(&InkwellModule) -> T) -> PyResult<T> {
+        let module = self.module.borrow(py);
+        let builder = self.builder.borrow(py);
+        let ret = builder.builder.build_return(None);
+        let new_context = InkwellContext::create();
+        let new_module = clone_module(&module.module, &new_context)?;
+        ret.erase_from_basic_block();
+        module::simple_finalize(&new_module).map_err(PyOSError::new_err)?;
+        Ok(f(&new_module))
     }
 }
 
@@ -1013,4 +1015,23 @@ fn value_contexts<'a>(
 ) -> impl Iterator<Item = Py<Context>> + 'a {
     obs.into_iter()
         .filter_map(|a| Some(a.ok()?.extract::<Value>().ok()?.context))
+}
+
+fn clone_module<'ctx>(
+    module: &InkwellModule,
+    context: &'ctx InkwellContext,
+) -> PyResult<InkwellModule<'ctx>> {
+    let bitcode = module.write_bitcode_to_memory();
+    let new_module = InkwellModule::parse_bitcode_from_buffer(&bitcode, context).map_err(|e| {
+        module.verify().err().map_or_else(
+            || PyOSError::new_err(e.to_string()),
+            |e| PyOSError::new_err(e.to_string()),
+        )
+    })?;
+    let name = module
+        .get_name()
+        .to_str()
+        .map_err(PyUnicodeDecodeError::new_err)?;
+    new_module.set_name(name);
+    Ok(new_module)
 }

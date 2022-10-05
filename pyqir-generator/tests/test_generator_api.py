@@ -141,3 +141,33 @@ def test_multiple_contexts() -> None:
         ValueError, match=r"^Some objects come from a different context\.$"
     ):
         m1.add_external_function("f", m1.types.function(m2.types.result, []))
+
+
+def test_ir_idempotence() -> None:
+    m = SimpleModule("ir_idempotence", num_qubits=1, num_results=0)
+    qis = BasicQisBuilder(m.builder)
+    qis.x(m.qubits[0])
+    ir1 = m.ir()
+    assert ir1.startswith("; ModuleID = 'ir_idempotence")
+    ir2 = m.ir()
+    assert ir1 == ir2
+
+
+def test_bitcode_idempotence() -> None:
+    m = SimpleModule("bitcode_idempotence", num_qubits=1, num_results=0)
+    qis = BasicQisBuilder(m.builder)
+    qis.x(m.qubits[0])
+    bc1 = m.bitcode()
+    bc2 = m.bitcode()
+    assert bc1 == bc2
+
+
+def test_ir_gate_ir() -> None:
+    m = SimpleModule("ir_gate_ir", num_qubits=1, num_results=0)
+    qis = BasicQisBuilder(m.builder)
+    qis.x(m.qubits[0])
+    ir1 = m.ir()
+    assert "call void @__quantum__qis__x__body(%Qubit* null)" in ir1
+    qis.h(m.qubits[0])
+    ir2 = m.ir()
+    assert "call void @__quantum__qis__h__body(%Qubit* null)" in ir2
