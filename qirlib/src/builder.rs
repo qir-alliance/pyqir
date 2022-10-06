@@ -4,7 +4,7 @@ use inkwell::{
     module::Module,
     values::{IntValue, PointerValue},
 };
-use std::{borrow::Borrow, ops::Deref};
+use std::{borrow::Borrow, convert::Infallible, ops::Deref};
 
 // TODO: With LLVM, it's possible to get the module that a builder is positioned in using only the
 // builder itself. But it's not possible with Inkwell, so we have to bundle the references together.
@@ -69,15 +69,16 @@ pub trait BuilderExt {
 
 impl<'ctx> BuilderExt for Builder<'ctx> {
     fn build_if(&self, cond: IntValue, build_true: impl Fn(), build_false: impl Fn()) {
-        self.try_build_if::<()>(
+        let always_ok: Result<(), Infallible> = Ok(());
+        self.try_build_if(
             cond,
             || {
                 build_true();
-                Ok(())
+                always_ok
             },
             || {
                 build_false();
-                Ok(())
+                always_ok
             },
         )
         .unwrap();
@@ -92,11 +93,9 @@ impl<'ctx> BuilderExt for Builder<'ctx> {
         let insert_block = self.get_insert_block().unwrap();
         let context = insert_block.get_context();
         let function = insert_block.get_parent().unwrap();
-
         let then_block = context.append_basic_block(function, "then");
         let else_block = context.append_basic_block(function, "else");
         self.build_conditional_branch(cond, then_block, else_block);
-
         let continue_block = context.append_basic_block(function, "continue");
 
         self.position_at_end(then_block);
