@@ -1005,8 +1005,10 @@ fn require_same_contexts(
     py: Python,
     contexts: impl IntoIterator<Item = impl Borrow<Py<Context>>>,
 ) -> PyResult<()> {
+    // then_some is stabilized in Rust 1.62.
+    #[allow(clippy::unnecessary_lazy_evaluations)]
     is_all_same(py, contexts)
-        .then_some(())
+        .then(|| ())
         .ok_or_else(|| PyValueError::new_err("Some objects come from a different context."))
 }
 
