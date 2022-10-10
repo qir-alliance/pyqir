@@ -5,6 +5,5 @@
 
 #[cfg(feature = "python-bindings")]
 pub mod python;
-
 #[cfg(feature = "python-bindings")]
 mod utils;

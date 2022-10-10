@@ -112,9 +112,9 @@ fn add_num_attribute(function: FunctionValue, key: &str, value: u64) {
 #[cfg(test)]
 mod tests {
     use crate::{
-        builder::ModuleBuilder,
+        builder::Builder,
         module::{self, create_entry_point},
-        qis::BuilderBasicExt,
+        qis::BuilderBasicQisExt,
     };
     use inkwell::context::Context;
     use std::{fs::File, io::Read, path::Path};
@@ -138,7 +138,7 @@ mod tests {
     fn example_ir() -> String {
         let context = Context::create();
         let module = context.create_module("test");
-        let builder = ModuleBuilder::new(&module);
+        let builder = Builder::new(&module);
         super::simple_init(&module, &builder, 1, 1);
         builder.build_mz(builder.build_qubit(0), builder.build_result(0));
         builder.build_return(None);

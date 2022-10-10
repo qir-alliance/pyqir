@@ -1,6 +1,6 @@
 use crate::types;
 use inkwell::{
-    builder::Builder,
+    builder::Builder as BuilderBase,
     module::Module,
     values::{IntValue, PointerValue},
 };
@@ -9,21 +9,20 @@ use std::{borrow::Borrow, convert::Infallible, ops::Deref};
 // TODO: With LLVM, it's possible to get the module that a builder is positioned in using only the
 // builder itself. But it's not possible with Inkwell, so we have to bundle the references together.
 // See https://github.com/TheDan64/inkwell/issues/347
-#[allow(clippy::module_name_repetitions)]
-pub struct ModuleBuilder<'ctx, 'm, B> {
+pub struct Builder<'ctx, 'm, B> {
     builder: B,
     module: &'m Module<'ctx>,
 }
 
-impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> Deref for ModuleBuilder<'ctx, 'm, B> {
-    type Target = Builder<'ctx>;
+impl<'ctx, 'm, B: Borrow<BuilderBase<'ctx>>> Deref for Builder<'ctx, 'm, B> {
+    type Target = BuilderBase<'ctx>;
 
     fn deref(&self) -> &Self::Target {
         self.builder.borrow()
     }
 }
 
-impl<'ctx, 'm> ModuleBuilder<'ctx, 'm, Builder<'ctx>> {
+impl<'ctx, 'm> Builder<'ctx, 'm, BuilderBase<'ctx>> {
     pub fn new(module: &'m Module<'ctx>) -> Self {
         Self {
             builder: module.get_context().create_builder(),
@@ -32,13 +31,13 @@ impl<'ctx, 'm> ModuleBuilder<'ctx, 'm, Builder<'ctx>> {
     }
 }
 
-impl<'ctx, 'b, 'm> ModuleBuilder<'ctx, 'm, &'b Builder<'ctx>> {
-    pub fn from(builder: &'b Builder<'ctx>, module: &'m Module<'ctx>) -> Self {
+impl<'ctx, 'b, 'm> Builder<'ctx, 'm, &'b BuilderBase<'ctx>> {
+    pub fn from(builder: &'b BuilderBase<'ctx>, module: &'m Module<'ctx>) -> Self {
         Self { builder, module }
     }
 }
 
-impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> ModuleBuilder<'ctx, 'm, B> {
+impl<'ctx, 'm, B: Borrow<BuilderBase<'ctx>>> Builder<'ctx, 'm, B> {
     pub fn module(&self) -> &Module<'ctx> {
         self.module.borrow()
     }
@@ -52,43 +51,36 @@ impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> ModuleBuilder<'ctx, 'm, B> {
         let value = self.module().get_context().i64_type().const_int(id, false);
         self.build_int_to_ptr(value, types::result(self.module()), "")
     }
-}
 
-#[allow(clippy::module_name_repetitions)]
-pub trait BuilderExt {
-    fn build_if(&self, cond: IntValue, build_true: impl Fn(), build_false: impl Fn());
-
-    #[allow(clippy::missing_errors_doc)]
-    fn try_build_if<E>(
+    #[allow(clippy::missing_panics_doc)]
+    pub fn build_if(
         &self,
         cond: IntValue,
-        build_true: impl Fn() -> Result<(), E>,
-        build_false: impl Fn() -> Result<(), E>,
-    ) -> Result<(), E>;
-}
-
-impl<'ctx> BuilderExt for Builder<'ctx> {
-    fn build_if(&self, cond: IntValue, build_true: impl Fn(), build_false: impl Fn()) {
+        build_true: impl FnOnce(&Self),
+        build_false: impl FnOnce(&Self),
+    ) {
         let always_ok: Result<(), Infallible> = Ok(());
         self.try_build_if(
             cond,
-            || {
-                build_true();
+            |builder| {
+                build_true(builder);
                 always_ok
             },
-            || {
-                build_false();
+            |builder| {
+                build_false(builder);
                 always_ok
             },
         )
         .unwrap();
     }
 
-    fn try_build_if<E>(
+    #[allow(clippy::missing_errors_doc)]
+    #[allow(clippy::missing_panics_doc)]
+    pub fn try_build_if<E>(
         &self,
         cond: IntValue,
-        build_true: impl Fn() -> Result<(), E>,
-        build_false: impl Fn() -> Result<(), E>,
+        build_true: impl FnOnce(&Self) -> Result<(), E>,
+        build_false: impl FnOnce(&Self) -> Result<(), E>,
     ) -> Result<(), E> {
         let insert_block = self.get_insert_block().unwrap();
         let context = insert_block.get_context();
@@ -99,11 +91,11 @@ impl<'ctx> BuilderExt for Builder<'ctx> {
         let continue_block = context.append_basic_block(function, "continue");
 
         self.position_at_end(then_block);
-        build_true()?;
+        build_true(self)?;
         self.build_unconditional_branch(continue_block);
 
         self.position_at_end(else_block);
-        build_false()?;
+        build_false(self)?;
         self.build_unconditional_branch(continue_block);
 
         self.position_at_end(continue_block);
@@ -113,9 +105,9 @@ impl<'ctx> BuilderExt for Builder<'ctx> {
 
 #[cfg(test)]
 mod tests {
-    use super::ModuleBuilder;
-    use crate::{module, qis::BuilderBasicExt};
-    use inkwell::{builder::Builder, context::Context};
+    use super::Builder;
+    use crate::{module, qis::BuilderBasicQisExt};
+    use inkwell::{builder::Builder as BuilderBase, context::Context};
     use normalize_line_endings::normalized;
     use std::{env, fs, path::PathBuf};
 
@@ -123,7 +115,7 @@ mod tests {
     fn test_empty_if() -> Result<(), String> {
         check_or_save_reference_ir("test_empty_if", 1, 1, |builder| {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
-            builder.build_if_result(builder.build_result(0), || (), || ());
+            builder.build_if_result(builder.build_result(0), |_| (), |_| ());
         })
     }
 
@@ -133,8 +125,8 @@ mod tests {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_if_result(
                 builder.build_result(0),
-                || builder.build_x(builder.build_qubit(0)),
-                || (),
+                |builder| builder.build_x(builder.build_qubit(0)),
+                |_| (),
             );
         })
     }
@@ -145,8 +137,8 @@ mod tests {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_if_result(
                 builder.build_result(0),
-                || (),
-                || builder.build_x(builder.build_qubit(0)),
+                |_| (),
+                |builder| builder.build_x(builder.build_qubit(0)),
             );
         })
     }
@@ -157,8 +149,8 @@ mod tests {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_if_result(
                 builder.build_result(0),
-                || builder.build_x(builder.build_qubit(0)),
-                || (),
+                |builder| builder.build_x(builder.build_qubit(0)),
+                |_| (),
             );
             builder.build_h(builder.build_qubit(0));
         })
@@ -170,8 +162,8 @@ mod tests {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_if_result(
                 builder.build_result(0),
-                || (),
-                || builder.build_x(builder.build_qubit(0)),
+                |_| (),
+                |builder| builder.build_x(builder.build_qubit(0)),
             );
             builder.build_h(builder.build_qubit(0));
         })
@@ -183,8 +175,8 @@ mod tests {
             builder.build_mz(builder.build_qubit(0), builder.build_result(0));
             builder.build_if_result(
                 builder.build_result(0),
-                || builder.build_x(builder.build_qubit(0)),
-                || builder.build_y(builder.build_qubit(0)),
+                |builder| builder.build_x(builder.build_qubit(0)),
+                |builder| builder.build_y(builder.build_qubit(0)),
             );
             builder.build_h(builder.build_qubit(0));
         })
@@ -197,14 +189,14 @@ mod tests {
             builder.build_mz(builder.build_qubit(0), builder.build_result(1));
             builder.build_if_result(
                 builder.build_result(0),
-                || {
+                |builder| {
                     builder.build_if_result(
                         builder.build_result(1),
-                        || builder.build_x(builder.build_qubit(0)),
-                        || (),
+                        |builder| builder.build_x(builder.build_qubit(0)),
+                        |_| (),
                     );
                 },
-                || (),
+                |_| (),
             );
         })
     }
@@ -216,12 +208,12 @@ mod tests {
             builder.build_mz(builder.build_qubit(0), builder.build_result(1));
             builder.build_if_result(
                 builder.build_result(0),
-                || (),
-                || {
+                |_| (),
+                |builder| {
                     builder.build_if_result(
                         builder.build_result(1),
-                        || (),
-                        || builder.build_x(builder.build_qubit(0)),
+                        |_| (),
+                        |builder| builder.build_x(builder.build_qubit(0)),
                     );
                 },
             );
@@ -235,14 +227,14 @@ mod tests {
             builder.build_mz(builder.build_qubit(0), builder.build_result(1));
             builder.build_if_result(
                 builder.build_result(0),
-                || {
+                |builder| {
                     builder.build_if_result(
                         builder.build_result(1),
-                        || (),
-                        || builder.build_x(builder.build_qubit(0)),
+                        |_| (),
+                        |builder| builder.build_x(builder.build_qubit(0)),
                     );
                 },
-                || (),
+                |_| (),
             );
         })
     }
@@ -254,12 +246,12 @@ mod tests {
             builder.build_mz(builder.build_qubit(0), builder.build_result(1));
             builder.build_if_result(
                 builder.build_result(0),
-                || (),
-                || {
+                |_| (),
+                |builder| {
                     builder.build_if_result(
                         builder.build_result(1),
-                        || builder.build_x(builder.build_qubit(0)),
-                        || (),
+                        |builder| builder.build_x(builder.build_qubit(0)),
+                        |_| (),
                     );
                 },
             );
@@ -271,8 +263,8 @@ mod tests {
         check_or_save_reference_ir("test_allows_unmeasured_result_condition", 1, 1, |builder| {
             builder.build_if_result(
                 builder.build_result(0),
-                || builder.build_x(builder.build_qubit(0)),
-                || builder.build_h(builder.build_qubit(0)),
+                |builder| builder.build_x(builder.build_qubit(0)),
+                |builder| builder.build_h(builder.build_qubit(0)),
             );
         })
     }
@@ -288,7 +280,7 @@ mod tests {
         name: &str,
         required_num_qubits: u64,
         required_num_results: u64,
-        build: impl for<'ctx> Fn(&ModuleBuilder<'ctx, '_, Builder<'ctx>>),
+        build: impl for<'ctx> Fn(&Builder<'ctx, '_, BuilderBase<'ctx>>),
     ) -> Result<(), String> {
         const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
         let actual_ir = build_ir(name, required_num_qubits, required_num_results, build)?;
@@ -319,11 +311,11 @@ mod tests {
         name: &str,
         required_num_qubits: u64,
         required_num_results: u64,
-        build: impl for<'ctx> Fn(&ModuleBuilder<'ctx, '_, Builder<'ctx>>),
+        build: impl for<'ctx> Fn(&Builder<'ctx, '_, BuilderBase<'ctx>>),
     ) -> Result<String, String> {
         let context = Context::create();
         let module = context.create_module(name);
-        let builder = ModuleBuilder::new(&module);
+        let builder = Builder::new(&module);
         module::simple_init(&module, &builder, required_num_qubits, required_num_results);
         build(&builder);
         builder.build_return(None);

@@ -1,18 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use super::{builder::ModuleBuilder, types};
-use crate::builder::BuilderExt;
+use super::{builder::Builder, types};
 use inkwell::{
-    builder::Builder,
+    builder::Builder as BuilderBase,
     module::{Linkage, Module},
     types::BasicMetadataTypeEnum,
     values::{FloatValue, FunctionValue, IntValue, PointerValue},
 };
-use log;
 use std::borrow::Borrow;
 
-pub trait BuilderBasicExt<'ctx> {
+pub trait BuilderBasicQisExt<'ctx> {
     fn build_cx(&self, control: PointerValue, qubit: PointerValue);
 
     fn build_cz(&self, control: PointerValue, qubit: PointerValue);
@@ -46,20 +44,20 @@ pub trait BuilderBasicExt<'ctx> {
     fn build_if_result(
         &self,
         cond: PointerValue<'ctx>,
-        build_one: impl Fn(),
-        build_zero: impl Fn(),
+        build_one: impl FnOnce(&Self),
+        build_zero: impl FnOnce(&Self),
     );
 
     #[allow(clippy::missing_errors_doc)]
     fn try_build_if_result<E>(
         &self,
         cond: PointerValue<'ctx>,
-        build_one: impl Fn() -> Result<(), E>,
-        build_zero: impl Fn() -> Result<(), E>,
+        build_one: impl FnOnce(&Self) -> Result<(), E>,
+        build_zero: impl FnOnce(&Self) -> Result<(), E>,
     ) -> Result<(), E>;
 }
 
-impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> BuilderBasicExt<'ctx> for ModuleBuilder<'ctx, 'm, B> {
+impl<'ctx, 'm, B: Borrow<BuilderBase<'ctx>>> BuilderBasicQisExt<'ctx> for Builder<'ctx, 'm, B> {
     fn build_cx(&self, control: PointerValue, qubit: PointerValue) {
         self.build_call(
             cnot_body(self.module()),
@@ -127,8 +125,8 @@ impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> BuilderBasicExt<'ctx> for ModuleBuilder
     fn build_if_result(
         &self,
         cond: PointerValue<'ctx>,
-        build_one: impl Fn(),
-        build_zero: impl Fn(),
+        build_one: impl FnOnce(&Self),
+        build_zero: impl FnOnce(&Self),
     ) {
         let bool_cond = build_read_result(self, cond);
         self.build_if(bool_cond, build_one, build_zero);
@@ -137,8 +135,8 @@ impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> BuilderBasicExt<'ctx> for ModuleBuilder
     fn try_build_if_result<E>(
         &self,
         cond: PointerValue<'ctx>,
-        build_one: impl Fn() -> Result<(), E>,
-        build_zero: impl Fn() -> Result<(), E>,
+        build_one: impl FnOnce(&Self) -> Result<(), E>,
+        build_zero: impl FnOnce(&Self) -> Result<(), E>,
     ) -> Result<(), E> {
         let bool_cond = build_read_result(self, cond);
         self.try_build_if(bool_cond, build_one, build_zero)
@@ -146,7 +144,7 @@ impl<'ctx, 'm, B: Borrow<Builder<'ctx>>> BuilderBasicExt<'ctx> for ModuleBuilder
 }
 
 fn build_read_result<'ctx>(
-    builder: &ModuleBuilder<'ctx, '_, impl Borrow<Builder<'ctx>>>,
+    builder: &Builder<'ctx, '_, impl Borrow<BuilderBase<'ctx>>>,
     result: PointerValue<'ctx>,
 ) -> IntValue<'ctx> {
     builder
