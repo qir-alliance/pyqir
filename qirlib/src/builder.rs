@@ -9,44 +9,53 @@ use std::{borrow::Borrow, convert::Infallible, ops::Deref};
 // TODO: With LLVM, it's possible to get the module that a builder is positioned in using only the
 // builder itself. But it's not possible with Inkwell, so we have to bundle the references together.
 // See https://github.com/TheDan64/inkwell/issues/347
-pub struct Builder<'ctx, 'm, B> {
-    builder: B,
-    module: &'m Module<'ctx>,
+pub struct Builder<'ctx, 'a> {
+    builder: OwnOrBorrow<'a, BuilderBase<'ctx>>,
+    module: &'a Module<'ctx>,
 }
 
-impl<'ctx, 'm, B: Borrow<BuilderBase<'ctx>>> Deref for Builder<'ctx, 'm, B> {
+impl<'ctx, 'a> Deref for Builder<'ctx, 'a> {
     type Target = BuilderBase<'ctx>;
 
     fn deref(&self) -> &Self::Target {
-        self.builder.borrow()
+        match &self.builder {
+            OwnOrBorrow::Owned(b) => b,
+            OwnOrBorrow::Borrowed(b) => b,
+        }
     }
 }
 
-impl<'ctx, 'm> Builder<'ctx, 'm, BuilderBase<'ctx>> {
-    pub fn new(module: &'m Module<'ctx>) -> Self {
+impl<'ctx, 'a> Builder<'ctx, 'a> {
+    pub fn new(module: &'a Module<'ctx>) -> Self {
         Self {
-            builder: module.get_context().create_builder(),
+            builder: OwnOrBorrow::Owned(module.get_context().create_builder()),
             module,
         }
     }
 }
 
-impl<'ctx, 'b, 'm> Builder<'ctx, 'm, &'b BuilderBase<'ctx>> {
-    pub fn from(builder: &'b BuilderBase<'ctx>, module: &'m Module<'ctx>) -> Self {
-        Self { builder, module }
+impl<'ctx, 'a> Builder<'ctx, 'a> {
+    pub fn from(builder: &'a BuilderBase<'ctx>, module: &'a Module<'ctx>) -> Self {
+        Self {
+            builder: OwnOrBorrow::Borrowed(builder),
+            module,
+        }
     }
 }
 
-impl<'ctx, 'm, B: Borrow<BuilderBase<'ctx>>> Builder<'ctx, 'm, B> {
+impl<'ctx, 'a> Builder<'ctx, 'a> {
+    #[must_use]
     pub fn module(&self) -> &Module<'ctx> {
         self.module.borrow()
     }
 
+    #[must_use]
     pub fn build_qubit(&self, id: u64) -> PointerValue<'ctx> {
         let value = self.module().get_context().i64_type().const_int(id, false);
         self.build_int_to_ptr(value, types::qubit(self.module()), "")
     }
 
+    #[must_use]
     pub fn build_result(&self, id: u64) -> PointerValue<'ctx> {
         let value = self.module().get_context().i64_type().const_int(id, false);
         self.build_int_to_ptr(value, types::result(self.module()), "")
@@ -103,11 +112,16 @@ impl<'ctx, 'm, B: Borrow<BuilderBase<'ctx>>> Builder<'ctx, 'm, B> {
     }
 }
 
+enum OwnOrBorrow<'a, T> {
+    Owned(T),
+    Borrowed(&'a T),
+}
+
 #[cfg(test)]
 mod tests {
     use super::Builder;
     use crate::{module, qis::BuilderBasicQisExt};
-    use inkwell::{builder::Builder as BuilderBase, context::Context};
+    use inkwell::context::Context;
     use normalize_line_endings::normalized;
     use std::{env, fs, path::PathBuf};
 
@@ -280,7 +294,7 @@ mod tests {
         name: &str,
         required_num_qubits: u64,
         required_num_results: u64,
-        build: impl for<'ctx> Fn(&Builder<'ctx, '_, BuilderBase<'ctx>>),
+        build: impl for<'ctx> Fn(&Builder<'ctx, '_>),
     ) -> Result<(), String> {
         const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
         let actual_ir = build_ir(name, required_num_qubits, required_num_results, build)?;
@@ -311,7 +325,7 @@ mod tests {
         name: &str,
         required_num_qubits: u64,
         required_num_results: u64,
-        build: impl for<'ctx> Fn(&Builder<'ctx, '_, BuilderBase<'ctx>>),
+        build: impl for<'ctx> Fn(&Builder<'ctx, '_>),
     ) -> Result<String, String> {
         let context = Context::create();
         let module = context.create_module(name);

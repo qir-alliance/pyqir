@@ -3,12 +3,10 @@
 
 use super::{builder::Builder, types};
 use inkwell::{
-    builder::Builder as BuilderBase,
     module::{Linkage, Module},
     types::BasicMetadataTypeEnum,
     values::{FloatValue, FunctionValue, IntValue, PointerValue},
 };
-use std::borrow::Borrow;
 
 pub trait BuilderBasicQisExt<'ctx> {
     fn build_cx(&self, control: PointerValue, qubit: PointerValue);
@@ -57,7 +55,7 @@ pub trait BuilderBasicQisExt<'ctx> {
     ) -> Result<(), E>;
 }
 
-impl<'ctx, 'm, B: Borrow<BuilderBase<'ctx>>> BuilderBasicQisExt<'ctx> for Builder<'ctx, 'm, B> {
+impl<'ctx, 'a> BuilderBasicQisExt<'ctx> for Builder<'ctx, 'a> {
     fn build_cx(&self, control: PointerValue, qubit: PointerValue) {
         self.build_call(
             cnot_body(self.module()),
@@ -144,7 +142,7 @@ impl<'ctx, 'm, B: Borrow<BuilderBase<'ctx>>> BuilderBasicQisExt<'ctx> for Builde
 }
 
 fn build_read_result<'ctx>(
-    builder: &Builder<'ctx, '_, impl Borrow<BuilderBase<'ctx>>>,
+    builder: &Builder<'ctx, '_>,
     result: PointerValue<'ctx>,
 ) -> IntValue<'ctx> {
     builder
