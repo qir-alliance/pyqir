@@ -39,7 +39,7 @@ use qirlib::{
     qis::BuilderBasicExt,
     types,
 };
-use std::{borrow::Borrow, convert::Into, mem::transmute};
+use std::{borrow::Borrow, convert::Into, mem::transmute, result::Result};
 
 #[pymodule]
 fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -49,8 +49,8 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Type>()?;
     m.add_class::<TypeFactory>()?;
     m.add_class::<Value>()?;
-    m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
     m.add("const", wrap_pyfunction!(constant, m)?)?;
+    m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
     m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
     Ok(())
 }
@@ -78,6 +78,27 @@ impl<'source> FromPyObject<'source> for PyIntPredicate {
 #[pyclass]
 #[derive(Eq, PartialEq)]
 struct Context(InkwellContext);
+
+impl Context {
+    fn from_values<'a>(
+        values: impl IntoIterator<Item = &'a PyAny> + 'a,
+    ) -> impl Iterator<Item = Py<Self>> + 'a {
+        values
+            .into_iter()
+            .filter_map(|v| Some(v.extract::<Value>().ok()?.context))
+    }
+
+    fn require_same(
+        py: Python,
+        contexts: impl IntoIterator<Item = impl Borrow<Py<Self>>>,
+    ) -> PyResult<()> {
+        // then_some is stabilized in Rust 1.62.
+        #[allow(clippy::unnecessary_lazy_evaluations)]
+        is_all_same(py, contexts)
+            .then(|| ())
+            .ok_or_else(|| PyValueError::new_err("Some objects come from a different context."))
+    }
+}
 
 #[pyclass(unsendable)]
 struct Type {
@@ -141,7 +162,7 @@ impl TypeFactory {
     #[staticmethod]
     #[allow(clippy::needless_pass_by_value)]
     fn function(py: Python, return_: &Type, params: Vec<Py<Type>>) -> PyResult<Py<Type>> {
-        require_same_contexts(
+        Context::require_same(
             py,
             params
                 .iter()
@@ -189,20 +210,12 @@ impl Value {
         let value = transmute::<AnyValueEnum<'_>, AnyValueEnum<'static>>(value);
         Self { value, context }
     }
-}
 
-/// Creates a constant QIR value.
-///
-/// :param Type ty: The type of the value.
-/// :param Union[int, float] value: A Python value that will be converted into a QIR value.
-/// :returns: The constant QIR value.
-/// :rtype: Value
-#[pyfunction]
-#[pyo3(text_signature = "(ty, value)")]
-fn constant(ty: &Type, value: &PyAny) -> PyResult<Value> {
-    let context = ty.context.clone();
-    let value = extract_constant(&ty.ty, value)?;
-    Ok(unsafe { Value::new(context, &value) })
+    unsafe fn extract<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyValueEnum<'ctx>> {
+        ob.extract()
+            .map(|v: Self| v.value)
+            .or_else(|_| extract_constant(ty, ob))
+    }
 }
 
 /// An instruction builder.
@@ -242,7 +255,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn and_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
-        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
+        Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_and(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
@@ -257,7 +270,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn or_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
-        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
+        Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_or(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
@@ -272,7 +285,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn xor(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
-        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
+        Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_xor(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
@@ -287,7 +300,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn add(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
-        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
+        Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_int_add(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
@@ -302,7 +315,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn sub(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
-        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
+        Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_int_sub(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
@@ -317,7 +330,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn mul(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
-        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
+        Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_int_mul(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
@@ -332,7 +345,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn shl(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
-        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
+        Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value = self.builder.build_left_shift(
             lhs.value.into_int_value(),
             rhs.value.into_int_value(),
@@ -349,7 +362,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn lshr(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
-        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
+        Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value = self.builder.build_right_shift(
             lhs.value.into_int_value(),
             rhs.value.into_int_value(),
@@ -369,7 +382,7 @@ impl Builder {
     #[pyo3(text_signature = "(self, pred, lhs, rhs)")]
     #[allow(clippy::needless_pass_by_value)]
     fn icmp(&self, py: Python, pred: PyIntPredicate, lhs: Value, rhs: Value) -> PyResult<Value> {
-        require_same_contexts(py, [&self.context, &lhs.context, &rhs.context])?;
+        Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value = self.builder.build_int_compare(
             pred.0,
             lhs.value.into_int_value(),
@@ -387,9 +400,10 @@ impl Builder {
     /// :rtype: Optional[Value]
     #[pyo3(text_signature = "(self, function, args)")]
     fn call(&self, py: Python, function: &Value, args: &PySequence) -> PyResult<Option<Value>> {
-        require_same_contexts(
+        Context::require_same(
             py,
-            value_contexts(args.iter()?).chain([self.context.clone(), function.context.clone()]),
+            Context::from_values(args.iter()?.filter_map(Result::ok))
+                .chain([self.context.clone(), function.context.clone()]),
         )?;
 
         let (callable, param_types) = try_callable_value(function.value)
@@ -403,9 +417,13 @@ impl Builder {
             )));
         }
 
-        let args = extract_values(param_types, args)?
-            .iter()
-            .map(|v| any_to_meta(*v).ok_or_else(|| PyValueError::new_err("Invalid argument.")))
+        let args = args
+            .iter()?
+            .zip(param_types)
+            .map(|(v, t)| {
+                let value = unsafe { Value::extract(&t, v?) }?;
+                any_to_meta(value).ok_or_else(|| PyValueError::new_err("Invalid argument."))
+            })
             .collect::<PyResult<Vec<_>>>()?;
 
         let call = self.builder.build_call(callable, &args, "");
@@ -432,7 +450,7 @@ impl Builder {
         r#true: Option<&PyAny>,
         r#false: Option<&PyAny>,
     ) -> PyResult<()> {
-        require_same_contexts(py, [&self.context, &cond.context])?;
+        Context::require_same(py, [&self.context, &cond.context])?;
         self.builder.try_build_if(
             cond.value.into_int_value(),
             || call_if_some(r#true),
@@ -554,7 +572,7 @@ impl SimpleModule {
     #[pyo3(text_signature = "(self, name, ty)")]
     fn add_external_function(&mut self, py: Python, name: &str, ty: &Type) -> PyResult<Value> {
         let module = self.module.borrow(py);
-        require_same_contexts(py, [&module.context, &ty.context])?;
+        Context::require_same(py, [&module.context, &ty.context])?;
 
         let context = ty.context.clone();
         let ty = ty.ty.into_function_type();
@@ -600,7 +618,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, control, target)")]
     fn cx(&self, py: Python, control: &Value, target: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(py, [&builder.context, &control.context, &target.context])?;
+        Context::require_same(py, [&builder.context, &control.context, &target.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_cx(
@@ -618,7 +636,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, control, target)")]
     fn cz(&self, py: Python, control: &Value, target: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(py, [&builder.context, &control.context, &target.context])?;
+        Context::require_same(py, [&builder.context, &control.context, &target.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_cz(
@@ -635,7 +653,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn h(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(py, [&builder.context, &qubit.context])?;
+        Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_h(qubit.value.into_pointer_value());
@@ -650,7 +668,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit, result)")]
     fn mz(&self, py: Python, qubit: &Value, result: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(py, [&builder.context, &qubit.context, &result.context])?;
+        Context::require_same(py, [&builder.context, &qubit.context, &result.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_mz(
@@ -667,7 +685,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn reset(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(py, [&builder.context, &qubit.context])?;
+        Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_reset(qubit.value.into_pointer_value());
@@ -682,15 +700,15 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn rx(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(
+        Context::require_same(
             py,
-            value_contexts([Ok(theta)]).chain([builder.context.clone(), qubit.context.clone()]),
+            Context::from_values([theta]).chain([builder.context.clone(), qubit.context.clone()]),
         )?;
 
         let context = builder.context.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let theta = extract_value(&context.0.f64_type(), theta)?;
+        let theta = unsafe { Value::extract(&context.0.f64_type(), theta)? };
         builder.build_rx(theta.into_float_value(), qubit.value.into_pointer_value());
         Ok(())
     }
@@ -703,15 +721,15 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn ry(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(
+        Context::require_same(
             py,
-            value_contexts([Ok(theta)]).chain([builder.context.clone(), qubit.context.clone()]),
+            Context::from_values([theta]).chain([builder.context.clone(), qubit.context.clone()]),
         )?;
 
         let context = builder.context.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let theta = extract_value(&context.0.f64_type(), theta)?;
+        let theta = unsafe { Value::extract(&context.0.f64_type(), theta)? };
         builder.build_ry(theta.into_float_value(), qubit.value.into_pointer_value());
         Ok(())
     }
@@ -724,15 +742,15 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, theta, qubit)")]
     fn rz(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(
+        Context::require_same(
             py,
-            value_contexts([Ok(theta)]).chain([builder.context.clone(), qubit.context.clone()]),
+            Context::from_values([theta]).chain([builder.context.clone(), qubit.context.clone()]),
         )?;
 
         let context = builder.context.borrow(py);
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
-        let theta = extract_value(&context.0.f64_type(), theta)?;
+        let theta = unsafe { Value::extract(&context.0.f64_type(), theta)? };
         builder.build_rz(theta.into_float_value(), qubit.value.into_pointer_value());
         Ok(())
     }
@@ -744,7 +762,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn s(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(py, [&builder.context, &qubit.context])?;
+        Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_s(qubit.value.into_pointer_value());
@@ -758,7 +776,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn s_adj(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(py, [&builder.context, &qubit.context])?;
+        Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_s_adj(qubit.value.into_pointer_value());
@@ -772,7 +790,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn t(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(py, [&builder.context, &qubit.context])?;
+        Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_t(qubit.value.into_pointer_value());
@@ -786,7 +804,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn t_adj(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(py, [&builder.context, &qubit.context])?;
+        Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_t_adj(qubit.value.into_pointer_value());
@@ -800,7 +818,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn x(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(py, [&builder.context, &qubit.context])?;
+        Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_x(qubit.value.into_pointer_value());
@@ -814,7 +832,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn y(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(py, [&builder.context, &qubit.context])?;
+        Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_y(qubit.value.into_pointer_value());
@@ -828,7 +846,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn z(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(py, [&builder.context, &qubit.context])?;
+        Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.build_z(qubit.value.into_pointer_value());
@@ -856,7 +874,7 @@ impl BasicQisBuilder {
         zero: Option<&PyAny>,
     ) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        require_same_contexts(py, [&builder.context, &cond.context])?;
+        Context::require_same(py, [&builder.context, &cond.context])?;
         let module = builder.module.borrow(py);
         let builder = ModuleBuilder::from(&builder.builder, &module.module);
         builder.try_build_if_result(
@@ -865,6 +883,20 @@ impl BasicQisBuilder {
             || call_if_some(zero),
         )
     }
+}
+
+/// Creates a constant QIR value.
+///
+/// :param Type ty: The type of the value.
+/// :param Union[int, float] value: A Python value that will be converted into a QIR value.
+/// :returns: The constant QIR value.
+/// :rtype: Value
+#[pyfunction]
+#[pyo3(text_signature = "(ty, value)")]
+fn constant(ty: &Type, value: &PyAny) -> PyResult<Value> {
+    let context = ty.context.clone();
+    let value = extract_constant(&ty.ty, value)?;
+    Ok(unsafe { Value::new(context, &value) })
 }
 
 /// Converts the supplied QIR string to its bitcode equivalent.
@@ -876,7 +908,6 @@ impl BasicQisBuilder {
 /// :rtype: bytes
 #[pyfunction]
 #[pyo3(text_signature = "(ir, module_name=None, source_file_name=None)")]
-#[allow(clippy::needless_pass_by_value)]
 fn ir_to_bitcode<'a>(
     py: Python<'a>,
     ir: &str,
@@ -897,7 +928,6 @@ fn ir_to_bitcode<'a>(
 /// :rtype: str
 #[pyfunction]
 #[pyo3(text_signature = "(bitcode, module_name=None, source_file_name=None)")]
-#[allow(clippy::needless_pass_by_value)]
 fn bitcode_to_ir<'a>(
     py: Python<'a>,
     bitcode: &PyBytes,
@@ -907,40 +937,4 @@ fn bitcode_to_ir<'a>(
     let ir = module::bitcode_to_ir(bitcode.as_bytes(), module_name, source_file_name)
         .map_err(PyOSError::new_err)?;
     Ok(PyUnicode::new(py, &ir))
-}
-
-fn extract_value<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyValueEnum<'ctx>> {
-    match ob.extract::<Value>() {
-        Ok(value) => Ok(value.value),
-        Err(_) => extract_constant(ty, ob),
-    }
-}
-
-fn extract_values<'ctx>(
-    types: impl IntoIterator<Item = impl AnyType<'ctx>>,
-    values: &PySequence,
-) -> PyResult<Vec<AnyValueEnum<'ctx>>> {
-    values
-        .iter()?
-        .zip(types)
-        .map(|(v, t)| extract_value(&t, v?))
-        .collect::<PyResult<Vec<_>>>()
-}
-
-fn require_same_contexts(
-    py: Python,
-    contexts: impl IntoIterator<Item = impl Borrow<Py<Context>>>,
-) -> PyResult<()> {
-    // then_some is stabilized in Rust 1.62.
-    #[allow(clippy::unnecessary_lazy_evaluations)]
-    is_all_same(py, contexts)
-        .then(|| ())
-        .ok_or_else(|| PyValueError::new_err("Some objects come from a different context."))
-}
-
-fn value_contexts<'a>(
-    obs: impl IntoIterator<Item = PyResult<&'a PyAny>> + 'a,
-) -> impl Iterator<Item = Py<Context>> + 'a {
-    obs.into_iter()
-        .filter_map(|a| Some(a.ok()?.extract::<Value>().ok()?.context))
 }
