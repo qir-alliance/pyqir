@@ -1,13 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-// pyo3 generates errors with _obj and _tmp values
-#![allow(clippy::used_underscore_binding)]
-// Some arguments get turned into Deref by PyO3 macros, which we can't control.
-#![allow(clippy::borrow_deref_ref, clippy::needless_option_as_deref)]
-// This was introduced in 1.62, but we can't update the dependency to
-// to resolve it until we move to a newer version of python.
-#![allow(clippy::format_push_string)]
+// Safety
+// ------
+//
+// To store Inkwell/LLVM objects in Python classes, we transmute the 'ctx lifetime to static. You
+// need to be careful when using Inkwell types with unsafely extended lifetimes. Follow these rules:
+//
+// 1. When storing in a data type, always include a Py<Context> field containing the context
+//    originally referred to by 'ctx.
+// 2. Before calling Inkwell methods that use 'ctx, call Context::require_same to assert that all
+//    contexts being used are the same.
 
 // Lints caused by PyO3 macros:
 #![allow(
