@@ -4,6 +4,4 @@
 #![warn(clippy::all, clippy::pedantic)]
 
 pub mod parse;
-
-#[cfg(feature = "python-bindings")]
 pub mod python;
