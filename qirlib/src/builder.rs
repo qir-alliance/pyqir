@@ -32,18 +32,14 @@ impl<'ctx, 'a> Builder<'ctx, 'a> {
             module,
         }
     }
-}
 
-impl<'ctx, 'a> Builder<'ctx, 'a> {
     pub fn from(builder: &'a BuilderBase<'ctx>, module: &'a Module<'ctx>) -> Self {
         Self {
             builder: OwnOrBorrow::Borrowed(builder),
             module,
         }
     }
-}
 
-impl<'ctx, 'a> Builder<'ctx, 'a> {
     #[must_use]
     pub fn module(&self) -> &Module<'ctx> {
         self.module.borrow()
