@@ -1,8 +1,8 @@
 [project]
 name = "pyqir-parser"
 version = "0.7.0a1"
-requires-python = ">=3.6"
+requires-python = ">= 3.7"
 
 [build-system]
-requires = ["maturin>=0.12.12,<0.13"]
+requires = ["maturin ~= 0.13.6"]
 build-backend = "maturin"

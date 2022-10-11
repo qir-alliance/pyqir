@@ -14,10 +14,10 @@ repository = "https://github.com/qir-alliance/pyqir"
 [dependencies]
 llvm-ir = { version = "0.8.1" }
 inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["target-x86"] }
-pyo3 = { version="0.15.2", optional = true }
+pyo3 = { version = "0.17.2", optional = true }
 
 [features]
-extension-module = ["pyo3/abi3-py36", "pyo3/extension-module"]
+extension-module = ["pyo3/abi3-py37", "pyo3/extension-module"]
 python-bindings = []
 llvm11-0 = ["llvm-ir/llvm-11", "inkwell/llvm11-0"]
 llvm12-0 = ["llvm-ir/llvm-12", "inkwell/llvm12-0"]
@@ -35,7 +35,6 @@ classifier=[
     "License :: OSI Approved :: MIT License",
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",

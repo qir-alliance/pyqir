@@ -13,7 +13,6 @@ use pyo3::{
     exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
     prelude::*,
     types::{PyBytes, PySequence, PyString, PyUnicode},
-    PyObjectProtocol,
 };
 use qirlib::generation::{
     emit,
@@ -149,8 +148,8 @@ struct Function {
 #[pyclass]
 struct Value(interop::Value);
 
-#[pyproto]
-impl PyObjectProtocol for Value {
+#[pymethods]
+impl Value {
     fn __repr__(&self) -> String {
         match &self.0 {
             interop::Value::Int(int) => {

@@ -219,7 +219,7 @@ task python-requirements -depends check-environment {
 
 task init -depends python-requirements {
     if (Test-CI) {
-        & $python -m pip install maturin==0.12.12
+        & $python -m pip install maturin~=0.13.6
     }
 
     $env:CARGO_EXTRA_ARGS = "-vv --features `"$(Get-LLVMFeatureVersion)`""

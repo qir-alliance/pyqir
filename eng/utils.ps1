@@ -270,7 +270,7 @@ function Build-PyQIR([string]$project) {
     exec -workingDirectory (Join-Path $srcPath $project) {
         $build_extra_args = ""
         Invoke-LoggedCommand {
-            exec { maturin build --release $build_extra_args --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)" }
+            exec { maturin build --release $build_extra_args @("$($env:CARGO_EXTRA_ARGS)" -split " ") }
             exec { & $python -m pip install --force-reinstall (Get-Wheel $project) }
             exec { pytest }
         }
