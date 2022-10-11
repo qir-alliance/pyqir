@@ -324,7 +324,7 @@ task build-manylinux-container-image {
         $gid = "$(Get-LinuxContainerGroupId)"
         $rustv = "$($rust.version)"
         $tag = "$($linux.manylinux_tag)"
-        Get-Content manylinux.Dockerfile | docker build `
+        Get-Content Dockerfile.manylinux | docker build `
             --build-arg USERNAME=$user `
             --build-arg USER_UID=$uid `
             --build-arg USER_GID=$gid `
@@ -336,15 +336,20 @@ task build-manylinux-container-image {
 # This is only usable if building for manylinux
 task run-examples-in-containers {
     $user = Get-LinuxContainerUserName
-    $uid = "$(Get-LinuxContainerUserId)"
-    $gid = "$(Get-LinuxContainerGroupId)"
-    $images = @("buster", "bullseye", "bionic", "focal")
-    foreach ($image in $images) {
+    $uid = Get-LinuxContainerUserId
+    $gid = Get-LinuxContainerGroupId
+    $releases = @("buster", "bullseye", "focal", "jammy")
+    foreach ($release in $releases) {
         exec -workingDirectory (Join-Path $repo.root "eng") {
-            get-content "$($image).Dockerfile" | docker build --build-arg USERNAME=$user --build-arg USER_UID=$uid --build-arg USER_GID=$gid -t "pyqir-$image-examples" -
+            Get-Content Dockerfile.examples | docker build `
+                --build-arg RELEASE=$release `
+                --build-arg USERNAME=$user `
+                --build-arg USER_UID=$uid `
+                --build-arg USER_GID=$gid `
+                -t "pyqir-$release-examples" -
         }
         exec {
-            docker run --rm --user $user -v "$($repo.root):/home/$user" "pyqir-$image-examples" build.ps1 -t run-examples
+            docker run --rm --user $user -v "$($repo.root):/home/$user" "pyqir-$release-examples" build.ps1 -t run-examples
         }
     }
 }
