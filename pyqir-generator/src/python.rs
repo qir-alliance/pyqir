@@ -23,23 +23,20 @@ use crate::utils::{
     any_to_meta, call_if_some, clone_module, extract_constant, function_type, is_all_same,
     try_callable_value,
 };
+use inkwell::{
+    builder::Builder as InkwellBuilder,
+    context::Context as InkwellContext,
+    module::Module as InkwellModule,
+    types::{AnyType, AnyTypeEnum},
+    values::{AnyValue, AnyValueEnum},
+    IntPredicate,
+};
 use pyo3::{
     exceptions::{PyOSError, PyValueError},
     prelude::*,
     types::{PyBytes, PySequence, PyString, PyUnicode},
 };
-use qirlib::{
-    self,
-    inkwell::{
-        builder::Builder as InkwellBuilder,
-        context::Context as InkwellContext,
-        module::Module as InkwellModule,
-        types::{AnyType, AnyTypeEnum},
-        values::{AnyValue, AnyValueEnum},
-        IntPredicate,
-    },
-    module, types, BuilderBasicQisExt,
-};
+use qirlib::{module, types, BuilderBasicQisExt};
 use std::{borrow::Borrow, convert::Into, mem::transmute, result::Result};
 
 #[pymodule]

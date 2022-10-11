@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use pyo3::{
-    exceptions::{PyOSError, PyTypeError, PyUnicodeDecodeError},
-    prelude::*,
-    PyClass,
-};
-use qirlib::inkwell::{
+use inkwell::{
     context::Context,
     module::Module,
     types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FunctionType},
     values::{AnyValueEnum, BasicMetadataValueEnum, CallableValue},
+};
+use pyo3::{
+    exceptions::{PyOSError, PyTypeError, PyUnicodeDecodeError},
+    prelude::*,
+    PyClass,
 };
 use std::{
     borrow::Borrow,

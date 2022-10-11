@@ -12,8 +12,9 @@ repository = "https://github.com/qir-alliance/pyqir"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["target-x86"] }
+pyo3 = { version = "0.15.2", optional = true }
 qirlib = { path = "../qirlib" }
-pyo3 = { version="0.15.2", optional = true }
 
 [features]
 extension-module = ["pyo3/abi3-py36", "pyo3/extension-module"]

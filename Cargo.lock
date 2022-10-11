@@ -470,6 +470,7 @@ dependencies = [
 name = "pyqir-generator"
 version = "0.7.0-alpha.1"
 dependencies = [
+ "inkwell",
  "pyo3",
  "qirlib",
 ]

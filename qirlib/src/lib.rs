@@ -6,8 +6,6 @@
 #[cfg(not(feature = "no-llvm-linking"))]
 pub use builder::Builder;
 #[cfg(not(feature = "no-llvm-linking"))]
-pub use inkwell;
-#[cfg(not(feature = "no-llvm-linking"))]
 pub use qis::BuilderBasicQisExt;
 
 #[cfg(not(feature = "no-llvm-linking"))]
