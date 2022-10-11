@@ -360,4 +360,162 @@ mod tests {
             build_read_result(builder, builder.build_result(0));
         })
     }
+
+    #[test]
+    fn empty_if() -> Result<(), String> {
+        assert_reference_ir("qis/empty_if", 1, 1, |builder| {
+            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            builder.build_if_result(builder.build_result(0), |_| (), |_| ());
+        })
+    }
+
+    #[test]
+    fn if_then() -> Result<(), String> {
+        assert_reference_ir("qis/if_then", 1, 1, |builder| {
+            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            builder.build_if_result(
+                builder.build_result(0),
+                |builder| builder.build_x(builder.build_qubit(0)),
+                |_| (),
+            );
+        })
+    }
+
+    #[test]
+    fn if_else() -> Result<(), String> {
+        assert_reference_ir("qis/if_else", 1, 1, |builder| {
+            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            builder.build_if_result(
+                builder.build_result(0),
+                |_| (),
+                |builder| builder.build_x(builder.build_qubit(0)),
+            );
+        })
+    }
+
+    #[test]
+    fn if_then_continue() -> Result<(), String> {
+        assert_reference_ir("qis/if_then_continue", 1, 1, |builder| {
+            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            builder.build_if_result(
+                builder.build_result(0),
+                |builder| builder.build_x(builder.build_qubit(0)),
+                |_| (),
+            );
+            builder.build_h(builder.build_qubit(0));
+        })
+    }
+
+    #[test]
+    fn if_else_continue() -> Result<(), String> {
+        assert_reference_ir("qis/if_else_continue", 1, 1, |builder| {
+            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            builder.build_if_result(
+                builder.build_result(0),
+                |_| (),
+                |builder| builder.build_x(builder.build_qubit(0)),
+            );
+            builder.build_h(builder.build_qubit(0));
+        })
+    }
+
+    #[test]
+    fn if_then_else_continue() -> Result<(), String> {
+        assert_reference_ir("qis/if_then_else_continue", 1, 1, |builder| {
+            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            builder.build_if_result(
+                builder.build_result(0),
+                |builder| builder.build_x(builder.build_qubit(0)),
+                |builder| builder.build_y(builder.build_qubit(0)),
+            );
+            builder.build_h(builder.build_qubit(0));
+        })
+    }
+
+    #[test]
+    fn if_then_then() -> Result<(), String> {
+        assert_reference_ir("qis/if_then_then", 1, 2, |builder| {
+            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            builder.build_mz(builder.build_qubit(0), builder.build_result(1));
+            builder.build_if_result(
+                builder.build_result(0),
+                |builder| {
+                    builder.build_if_result(
+                        builder.build_result(1),
+                        |builder| builder.build_x(builder.build_qubit(0)),
+                        |_| (),
+                    );
+                },
+                |_| (),
+            );
+        })
+    }
+
+    #[test]
+    fn if_else_else() -> Result<(), String> {
+        assert_reference_ir("qis/if_else_else", 1, 2, |builder| {
+            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            builder.build_mz(builder.build_qubit(0), builder.build_result(1));
+            builder.build_if_result(
+                builder.build_result(0),
+                |_| (),
+                |builder| {
+                    builder.build_if_result(
+                        builder.build_result(1),
+                        |_| (),
+                        |builder| builder.build_x(builder.build_qubit(0)),
+                    );
+                },
+            );
+        })
+    }
+
+    #[test]
+    fn if_then_else() -> Result<(), String> {
+        assert_reference_ir("qis/if_then_else", 1, 2, |builder| {
+            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            builder.build_mz(builder.build_qubit(0), builder.build_result(1));
+            builder.build_if_result(
+                builder.build_result(0),
+                |builder| {
+                    builder.build_if_result(
+                        builder.build_result(1),
+                        |_| (),
+                        |builder| builder.build_x(builder.build_qubit(0)),
+                    );
+                },
+                |_| (),
+            );
+        })
+    }
+
+    #[test]
+    fn if_else_then() -> Result<(), String> {
+        assert_reference_ir("qis/if_else_then", 1, 2, |builder| {
+            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            builder.build_mz(builder.build_qubit(0), builder.build_result(1));
+            builder.build_if_result(
+                builder.build_result(0),
+                |_| (),
+                |builder| {
+                    builder.build_if_result(
+                        builder.build_result(1),
+                        |builder| builder.build_x(builder.build_qubit(0)),
+                        |_| (),
+                    );
+                },
+            );
+        })
+    }
+
+    #[test]
+    fn if_unmeasured_result() -> Result<(), String> {
+        assert_reference_ir("qis/if_unmeasured_result", 1, 1, |builder| {
+            builder.build_if_result(
+                builder.build_result(0),
+                |builder| builder.build_x(builder.build_qubit(0)),
+                |builder| builder.build_h(builder.build_qubit(0)),
+            );
+        })
+    }
 }

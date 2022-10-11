@@ -1,11 +1,12 @@
-; ModuleID = 'test_allows_unmeasured_result_condition'
-source_filename = "test_allows_unmeasured_result_condition"
+; ModuleID = 'if_then_continue'
+source_filename = "if_then_continue"
 
-%Result = type opaque
 %Qubit = type opaque
+%Result = type opaque
 
 define void @main() #0 {
 entry:
+  call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
   %0 = call i1 @__quantum__qis__read_result__body(%Result* null)
   br i1 %0, label %then, label %else
 
@@ -14,12 +15,14 @@ then:                                             ; preds = %entry
   br label %continue
 
 else:                                             ; preds = %entry
-  call void @__quantum__qis__h__body(%Qubit* null)
   br label %continue
 
 continue:                                         ; preds = %else, %then
+  call void @__quantum__qis__h__body(%Qubit* null)
   ret void
 }
+
+declare void @__quantum__qis__mz__body(%Qubit*, %Result*)
 
 declare i1 @__quantum__qis__read_result__body(%Result*)
 

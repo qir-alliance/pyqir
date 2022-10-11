@@ -1,5 +1,5 @@
-; ModuleID = 'test_empty_if'
-source_filename = "test_empty_if"
+; ModuleID = 'if_else'
+source_filename = "if_else"
 
 %Qubit = type opaque
 %Result = type opaque
@@ -14,6 +14,7 @@ then:                                             ; preds = %entry
   br label %continue
 
 else:                                             ; preds = %entry
+  call void @__quantum__qis__x__body(%Qubit* null)
   br label %continue
 
 continue:                                         ; preds = %else, %then
@@ -23,5 +24,7 @@ continue:                                         ; preds = %else, %then
 declare void @__quantum__qis__mz__body(%Qubit*, %Result*)
 
 declare i1 @__quantum__qis__read_result__body(%Result*)
+
+declare void @__quantum__qis__x__body(%Qubit*)
 
 attributes #0 = { "EntryPoint" "requiredQubits"="1" "requiredResults"="1" }

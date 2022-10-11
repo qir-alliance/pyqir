@@ -1,5 +1,5 @@
-; ModuleID = 'test_if_else_else'
-source_filename = "test_if_else_else"
+; ModuleID = 'if_else_else'
+source_filename = "if_else_else"
 
 %Qubit = type opaque
 %Result = type opaque

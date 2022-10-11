@@ -1,5 +1,5 @@
-; ModuleID = 'test_if_then_continue'
-source_filename = "test_if_then_continue"
+; ModuleID = 'if_then'
+source_filename = "if_then"
 
 %Qubit = type opaque
 %Result = type opaque
@@ -18,7 +18,6 @@ else:                                             ; preds = %entry
   br label %continue
 
 continue:                                         ; preds = %else, %then
-  call void @__quantum__qis__h__body(%Qubit* null)
   ret void
 }
 
@@ -27,7 +26,5 @@ declare void @__quantum__qis__mz__body(%Qubit*, %Result*)
 declare i1 @__quantum__qis__read_result__body(%Result*)
 
 declare void @__quantum__qis__x__body(%Qubit*)
-
-declare void @__quantum__qis__h__body(%Qubit*)
 
 attributes #0 = { "EntryPoint" "requiredQubits"="1" "requiredResults"="1" }

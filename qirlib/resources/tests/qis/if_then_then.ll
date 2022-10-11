@@ -1,5 +1,5 @@
-; ModuleID = 'test_if_then_else'
-source_filename = "test_if_then_else"
+; ModuleID = 'if_then_then'
+source_filename = "if_then_then"
 
 %Qubit = type opaque
 %Result = type opaque
@@ -22,10 +22,10 @@ continue:                                         ; preds = %else, %continue3
   ret void
 
 then1:                                            ; preds = %then
+  call void @__quantum__qis__x__body(%Qubit* null)
   br label %continue3
 
 else2:                                            ; preds = %then
-  call void @__quantum__qis__x__body(%Qubit* null)
   br label %continue3
 
 continue3:                                        ; preds = %else2, %then1

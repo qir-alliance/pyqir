@@ -1,5 +1,5 @@
-; ModuleID = 'test_if_then_then'
-source_filename = "test_if_then_then"
+; ModuleID = 'if_else_then'
+source_filename = "if_else_then"
 
 %Qubit = type opaque
 %Result = type opaque
@@ -12,20 +12,20 @@ entry:
   br i1 %0, label %then, label %else
 
 then:                                             ; preds = %entry
+  br label %continue
+
+else:                                             ; preds = %entry
   %1 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 1 to %Result*))
   br i1 %1, label %then1, label %else2
 
-else:                                             ; preds = %entry
-  br label %continue
-
-continue:                                         ; preds = %else, %continue3
+continue:                                         ; preds = %continue3, %then
   ret void
 
-then1:                                            ; preds = %then
+then1:                                            ; preds = %else
   call void @__quantum__qis__x__body(%Qubit* null)
   br label %continue3
 
-else2:                                            ; preds = %then
+else2:                                            ; preds = %else
   br label %continue3
 
 continue3:                                        ; preds = %else2, %then1
