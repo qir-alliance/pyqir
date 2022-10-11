@@ -1,14 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-// pyo3 generates errors with _obj and _tmp values
-#![allow(clippy::used_underscore_binding)]
-// Some arguments get turned into Deref by PyO3 macros, which we can't control.
-#![allow(clippy::borrow_deref_ref, clippy::needless_option_as_deref)]
-// This was introduced in 1.62, but we can't update the dependency to
-// to resolve it until we move to a newer version of python.
-#![allow(clippy::format_push_string)]
-
 use pyo3::{
     exceptions::{PyOSError, PyOverflowError, PyTypeError, PyValueError},
     prelude::*,

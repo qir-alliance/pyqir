@@ -3,5 +3,5 @@
 
 #![warn(clippy::all, clippy::pedantic)]
 
-pub mod parse;
+mod parse;
 pub mod python;
