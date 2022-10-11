@@ -1,5 +1,5 @@
-; ModuleID = 'test_one_required_result'
-source_filename = "test_one_required_result"
+; ModuleID = 'one_required_result'
+source_filename = "one_required_result"
 
 define void @main() #0 {
 entry:

@@ -1,5 +1,5 @@
-; ModuleID = 'test_zero_required_qubits_results'
-source_filename = "test_zero_required_qubits_results"
+; ModuleID = 'zero_required_qubits_results'
+source_filename = "zero_required_qubits_results"
 
 define void @main() #0 {
 entry:

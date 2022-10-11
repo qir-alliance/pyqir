@@ -115,6 +115,7 @@ mod tests {
         builder::Builder,
         module::{self, create_entry_point},
         qis::BuilderBasicQisExt,
+        tests::assert_reference_ir,
     };
     use inkwell::context::Context;
     use std::{fs::File, io::Read, path::Path};
@@ -179,5 +180,25 @@ mod tests {
             emitted_bitcode_bytes.as_slice(),
             decoded_bitcode_bytes.as_slice()
         );
+    }
+
+    #[test]
+    fn zero_required_qubits_results() -> Result<(), String> {
+        assert_reference_ir("module/zero_required_qubits_results", 0, 0, |_| ())
+    }
+
+    #[test]
+    fn one_required_qubit() -> Result<(), String> {
+        assert_reference_ir("module/one_required_qubit", 1, 0, |_| ())
+    }
+
+    #[test]
+    fn one_required_result() -> Result<(), String> {
+        assert_reference_ir("module/one_required_result", 0, 1, |_| ())
+    }
+
+    #[test]
+    fn many_required_qubits_results() -> Result<(), String> {
+        assert_reference_ir("module/many_required_qubits_results", 5, 7, |_| ())
     }
 }
