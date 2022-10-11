@@ -2,7 +2,7 @@
 
 ## Operating systems
 
-PyQIR runs on most x86-64 operating systems that can run Python 3.6+; however,
+PyQIR runs on most x86-64 operating systems that can run Python 3.7+; however,
 not all of these systems are equally compatible. Operating systems are grouped
 into tiers that represent the level of compatibility users can expect.
 
