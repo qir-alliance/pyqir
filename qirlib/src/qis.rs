@@ -4,7 +4,7 @@
 use super::{builder::Builder, types};
 use inkwell::{
     module::{Linkage, Module},
-    types::BasicMetadataTypeEnum,
+    types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum},
     values::{FloatValue, FunctionValue, IntValue, PointerValue},
 };
 
@@ -57,67 +57,77 @@ pub trait BuilderBasicQisExt<'ctx> {
 
 impl<'ctx, 'a> BuilderBasicQisExt<'ctx> for Builder<'ctx, 'a> {
     fn build_cx(&self, control: PointerValue, qubit: PointerValue) {
-        self.build_call(
-            cnot_body(self.module()),
-            &[control.into(), qubit.into()],
-            "",
-        );
+        let function = controlled_gate(self.module(), "cnot");
+        self.build_call(function, &[control.into(), qubit.into()], "");
     }
 
     fn build_cz(&self, control: PointerValue, qubit: PointerValue) {
-        self.build_call(cz_body(self.module()), &[control.into(), qubit.into()], "");
+        let function = controlled_gate(self.module(), "cz");
+        self.build_call(function, &[control.into(), qubit.into()], "");
     }
 
     fn build_h(&self, qubit: PointerValue) {
-        self.build_call(h_body(self.module()), &[qubit.into()], "");
+        let function = simple_gate(self.module(), "h", Functor::Body);
+        self.build_call(function, &[qubit.into()], "");
     }
 
     fn build_s(&self, qubit: PointerValue) {
-        self.build_call(s_body(self.module()), &[qubit.into()], "");
+        let function = simple_gate(self.module(), "s", Functor::Body);
+        self.build_call(function, &[qubit.into()], "");
     }
 
     fn build_s_adj(&self, qubit: PointerValue) {
-        self.build_call(s_adj(self.module()), &[qubit.into()], "");
+        let function = simple_gate(self.module(), "s", Functor::Adjoint);
+        self.build_call(function, &[qubit.into()], "");
     }
 
     fn build_t(&self, qubit: PointerValue) {
-        self.build_call(t_body(self.module()), &[qubit.into()], "");
+        let function = simple_gate(self.module(), "t", Functor::Body);
+        self.build_call(function, &[qubit.into()], "");
     }
 
     fn build_t_adj(&self, qubit: PointerValue) {
-        self.build_call(t_adj(self.module()), &[qubit.into()], "");
+        let function = simple_gate(self.module(), "t", Functor::Adjoint);
+        self.build_call(function, &[qubit.into()], "");
     }
 
     fn build_x(&self, qubit: PointerValue) {
-        self.build_call(x_body(self.module()), &[qubit.into()], "");
+        let function = simple_gate(self.module(), "x", Functor::Body);
+        self.build_call(function, &[qubit.into()], "");
     }
 
     fn build_y(&self, qubit: PointerValue) {
-        self.build_call(y_body(self.module()), &[qubit.into()], "");
+        let function = simple_gate(self.module(), "y", Functor::Body);
+        self.build_call(function, &[qubit.into()], "");
     }
 
     fn build_z(&self, qubit: PointerValue) {
-        self.build_call(z_body(self.module()), &[qubit.into()], "");
+        let function = simple_gate(self.module(), "z", Functor::Body);
+        self.build_call(function, &[qubit.into()], "");
     }
 
     fn build_rx(&self, theta: FloatValue, qubit: PointerValue) {
-        self.build_call(rx_body(self.module()), &[theta.into(), qubit.into()], "");
+        let function = rotation_gate(self.module(), "rx");
+        self.build_call(function, &[theta.into(), qubit.into()], "");
     }
 
     fn build_ry(&self, theta: FloatValue, qubit: PointerValue) {
-        self.build_call(ry_body(self.module()), &[theta.into(), qubit.into()], "");
+        let function = rotation_gate(self.module(), "ry");
+        self.build_call(function, &[theta.into(), qubit.into()], "");
     }
 
     fn build_rz(&self, theta: FloatValue, qubit: PointerValue) {
-        self.build_call(rz_body(self.module()), &[theta.into(), qubit.into()], "");
+        let function = rotation_gate(self.module(), "rz");
+        self.build_call(function, &[theta.into(), qubit.into()], "");
     }
 
     fn build_reset(&self, qubit: PointerValue) {
-        self.build_call(reset_body(self.module()), &[qubit.into()], "");
+        let function = simple_gate(self.module(), "reset", Functor::Body);
+        self.build_call(function, &[qubit.into()], "");
     }
 
     fn build_mz(&self, qubit: PointerValue, result: PointerValue) {
-        self.build_call(mz_body(self.module()), &[qubit.into(), result.into()], "");
+        self.build_call(mz(self.module()), &[qubit.into(), result.into()], "");
     }
 
     fn build_if_result(
@@ -141,6 +151,12 @@ impl<'ctx, 'a> BuilderBasicQisExt<'ctx> for Builder<'ctx, 'a> {
     }
 }
 
+#[derive(Clone, Copy)]
+enum Functor {
+    Body,
+    Adjoint,
+}
+
 fn build_read_result<'ctx>(
     builder: &Builder<'ctx, '_>,
     result: PointerValue<'ctx>,
@@ -153,372 +169,195 @@ fn build_read_result<'ctx>(
         .into_int_value()
 }
 
-fn cnot_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_controlled_intrinsic_function_body(module, "cnot")
+fn simple_gate<'ctx>(module: &Module<'ctx>, name: &str, functor: Functor) -> FunctionValue<'ctx> {
+    let qubit_type = types::qubit(module).into();
+    declare(module, name, functor, None, &[qubit_type])
 }
 
-fn cz_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_controlled_intrinsic_function_body(module, "cz")
+fn controlled_gate<'ctx>(module: &Module<'ctx>, name: &str) -> FunctionValue<'ctx> {
+    let qubit_type = types::qubit(module).into();
+    declare(module, name, Functor::Body, None, &[qubit_type, qubit_type])
 }
 
-fn h_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_intrinsic_function_body(module, "h")
-}
-
-fn s_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_intrinsic_function_body(module, "s")
-}
-
-fn s_adj<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_intrinsic_function_adj(module, "s")
-}
-
-fn t_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_intrinsic_function_body(module, "t")
-}
-
-fn t_adj<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_intrinsic_function_adj(module, "t")
-}
-
-fn x_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_intrinsic_function_body(module, "x")
-}
-
-fn y_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_intrinsic_function_body(module, "y")
-}
-
-fn z_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_intrinsic_function_body(module, "z")
-}
-
-fn rx_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_rotated_intrinsic_function_body(module, "rx")
-}
-
-fn ry_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_rotated_intrinsic_function_body(module, "ry")
-}
-
-fn rz_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_rotated_intrinsic_function_body(module, "rz")
-}
-
-fn reset_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_intrinsic_function_body(module, "reset")
-}
-
-fn mz_body<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    get_intrinsic_mz_function_body(module, "mz")
-}
-
-/// `declare void @__quantum__qis__{}__body(%Qubit*, %Qubit*)`
-fn get_controlled_intrinsic_function_body<'ctx>(
-    module: &Module<'ctx>,
-    name: &str,
-) -> FunctionValue<'ctx> {
-    let qubit_ptr_type = types::qubit(module);
-    get_intrinsic_function_body_impl(
+fn rotation_gate<'ctx>(module: &Module<'ctx>, name: &str) -> FunctionValue<'ctx> {
+    let double_type = module.get_context().f64_type().into();
+    let qubit_type = types::qubit(module).into();
+    declare(
         module,
         name,
-        &[qubit_ptr_type.into(), qubit_ptr_type.into()],
+        Functor::Body,
+        None,
+        &[double_type, qubit_type],
     )
 }
 
-/// `declare void @__quantum__qis__{}__body(double, %Qubit*)`
-fn get_rotated_intrinsic_function_body<'ctx>(
-    module: &Module<'ctx>,
-    name: &str,
-) -> FunctionValue<'ctx> {
-    let qubit_ptr_type = types::qubit(module);
-    get_intrinsic_function_body_impl(
+fn mz<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+    let qubit_type = types::qubit(module).into();
+    let result_type = types::result(module).into();
+    declare(
         module,
-        name,
-        &[
-            module.get_context().f64_type().into(),
-            qubit_ptr_type.into(),
-        ],
+        "mz",
+        Functor::Body,
+        None,
+        &[qubit_type, result_type],
     )
 }
 
-/// `declare void @__quantum__qis__{}__body(%Qubit*)`
-fn get_intrinsic_function_body<'ctx>(module: &Module<'ctx>, name: &str) -> FunctionValue<'ctx> {
-    let qubit_ptr_type = types::qubit(module);
-    get_intrinsic_function_body_impl(module, name, &[qubit_ptr_type.into()])
+fn read_result<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+    let bool_type = module.get_context().bool_type().into();
+    let result_type = types::result(module).into();
+    declare(
+        module,
+        "read_result",
+        Functor::Body,
+        Some(bool_type),
+        &[result_type],
+    )
 }
 
-fn get_intrinsic_function_body_impl<'ctx>(
+fn declare<'ctx>(
     module: &Module<'ctx>,
     name: &str,
+    functor: Functor,
+    return_type: Option<BasicTypeEnum<'ctx>>,
     param_types: &[BasicMetadataTypeEnum<'ctx>],
 ) -> FunctionValue<'ctx> {
-    let function_name = format!("__quantum__qis__{}__body", name.to_lowercase());
-    if let Some(function) = get_function(module, function_name.as_str()) {
-        function
-    } else {
-        let void_type = module.get_context().void_type();
-        let fn_type = void_type.fn_type(param_types, false);
-        let fn_value =
-            module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
-        fn_value
-    }
-}
-
-/// `declare void @__quantum__qis__{}__body(%Qubit*, %Result*)`
-fn get_intrinsic_mz_function_body<'ctx>(module: &Module<'ctx>, name: &str) -> FunctionValue<'ctx> {
-    let function_name = format!("__quantum__qis__{}__body", name.to_lowercase());
-    if let Some(function) = get_function(module, function_name.as_str()) {
-        function
-    } else {
-        let result_ptr_type = types::result(module);
-        let qubit_ptr_type = types::qubit(module);
-        let void_type = module.get_context().void_type();
-        let fn_type = void_type.fn_type(&[qubit_ptr_type.into(), result_ptr_type.into()], false);
-        let fn_value =
-            module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
-        fn_value
-    }
-}
-
-/// `declare void @__quantum__qis__{}__adj(%Qubit*)`
-fn get_intrinsic_function_adj<'ctx>(module: &Module<'ctx>, name: &str) -> FunctionValue<'ctx> {
-    let function_name = format!("__quantum__qis__{}__adj", name.to_lowercase());
-    if let Some(function) = get_function(module, function_name.as_str()) {
-        function
-    } else {
-        let void_type = module.get_context().void_type();
-        let qubit_ptr_type = types::qubit(module);
-        let fn_type = void_type.fn_type(&[qubit_ptr_type.into()], false);
-        let fn_value =
-            module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
-        fn_value
-    }
-}
-
-fn get_function<'ctx>(module: &Module<'ctx>, function_name: &str) -> Option<FunctionValue<'ctx>> {
-    let defined_function = module.get_function(function_name);
-    match defined_function {
-        None => {
-            log::debug!(
-                "{} global function was not defined in the module",
-                function_name
-            );
-            None
+    let name = format!(
+        "__quantum__qis__{}__{}",
+        name,
+        match functor {
+            Functor::Body => "body",
+            Functor::Adjoint => "adj",
         }
-        Some(value) => Some(value),
-    }
-}
+    );
 
-/// `declare i1 @__quantum__qis__read_result__body(%Result*)`
-fn read_result<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    let function_name = format!("__quantum__qis__{}__body", "read_result");
-    if let Some(function) = get_function(module, function_name.as_str()) {
-        function
-    } else {
-        let result_ptr_type = types::result(module);
-        let bool_type = module.get_context().bool_type();
-        let fn_type = bool_type.fn_type(&[result_ptr_type.into()], false);
-        let fn_value =
-            module.add_function(function_name.as_str(), fn_type, Some(Linkage::External));
-        fn_value
-    }
+    module.get_function(&name).unwrap_or_else(|| {
+        log::debug!("{} global function was not defined in the module", name);
+        let ty = match return_type {
+            Some(ty) => ty.fn_type(param_types, false),
+            None => module.get_context().void_type().fn_type(param_types, false),
+        };
+        module.add_function(&name, ty, Some(Linkage::External))
+    })
 }
 
 #[cfg(test)]
-mod qis_declaration_tests {
+mod tests {
     use super::*;
-    use inkwell::{context::Context, values::AnyValue};
+    use crate::tests::assert_reference_ir;
 
     #[test]
-    fn cnot_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = cnot_body(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__cnot__body(%Qubit*, %Qubit*)\n",
-            str_val.to_string()
-        );
+    fn cx() -> Result<(), String> {
+        assert_reference_ir("qis/cx", 2, 0, |builder| {
+            builder.build_cx(builder.build_qubit(0), builder.build_qubit(1));
+        })
     }
 
     #[test]
-    fn cz_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = cz_body(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__cz__body(%Qubit*, %Qubit*)\n",
-            str_val.to_string()
-        );
+    fn cz() -> Result<(), String> {
+        assert_reference_ir("qis/cz", 2, 0, |builder| {
+            builder.build_cz(builder.build_qubit(0), builder.build_qubit(1));
+        })
     }
 
     #[test]
-    fn h_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = h_body(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__h__body(%Qubit*)\n",
-            str_val.to_string()
-        );
+    fn h() -> Result<(), String> {
+        assert_reference_ir("qis/h", 1, 0, |builder| {
+            builder.build_h(builder.build_qubit(0));
+        })
     }
 
     #[test]
-    fn s_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = s_body(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__s__body(%Qubit*)\n",
-            str_val.to_string()
-        );
+    fn s() -> Result<(), String> {
+        assert_reference_ir("qis/s", 1, 0, |builder| {
+            builder.build_s(builder.build_qubit(0));
+        })
     }
 
     #[test]
-    fn s_adj_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = s_adj(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__s__adj(%Qubit*)\n",
-            str_val.to_string()
-        );
+    fn s_adj() -> Result<(), String> {
+        assert_reference_ir("qis/s_adj", 1, 0, |builder| {
+            builder.build_s_adj(builder.build_qubit(0));
+        })
     }
 
     #[test]
-    fn t_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = t_body(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__t__body(%Qubit*)\n",
-            str_val.to_string()
-        );
+    fn t() -> Result<(), String> {
+        assert_reference_ir("qis/t", 1, 0, |builder| {
+            builder.build_t(builder.build_qubit(0));
+        })
     }
 
     #[test]
-    fn t_adj_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = t_adj(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__t__adj(%Qubit*)\n",
-            str_val.to_string()
-        );
+    fn t_adj() -> Result<(), String> {
+        assert_reference_ir("qis/t_adj", 1, 0, |builder| {
+            builder.build_t_adj(builder.build_qubit(0));
+        })
     }
 
     #[test]
-    fn x_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = x_body(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__x__body(%Qubit*)\n",
-            str_val.to_string()
-        );
+    fn x() -> Result<(), String> {
+        assert_reference_ir("qis/x", 1, 0, |builder| {
+            builder.build_x(builder.build_qubit(0));
+        })
     }
 
     #[test]
-    fn y_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = y_body(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__y__body(%Qubit*)\n",
-            str_val.to_string()
-        );
+    fn y() -> Result<(), String> {
+        assert_reference_ir("qis/y", 1, 0, |builder| {
+            builder.build_y(builder.build_qubit(0));
+        })
     }
 
     #[test]
-    fn z_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = z_body(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__z__body(%Qubit*)\n",
-            str_val.to_string()
-        );
+    fn z() -> Result<(), String> {
+        assert_reference_ir("qis/z", 1, 0, |builder| {
+            builder.build_z(builder.build_qubit(0));
+        })
     }
 
     #[test]
-    fn rx_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = rx_body(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__rx__body(double, %Qubit*)\n",
-            str_val.to_string()
-        );
+    fn rx() -> Result<(), String> {
+        assert_reference_ir("qis/rx", 1, 0, |builder| {
+            let double_type = builder.module().get_context().f64_type();
+            builder.build_rx(double_type.const_float(0.0), builder.build_qubit(0));
+        })
     }
 
     #[test]
-    fn ry_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = ry_body(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__ry__body(double, %Qubit*)\n",
-            str_val.to_string()
-        );
+    fn ry() -> Result<(), String> {
+        assert_reference_ir("qis/ry", 1, 0, |builder| {
+            let double_type = builder.module().get_context().f64_type();
+            builder.build_ry(double_type.const_float(0.0), builder.build_qubit(0));
+        })
     }
 
     #[test]
-    fn rz_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = rz_body(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__rz__body(double, %Qubit*)\n",
-            str_val.to_string()
-        );
+    fn rz() -> Result<(), String> {
+        assert_reference_ir("qis/rz", 1, 0, |builder| {
+            let double_type = builder.module().get_context().f64_type();
+            builder.build_rz(double_type.const_float(0.0), builder.build_qubit(0));
+        })
     }
 
     #[test]
-    fn reset_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = reset_body(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__reset__body(%Qubit*)\n",
-            str_val.to_string()
-        );
+    fn reset() -> Result<(), String> {
+        assert_reference_ir("qis/reset", 1, 0, |builder| {
+            builder.build_reset(builder.build_qubit(0));
+        })
     }
 
     #[test]
-    fn mz_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = mz_body(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare void @__quantum__qis__mz__body(%Qubit*, %Result*)\n",
-            str_val.to_string()
-        );
+    fn mz() -> Result<(), String> {
+        assert_reference_ir("qis/mz", 1, 1, |builder| {
+            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+        })
     }
 
     #[test]
-    fn read_result_is_declared_correctly() {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let function = read_result(&module);
-        let str_val = function.print_to_string();
-        assert_eq!(
-            "declare i1 @__quantum__qis__read_result__body(%Result*)\n",
-            str_val.to_string()
-        );
+    fn read_result() -> Result<(), String> {
+        assert_reference_ir("qis/read_result", 1, 1, |builder| {
+            build_read_result(builder, builder.build_result(0));
+        })
     }
 }
