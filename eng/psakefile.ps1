@@ -210,10 +210,9 @@ task check-environment {
     }
 
     Assert ((Test-InVirtualEnvironment) -eq $true) "$($env_message -join ' ')"
-    pip install pip~=22.3
 }
 
-task init {
+task init -depends check-environment {
     # qirlib has this logic built in when compiled on its own
     # but we must have LLVM installed prior to the wheels being built.
 
