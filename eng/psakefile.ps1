@@ -4,6 +4,7 @@
 properties {
     $repo = @{}
     $repo.root = Resolve-Path (Split-Path -parent $PSScriptRoot)
+    $repo.examples = Join-Path $repo.root "examples"
     $repo.target = Join-Path $repo.root "target"
     $repo.wheels = Join-Path $repo.target "wheels"
     $repo.dot_cargo = Join-Path $repo.root ".cargo"
@@ -29,13 +30,13 @@ properties {
     $pyqir.generator = @{}
     $pyqir.generator.name = "pyqir-generator"
     $pyqir.generator.dir = Join-Path $repo.root $pyqir.generator.name
-    $pyqir.generator.examples_dir = Join-Path $repo.root "examples" "generator"
+    $pyqir.generator.examples_dir = Join-Path $repo.examples "generator"
     $pyqir.generator.python_dir = Join-Path $pyqir.generator.dir "pyqir" "generator"
 
     $pyqir.evaluator = @{}
     $pyqir.evaluator.name = "pyqir-evaluator"
     $pyqir.evaluator.dir = Join-Path $repo.root $pyqir.evaluator.name
-    $pyqir.evaluator.examples_dir = Join-Path $repo.root "examples" "evaluator"
+    $pyqir.evaluator.examples_dir = Join-Path $repo.examples "evaluator"
     $pyqir.evaluator.python_dir = Join-Path $pyqir.evaluator.dir "pyqir" "evaluator"
 
     $pyqir.tests = @{}
@@ -102,20 +103,22 @@ task cargo-clippy -depends init {
 }
 
 task black -depends check-environment {
-    exec {
-        pip install black
-    }
-
+    exec { pip install black }
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please run black before pushing" {
         black --check --extend-exclude "^/examples/generator/mock_language/" .
     }
 }
 
-task mypy -depends python-requirements {
-    exec {
-        & $python -m pip install mypy
-    }
+task mypy -depends check-environment {
+    $projects = @(
+        "$($pyqir.parser.dir)[test]",
+        "$($pyqir.generator.dir)[test]",
+        "$($pyqir.evaluator.dir)[test]",
+        $pyqir.tests.dir
+    )
 
+    $reqs = Resolve-PythonRequirements($projects)
+    exec { pip install --requirement (Join-Path $repo.examples requirements.txt) @reqs mypy }
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above mypy errors" {
         mypy
     }
@@ -208,17 +211,7 @@ task check-environment {
     Assert ((Test-InVirtualEnvironment) -eq $true) "$($env_message -join ' ')"
 }
 
-task python-requirements -depends check-environment {
-    exec {
-        & $python -m pip install `
-            --requirement (Join-Path $pyqir.generator.examples_dir requirements.txt) `
-            --requirement (Join-Path $pyqir.evaluator.dir requirements-dev.txt) `
-            --requirement (Join-Path $pyqir.generator.dir requirements-dev.txt) `
-            --requirement (Join-Path $pyqir.parser.dir requirements-dev.txt)
-    }
-}
-
-task init -depends python-requirements {
+task init {
     # qirlib has this logic built in when compiled on its own
     # but we must have LLVM installed prior to the wheels being built.
 
@@ -350,7 +343,7 @@ task run-examples-in-containers {
 }
 
 # run-examples assumes the wheels have already been installed locally
-task run-examples {   
+task run-examples {
     exec -workingDirectory $pyqir.generator.examples_dir {
         & $python -m pip install -U pip wheel
         & $python -m pip install -r requirements.txt

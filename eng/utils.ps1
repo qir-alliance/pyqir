@@ -255,6 +255,13 @@ function Get-Wheel([string] $project) {
     }
 }
 
+function Resolve-PythonRequirements([string[]] $projects) {
+    $report = pip --quiet install --dry-run --ignore-installed --report - @projects | ConvertFrom-Json
+    $report.install.metadata `
+    | Where-Object { !$_.name.StartsWith("pyqir") } `
+    | ForEach-Object { "$($_.name)==$($_.version)" }
+}
+
 function Build-PyQIR([string] $project) {
     $projectDir = Join-Path $repo.root $project
     Invoke-LoggedCommand {
