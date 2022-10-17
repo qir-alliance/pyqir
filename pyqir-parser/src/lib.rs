@@ -3,6 +3,6 @@
 
 #![warn(clippy::all, clippy::pedantic)]
 
-mod parse;
+pub mod parse;
 #[cfg(feature = "python-bindings")]
 pub mod python;
