@@ -25,7 +25,7 @@ into tiers that represent the level of compatibility users can expect.
 
 - Windows 10
 - Windows 11
-- [Ubuntu 18.04](https://wiki.ubuntu.com/BionicBeaver/ReleaseNotes)
+- [Ubuntu 22.04](https://wiki.ubuntu.com/BionicBeaver/ReleaseNotes)
 - [Debian 10](https://www.debian.org/releases/buster/)
 - [Debian 11](https://www.debian.org/releases/bullseye/)
 - macOS 10.7 - 10.15
