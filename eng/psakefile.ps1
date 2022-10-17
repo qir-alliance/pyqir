@@ -189,9 +189,10 @@ task docs -depends wheelhouse {
 task check-environment {
     $env_message = @(
         "PyQIR requires a virtualenv or conda environment to build.",
-        "Neither the VIRTUAL_ENV nor CONDA_PREFIX environment variables are set).",
+        "Neither the VIRTUAL_ENV nor CONDA_PREFIX environment variables are set.",
         "See https://virtualenv.pypa.io/en/latest/index.html on how to use virtualenv"
     )
+
     if ((Test-InVirtualEnvironment) -eq $false) {
         Write-BuildLog "No virtual environment found."
         $pyenv = Join-Path $repo.target ".env"
@@ -207,8 +208,9 @@ task check-environment {
     else {
         Write-BuildLog "Virtual environment found."
     }
-    # ensure that we are now in a virtual environment
+
     Assert ((Test-InVirtualEnvironment) -eq $true) "$($env_message -join ' ')"
+    pip install pip~=22.3
 }
 
 task init {
@@ -344,9 +346,9 @@ task run-examples-in-containers {
 
 # run-examples assumes the wheels have already been installed locally
 task run-examples {
+    exec { & $python -m pip install --requirement (Join-Path $repo.examples "requirements.txt") }
+
     exec -workingDirectory $pyqir.generator.examples_dir {
-        & $python -m pip install -U pip wheel
-        & $python -m pip install -r requirements.txt
         & $python -m pip install --force-reinstall (Get-Wheel pyqir-generator)
 
         & $python "bell_pair.py" | Tee-Object -Variable output
