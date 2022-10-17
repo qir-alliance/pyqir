@@ -97,7 +97,7 @@ task cargo-fmt {
 
 task cargo-clippy -depends init {
     Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
-        cargo clippy --workspace --all-targets @("$($env:CARGO_EXTRA_ARGS)" -split " ") -- -D warnings
+        cargo clippy --workspace --all-targets @(Get-CargoArgs) -- -D warnings
     }
 }
 
@@ -141,10 +141,10 @@ task pyqir-tests -depends init, generator, evaluator {
 
 task qirlib -depends init {
     Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-        cargo test --release @("$($env:CARGO_EXTRA_ARGS)" -split " ")
+        cargo test --release @(Get-CargoArgs)
     }
     Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-        cargo build --release @("$($env:CARGO_EXTRA_ARGS)" -split " ")
+        cargo build --release @(Get-CargoArgs)
     }
 }
 
@@ -219,11 +219,9 @@ task python-requirements -depends check-environment {
 }
 
 task init -depends python-requirements {
-    $env:CARGO_EXTRA_ARGS = "-vv --features `"$(Get-LLVMFeatureVersion)`""
-
     # qirlib has this logic built in when compiled on its own
     # but we must have LLVM installed prior to the wheels being built.
-    
+
     # if an external LLVM is specified, make sure it exist and
     # skip further bootstapping
     if (Test-Path env:\QIRLIB_LLVM_EXTERNAL_DIR) {

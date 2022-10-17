@@ -236,6 +236,10 @@ function Get-LLVMFeatureVersion {
     }
 }
 
+function Get-CargoArgs {
+    @("-vv", "--features", (Get-LLVMFeatureVersion))
+}
+
 function Get-Wheel([string] $project) {
     $wheelProject = $project.Replace('-', '_')
     $pattern = Join-Path $repo.wheels "$wheelProject-*.whl"
@@ -254,7 +258,7 @@ function Get-Wheel([string] $project) {
 function Build-PyQIR([string] $project) {
     $projectDir = Join-Path $repo.root $project
     Invoke-LoggedCommand {
-        $env:MATURIN_PEP517_ARGS = $env:CARGO_EXTRA_ARGS
+        $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
         exec { pip --verbose wheel --wheel-dir $repo.wheels $projectDir }
         exec { pip install --force-reinstall (Get-Wheel $project) }
         exec -workingDirectory $projectDir { pytest }
