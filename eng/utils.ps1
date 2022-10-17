@@ -20,19 +20,6 @@ if (!(Test-Path env:\TEMP)) {
 # Utilities
 ####
 
-# returns true if the script is running on a build agent, false otherwise
-function Test-CI {
-    if (Test-Path env:\TF_BUILD) {
-        $true
-    }
-    elseif ((Test-Path env:\CI)) {
-        $env:CI -eq $true
-    }
-    else {
-        $false
-    }
-}
-
 # Writes an Azure DevOps message with default debug severity
 function Write-BuildLog {
     param (
@@ -250,8 +237,8 @@ function Get-LLVMFeatureVersion {
 }
 
 function Get-Wheel([string] $project) {
-    $wheel_project = $project.Replace('-', '_')
-    $pattern = Join-Path $repo.root "target" "wheels" "$wheel_project-*.whl"
+    $wheelProject = $project.Replace('-', '_')
+    $pattern = Join-Path $repo.wheels "$wheelProject-*.whl"
     $wheels = @(Get-Item $pattern)
     if ($wheels.Length -eq 1) {
         $wheels[0]
@@ -264,16 +251,13 @@ function Get-Wheel([string] $project) {
     }
 }
 
-function Build-PyQIR([string]$project) {
-    $srcPath = $repo.root
-
-    exec -workingDirectory (Join-Path $srcPath $project) {
-        $build_extra_args = ""
-        Invoke-LoggedCommand {
-            exec { maturin build --release $build_extra_args @("$($env:CARGO_EXTRA_ARGS)" -split " ") }
-            exec { & $python -m pip install --force-reinstall (Get-Wheel $project) }
-            exec { pytest }
-        }
+function Build-PyQIR([string] $project) {
+    $projectDir = Join-Path $repo.root $project
+    Invoke-LoggedCommand {
+        $env:MATURIN_PEP517_ARGS = $env:CARGO_EXTRA_ARGS
+        exec { pip --verbose wheel --wheel-dir $repo.wheels $projectDir }
+        exec { pip install --force-reinstall (Get-Wheel $project) }
+        exec -workingDirectory $projectDir { pytest }
     }
 }
 

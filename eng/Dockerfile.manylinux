@@ -39,8 +39,6 @@ RUN python3.7 -m pip install --no-cache-dir cffi \
     && python3.9 -m pip install --no-cache-dir cffi \
     && python3.10 -m pip install --no-cache-dir cffi
 
-RUN python3.10 -m pip install --no-cache-dir maturin~=0.13.6
-
 USER root
 
 RUN yum install -y libffi-devel ninja-build ccache

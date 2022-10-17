@@ -5,6 +5,7 @@ properties {
     $repo = @{}
     $repo.root = Resolve-Path (Split-Path -parent $PSScriptRoot)
     $repo.target = Join-Path $repo.root "target"
+    $repo.wheels = Join-Path $repo.target "wheels"
     $repo.dot_cargo = Join-Path $repo.root ".cargo"
     $repo.workspace_config_file = Join-Path $repo.dot_cargo "config.toml"
     $repo.dot_vscode = Join-Path $repo.root ".vscode"
@@ -55,7 +56,7 @@ properties {
     $linux.manylinux_root = "/io"
 
     [Diagnostics.CodeAnalysis.SuppressMessage("PSUseDeclaredVarsMoreThanAssignments", "")]
-    $wheelhouse = Join-Path $repo.root "target" "wheels" "*.whl"
+    $wheelhouse = Join-Path $repo.wheels "*.whl"
 }
 
 include settings.ps1
@@ -218,10 +219,6 @@ task python-requirements -depends check-environment {
 }
 
 task init -depends python-requirements {
-    if (Test-CI) {
-        & $python -m pip install maturin~=0.13.6
-    }
-
     $env:CARGO_EXTRA_ARGS = "-vv --features `"$(Get-LLVMFeatureVersion)`""
 
     # qirlib has this logic built in when compiled on its own
