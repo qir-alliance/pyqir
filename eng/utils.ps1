@@ -267,7 +267,7 @@ function Build-PyQIR([string] $project) {
     Invoke-LoggedCommand {
         $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
         exec { pip --verbose wheel --wheel-dir $repo.wheels $projectDir }
-        exec { pip install --force-reinstall (Get-Wheel $project) }
+        exec { pip install --force-reinstall "$(Get-Wheel $project)[test]" }
         exec -workingDirectory $projectDir { pytest }
     }
 }
