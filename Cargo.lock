@@ -169,7 +169,6 @@ dependencies = [
  "llvm-sys 110.0.4",
  "llvm-sys 120.2.5",
  "llvm-sys 130.0.5",
- "llvm-sys 140.0.3",
  "log",
 ]
 
