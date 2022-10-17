@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-
+//
 // Safety
 // ------
 //
@@ -98,6 +98,7 @@ impl Context {
     }
 }
 
+/// A type.
 #[pyclass(unsendable)]
 struct Type {
     ty: AnyTypeEnum<'static>,
@@ -121,6 +122,7 @@ impl Module {
     }
 }
 
+/// Provides access to all supported types.
 #[pyclass]
 struct TypeFactory {
     module: Py<Module>,
@@ -128,36 +130,64 @@ struct TypeFactory {
 
 #[pymethods]
 impl TypeFactory {
+    /// The void type.
+    ///
+    /// :type: Type
     #[getter]
     fn void(&self, py: Python) -> PyResult<Py<Type>> {
         self.create_type(py, |m| m.get_context().void_type().into())
     }
 
+    /// The boolean type.
+    ///
+    /// :type: Type
     #[getter]
     fn bool(&self, py: Python) -> PyResult<Py<Type>> {
         self.create_type(py, |m| m.get_context().bool_type().into())
     }
 
+    /// An integer type.
+    ///
+    /// :param int width: The number of bits in the integers.
+    /// :returns: The integer type.
+    /// :rtype: Type
+    #[pyo3(text_signature = "(width)")]
     fn int(&self, py: Python, width: u32) -> PyResult<Py<Type>> {
         self.create_type(py, |m| m.get_context().custom_width_int_type(width).into())
     }
 
+    /// The double type.
+    ///
+    /// :type: Type
     #[getter]
     fn double(&self, py: Python) -> PyResult<Py<Type>> {
         self.create_type(py, |m| m.get_context().f64_type().into())
     }
 
+    /// The qubit type.
+    ///
+    /// :type: Type
     #[getter]
     fn qubit(&self, py: Python) -> PyResult<Py<Type>> {
         self.create_type(py, |m| types::qubit(m).into())
     }
 
+    /// The measurement result type.
+    ///
+    /// :type: Type
     #[getter]
     fn result(&self, py: Python) -> PyResult<Py<Type>> {
         self.create_type(py, |m| types::result(m).into())
     }
 
+    /// A function type.
+    ///
+    /// :param Type return_: The return type.
+    /// :param List[Type] params: The parameter types.
+    /// :returns: The function type.
+    /// :rtype: Type
     #[staticmethod]
+    #[pyo3(text_signature = "(return_, params)")]
     #[allow(clippy::needless_pass_by_value)]
     fn function(py: Python, return_: &Type, params: Vec<Py<Type>>) -> PyResult<Py<Type>> {
         Context::require_same(
@@ -194,7 +224,7 @@ impl TypeFactory {
     }
 }
 
-/// A QIR value.
+/// A value.
 #[pyclass(unsendable)]
 #[derive(Clone)]
 struct Value {
@@ -459,7 +489,7 @@ impl Builder {
     }
 }
 
-/// A simple module represents an executable QIR program with these restrictions:
+/// A simple module represents an executable program with these restrictions:
 ///
 /// - There is one global qubit register and one global result register. Both are statically
 ///   allocated with a fixed size.
@@ -885,11 +915,11 @@ impl BasicQisBuilder {
     }
 }
 
-/// Creates a constant QIR value.
+/// Creates a constant value.
 ///
 /// :param Type ty: The type of the value.
-/// :param Union[int, float] value: A Python value that will be converted into a QIR value.
-/// :returns: The constant QIR value.
+/// :param Union[int, float] value: The value of the constant.
+/// :returns: The constant value.
 /// :rtype: Value
 #[pyfunction]
 #[pyo3(text_signature = "(ty, value)")]
