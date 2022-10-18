@@ -264,12 +264,10 @@ function Resolve-PythonRequirements([string[]] $projects) {
 
 function Build-PyQIR([string] $project) {
     $projectDir = Join-Path $repo.root $project
-    Invoke-LoggedCommand {
-        $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
-        exec { pip --verbose wheel --wheel-dir $repo.wheels $projectDir }
-        exec { pip install --force-reinstall "$(Get-Wheel $project)[test]" }
-        exec -workingDirectory $projectDir { pytest }
-    }
+    $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
+    Invoke-LoggedCommand { pip --verbose wheel --wheel-dir $repo.wheels $projectDir }
+    Invoke-LoggedCommand { pip install --force-reinstall "$(Get-Wheel $project)[test]" }
+    Invoke-LoggedCommand -workingDirectory $projectDir { pytest }
 }
 
 function Create-PyEnv() {
