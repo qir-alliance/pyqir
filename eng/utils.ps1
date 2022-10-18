@@ -20,19 +20,6 @@ if (!(Test-Path env:\TEMP)) {
 # Utilities
 ####
 
-# returns true if the script is running on a build agent, false otherwise
-function Test-CI {
-    if (Test-Path env:\TF_BUILD) {
-        $true
-    }
-    elseif ((Test-Path env:\CI)) {
-        $env:CI -eq $true
-    }
-    else {
-        $false
-    }
-}
-
 # Writes an Azure DevOps message with default debug severity
 function Write-BuildLog {
     param (
@@ -249,32 +236,45 @@ function Get-LLVMFeatureVersion {
     }
 }
 
-function Get-Wheel([string] $project) {
-    $wheel_project = $project.Replace('-', '_')
-    $pattern = Join-Path $repo.root "target" "wheels" "$wheel_project-*.whl"
-    $wheels = @(Get-Item $pattern)
-    if ($wheels.Length -eq 1) {
-        $wheels[0]
-    }
-    elseif ($wheels.Length -gt 1) {
-        throw "Multiple wheels matching $pattern. Clean the wheels directory."
-    }
-    else {
-        throw "No wheels matching $pattern."
-    }
+function Get-CargoArgs {
+    @("-vv", "--features", (Get-LLVMFeatureVersion))
 }
 
-function Build-PyQIR([string]$project) {
-    $srcPath = $repo.root
+function Get-Wheels([string] $project) {
+    $name = $project.Replace('-', '_')
+    $pattern = Join-Path $repo.wheels "$name-*.whl"
+    Get-Item -ErrorAction Ignore $pattern
+}
 
-    exec -workingDirectory (Join-Path $srcPath $project) {
-        $build_extra_args = ""
-        Invoke-LoggedCommand {
-            exec { maturin build --release $build_extra_args --cargo-extra-args="$($env:CARGO_EXTRA_ARGS)" }
-            exec { & $python -m pip install --force-reinstall (Get-Wheel $project) }
-            exec { pytest }
-        }
+function Get-Wheel([string] $project) {
+    $wheels = @(Get-Wheels $project)
+    Assert ($wheels.Length -gt 0) "Missing wheels for $project."
+    Assert ($wheels.Length -le 1) "Multiple wheels for $project ($wheels). Clean the wheels directory."
+    $wheels[0]
+}
+
+function Resolve-PythonRequirements([string[]] $projects) {
+    $report = pip --quiet install --dry-run --ignore-installed --report - @projects | ConvertFrom-Json
+    $report.install.metadata `
+    | Where-Object { !$_.name.StartsWith("pyqir") } `
+    | ForEach-Object { "$($_.name)==$($_.version)" }
+}
+
+function Build-PyQIR([string] $project) {
+    $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
+    $projectDir = Join-Path $repo.root $project
+    Get-Wheels $project | Remove-Item
+    Invoke-LoggedCommand { pip --verbose wheel --wheel-dir $repo.wheels $projectDir }
+
+    if (Test-CommandExists auditwheel) {
+        $unauditedWheels = Get-Wheels $project
+        Invoke-LoggedCommand { auditwheel repair --wheel-dir $repo.wheels $unauditedWheels }
+        $unauditedWheels | Remove-Item
     }
+
+    $packages = Get-Wheels $project | ForEach-Object { "$_[test]" }
+    Invoke-LoggedCommand { pip install --force-reinstall $packages }
+    Invoke-LoggedCommand -workingDirectory $projectDir { pytest }
 }
 
 function Create-PyEnv() {

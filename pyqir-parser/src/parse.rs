@@ -5,8 +5,6 @@ use std::convert::{TryFrom, TryInto};
 use std::num::ParseIntError;
 use std::path::Path;
 
-use llvm_ir;
-
 // This module introduces extensions to the existing types exposed by llvm_ir to bring in some
 // convenience functions as well as QIR-specific utilities.
 
