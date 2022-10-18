@@ -20,6 +20,12 @@ if (!(Test-Path env:\TEMP)) {
 # Utilities
 ####
 
+function New-TemporaryDirectory {
+    $temp = [System.IO.Path]::GetTempPath()
+    $name = [System.IO.Path]::GetRandomFileName()
+    New-Item -ItemType Directory (Join-Path $temp $name)
+}
+
 # Writes an Azure DevOps message with default debug severity
 function Write-BuildLog {
     param (
@@ -263,17 +269,22 @@ function Resolve-PythonRequirements([string[]] $projects) {
 }
 
 function Build-PyQIR([string] $project) {
-    $projectDir = Join-Path $repo.root $project
     $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
-    Invoke-LoggedCommand { pip --verbose wheel --wheel-dir $repo.wheels $projectDir }
+    $projectDir = Join-Path $repo.root $project
+    $wheelsTempDir = New-TemporaryDirectory
+    Invoke-LoggedCommand { pip --verbose wheel --wheel-dir $wheelsTempDir $projectDir }
 
     if (Test-CommandExists auditwheel) {
-        $wheel = Get-Wheel $project
-        Invoke-LoggedCommand { auditwheel repair --wheel-dir $repo.wheels $wheel }
-        Remove-Item $wheel
+        $unauditedWheels = Get-ChildItem $wheelsTempDir
+        Invoke-LoggedCommand { auditwheel repair --wheel-dir $wheelsTempDir $unauditedWheels }
+        Remove-Item $unauditedWheels
     }
 
-    Invoke-LoggedCommand { pip install --force-reinstall "$(Get-Wheel $project)[test]" }
+    $wheels = Get-ChildItem $wheelsTempDir
+    $packages = $wheels | ForEach-Object { "$_[test]" }
+    Invoke-LoggedCommand { pip install --force-reinstall $packages }
+    New-Item -ItemType Directory -Force $repo.wheels | Out-Null
+    $wheels | ForEach-Object { Move-Item -Force $_ (Join-Path $repo.wheels $_.Name) }
     Invoke-LoggedCommand -workingDirectory $projectDir { pytest }
 }
 
