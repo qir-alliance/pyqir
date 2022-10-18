@@ -267,7 +267,7 @@ function Build-PyQIR([string] $project) {
     $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
     Invoke-LoggedCommand { pip --verbose wheel --wheel-dir $repo.wheels $projectDir }
 
-    if (Get-Command -ErrorAction:Ignore auditwheel) {
+    if (Test-CommandExists auditwheel) {
         $wheel = Get-Wheel $project
         Invoke-LoggedCommand { auditwheel repair --wheel-dir $repo.wheels $wheel }
         Remove-Item $wheel
