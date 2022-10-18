@@ -20,12 +20,6 @@ if (!(Test-Path env:\TEMP)) {
 # Utilities
 ####
 
-function New-TemporaryDirectory {
-    $temp = [System.IO.Path]::GetTempPath()
-    $name = [System.IO.Path]::GetRandomFileName()
-    New-Item -ItemType Directory (Join-Path $temp $name)
-}
-
 # Writes an Azure DevOps message with default debug severity
 function Write-BuildLog {
     param (
@@ -246,19 +240,17 @@ function Get-CargoArgs {
     @("-vv", "--features", (Get-LLVMFeatureVersion))
 }
 
+function Get-Wheels([string] $project) {
+    $name = $project.Replace('-', '_')
+    $pattern = Join-Path $repo.wheels "$name-*.whl"
+    Get-Item -ErrorAction Ignore $pattern
+}
+
 function Get-Wheel([string] $project) {
-    $wheelProject = $project.Replace('-', '_')
-    $pattern = Join-Path $repo.wheels "$wheelProject-*.whl"
-    $wheels = @(Get-Item $pattern)
-    if ($wheels.Length -eq 1) {
-        $wheels[0]
-    }
-    elseif ($wheels.Length -gt 1) {
-        throw "Multiple wheels matching $pattern. Clean the wheels directory."
-    }
-    else {
-        throw "No wheels matching $pattern."
-    }
+    $wheels = @(Get-Wheels $project)
+    Assert ($wheels.Length -gt 0) "Missing wheels for $project."
+    Assert ($wheels.Length -le 1) "Multiple wheels for $project ($wheels). Clean the wheels directory."
+    $wheels[0]
 }
 
 function Resolve-PythonRequirements([string[]] $projects) {
@@ -271,20 +263,17 @@ function Resolve-PythonRequirements([string[]] $projects) {
 function Build-PyQIR([string] $project) {
     $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
     $projectDir = Join-Path $repo.root $project
-    $wheelsTempDir = New-TemporaryDirectory
-    Invoke-LoggedCommand { pip --verbose wheel --wheel-dir $wheelsTempDir $projectDir }
+    Get-Wheels $project | Remove-Item
+    Invoke-LoggedCommand { pip --verbose wheel --wheel-dir $repo.wheels $projectDir }
 
     if (Test-CommandExists auditwheel) {
-        $unauditedWheels = Get-ChildItem $wheelsTempDir
-        Invoke-LoggedCommand { auditwheel repair --wheel-dir $wheelsTempDir $unauditedWheels }
-        Remove-Item $unauditedWheels
+        $unauditedWheels = Get-Wheels $project
+        Invoke-LoggedCommand { auditwheel repair --wheel-dir $repo.wheels $unauditedWheels }
+        $unauditedWheels | Remove-Item
     }
 
-    $wheels = Get-ChildItem $wheelsTempDir
-    $packages = $wheels | ForEach-Object { "$_[test]" }
+    $packages = Get-Wheels $project | ForEach-Object { "$_[test]" }
     Invoke-LoggedCommand { pip install --force-reinstall $packages }
-    New-Item -ItemType Directory -Force $repo.wheels | Out-Null
-    $wheels | ForEach-Object { Move-Item -Force $_ (Join-Path $repo.wheels $_.Name) }
     Invoke-LoggedCommand -workingDirectory $projectDir { pytest }
 }
 
