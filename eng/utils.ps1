@@ -266,6 +266,13 @@ function Build-PyQIR([string] $project) {
     $projectDir = Join-Path $repo.root $project
     $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
     Invoke-LoggedCommand { pip --verbose wheel --wheel-dir $repo.wheels $projectDir }
+
+    if (Get-Command -ErrorAction:Ignore auditwheel) {
+        $wheel = Get-Wheel $project
+        Invoke-LoggedCommand { auditwheel repair --wheel-dir $repo.wheels $wheel }
+        Remove-Item $wheel
+    }
+
     Invoke-LoggedCommand { pip install --force-reinstall "$(Get-Wheel $project)[test]" }
     Invoke-LoggedCommand -workingDirectory $projectDir { pytest }
 }
