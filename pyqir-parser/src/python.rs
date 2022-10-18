@@ -9,17 +9,11 @@
 // from within rust, and wrappers for each class and function will be added to __init__.py so that the
 // parser API can have full python doc comments for usability.
 
-// pyo3 generates errors with _obj and _tmp values
-#![allow(clippy::used_underscore_binding)]
-// Some arguments get turned into Deref by PyO3 macros, which we can't control.
-#![allow(clippy::borrow_deref_ref, clippy::needless_option_as_deref)]
-
-use crate::parse::verify_module_can_be_loaded;
-
 use super::parse::{
     BasicBlockExt, CallExt, ConstantExt, FunctionExt, IntructionExt, ModuleExt, NameExt, PhiExt,
     TypeExt,
 };
+use crate::parse::verify_module_can_be_loaded;
 use llvm_ir::{self, types::Typed};
 use pyo3::{exceptions::PyRuntimeError, prelude::*, types::PyBytes};
 use std::{convert::TryFrom, path::PathBuf};

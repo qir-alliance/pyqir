@@ -12,13 +12,6 @@
 // 2. Before calling Inkwell methods that use 'ctx, call Context::require_same to assert that all
 //    contexts being used are the same.
 
-// Lints caused by PyO3 macros:
-#![allow(
-    clippy::borrow_deref_ref,
-    clippy::needless_option_as_deref,
-    clippy::used_underscore_binding
-)]
-
 use crate::utils::{
     any_to_meta, call_if_some, clone_module, extract_constant, function_type, is_all_same,
     try_callable_value,

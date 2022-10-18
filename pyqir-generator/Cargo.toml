@@ -9,17 +9,12 @@ readme = "README.md"
 homepage = "https://github.com/qir-alliance/pyqir"
 repository = "https://github.com/qir-alliance/pyqir"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["target-x86"] }
-pyo3 = { version = "0.15.2", optional = true }
+pyo3 = { version = "0.17.2", features = ["abi3-py37", "extension-module"] }
 qirlib = { path = "../qirlib" }
 
 [features]
-extension-module = ["pyo3/abi3-py36", "pyo3/extension-module"]
-python-bindings = []
-default = ["extension-module", "python-bindings"]
 llvm11-0 = ["qirlib/llvm11-0"]
 llvm12-0 = ["qirlib/llvm12-0"]
 llvm13-0 = ["qirlib/llvm13-0"]
@@ -35,7 +30,6 @@ classifier = [
     "License :: OSI Approved :: MIT License",
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
