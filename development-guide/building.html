@@ -43,7 +43,7 @@
 <h3>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p><a class="reference external" href="https://rustup.rs/">Rust 1.57+</a></p></li>
-<li><p><a class="reference external" href="https://www.python.org">Python 3.6+</a></p></li>
+<li><p><a class="reference external" href="https://www.python.org">Python 3.7+</a></p></li>
 <li><p><a class="reference external" href="https://github.com/powershell/powershell#get-powershell">PowerShell 7+
 (Core)</a></p></li>
 <li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 13.0.1</a> - See <span class="xref myst">Installing
@@ -79,7 +79,7 @@ python3 -m pip install --user maturin
 </section>
 <section id="windows">
 <h3>Windows<a class="headerlink" href="#windows" title="Permalink to this heading">¶</a></h3>
-<p>Install Python 3.6+ from one of the following and make sure it is added to the
+<p>Install Python 3.7+ from one of the following and make sure it is added to the
 path.</p>
 <ul class="simple">
 <li><p><a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links">Miniconda</a></p></li>
@@ -93,7 +93,7 @@ path.</p>
 </section>
 <section id="macos">
 <h3>MacOS<a class="headerlink" href="#macos" title="Permalink to this heading">¶</a></h3>
-<p>Install Python 3.6+ from <a class="reference external" href="https://www.python.org/downloads/macos/">Python.org</a>.</p>
+<p>Install Python 3.7+ from <a class="reference external" href="https://www.python.org/downloads/macos/">Python.org</a>.</p>
 <p>or brew:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>brew install <span class="s1">&#39;python@3.9&#39;</span>
 python -m pip install --user maturin
@@ -196,7 +196,7 @@ be linked into the rest of the build.</p>
 <h3>Packaging<a class="headerlink" href="#packaging" title="Permalink to this heading">¶</a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">build.(ps1|sh|cmd)</span></code>, <code class="docutils literal notranslate"><span class="pre">maturin</span></code> builds all generate Python wheels
 to the <code class="docutils literal notranslate"><span class="pre">target/wheels</span></code> folder. The default Python3 installation will be used
-targeting Python ABI 3.6.</p>
+targeting Python ABI 3.7.</p>
 <p>The manylinux support uses a Docker image in the build scripts to run the builds
 in the CI environment.</p>
 </section>
@@ -268,7 +268,7 @@ in the CI environment.</p>
       &copy;2021, QIR Alliance.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.2.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

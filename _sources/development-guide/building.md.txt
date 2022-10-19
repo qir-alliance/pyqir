@@ -5,7 +5,7 @@
 ### Requirements
 
 - [Rust 1.57+](https://rustup.rs/)
-- [Python 3.6+](https://www.python.org)
+- [Python 3.7+](https://www.python.org)
 - [PowerShell 7+
   (Core)](https://github.com/powershell/powershell#get-powershell)
 - [LLVM/Clang 13.0.1](https://llvm.org/) - See [Installing
@@ -34,7 +34,7 @@ Install Rust from [rustup](https://rustup.rs/).
 
 ### Windows
 
-Install Python 3.6+ from one of the following and make sure it is added to the
+Install Python 3.7+ from one of the following and make sure it is added to the
 path.
 
 - [Miniconda](https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links)
@@ -50,7 +50,7 @@ Install Rust from [rustup](https://rustup.rs/).
 
 ### MacOS
 
-Install Python 3.6+ from [Python.org](https://www.python.org/downloads/macos/).
+Install Python 3.7+ from [Python.org](https://www.python.org/downloads/macos/).
 
 or brew:
 
@@ -155,7 +155,7 @@ be linked into the rest of the build.
 
 The `build.(ps1|sh|cmd)`, `maturin` builds all generate Python wheels
 to the `target/wheels` folder. The default Python3 installation will be used
-targeting Python ABI 3.6.
+targeting Python ABI 3.7.
 
 The manylinux support uses a Docker image in the build scripts to run the builds
 in the CI environment.
