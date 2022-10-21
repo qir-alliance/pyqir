@@ -21,6 +21,7 @@ from pyqir.generator._native import (
     Constant as Constant,
     FCmp as FCmp,
     FloatConstant as FloatConstant,
+    FloatPredicate as FloatPredicate,
     Function as Function,
     FunctionType as FunctionType,
     ICmp as ICmp,

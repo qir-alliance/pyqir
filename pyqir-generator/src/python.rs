@@ -34,7 +34,6 @@ use inkwell::{
         AnyValueEnum, CallSiteValue, FloatValue, FunctionValue, InstructionValue, IntValue,
         PhiValue,
     },
-    IntPredicate as InkwellIntPredicate,
 };
 use pyo3::{
     exceptions::{PyOSError, PyValueError},
@@ -60,6 +59,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Constant>()?;
     m.add_class::<FCmp>()?;
     m.add_class::<FloatConstant>()?;
+    m.add_class::<FloatPredicate>()?;
     m.add_class::<Function>()?;
     m.add_class::<FunctionType>()?;
     m.add_class::<ICmp>()?;
@@ -592,24 +592,24 @@ enum IntPredicate {
     Sle,
 }
 
-impl From<InkwellIntPredicate> for IntPredicate {
-    fn from(pred: InkwellIntPredicate) -> Self {
+impl From<inkwell::IntPredicate> for IntPredicate {
+    fn from(pred: inkwell::IntPredicate) -> Self {
         match pred {
-            InkwellIntPredicate::EQ => Self::Eq,
-            InkwellIntPredicate::NE => Self::Ne,
-            InkwellIntPredicate::UGT => Self::Ugt,
-            InkwellIntPredicate::UGE => Self::Uge,
-            InkwellIntPredicate::ULT => Self::Ult,
-            InkwellIntPredicate::ULE => Self::Ule,
-            InkwellIntPredicate::SGT => Self::Sgt,
-            InkwellIntPredicate::SGE => Self::Sge,
-            InkwellIntPredicate::SLT => Self::Slt,
-            InkwellIntPredicate::SLE => Self::Sle,
+            inkwell::IntPredicate::EQ => Self::Eq,
+            inkwell::IntPredicate::NE => Self::Ne,
+            inkwell::IntPredicate::UGT => Self::Ugt,
+            inkwell::IntPredicate::UGE => Self::Uge,
+            inkwell::IntPredicate::ULT => Self::Ult,
+            inkwell::IntPredicate::ULE => Self::Ule,
+            inkwell::IntPredicate::SGT => Self::Sgt,
+            inkwell::IntPredicate::SGE => Self::Sge,
+            inkwell::IntPredicate::SLT => Self::Slt,
+            inkwell::IntPredicate::SLE => Self::Sle,
         }
     }
 }
 
-impl From<IntPredicate> for InkwellIntPredicate {
+impl From<IntPredicate> for inkwell::IntPredicate {
     fn from(pred: IntPredicate) -> Self {
         match pred {
             IntPredicate::Eq => Self::EQ,
@@ -622,6 +622,66 @@ impl From<IntPredicate> for InkwellIntPredicate {
             IntPredicate::Sge => Self::SGE,
             IntPredicate::Slt => Self::SLT,
             IntPredicate::Sle => Self::SLE,
+        }
+    }
+}
+
+#[pyclass]
+#[derive(Clone)]
+enum FloatPredicate {
+    #[pyo3(name = "FALSE")]
+    False,
+    #[pyo3(name = "OEQ")]
+    Oeq,
+    #[pyo3(name = "OGT")]
+    Ogt,
+    #[pyo3(name = "OGE")]
+    Oge,
+    #[pyo3(name = "OLT")]
+    Olt,
+    #[pyo3(name = "OLE")]
+    Ole,
+    #[pyo3(name = "ONE")]
+    One,
+    #[pyo3(name = "ORD")]
+    Ord,
+    #[pyo3(name = "UNO")]
+    Uno,
+    #[pyo3(name = "UEQ")]
+    Ueq,
+    #[pyo3(name = "UGT")]
+    Ugt,
+    #[pyo3(name = "UGE")]
+    Uge,
+    #[pyo3(name = "ULT")]
+    Ult,
+    #[pyo3(name = "ULE")]
+    Ule,
+    #[pyo3(name = "UNE")]
+    Une,
+    #[pyo3(name = "TRUE")]
+    True,
+}
+
+impl From<inkwell::FloatPredicate> for FloatPredicate {
+    fn from(pred: inkwell::FloatPredicate) -> Self {
+        match pred {
+            inkwell::FloatPredicate::OEQ => Self::Oeq,
+            inkwell::FloatPredicate::OGE => Self::Oge,
+            inkwell::FloatPredicate::OGT => Self::Ogt,
+            inkwell::FloatPredicate::OLE => Self::Ole,
+            inkwell::FloatPredicate::OLT => Self::Olt,
+            inkwell::FloatPredicate::ONE => Self::One,
+            inkwell::FloatPredicate::ORD => Self::Ord,
+            inkwell::FloatPredicate::PredicateFalse => Self::False,
+            inkwell::FloatPredicate::PredicateTrue => Self::True,
+            inkwell::FloatPredicate::UEQ => Self::Ueq,
+            inkwell::FloatPredicate::UGE => Self::Uge,
+            inkwell::FloatPredicate::UGT => Self::Ugt,
+            inkwell::FloatPredicate::ULE => Self::Ule,
+            inkwell::FloatPredicate::ULT => Self::Ult,
+            inkwell::FloatPredicate::UNE => Self::Une,
+            inkwell::FloatPredicate::UNO => Self::Uno,
         }
     }
 }
@@ -678,6 +738,14 @@ impl ICmp {
 
 #[pyclass(extends = Instruction)]
 struct FCmp;
+
+#[pymethods]
+impl FCmp {
+    #[getter]
+    fn predicate(slf: PyRef<Self>) -> FloatPredicate {
+        slf.into_super().0.get_fcmp_predicate().unwrap().into()
+    }
+}
 
 #[pyclass(extends = Instruction, unsendable)]
 struct Call(CallSiteValue<'static>);
