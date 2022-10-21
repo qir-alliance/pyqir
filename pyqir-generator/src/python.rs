@@ -15,8 +15,8 @@
 #![allow(clippy::used_underscore_binding)]
 
 use crate::utils::{
-    any_to_meta, call_if_some, clone_module, extract_constant, function_type, is_all_same,
-    try_callable_value, AnyValue,
+    any_to_meta, basic_to_any, call_if_some, clone_module, extract_constant, function_type,
+    is_all_same, try_callable_value, AnyValue,
 };
 use inkwell::{
     attributes::Attribute as InkwellAttribute,
@@ -130,20 +130,122 @@ struct Type {
     context: Py<Context>,
 }
 
+#[pymethods]
+impl Type {
+    #[getter]
+    fn is_void(&self) -> bool {
+        self.ty.is_void_type()
+    }
+
+    #[getter]
+    fn is_double(&self) -> bool {
+        match self.ty {
+            AnyTypeEnum::FloatType(float) => {
+                float.size_of().get_zero_extended_constant() == Some(64)
+            }
+            _ => false,
+        }
+    }
+}
+
 #[pyclass(extends=Type, unsendable)]
 struct IntType(InkwellIntType<'static>);
+
+#[pymethods]
+impl IntType {
+    #[getter]
+    fn width(&self) -> u32 {
+        self.0.get_bit_width()
+    }
+}
 
 #[pyclass(extends=Type, unsendable)]
 struct FunctionType(InkwellFunctionType<'static>);
 
+#[pymethods]
+impl FunctionType {
+    #[getter]
+    fn return_(slf: PyRef<Self>) -> Type {
+        let ty = basic_to_any(slf.0.get_return_type().unwrap());
+        let context = slf.into_super().context.clone();
+        Type { ty, context }
+    }
+
+    #[getter]
+    fn params(slf: PyRef<Self>) -> Vec<Type> {
+        let params = slf.0.get_param_types();
+        let context = &slf.into_super().context;
+        params
+            .into_iter()
+            .map(|ty| Type {
+                ty: basic_to_any(ty),
+                context: context.clone(),
+            })
+            .collect()
+    }
+}
+
 #[pyclass(extends=Type, unsendable)]
 struct StructType(InkwellStructType<'static>);
+
+#[pymethods]
+impl StructType {
+    #[getter]
+    fn name(&self) -> Option<&str> {
+        self.0
+            .get_name()
+            .map(|n| n.to_str().expect("Name is not valid UTF-8."))
+    }
+
+    #[getter]
+    fn fields(slf: PyRef<Self>) -> Vec<Type> {
+        let fields = slf.0.get_field_types();
+        let context = &slf.into_super().context;
+        fields
+            .into_iter()
+            .map(|ty| Type {
+                ty: basic_to_any(ty),
+                context: context.clone(),
+            })
+            .collect()
+    }
+}
 
 #[pyclass(extends=Type, unsendable)]
 struct ArrayType(InkwellArrayType<'static>);
 
+#[pymethods]
+impl ArrayType {
+    #[getter]
+    fn element(slf: PyRef<Self>) -> Type {
+        let ty = basic_to_any(slf.0.get_element_type());
+        let context = slf.into_super().context.clone();
+        Type { ty, context }
+    }
+
+    #[getter]
+    fn count(&self) -> u32 {
+        self.0.len()
+    }
+}
+
 #[pyclass(extends=Type, unsendable)]
 struct PointerType(InkwellPointerType<'static>);
+
+#[pymethods]
+impl PointerType {
+    #[getter]
+    fn pointee(slf: PyRef<Self>) -> Type {
+        let ty = slf.0.get_element_type();
+        let context = slf.into_super().context.clone();
+        Type { ty, context }
+    }
+
+    #[getter]
+    fn address_space(&self) -> u32 {
+        self.0.get_address_space() as u32
+    }
+}
 
 #[pyclass(unsendable)]
 struct Module {

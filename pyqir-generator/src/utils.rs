@@ -183,6 +183,17 @@ pub(crate) fn any_to_meta(value: AnyValueEnum) -> Option<BasicMetadataValueEnum>
     }
 }
 
+pub(crate) fn basic_to_any(ty: BasicTypeEnum) -> AnyTypeEnum {
+    match ty {
+        BasicTypeEnum::ArrayType(a) => a.into(),
+        BasicTypeEnum::FloatType(f) => f.into(),
+        BasicTypeEnum::IntType(i) => i.into(),
+        BasicTypeEnum::PointerType(p) => p.into(),
+        BasicTypeEnum::StructType(s) => s.into(),
+        BasicTypeEnum::VectorType(v) => v.into(),
+    }
+}
+
 pub(crate) fn call_if_some(f: Option<&PyAny>) -> PyResult<()> {
     match f {
         Some(f) => f.call0().map(|_| ()),
