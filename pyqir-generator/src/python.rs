@@ -19,13 +19,18 @@ use crate::utils::{
     try_callable_value, AnyValue,
 };
 use inkwell::{
+    attributes::Attribute as InkwellAttribute,
     basic_block::BasicBlock as InkwellBasicBlock,
     builder::Builder as InkwellBuilder,
     context::Context as InkwellContext,
     memory_buffer::MemoryBuffer,
     module::Module as InkwellModule,
-    types::{AnyType, AnyTypeEnum},
-    values::{AnyValueEnum, FunctionValue, InstructionValue, IntValue},
+    types::{
+        AnyType, AnyTypeEnum, ArrayType as InkwellArrayType, FunctionType as InkwellFunctionType,
+        IntType as InkwellIntType, PointerType as InkwellPointerType,
+        StructType as InkwellStructType,
+    },
+    values::{AnyValueEnum, CallSiteValue, FunctionValue, InstructionValue, IntValue, PhiValue},
     IntPredicate,
 };
 use pyo3::{
@@ -43,14 +48,27 @@ use std::{
 
 #[pymodule]
 fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<ArrayType>()?;
+    m.add_class::<Attribute>()?;
     m.add_class::<BasicBlock>()?;
     m.add_class::<BasicQisBuilder>()?;
     m.add_class::<Builder>()?;
+    m.add_class::<Call>()?;
     m.add_class::<Constant>()?;
+    m.add_class::<FCmp>()?;
+    m.add_class::<FloatConstant>()?;
     m.add_class::<Function>()?;
+    m.add_class::<FunctionType>()?;
+    m.add_class::<ICmp>()?;
     m.add_class::<Instruction>()?;
+    m.add_class::<IntConstant>()?;
+    m.add_class::<IntType>()?;
     m.add_class::<Module>()?;
+    m.add_class::<Phi>()?;
+    m.add_class::<PointerType>()?;
     m.add_class::<SimpleModule>()?;
+    m.add_class::<StructType>()?;
+    m.add_class::<Switch>()?;
     m.add_class::<Type>()?;
     m.add_class::<TypeFactory>()?;
     m.add_class::<Value>()?;
@@ -106,11 +124,26 @@ impl Context {
 }
 
 /// A type.
-#[pyclass(unsendable)]
+#[pyclass(subclass, unsendable)]
 struct Type {
     ty: AnyTypeEnum<'static>,
     context: Py<Context>,
 }
+
+#[pyclass(extends=Type, unsendable)]
+struct IntType(InkwellIntType<'static>);
+
+#[pyclass(extends=Type, unsendable)]
+struct FunctionType(InkwellFunctionType<'static>);
+
+#[pyclass(extends=Type, unsendable)]
+struct StructType(InkwellStructType<'static>);
+
+#[pyclass(extends=Type, unsendable)]
+struct ArrayType(InkwellArrayType<'static>);
+
+#[pyclass(extends=Type, unsendable)]
+struct PointerType(InkwellPointerType<'static>);
 
 #[pyclass(unsendable)]
 struct Module {
@@ -327,6 +360,12 @@ impl BasicBlock {
 #[pyclass(extends=Value, subclass)]
 struct Constant;
 
+#[pyclass(extends=Constant)]
+struct IntConstant;
+
+#[pyclass(extends=Constant)]
+struct FloatConstant;
+
 #[pyclass(extends=Constant, unsendable)]
 struct Function(FunctionValue<'static>);
 
@@ -351,8 +390,37 @@ impl Function {
     }
 }
 
-#[pyclass(extends=Value, unsendable)]
+#[pyclass(unsendable)]
+struct Attribute(InkwellAttribute);
+
+#[pyclass(extends=Value, subclass, unsendable)]
 struct Instruction(InstructionValue<'static>);
+
+#[pymethods]
+impl Instruction {
+    fn operands(slf: PyRef<Self>) -> Vec<Value> {
+        let instruction = slf.0;
+        let context = &slf.into_super().context;
+        (0..instruction.get_num_operands())
+            .filter_map(|i| {
+                let value = instruction.get_operand(i).unwrap().left()?;
+                Some(unsafe { Value::new(context.clone(), value) })
+            })
+            .collect()
+    }
+
+    fn successors(slf: PyRef<Self>, py: Python) -> PyResult<Vec<Py<BasicBlock>>> {
+        let instruction = slf.0;
+        let context = &slf.into_super().context;
+        (0..instruction.get_num_operands())
+            .filter_map(|i| {
+                let block = instruction.get_operand(i).unwrap().right()?;
+                let block = unsafe { BasicBlock::new(context.clone(), block) };
+                Some(Py::new(py, block))
+            })
+            .collect()
+    }
+}
 
 impl Instruction {
     unsafe fn new(context: Py<Context>, instruction: InstructionValue) -> (Self, Value) {
@@ -360,6 +428,21 @@ impl Instruction {
         (Self(instruction), Value::new(context, instruction))
     }
 }
+
+#[pyclass(extends=Instruction)]
+struct Switch;
+
+#[pyclass(extends=Instruction)]
+struct ICmp;
+
+#[pyclass(extends=Instruction)]
+struct FCmp;
+
+#[pyclass(extends=Instruction, unsendable)]
+struct Call(CallSiteValue<'static>);
+
+#[pyclass(extends=Instruction, unsendable)]
+struct Phi(PhiValue<'static>);
 
 /// An instruction builder.
 #[pyclass(unsendable)]
