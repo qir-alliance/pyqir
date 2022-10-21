@@ -7,8 +7,8 @@ use inkwell::{
     module::Module,
     types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FunctionType},
     values::{
-        AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, CallableValue, FunctionValue,
-        InstructionValue, IntValue, PointerValue,
+        AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, CallableValue, FloatValue,
+        FunctionValue, InstructionValue, IntValue, PointerValue,
     },
 };
 use pyo3::{
@@ -19,8 +19,10 @@ use pyo3::{
 use std::{
     borrow::Borrow,
     convert::{Into, TryFrom},
+    ffi::CStr,
 };
 
+#[derive(Debug)]
 pub(crate) struct ConversionError {
     from: String,
     to: String,
@@ -44,8 +46,31 @@ impl From<ConversionError> for PyErr {
 #[derive(Clone, Copy)]
 pub(crate) enum AnyValue<'ctx> {
     Any(AnyValueEnum<'ctx>),
-    Instruction(InstructionValue<'ctx>),
     BasicBlock(BasicBlock<'ctx>),
+}
+
+impl<'ctx> AnyValue<'ctx> {
+    pub(crate) fn ty(&self) -> AnyTypeEnum<'ctx> {
+        match self {
+            Self::Any(a) => a.get_type(),
+            Self::BasicBlock(b) => b.get_context().void_type().into(),
+        }
+    }
+
+    pub(crate) fn name(&self) -> Option<&CStr> {
+        match self {
+            Self::Any(AnyValueEnum::InstructionValue(i)) => i.get_name(),
+            Self::Any(_) => None,
+            Self::BasicBlock(b) => Some(b.get_name()),
+        }
+    }
+
+    pub(crate) fn is_null(&self) -> bool {
+        match self {
+            Self::Any(AnyValueEnum::PointerValue(p)) => p.is_null(),
+            Self::Any(_) | Self::BasicBlock(_) => false,
+        }
+    }
 }
 
 impl<'ctx> From<AnyValueEnum<'ctx>> for AnyValue<'ctx> {
@@ -78,15 +103,15 @@ impl<'ctx> From<PointerValue<'ctx>> for AnyValue<'ctx> {
     }
 }
 
-impl<'ctx> From<BasicBlock<'ctx>> for AnyValue<'ctx> {
-    fn from(block: BasicBlock<'ctx>) -> Self {
-        Self::BasicBlock(block)
+impl<'ctx> From<InstructionValue<'ctx>> for AnyValue<'ctx> {
+    fn from(instruction: InstructionValue<'ctx>) -> Self {
+        Self::Any(instruction.into())
     }
 }
 
-impl<'ctx> From<InstructionValue<'ctx>> for AnyValue<'ctx> {
-    fn from(instruction: InstructionValue<'ctx>) -> Self {
-        Self::Instruction(instruction)
+impl<'ctx> From<BasicBlock<'ctx>> for AnyValue<'ctx> {
+    fn from(block: BasicBlock<'ctx>) -> Self {
+        Self::BasicBlock(block)
     }
 }
 
@@ -96,7 +121,7 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for AnyValueEnum<'ctx> {
     fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
         match value {
             AnyValue::Any(a) => Ok(a),
-            _ => Err(ConversionError::new("value", "any value")),
+            AnyValue::BasicBlock(_) => Err(ConversionError::new("value", "any value")),
         }
     }
 }
@@ -108,6 +133,17 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for IntValue<'ctx> {
         match value {
             AnyValue::Any(AnyValueEnum::IntValue(i)) => Ok(i),
             _ => Err(ConversionError::new("value", "integer value")),
+        }
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for FloatValue<'ctx> {
+    type Error = ConversionError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(AnyValueEnum::FloatValue(f)) => Ok(f),
+            _ => Err(ConversionError::new("value", "float value")),
         }
     }
 }

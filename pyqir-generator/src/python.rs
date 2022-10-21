@@ -19,7 +19,7 @@ use crate::utils::{
     is_all_same, try_callable_value, AnyValue,
 };
 use inkwell::{
-    attributes::Attribute as InkwellAttribute,
+    attributes::{Attribute as InkwellAttribute, AttributeLoc},
     basic_block::BasicBlock as InkwellBasicBlock,
     builder::Builder as InkwellBuilder,
     context::Context as InkwellContext,
@@ -30,7 +30,10 @@ use inkwell::{
         IntType as InkwellIntType, PointerType as InkwellPointerType,
         StructType as InkwellStructType,
     },
-    values::{AnyValueEnum, CallSiteValue, FunctionValue, InstructionValue, IntValue, PhiValue},
+    values::{
+        AnyValueEnum, CallSiteValue, FloatValue, FunctionValue, InstructionValue, IntValue,
+        PhiValue,
+    },
     IntPredicate,
 };
 use pyo3::{
@@ -148,7 +151,7 @@ impl Type {
     }
 }
 
-#[pyclass(extends=Type, unsendable)]
+#[pyclass(extends = Type, unsendable)]
 struct IntType(InkwellIntType<'static>);
 
 #[pymethods]
@@ -159,7 +162,7 @@ impl IntType {
     }
 }
 
-#[pyclass(extends=Type, unsendable)]
+#[pyclass(extends = Type, unsendable)]
 struct FunctionType(InkwellFunctionType<'static>);
 
 #[pymethods]
@@ -185,7 +188,7 @@ impl FunctionType {
     }
 }
 
-#[pyclass(extends=Type, unsendable)]
+#[pyclass(extends = Type, unsendable)]
 struct StructType(InkwellStructType<'static>);
 
 #[pymethods]
@@ -211,7 +214,7 @@ impl StructType {
     }
 }
 
-#[pyclass(extends=Type, unsendable)]
+#[pyclass(extends = Type, unsendable)]
 struct ArrayType(InkwellArrayType<'static>);
 
 #[pymethods]
@@ -229,7 +232,7 @@ impl ArrayType {
     }
 }
 
-#[pyclass(extends=Type, unsendable)]
+#[pyclass(extends = Type, unsendable)]
 struct PointerType(InkwellPointerType<'static>);
 
 #[pymethods]
@@ -417,6 +420,24 @@ struct Value {
     context: Py<Context>,
 }
 
+#[pymethods]
+impl Value {
+    #[getter]
+    fn r#type(&self) -> Type {
+        Type {
+            ty: self.value.ty(),
+            context: self.context.clone(),
+        }
+    }
+
+    #[getter]
+    fn name(&self) -> Option<&str> {
+        self.value
+            .name()
+            .map(|n| n.to_str().expect("Name is not valid UTF-8."))
+    }
+}
+
 impl Value {
     unsafe fn new<'ctx>(context: Py<Context>, value: impl Into<AnyValue<'ctx>>) -> Self {
         let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value.into());
@@ -430,11 +451,12 @@ impl Value {
     }
 }
 
-#[pyclass(extends=Value, unsendable)]
+#[pyclass(extends = Value, unsendable)]
 struct BasicBlock(InkwellBasicBlock<'static>);
 
 #[pymethods]
 impl BasicBlock {
+    #[getter]
     fn instructions(slf: PyRef<Self>, py: Python) -> PyResult<Vec<Py<Instruction>>> {
         let block = slf.0;
         let context = &slf.into_super().context;
@@ -450,6 +472,21 @@ impl BasicBlock {
 
         Ok(instructions)
     }
+
+    #[getter]
+    fn terminator(slf: PyRef<Self>, py: Python) -> PyResult<Option<Py<Instruction>>> {
+        match slf.0.get_terminator() {
+            Some(terminator) => {
+                let context = slf.into_super().context.clone();
+                let value = unsafe { Value::new(context, terminator) };
+                Ok(Some(Py::new(
+                    py,
+                    PyClassInitializer::from((Instruction(terminator), value)),
+                )?))
+            }
+            None => Ok(None),
+        }
+    }
 }
 
 impl BasicBlock {
@@ -459,20 +496,57 @@ impl BasicBlock {
     }
 }
 
-#[pyclass(extends=Value, subclass)]
+#[pyclass(extends = Value, subclass)]
 struct Constant;
 
-#[pyclass(extends=Constant)]
+#[pymethods]
+impl Constant {
+    #[getter]
+    fn is_null(slf: PyRef<Self>) -> bool {
+        slf.into_super().value.is_null()
+    }
+}
+
+#[pyclass(extends = Constant)]
 struct IntConstant;
 
-#[pyclass(extends=Constant)]
+#[pymethods]
+impl IntConstant {
+    #[getter]
+    fn value(slf: PyRef<Self>) -> u64 {
+        let int: IntValue = slf.into_super().into_super().value.try_into().unwrap();
+        int.get_zero_extended_constant().unwrap()
+    }
+}
+
+#[pyclass(extends = Constant)]
 struct FloatConstant;
 
-#[pyclass(extends=Constant, unsendable)]
+#[pymethods]
+impl FloatConstant {
+    #[getter]
+    fn value(slf: PyRef<Self>) -> f64 {
+        let float: FloatValue = slf.into_super().into_super().value.try_into().unwrap();
+        float.get_constant().unwrap().0
+    }
+}
+
+#[pyclass(extends = Constant, unsendable)]
 struct Function(FunctionValue<'static>);
 
 #[pymethods]
 impl Function {
+    #[getter]
+    fn params(slf: PyRef<Self>) -> Vec<Value> {
+        let params = slf.0.get_params();
+        let context = &slf.into_super().into_super().context;
+        params
+            .into_iter()
+            .map(|p| unsafe { Value::new(context.clone(), p) })
+            .collect()
+    }
+
+    #[getter]
     fn basic_blocks(slf: PyRef<Self>, py: Python) -> PyResult<Vec<Py<BasicBlock>>> {
         let function = slf.0;
         let context = &slf.into_super().into_super().context;
@@ -481,6 +555,12 @@ impl Function {
             .into_iter()
             .map(|b| Py::new(py, unsafe { BasicBlock::new(context.clone(), b) }))
             .collect()
+    }
+
+    fn attribute(&self, name: &str) -> Option<Attribute> {
+        Some(Attribute(
+            self.0.get_string_attribute(AttributeLoc::Function, name)?,
+        ))
     }
 }
 
@@ -495,7 +575,18 @@ impl Function {
 #[pyclass(unsendable)]
 struct Attribute(InkwellAttribute);
 
-#[pyclass(extends=Value, subclass, unsendable)]
+#[pymethods]
+impl Attribute {
+    #[getter]
+    fn value(&self) -> &str {
+        self.0
+            .get_string_value()
+            .to_str()
+            .expect("Value is not valid UTF-8.")
+    }
+}
+
+#[pyclass(extends = Value, subclass, unsendable)]
 struct Instruction(InstructionValue<'static>);
 
 #[pymethods]
@@ -531,19 +622,19 @@ impl Instruction {
     }
 }
 
-#[pyclass(extends=Instruction)]
+#[pyclass(extends = Instruction)]
 struct Switch;
 
-#[pyclass(extends=Instruction)]
+#[pyclass(extends = Instruction)]
 struct ICmp;
 
-#[pyclass(extends=Instruction)]
+#[pyclass(extends = Instruction)]
 struct FCmp;
 
-#[pyclass(extends=Instruction, unsendable)]
+#[pyclass(extends = Instruction, unsendable)]
 struct Call(CallSiteValue<'static>);
 
-#[pyclass(extends=Instruction, unsendable)]
+#[pyclass(extends = Instruction, unsendable)]
 struct Phi(PhiValue<'static>);
 
 /// An instruction builder.
