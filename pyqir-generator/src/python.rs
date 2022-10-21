@@ -30,6 +30,7 @@ use inkwell::{
         IntType as InkwellIntType, PointerType as InkwellPointerType,
         StructType as InkwellStructType,
     },
+    values::InstructionOpcode,
     values::{
         AnyValueEnum, CallSiteValue, FloatValue, FunctionValue, InstructionValue, IntValue,
         PhiValue,
@@ -68,6 +69,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<IntPredicate>()?;
     m.add_class::<IntType>()?;
     m.add_class::<Module>()?;
+    m.add_class::<Opcode>()?;
     m.add_class::<Phi>()?;
     m.add_class::<PointerType>()?;
     m.add_class::<SimpleModule>()?;
@@ -568,6 +570,218 @@ impl Attribute {
 }
 
 #[pyclass]
+enum Opcode {
+    #[pyo3(name = "ADD")]
+    Add,
+    #[pyo3(name = "ADDR_SPACE_CAST")]
+    AddrSpaceCast,
+    #[pyo3(name = "ALLOCA")]
+    Alloca,
+    #[pyo3(name = "AND")]
+    And,
+    #[pyo3(name = "ASHR")]
+    AShr,
+    #[pyo3(name = "ATOMIC_CMP_XCHG")]
+    AtomicCmpXchg,
+    #[pyo3(name = "ATOMIC_RMW")]
+    AtomicRmw,
+    #[pyo3(name = "BIT_CAST")]
+    BitCast,
+    #[pyo3(name = "BR")]
+    Br,
+    #[pyo3(name = "CALL")]
+    Call,
+    #[pyo3(name = "CALL_BR")]
+    CallBr,
+    #[pyo3(name = "CATCH_RET")]
+    CatchRet,
+    #[pyo3(name = "CATCH_PAD")]
+    CatchPad,
+    #[pyo3(name = "CATCH_SWITCH")]
+    CatchSwitch,
+    #[pyo3(name = "CLEANUP_PAD")]
+    CleanupPad,
+    #[pyo3(name = "CLEANUP_RET")]
+    CleanupRet,
+    #[pyo3(name = "EXTRACT_ELEMENT")]
+    ExtractElement,
+    #[pyo3(name = "EXTRACT_VALUE")]
+    ExtractValue,
+    #[pyo3(name = "FADD")]
+    FAdd,
+    #[pyo3(name = "FCMP")]
+    FCmp,
+    #[pyo3(name = "FDIV")]
+    FDiv,
+    #[pyo3(name = "FENCE")]
+    Fence,
+    #[pyo3(name = "FMUL")]
+    FMul,
+    #[pyo3(name = "FNEG")]
+    FNeg,
+    #[pyo3(name = "FP_EXT")]
+    FPExt,
+    #[pyo3(name = "FP_TO_SI")]
+    FPToSI,
+    #[pyo3(name = "FP_TO_UI")]
+    FPToUI,
+    #[pyo3(name = "FP_TRUNC")]
+    FPTrunc,
+    #[pyo3(name = "FREEZE")]
+    Freeze,
+    #[pyo3(name = "FREM")]
+    FRem,
+    #[pyo3(name = "FSUB")]
+    FSub,
+    #[pyo3(name = "GET_ELEMENT_PTR")]
+    GetElementPtr,
+    #[pyo3(name = "ICMP")]
+    ICmp,
+    #[pyo3(name = "INDIRECT_BR")]
+    IndirectBr,
+    #[pyo3(name = "INSERT_ELEMENT")]
+    InsertElement,
+    #[pyo3(name = "INSERT_VALUE")]
+    InsertValue,
+    #[pyo3(name = "INT_TO_PTR")]
+    IntToPtr,
+    #[pyo3(name = "INVOKE")]
+    Invoke,
+    #[pyo3(name = "LANDING_PAD")]
+    LandingPad,
+    #[pyo3(name = "LOAD")]
+    Load,
+    #[pyo3(name = "LSHR")]
+    LShr,
+    #[pyo3(name = "MUL")]
+    Mul,
+    #[pyo3(name = "OR")]
+    Or,
+    #[pyo3(name = "PHI")]
+    Phi,
+    #[pyo3(name = "PTR_TO_INT")]
+    PtrToInt,
+    #[pyo3(name = "RESUME")]
+    Resume,
+    #[pyo3(name = "RET")]
+    Ret,
+    #[pyo3(name = "SDIV")]
+    SDiv,
+    #[pyo3(name = "SELECT")]
+    Select,
+    #[pyo3(name = "SEXT")]
+    SExt,
+    #[pyo3(name = "SHL")]
+    Shl,
+    #[pyo3(name = "SHUFFLE_VECTOR")]
+    ShuffleVector,
+    #[pyo3(name = "SI_TO_FP")]
+    SIToFP,
+    #[pyo3(name = "SREM")]
+    SRem,
+    #[pyo3(name = "STORE")]
+    Store,
+    #[pyo3(name = "SUB")]
+    Sub,
+    #[pyo3(name = "SWITCH")]
+    Switch,
+    #[pyo3(name = "TRUNC")]
+    Trunc,
+    #[pyo3(name = "UDIV")]
+    UDiv,
+    #[pyo3(name = "UI_TO_FP")]
+    UIToFP,
+    #[pyo3(name = "UNREACHABLE")]
+    Unreachable,
+    #[pyo3(name = "UREM")]
+    URem,
+    #[pyo3(name = "USER_OP_1")]
+    UserOp1,
+    #[pyo3(name = "USER_OP_2")]
+    UserOp2,
+    #[pyo3(name = "VA_ARG")]
+    VaArg,
+    #[pyo3(name = "XOR")]
+    Xor,
+    #[pyo3(name = "ZEXT")]
+    ZExt,
+}
+
+impl From<InstructionOpcode> for Opcode {
+    fn from(opcode: InstructionOpcode) -> Self {
+        match opcode {
+            InstructionOpcode::Add => Self::Add,
+            InstructionOpcode::AddrSpaceCast => Self::AddrSpaceCast,
+            InstructionOpcode::Alloca => Self::Alloca,
+            InstructionOpcode::And => Self::And,
+            InstructionOpcode::AShr => Self::AShr,
+            InstructionOpcode::AtomicCmpXchg => Self::AtomicCmpXchg,
+            InstructionOpcode::AtomicRMW => Self::AtomicRmw,
+            InstructionOpcode::BitCast => Self::BitCast,
+            InstructionOpcode::Br => Self::Br,
+            InstructionOpcode::Call => Self::Call,
+            InstructionOpcode::CallBr => Self::CallBr,
+            InstructionOpcode::CatchPad => Self::CatchPad,
+            InstructionOpcode::CatchRet => Self::CatchRet,
+            InstructionOpcode::CatchSwitch => Self::CatchSwitch,
+            InstructionOpcode::CleanupPad => Self::CleanupPad,
+            InstructionOpcode::CleanupRet => Self::CleanupRet,
+            InstructionOpcode::ExtractElement => Self::ExtractElement,
+            InstructionOpcode::ExtractValue => Self::ExtractValue,
+            InstructionOpcode::FNeg => Self::FNeg,
+            InstructionOpcode::FAdd => Self::FAdd,
+            InstructionOpcode::FCmp => Self::FCmp,
+            InstructionOpcode::FDiv => Self::FDiv,
+            InstructionOpcode::Fence => Self::Fence,
+            InstructionOpcode::FMul => Self::FMul,
+            InstructionOpcode::FPExt => Self::FPExt,
+            InstructionOpcode::FPToSI => Self::FPToSI,
+            InstructionOpcode::FPToUI => Self::FPToUI,
+            InstructionOpcode::FPTrunc => Self::FPTrunc,
+            InstructionOpcode::Freeze => Self::Freeze,
+            InstructionOpcode::FRem => Self::FRem,
+            InstructionOpcode::FSub => Self::FSub,
+            InstructionOpcode::GetElementPtr => Self::GetElementPtr,
+            InstructionOpcode::ICmp => Self::ICmp,
+            InstructionOpcode::IndirectBr => Self::IndirectBr,
+            InstructionOpcode::InsertElement => Self::InsertElement,
+            InstructionOpcode::InsertValue => Self::InsertValue,
+            InstructionOpcode::IntToPtr => Self::IntToPtr,
+            InstructionOpcode::Invoke => Self::Invoke,
+            InstructionOpcode::LandingPad => Self::LandingPad,
+            InstructionOpcode::Load => Self::Load,
+            InstructionOpcode::LShr => Self::LShr,
+            InstructionOpcode::Mul => Self::Mul,
+            InstructionOpcode::Or => Self::Or,
+            InstructionOpcode::Phi => Self::Phi,
+            InstructionOpcode::PtrToInt => Self::PtrToInt,
+            InstructionOpcode::Resume => Self::Resume,
+            InstructionOpcode::Return => Self::Ret,
+            InstructionOpcode::SDiv => Self::SDiv,
+            InstructionOpcode::Select => Self::Select,
+            InstructionOpcode::SExt => Self::SExt,
+            InstructionOpcode::Shl => Self::Shl,
+            InstructionOpcode::ShuffleVector => Self::ShuffleVector,
+            InstructionOpcode::SIToFP => Self::SIToFP,
+            InstructionOpcode::SRem => Self::SRem,
+            InstructionOpcode::Store => Self::Store,
+            InstructionOpcode::Sub => Self::Sub,
+            InstructionOpcode::Switch => Self::Switch,
+            InstructionOpcode::Trunc => Self::Trunc,
+            InstructionOpcode::UDiv => Self::UDiv,
+            InstructionOpcode::UIToFP => Self::UIToFP,
+            InstructionOpcode::Unreachable => Self::Unreachable,
+            InstructionOpcode::URem => Self::URem,
+            InstructionOpcode::UserOp1 => Self::UserOp1,
+            InstructionOpcode::UserOp2 => Self::UserOp2,
+            InstructionOpcode::VAArg => Self::VaArg,
+            InstructionOpcode::Xor => Self::Xor,
+            InstructionOpcode::ZExt => Self::ZExt,
+        }
+    }
+}
+
+#[pyclass]
 #[derive(Clone)]
 enum IntPredicate {
     #[pyo3(name = "EQ")]
@@ -691,6 +905,12 @@ struct Instruction(InstructionValue<'static>);
 
 #[pymethods]
 impl Instruction {
+    #[getter]
+    fn opcode(&self) -> Opcode {
+        self.0.get_opcode().into()
+    }
+
+    #[getter]
     fn operands(slf: PyRef<Self>) -> Vec<Value> {
         let instruction = slf.0;
         let context = &slf.into_super().context;
@@ -702,6 +922,7 @@ impl Instruction {
             .collect()
     }
 
+    #[getter]
     fn successors(slf: PyRef<Self>, py: Python) -> PyResult<Vec<Py<BasicBlock>>> {
         let instruction = slf.0;
         let context = &slf.into_super().context;

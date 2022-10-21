@@ -165,73 +165,73 @@ def required_num_results(f: Function) -> Optional[int]: ...
 def global_byte_string_value_name(value: Value) -> Optional[str]: ...
 
 class Opcode(Enum):
-    RET: Opcode
-    BR: Opcode
-    SWITCH: Opcode
-    INDIRECT_BR: Opcode
-    INVOKE: Opcode
-    RESUME: Opcode
-    UNREACHABLE: Opcode
-    CLEANUP_RET: Opcode
-    CATCH: Opcode
-    CATCH_SWITCH: Opcode
-    CALL_BR: Opcode
-    FNEG: Opcode
     ADD: Opcode
-    FADD: Opcode
-    SUB: Opcode
-    FSUB: Opcode
-    MUL: Opcode
-    FMUL: Opcode
-    UDIV: Opcode
-    SDIV: Opcode
-    FDIV: Opcode
-    UREM: Opcode
-    SREM: Opcode
-    FREM: Opcode
-    SHL: Opcode
-    LSHR: Opcode
-    ASHR: Opcode
-    AND: Opcode
-    OR: Opcode
-    XOR: Opcode
+    ADDR_SPACE_CAST: Opcode
     ALLOCA: Opcode
-    LOAD: Opcode
-    STORE: Opcode
-    GET_ELEMENT_PTR: Opcode
-    FENCE: Opcode
+    AND: Opcode
+    ASHR: Opcode
     ATOMIC_CMP_XCHG: Opcode
     ATOMIC_RMW: Opcode
-    TRUNC: Opcode
-    ZEXT: Opcode
-    SEXT: Opcode
-    FP_TO_UI: Opcode
-    FP_TO_SI: Opcode
-    UI_TO_FP: Opcode
-    SI_TO_FP: Opcode
-    FP_TRUNC: Opcode
-    FP_EXT: Opcode
-    PTR_TO_INT: Opcode
-    INT_TO_PTR: Opcode
     BIT_CAST: Opcode
-    ADDR_SPACE_CAST: Opcode
-    CLEANUP_PAD: Opcode
-    CATCH_PAD: Opcode
-    ICMP: Opcode
-    FCMP: Opcode
-    PHI: Opcode
+    BR: Opcode
+    CALL_BR: Opcode
     CALL: Opcode
+    CATCH_PAD: Opcode
+    CATCH_RET: Opcode
+    CATCH_SWITCH: Opcode
+    CLEANUP_PAD: Opcode
+    CLEANUP_RET: Opcode
+    EXTRACT_ELEMENT: Opcode
+    EXTRACT_VALUE: Opcode
+    FADD: Opcode
+    FCMP: Opcode
+    FDIV: Opcode
+    FENCE: Opcode
+    FMUL: Opcode
+    FNEG: Opcode
+    FP_EXT: Opcode
+    FP_TO_SI: Opcode
+    FP_TO_UI: Opcode
+    FP_TRUNC: Opcode
+    FREEZE: Opcode
+    FREM: Opcode
+    FSUB: Opcode
+    GET_ELEMENT_PTR: Opcode
+    ICMP: Opcode
+    INDIRECT_BR: Opcode
+    INSERT_ELEMENT: Opcode
+    INSERT_VALUE: Opcode
+    INT_TO_PTR: Opcode
+    INVOKE: Opcode
+    LANDING_PAD: Opcode
+    LOAD: Opcode
+    LSHR: Opcode
+    MUL: Opcode
+    OR: Opcode
+    PHI: Opcode
+    PTR_TO_INT: Opcode
+    RESUME: Opcode
+    RET: Opcode
+    SDIV: Opcode
     SELECT: Opcode
+    SEXT: Opcode
+    SHL: Opcode
+    SHUFFLE_VECTOR: Opcode
+    SI_TO_FP: Opcode
+    SREM: Opcode
+    STORE: Opcode
+    SUB: Opcode
+    SWITCH: Opcode
+    TRUNC: Opcode
+    UDIV: Opcode
+    UI_TO_FP: Opcode
+    UNREACHABLE: Opcode
+    UREM: Opcode
     USER_OP_1: Opcode
     USER_OP_2: Opcode
     VA_ARG: Opcode
-    EXTRACT_ELEMENT: Opcode
-    INSERT_ELEMENT: Opcode
-    SHUFFLE_VECTOR: Opcode
-    EXTRACT_VALUE: Opcode
-    INSERT_VALUE: Opcode
-    LANDING_PAD: Opcode
-    FREEZE: Opcode
+    XOR: Opcode
+    ZEXT: Opcode
 
 class IntPredicate(Enum):
     EQ: IntPredicate
