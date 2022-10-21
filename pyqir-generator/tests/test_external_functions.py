@@ -242,6 +242,11 @@ class ExternalFunctionsTest(unittest.TestCase):
         with self.assertRaises(OverflowError):
             mod.builder.call(f, [-(2**32) - 123])
 
+    def test_64_bit_overflow(self) -> None:
+        mod = SimpleModule("test", 0, 0)
+        with self.assertRaises(OverflowError):
+            const(mod.types.int(128), 2**64)
+
     def test_wrong_number_of_args(self) -> None:
         cases: List[Callable[[TypeFactory], List[Value]]] = [
             lambda _: [],
