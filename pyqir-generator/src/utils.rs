@@ -2,13 +2,17 @@
 // Licensed under the MIT License.
 
 use inkwell::{
+    basic_block::BasicBlock,
     context::Context,
     module::Module,
     types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FunctionType},
-    values::{AnyValueEnum, BasicMetadataValueEnum, CallableValue},
+    values::{
+        AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, CallableValue, FunctionValue,
+        InstructionValue, IntValue, PointerValue,
+    },
 };
 use pyo3::{
-    exceptions::{PyOSError, PyTypeError, PyUnicodeDecodeError},
+    exceptions::{PyOSError, PyTypeError, PyUnicodeDecodeError, PyValueError},
     prelude::*,
     PyClass,
 };
@@ -16,6 +20,108 @@ use std::{
     borrow::Borrow,
     convert::{Into, TryFrom},
 };
+
+pub(crate) struct ConversionError {
+    from: String,
+    to: String,
+}
+
+impl ConversionError {
+    fn new(from: impl Into<String>, to: impl Into<String>) -> ConversionError {
+        ConversionError {
+            from: from.into(),
+            to: to.into(),
+        }
+    }
+}
+
+impl From<ConversionError> for PyErr {
+    fn from(error: ConversionError) -> Self {
+        PyValueError::new_err(format!("Couldn't convert {} to {}.", error.from, error.to))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum AnyValue<'ctx> {
+    Any(AnyValueEnum<'ctx>),
+    Instruction(InstructionValue<'ctx>),
+    BasicBlock(BasicBlock<'ctx>),
+}
+
+impl<'ctx> From<AnyValueEnum<'ctx>> for AnyValue<'ctx> {
+    fn from(any: AnyValueEnum<'ctx>) -> Self {
+        Self::Any(any)
+    }
+}
+
+impl<'ctx> From<BasicValueEnum<'ctx>> for AnyValue<'ctx> {
+    fn from(basic: BasicValueEnum<'ctx>) -> Self {
+        Self::Any(basic.into())
+    }
+}
+
+impl<'ctx> From<IntValue<'ctx>> for AnyValue<'ctx> {
+    fn from(int: IntValue<'ctx>) -> Self {
+        Self::Any(int.into())
+    }
+}
+
+impl<'ctx> From<FunctionValue<'ctx>> for AnyValue<'ctx> {
+    fn from(function: FunctionValue<'ctx>) -> Self {
+        Self::Any(function.into())
+    }
+}
+
+impl<'ctx> From<PointerValue<'ctx>> for AnyValue<'ctx> {
+    fn from(pointer: PointerValue<'ctx>) -> Self {
+        Self::Any(pointer.into())
+    }
+}
+
+impl<'ctx> From<BasicBlock<'ctx>> for AnyValue<'ctx> {
+    fn from(block: BasicBlock<'ctx>) -> Self {
+        Self::BasicBlock(block)
+    }
+}
+
+impl<'ctx> From<InstructionValue<'ctx>> for AnyValue<'ctx> {
+    fn from(instruction: InstructionValue<'ctx>) -> Self {
+        Self::Instruction(instruction)
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for AnyValueEnum<'ctx> {
+    type Error = ConversionError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(a) => Ok(a),
+            _ => Err(ConversionError::new("value", "any value")),
+        }
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for IntValue<'ctx> {
+    type Error = ConversionError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(AnyValueEnum::IntValue(i)) => Ok(i),
+            _ => Err(ConversionError::new("value", "integer value")),
+        }
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for PointerValue<'ctx> {
+    type Error = ConversionError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(AnyValueEnum::PointerValue(p)) => Ok(p),
+            _ => Err(ConversionError::new("value", "pointer value")),
+        }
+    }
+}
 
 pub(crate) fn extract_constant<'ctx>(
     ty: &impl AnyType<'ctx>,
@@ -47,14 +153,12 @@ pub(crate) fn function_type<'ctx>(
     }
 }
 
-pub(crate) fn try_callable_value(
-    value: AnyValueEnum,
-) -> Option<(CallableValue, Vec<BasicTypeEnum>)> {
+pub(crate) fn try_callable_value(value: AnyValue) -> Option<(CallableValue, Vec<BasicTypeEnum>)> {
     match value {
-        AnyValueEnum::FunctionValue(f) => {
+        AnyValue::Any(AnyValueEnum::FunctionValue(f)) => {
             Some((CallableValue::from(f), f.get_type().get_param_types()))
         }
-        AnyValueEnum::PointerValue(p) => match p.get_type().get_element_type() {
+        AnyValue::Any(AnyValueEnum::PointerValue(p)) => match p.get_type().get_element_type() {
             AnyTypeEnum::FunctionType(ty) => {
                 Some((CallableValue::try_from(p).unwrap(), ty.get_param_types()))
             }

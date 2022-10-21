@@ -12,16 +12,20 @@
 // 2. Before calling Inkwell methods that use 'ctx, call Context::require_same to assert that all
 //    contexts being used are the same.
 
+#![allow(clippy::used_underscore_binding)]
+
 use crate::utils::{
     any_to_meta, call_if_some, clone_module, extract_constant, function_type, is_all_same,
-    try_callable_value,
+    try_callable_value, AnyValue,
 };
 use inkwell::{
+    basic_block::BasicBlock as InkwellBasicBlock,
     builder::Builder as InkwellBuilder,
     context::Context as InkwellContext,
+    memory_buffer::MemoryBuffer,
     module::Module as InkwellModule,
     types::{AnyType, AnyTypeEnum},
-    values::{AnyValue, AnyValueEnum},
+    values::{AnyValueEnum, FunctionValue, InstructionValue, IntValue},
     IntPredicate,
 };
 use pyo3::{
@@ -30,12 +34,22 @@ use pyo3::{
     types::{PyBytes, PySequence, PyString, PyUnicode},
 };
 use qirlib::{module, types, BuilderBasicQisExt};
-use std::{borrow::Borrow, convert::Into, mem::transmute, result::Result};
+use std::{
+    borrow::Borrow,
+    convert::{Into, TryFrom, TryInto},
+    mem::transmute,
+    result::Result,
+};
 
 #[pymodule]
 fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<BasicBlock>()?;
     m.add_class::<BasicQisBuilder>()?;
     m.add_class::<Builder>()?;
+    m.add_class::<Constant>()?;
+    m.add_class::<Function>()?;
+    m.add_class::<Instruction>()?;
+    m.add_class::<Module>()?;
     m.add_class::<SimpleModule>()?;
     m.add_class::<Type>()?;
     m.add_class::<TypeFactory>()?;
@@ -104,14 +118,57 @@ struct Module {
     context: Py<Context>,
 }
 
+#[pymethods]
 impl Module {
-    fn new(py: Python, context: Py<Context>, name: &str) -> Module {
+    #[staticmethod]
+    #[pyo3(text_signature = "(ir)")]
+    fn from_ir(py: Python, ir: &str) -> PyResult<Self> {
+        let context = InkwellContext::create();
+        let buffer = MemoryBuffer::create_from_memory_range(ir.as_bytes(), "");
+        let module = context
+            .create_module_from_ir(buffer)
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        let module = unsafe { transmute::<InkwellModule<'_>, InkwellModule<'static>>(module) };
+        let context = Py::new(py, Context(context))?;
+        Ok(Self { module, context })
+    }
+
+    #[staticmethod]
+    #[pyo3(text_signature = "(bitcode)")]
+    fn from_bitcode(py: Python, bitcode: &[u8]) -> PyResult<Self> {
+        let context = InkwellContext::create();
+        let buffer = MemoryBuffer::create_from_memory_range(bitcode, "");
+        let module = InkwellModule::parse_bitcode_from_buffer(&buffer, &context)
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        let module = unsafe { transmute::<InkwellModule<'_>, InkwellModule<'static>>(module) };
+        let context = Py::new(py, Context(context))?;
+        Ok(Self { module, context })
+    }
+
+    fn __str__(&self) -> String {
+        self.module.to_string()
+    }
+
+    fn functions(&self, py: Python) -> PyResult<Vec<Py<Function>>> {
+        self.module
+            .get_functions()
+            .map(|f| Py::new(py, unsafe { Function::new(self.context.clone(), f) }))
+            .collect()
+    }
+
+    fn bitcode<'py>(&self, py: Python<'py>) -> &'py PyBytes {
+        PyBytes::new(py, self.module.write_bitcode_to_memory().as_slice())
+    }
+}
+
+impl Module {
+    fn new(py: Python, context: Py<Context>, name: &str) -> Self {
         let module = {
             let context = context.borrow(py);
             let module = context.0.create_module(name);
             unsafe { transmute::<InkwellModule<'_>, InkwellModule<'static>>(module) }
         };
-        Module { module, context }
+        Self { module, context }
     }
 }
 
@@ -218,24 +275,89 @@ impl TypeFactory {
 }
 
 /// A value.
-#[pyclass(unsendable)]
+#[pyclass(subclass, unsendable)]
 #[derive(Clone)]
 struct Value {
-    value: AnyValueEnum<'static>,
+    value: AnyValue<'static>,
     context: Py<Context>,
 }
 
 impl Value {
-    unsafe fn new<'ctx>(context: Py<Context>, value: &impl AnyValue<'ctx>) -> Self {
-        let value = value.as_any_value_enum();
-        let value = transmute::<AnyValueEnum<'_>, AnyValueEnum<'static>>(value);
+    unsafe fn new<'ctx>(context: Py<Context>, value: impl Into<AnyValue<'ctx>>) -> Self {
+        let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value.into());
         Self { value, context }
     }
 
     unsafe fn extract<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyValueEnum<'ctx>> {
         ob.extract()
-            .map(|v: Self| v.value)
+            .and_then(|v: Self| AnyValueEnum::try_from(v.value).map_err(Into::into))
             .or_else(|_| extract_constant(ty, ob))
+    }
+}
+
+#[pyclass(extends=Value, unsendable)]
+struct BasicBlock(InkwellBasicBlock<'static>);
+
+#[pymethods]
+impl BasicBlock {
+    fn instructions(slf: PyRef<Self>, py: Python) -> PyResult<Vec<Py<Instruction>>> {
+        let block = slf.0;
+        let context = &slf.into_super().context;
+        let mut instructions = Vec::new();
+        let mut instruction = block.get_first_instruction();
+
+        while let Some(i) = instruction {
+            instructions.push(Py::new(py, unsafe {
+                Instruction::new(context.clone(), i)
+            })?);
+            instruction = i.get_next_instruction();
+        }
+
+        Ok(instructions)
+    }
+}
+
+impl BasicBlock {
+    unsafe fn new(context: Py<Context>, block: InkwellBasicBlock) -> PyClassInitializer<Self> {
+        let block = transmute::<InkwellBasicBlock<'_>, InkwellBasicBlock<'static>>(block);
+        PyClassInitializer::from((Self(block), Value::new(context, block)))
+    }
+}
+
+#[pyclass(extends=Value, subclass)]
+struct Constant;
+
+#[pyclass(extends=Constant, unsendable)]
+struct Function(FunctionValue<'static>);
+
+#[pymethods]
+impl Function {
+    fn basic_blocks(slf: PyRef<Self>, py: Python) -> PyResult<Vec<Py<BasicBlock>>> {
+        let function = slf.0;
+        let context = &slf.into_super().into_super().context;
+        function
+            .get_basic_blocks()
+            .into_iter()
+            .map(|b| Py::new(py, unsafe { BasicBlock::new(context.clone(), b) }))
+            .collect()
+    }
+}
+
+impl Function {
+    unsafe fn new(context: Py<Context>, function: FunctionValue) -> PyClassInitializer<Function> {
+        let function = transmute::<FunctionValue<'_>, FunctionValue<'static>>(function);
+        PyClassInitializer::from((Constant, Value::new(context, function)))
+            .add_subclass(Function(function))
+    }
+}
+
+#[pyclass(extends=Value, unsendable)]
+struct Instruction(InstructionValue<'static>);
+
+impl Instruction {
+    unsafe fn new(context: Py<Context>, instruction: InstructionValue) -> (Self, Value) {
+        let instruction = transmute::<InstructionValue<'_>, InstructionValue<'static>>(instruction);
+        (Self(instruction), Value::new(context, instruction))
     }
 }
 
@@ -279,8 +401,8 @@ impl Builder {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
-                .build_and(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Ok(unsafe { Value::new(self.context.clone(), &value) })
+                .build_and::<IntValue>(lhs.value.try_into()?, rhs.value.try_into()?, "");
+        Ok(unsafe { Value::new(self.context.clone(), value) })
     }
 
     /// Inserts a bitwise logical or instruction.
@@ -294,8 +416,8 @@ impl Builder {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
-                .build_or(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Ok(unsafe { Value::new(self.context.clone(), &value) })
+                .build_or::<IntValue>(lhs.value.try_into()?, rhs.value.try_into()?, "");
+        Ok(unsafe { Value::new(self.context.clone(), value) })
     }
 
     /// Inserts a bitwise logical exclusive or instruction.
@@ -309,8 +431,8 @@ impl Builder {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
-                .build_xor(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Ok(unsafe { Value::new(self.context.clone(), &value) })
+                .build_xor::<IntValue>(lhs.value.try_into()?, rhs.value.try_into()?, "");
+        Ok(unsafe { Value::new(self.context.clone(), value) })
     }
 
     /// Inserts an addition instruction.
@@ -322,10 +444,12 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn add(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
-        let value =
-            self.builder
-                .build_int_add(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Ok(unsafe { Value::new(self.context.clone(), &value) })
+        let value = self.builder.build_int_add::<IntValue>(
+            lhs.value.try_into()?,
+            rhs.value.try_into()?,
+            "",
+        );
+        Ok(unsafe { Value::new(self.context.clone(), value) })
     }
 
     /// Inserts a subtraction instruction.
@@ -337,10 +461,12 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn sub(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
-        let value =
-            self.builder
-                .build_int_sub(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Ok(unsafe { Value::new(self.context.clone(), &value) })
+        let value = self.builder.build_int_sub::<IntValue>(
+            lhs.value.try_into()?,
+            rhs.value.try_into()?,
+            "",
+        );
+        Ok(unsafe { Value::new(self.context.clone(), value) })
     }
 
     /// Inserts a multiplication instruction.
@@ -352,10 +478,12 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn mul(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
-        let value =
-            self.builder
-                .build_int_mul(lhs.value.into_int_value(), rhs.value.into_int_value(), "");
-        Ok(unsafe { Value::new(self.context.clone(), &value) })
+        let value = self.builder.build_int_mul::<IntValue>(
+            lhs.value.try_into()?,
+            rhs.value.try_into()?,
+            "",
+        );
+        Ok(unsafe { Value::new(self.context.clone(), value) })
     }
 
     /// Inserts a shift left instruction.
@@ -367,12 +495,12 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn shl(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
-        let value = self.builder.build_left_shift(
-            lhs.value.into_int_value(),
-            rhs.value.into_int_value(),
+        let value = self.builder.build_left_shift::<IntValue>(
+            lhs.value.try_into()?,
+            rhs.value.try_into()?,
             "",
         );
-        Ok(unsafe { Value::new(self.context.clone(), &value) })
+        Ok(unsafe { Value::new(self.context.clone(), value) })
     }
 
     /// Inserts a logical (zero fill) shift right instruction.
@@ -384,13 +512,13 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn lshr(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
-        let value = self.builder.build_right_shift(
-            lhs.value.into_int_value(),
-            rhs.value.into_int_value(),
+        let value = self.builder.build_right_shift::<IntValue>(
+            lhs.value.try_into()?,
+            rhs.value.try_into()?,
             false,
             "",
         );
-        Ok(unsafe { Value::new(self.context.clone(), &value) })
+        Ok(unsafe { Value::new(self.context.clone(), value) })
     }
 
     /// Inserts an integer comparison instruction.
@@ -404,13 +532,13 @@ impl Builder {
     #[allow(clippy::needless_pass_by_value)]
     fn icmp(&self, py: Python, pred: PyIntPredicate, lhs: Value, rhs: Value) -> PyResult<Value> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
-        let value = self.builder.build_int_compare(
+        let value = self.builder.build_int_compare::<IntValue>(
             pred.0,
-            lhs.value.into_int_value(),
-            rhs.value.into_int_value(),
+            lhs.value.try_into()?,
+            rhs.value.try_into()?,
             "",
         );
-        Ok(unsafe { Value::new(self.context.clone(), &value) })
+        Ok(unsafe { Value::new(self.context.clone(), value) })
     }
 
     /// Inserts a call instruction.
@@ -449,7 +577,7 @@ impl Builder {
 
         let call = self.builder.build_call(callable, &args, "");
         let value = call.try_as_basic_value().left();
-        Ok(value.map(|v| unsafe { Value::new(function.context.clone(), &v) }))
+        Ok(value.map(|v| unsafe { Value::new(function.context.clone(), v) }))
     }
 
     /// Inserts a branch conditioned on a boolean.
@@ -475,7 +603,7 @@ impl Builder {
         let module = self.module.borrow(py);
         let builder = qirlib::Builder::from(&self.builder, &module.module);
         builder.try_build_if(
-            cond.value.into_int_value(),
+            cond.value.try_into()?,
             |_| call_if_some(r#true),
             |_| call_if_some(r#false),
         )
@@ -545,7 +673,7 @@ impl SimpleModule {
         let module = self.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
         (0..self.num_qubits)
-            .map(|id| unsafe { Value::new(module.context.clone(), &builder.build_qubit(id)) })
+            .map(|id| unsafe { Value::new(module.context.clone(), builder.build_qubit(id)) })
             .collect()
     }
 
@@ -558,7 +686,7 @@ impl SimpleModule {
         let module = self.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
         (0..self.num_results)
-            .map(|id| unsafe { Value::new(module.context.clone(), &builder.build_result(id)) })
+            .map(|id| unsafe { Value::new(module.context.clone(), builder.build_result(id)) })
             .collect()
     }
 
@@ -600,7 +728,7 @@ impl SimpleModule {
         let context = ty.context.clone();
         let ty = ty.ty.into_function_type();
         let function = module.module.add_function(name, ty, None);
-        Ok(unsafe { Value::new(context, &function) })
+        Ok(unsafe { Value::new(context, function) })
     }
 }
 
@@ -644,10 +772,7 @@ impl BasicQisBuilder {
         Context::require_same(py, [&builder.context, &control.context, &target.context])?;
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
-        builder.build_cx(
-            control.value.into_pointer_value(),
-            target.value.into_pointer_value(),
-        );
+        builder.build_cx(control.value.try_into()?, target.value.try_into()?);
         Ok(())
     }
 
@@ -662,10 +787,7 @@ impl BasicQisBuilder {
         Context::require_same(py, [&builder.context, &control.context, &target.context])?;
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
-        builder.build_cz(
-            control.value.into_pointer_value(),
-            target.value.into_pointer_value(),
-        );
+        builder.build_cz(control.value.try_into()?, target.value.try_into()?);
         Ok(())
     }
 
@@ -679,7 +801,7 @@ impl BasicQisBuilder {
         Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
-        builder.build_h(qubit.value.into_pointer_value());
+        builder.build_h(qubit.value.try_into()?);
         Ok(())
     }
 
@@ -694,10 +816,7 @@ impl BasicQisBuilder {
         Context::require_same(py, [&builder.context, &qubit.context, &result.context])?;
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
-        builder.build_mz(
-            qubit.value.into_pointer_value(),
-            result.value.into_pointer_value(),
-        );
+        builder.build_mz(qubit.value.try_into()?, result.value.try_into()?);
         Ok(())
     }
 
@@ -711,7 +830,7 @@ impl BasicQisBuilder {
         Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
-        builder.build_reset(qubit.value.into_pointer_value());
+        builder.build_reset(qubit.value.try_into()?);
         Ok(())
     }
 
@@ -732,7 +851,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
         let theta = unsafe { Value::extract(&context.0.f64_type(), theta)? };
-        builder.build_rx(theta.into_float_value(), qubit.value.into_pointer_value());
+        builder.build_rx(theta.into_float_value(), qubit.value.try_into()?);
         Ok(())
     }
 
@@ -753,7 +872,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
         let theta = unsafe { Value::extract(&context.0.f64_type(), theta)? };
-        builder.build_ry(theta.into_float_value(), qubit.value.into_pointer_value());
+        builder.build_ry(theta.into_float_value(), qubit.value.try_into()?);
         Ok(())
     }
 
@@ -774,7 +893,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
         let theta = unsafe { Value::extract(&context.0.f64_type(), theta)? };
-        builder.build_rz(theta.into_float_value(), qubit.value.into_pointer_value());
+        builder.build_rz(theta.into_float_value(), qubit.value.try_into()?);
         Ok(())
     }
 
@@ -788,7 +907,7 @@ impl BasicQisBuilder {
         Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
-        builder.build_s(qubit.value.into_pointer_value());
+        builder.build_s(qubit.value.try_into()?);
         Ok(())
     }
 
@@ -802,7 +921,7 @@ impl BasicQisBuilder {
         Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
-        builder.build_s_adj(qubit.value.into_pointer_value());
+        builder.build_s_adj(qubit.value.try_into()?);
         Ok(())
     }
 
@@ -816,7 +935,7 @@ impl BasicQisBuilder {
         Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
-        builder.build_t(qubit.value.into_pointer_value());
+        builder.build_t(qubit.value.try_into()?);
         Ok(())
     }
 
@@ -830,7 +949,7 @@ impl BasicQisBuilder {
         Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
-        builder.build_t_adj(qubit.value.into_pointer_value());
+        builder.build_t_adj(qubit.value.try_into()?);
         Ok(())
     }
 
@@ -844,7 +963,7 @@ impl BasicQisBuilder {
         Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
-        builder.build_x(qubit.value.into_pointer_value());
+        builder.build_x(qubit.value.try_into()?);
         Ok(())
     }
 
@@ -858,7 +977,7 @@ impl BasicQisBuilder {
         Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
-        builder.build_y(qubit.value.into_pointer_value());
+        builder.build_y(qubit.value.try_into()?);
         Ok(())
     }
 
@@ -872,7 +991,7 @@ impl BasicQisBuilder {
         Context::require_same(py, [&builder.context, &qubit.context])?;
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
-        builder.build_z(qubit.value.into_pointer_value());
+        builder.build_z(qubit.value.try_into()?);
         Ok(())
     }
 
@@ -901,7 +1020,7 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
         builder.try_build_if_result(
-            cond.value.into_pointer_value(),
+            cond.value.try_into()?,
             |_| call_if_some(one),
             |_| call_if_some(zero),
         )
@@ -919,7 +1038,7 @@ impl BasicQisBuilder {
 fn constant(ty: &Type, value: &PyAny) -> PyResult<Value> {
     let context = ty.context.clone();
     let value = extract_constant(&ty.ty, value)?;
-    Ok(unsafe { Value::new(context, &value) })
+    Ok(unsafe { Value::new(context, value) })
 }
 
 /// Converts the supplied QIR string to its bitcode equivalent.
