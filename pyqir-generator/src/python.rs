@@ -34,7 +34,7 @@ use inkwell::{
         AnyValueEnum, CallSiteValue, FloatValue, FunctionValue, InstructionValue, IntValue,
         PhiValue,
     },
-    IntPredicate,
+    IntPredicate as InkwellIntPredicate,
 };
 use pyo3::{
     exceptions::{PyOSError, PyValueError},
@@ -65,6 +65,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<ICmp>()?;
     m.add_class::<Instruction>()?;
     m.add_class::<IntConstant>()?;
+    m.add_class::<IntPredicate>()?;
     m.add_class::<IntType>()?;
     m.add_class::<Module>()?;
     m.add_class::<Phi>()?;
@@ -79,26 +80,6 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
     m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
     Ok(())
-}
-
-struct PyIntPredicate(IntPredicate);
-
-impl<'source> FromPyObject<'source> for PyIntPredicate {
-    fn extract(ob: &'source PyAny) -> PyResult<Self> {
-        match ob.getattr("name")?.extract()? {
-            "EQ" => Ok(Self(IntPredicate::EQ)),
-            "NE" => Ok(Self(IntPredicate::NE)),
-            "UGT" => Ok(Self(IntPredicate::UGT)),
-            "UGE" => Ok(Self(IntPredicate::UGE)),
-            "ULT" => Ok(Self(IntPredicate::ULT)),
-            "ULE" => Ok(Self(IntPredicate::ULE)),
-            "SGT" => Ok(Self(IntPredicate::SGT)),
-            "SGE" => Ok(Self(IntPredicate::SGE)),
-            "SLT" => Ok(Self(IntPredicate::SLT)),
-            "SLE" => Ok(Self(IntPredicate::SLE)),
-            _ => Err(PyValueError::new_err("Invalid integer predicate.")),
-        }
-    }
 }
 
 #[pyclass]
@@ -586,6 +567,65 @@ impl Attribute {
     }
 }
 
+#[pyclass]
+#[derive(Clone)]
+enum IntPredicate {
+    #[pyo3(name = "EQ")]
+    Eq,
+    #[pyo3(name = "NE")]
+    Ne,
+    #[pyo3(name = "UGT")]
+    Ugt,
+    #[pyo3(name = "UGE")]
+    Uge,
+    #[pyo3(name = "ULT")]
+    Ult,
+    #[pyo3(name = "ULE")]
+    Ule,
+    #[pyo3(name = "SGT")]
+    Sgt,
+    #[pyo3(name = "SGE")]
+    Sge,
+    #[pyo3(name = "SLT")]
+    Slt,
+    #[pyo3(name = "SLE")]
+    Sle,
+}
+
+impl From<InkwellIntPredicate> for IntPredicate {
+    fn from(pred: InkwellIntPredicate) -> Self {
+        match pred {
+            InkwellIntPredicate::EQ => Self::Eq,
+            InkwellIntPredicate::NE => Self::Ne,
+            InkwellIntPredicate::UGT => Self::Ugt,
+            InkwellIntPredicate::UGE => Self::Uge,
+            InkwellIntPredicate::ULT => Self::Ult,
+            InkwellIntPredicate::ULE => Self::Ule,
+            InkwellIntPredicate::SGT => Self::Sgt,
+            InkwellIntPredicate::SGE => Self::Sge,
+            InkwellIntPredicate::SLT => Self::Slt,
+            InkwellIntPredicate::SLE => Self::Sle,
+        }
+    }
+}
+
+impl From<IntPredicate> for InkwellIntPredicate {
+    fn from(pred: IntPredicate) -> Self {
+        match pred {
+            IntPredicate::Eq => Self::EQ,
+            IntPredicate::Ne => Self::NE,
+            IntPredicate::Ugt => Self::UGT,
+            IntPredicate::Uge => Self::UGE,
+            IntPredicate::Ult => Self::ULT,
+            IntPredicate::Ule => Self::ULE,
+            IntPredicate::Sgt => Self::SGT,
+            IntPredicate::Sge => Self::SGE,
+            IntPredicate::Slt => Self::SLT,
+            IntPredicate::Sle => Self::SLE,
+        }
+    }
+}
+
 #[pyclass(extends = Value, subclass, unsendable)]
 struct Instruction(InstructionValue<'static>);
 
@@ -627,6 +667,14 @@ struct Switch;
 
 #[pyclass(extends = Instruction)]
 struct ICmp;
+
+#[pymethods]
+impl ICmp {
+    #[getter]
+    fn predicate(slf: PyRef<Self>) -> IntPredicate {
+        slf.into_super().0.get_icmp_predicate().unwrap().into()
+    }
+}
 
 #[pyclass(extends = Instruction)]
 struct FCmp;
@@ -806,10 +854,10 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, pred, lhs, rhs)")]
     #[allow(clippy::needless_pass_by_value)]
-    fn icmp(&self, py: Python, pred: PyIntPredicate, lhs: Value, rhs: Value) -> PyResult<Value> {
+    fn icmp(&self, py: Python, pred: IntPredicate, lhs: Value, rhs: Value) -> PyResult<Value> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value = self.builder.build_int_compare::<IntValue>(
-            pred.0,
+            pred.into(),
             lhs.value.try_into()?,
             rhs.value.try_into()?,
             "",
@@ -819,19 +867,19 @@ impl Builder {
 
     /// Inserts a call instruction.
     ///
-    /// :param Function function: The function to call.
+    /// :param Value value: The value to call.
     /// :param Sequence[Union[Value, bool, int, float]] args: The arguments to the function.
     /// :returns: The return value, or None if the function has a void return type.
     /// :rtype: Optional[Value]
-    #[pyo3(text_signature = "(self, function, args)")]
-    fn call(&self, py: Python, function: &Value, args: &PySequence) -> PyResult<Option<Value>> {
+    #[pyo3(text_signature = "(self, callee, args)")]
+    fn call(&self, py: Python, callee: &Value, args: &PySequence) -> PyResult<Option<Value>> {
         Context::require_same(
             py,
             Context::from_values(args.iter()?.filter_map(Result::ok))
-                .chain([self.context.clone(), function.context.clone()]),
+                .chain([self.context.clone(), callee.context.clone()]),
         )?;
 
-        let (callable, param_types) = try_callable_value(function.value)
+        let (callable, param_types) = try_callable_value(callee.value)
             .ok_or_else(|| PyValueError::new_err("Value is not callable."))?;
 
         if param_types.len() != args.len()? {
@@ -853,7 +901,7 @@ impl Builder {
 
         let call = self.builder.build_call(callable, &args, "");
         let value = call.try_as_basic_value().left();
-        Ok(value.map(|v| unsafe { Value::new(function.context.clone(), v) }))
+        Ok(value.map(|v| unsafe { Value::new(callee.context.clone(), v) }))
     }
 
     /// Inserts a branch conditioned on a boolean.

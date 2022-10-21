@@ -11,11 +11,29 @@ the generation of QIR rather than directly consumed by an end-user. It is not
 intended to be used as a framework for algorithm and application development.
 """
 
-from pyqir.generator._builder import IntPredicate as IntPredicate
 from pyqir.generator._native import (
+    ArrayType as ArrayType,
+    Attribute as Attribute,
+    BasicBlock as BasicBlock,
     BasicQisBuilder as BasicQisBuilder,
     Builder as Builder,
+    Call as Call,
+    Constant as Constant,
+    FCmp as FCmp,
+    FloatConstant as FloatConstant,
+    Function as Function,
+    FunctionType as FunctionType,
+    ICmp as ICmp,
+    Instruction as Instruction,
+    IntConstant as IntConstant,
+    IntPredicate as IntPredicate,
+    IntType as IntType,
+    Module as Module,
+    Phi as Phi,
+    PointerType as PointerType,
     SimpleModule as SimpleModule,
+    StructType as StructType,
+    Switch as Switch,
     Type as Type,
     TypeFactory as TypeFactory,
     Value as Value,

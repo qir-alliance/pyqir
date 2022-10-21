@@ -1,10 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator._builder import IntPredicate
+from enum import Enum
 from typing import Callable, List, Optional, Sequence, Tuple, Union
-
-class Type: ...
 
 class TypeFactory:
     @property
@@ -21,10 +19,6 @@ class TypeFactory:
     @staticmethod
     def function(return_: Type, params: List[Type]) -> Type: ...
 
-class Value: ...
-
-def const(ty: Type, value: Union[int, float]) -> Value: ...
-
 class Builder:
     def and_(self, lhs: Value, rhs: Value) -> Value: ...
     def or_(self, lhs: Value, rhs: Value) -> Value: ...
@@ -37,7 +31,7 @@ class Builder:
     def icmp(self, pred: IntPredicate, lhs: Value, rhs: Value) -> Value: ...
     def call(
         self,
-        function: Value,
+        callee: Value,
         args: Sequence[Union[Value, bool, int, float]],
     ) -> Optional[Value]: ...
     def if_(
@@ -76,15 +70,245 @@ class SimpleModule:
     @property
     def types(self) -> TypeFactory: ...
     @property
-    def qubits(self) -> Tuple[Value, ...]: ...
+    def qubits(self) -> Sequence[Value]: ...
     @property
-    def results(self) -> Tuple[Value, ...]: ...
+    def results(self) -> Sequence[Value]: ...
     @property
     def builder(self) -> Builder: ...
     def ir(self) -> str: ...
     def bitcode(self) -> bytes: ...
-    def add_external_function(self, name: str, ty: Type) -> Value: ...
+    def add_external_function(self, name: str, ty: Type) -> Function: ...
 
+class Type:
+    @property
+    def is_void(self) -> bool: ...
+    @property
+    def is_double(self) -> bool: ...
+
+class IntType(Type):
+    @property
+    def width(self) -> int: ...
+
+class FunctionType(Type):
+    @property
+    def return_(self) -> Type: ...
+    @property
+    def params(self) -> List[Type]: ...
+
+class StructType(Type):
+    @property
+    def name(self) -> Optional[str]: ...
+    @property
+    def fields(self) -> List[Type]: ...
+
+class ArrayType(Type):
+    @property
+    def element(self) -> Type: ...
+    @property
+    def count(self) -> int: ...
+
+class PointerType(Type):
+    @property
+    def pointee(self) -> Type: ...
+    @property
+    def address_space(self) -> int: ...
+
+def is_qubit(ty: Type) -> bool: ...
+def is_result(ty: Type) -> bool: ...
+
+class Value:
+    @property
+    def type(self) -> Type: ...
+    @property
+    def name(self) -> Optional[str]: ...
+
+class BasicBlock(Value):
+    @property
+    def instructions(self) -> Sequence[Instruction]: ...
+    @property
+    def terminator(self) -> Optional[Instruction]: ...
+
+class Constant(Value):
+    @property
+    def is_null(self) -> bool: ...
+
+class IntConstant(Constant):
+    @property
+    def type(self) -> IntType: ...
+    @property
+    def value(self) -> int: ...
+
+class FloatConstant(Constant):
+    @property
+    def value(self) -> float: ...
+
+class Function(Constant):
+    @property
+    def type(self) -> FunctionType: ...
+    @property
+    def params(self) -> Sequence[Value]: ...
+    @property
+    def basic_blocks(self) -> Sequence[BasicBlock]: ...
+    def attribute(self, name: str) -> Optional[Attribute]: ...
+
+class Attribute:
+    @property
+    def value(self) -> str: ...
+
+def const(ty: Type, value: Union[int, float]) -> Value: ...
+def qubit_id(value: Value) -> Optional[int]: ...
+def result_id(value: Value) -> Optional[int]: ...
+def is_entry_point(f: Function) -> bool: ...
+def is_interop_friendly(f: Function) -> bool: ...
+def required_num_qubits(f: Function) -> Optional[int]: ...
+def required_num_results(f: Function) -> Optional[int]: ...
+def global_byte_string_value_name(value: Value) -> Optional[str]: ...
+
+class Opcode(Enum):
+    RET: Opcode
+    BR: Opcode
+    SWITCH: Opcode
+    INDIRECT_BR: Opcode
+    INVOKE: Opcode
+    RESUME: Opcode
+    UNREACHABLE: Opcode
+    CLEANUP_RET: Opcode
+    CATCH: Opcode
+    CATCH_SWITCH: Opcode
+    CALL_BR: Opcode
+    FNEG: Opcode
+    ADD: Opcode
+    FADD: Opcode
+    SUB: Opcode
+    FSUB: Opcode
+    MUL: Opcode
+    FMUL: Opcode
+    UDIV: Opcode
+    SDIV: Opcode
+    FDIV: Opcode
+    UREM: Opcode
+    SREM: Opcode
+    FREM: Opcode
+    SHL: Opcode
+    LSHR: Opcode
+    ASHR: Opcode
+    AND: Opcode
+    OR: Opcode
+    XOR: Opcode
+    ALLOCA: Opcode
+    LOAD: Opcode
+    STORE: Opcode
+    GET_ELEMENT_PTR: Opcode
+    FENCE: Opcode
+    ATOMIC_CMP_XCHG: Opcode
+    ATOMIC_RMW: Opcode
+    TRUNC: Opcode
+    ZEXT: Opcode
+    SEXT: Opcode
+    FP_TO_UI: Opcode
+    FP_TO_SI: Opcode
+    UI_TO_FP: Opcode
+    SI_TO_FP: Opcode
+    FP_TRUNC: Opcode
+    FP_EXT: Opcode
+    PTR_TO_INT: Opcode
+    INT_TO_PTR: Opcode
+    BIT_CAST: Opcode
+    ADDR_SPACE_CAST: Opcode
+    CLEANUP_PAD: Opcode
+    CATCH_PAD: Opcode
+    ICMP: Opcode
+    FCMP: Opcode
+    PHI: Opcode
+    CALL: Opcode
+    SELECT: Opcode
+    USER_OP_1: Opcode
+    USER_OP_2: Opcode
+    VA_ARG: Opcode
+    EXTRACT_ELEMENT: Opcode
+    INSERT_ELEMENT: Opcode
+    SHUFFLE_VECTOR: Opcode
+    EXTRACT_VALUE: Opcode
+    INSERT_VALUE: Opcode
+    LANDING_PAD: Opcode
+    FREEZE: Opcode
+
+class IntPredicate(Enum):
+    EQ: IntPredicate
+    NE: IntPredicate
+    UGT: IntPredicate
+    UGE: IntPredicate
+    ULT: IntPredicate
+    ULE: IntPredicate
+    SGT: IntPredicate
+    SGE: IntPredicate
+    SLT: IntPredicate
+    SLE: IntPredicate
+
+class FloatPredicate(Enum):
+    FALSE: FloatPredicate
+    OEQ: FloatPredicate
+    OGT: FloatPredicate
+    OGE: FloatPredicate
+    OLT: FloatPredicate
+    OLE: FloatPredicate
+    ONE: FloatPredicate
+    ORD: FloatPredicate
+    UNO: FloatPredicate
+    UEQ: FloatPredicate
+    UGT: FloatPredicate
+    UGE: FloatPredicate
+    ULT: FloatPredicate
+    ULE: FloatPredicate
+    UNE: FloatPredicate
+    TRUE: FloatPredicate
+
+class Instruction(Value):
+    @property
+    def opcode(self) -> Opcode: ...
+    @property
+    def operands(self) -> Sequence[Value]: ...
+    @property
+    def successors(self) -> Sequence[BasicBlock]: ...
+
+class Switch(Instruction):
+    @property
+    def cond(self) -> Value: ...
+    @property
+    def default(self) -> BasicBlock: ...
+    @property
+    def cases(self) -> Sequence[Tuple[IntConstant, BasicBlock]]: ...
+
+class ICmp(Instruction):
+    @property
+    def predicate(self) -> IntPredicate: ...
+
+class FCmp(Instruction):
+    @property
+    def predicate(self) -> FloatPredicate: ...
+
+class Call(Instruction):
+    @property
+    def callee(self) -> Value: ...
+    @property
+    def args(self) -> Sequence[Value]: ...
+
+class Phi(Instruction):
+    @property
+    def incoming(self) -> Sequence[Tuple[Value, BasicBlock]]: ...
+
+class Module:
+    @staticmethod
+    def from_ir(ir: str) -> Module: ...
+    @staticmethod
+    def from_bitcode(bitcode: bytes) -> Module: ...
+    def __str__(self) -> str: ...
+    @property
+    def functions(self) -> Sequence[Function]: ...
+    @property
+    def bitcode(self) -> bytes: ...
+
+def global_byte_string_value(module: Module, name: str) -> Optional[bytes]: ...
 def ir_to_bitcode(
     ir: str, module_name: Optional[str] = ..., source_file_name: Optional[str] = ...
 ) -> bytes: ...
