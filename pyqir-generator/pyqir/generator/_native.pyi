@@ -290,8 +290,6 @@ class FCmp(Instruction):
 class Call(Instruction):
     @property
     def callee(self) -> Value: ...
-    @property
-    def args(self) -> Sequence[Value]: ...
 
 class Phi(Instruction):
     @property

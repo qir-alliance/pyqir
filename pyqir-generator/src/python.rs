@@ -946,6 +946,46 @@ impl Instruction {
 #[pyclass(extends = Instruction)]
 struct Switch;
 
+#[pymethods]
+impl Switch {
+    #[getter]
+    fn cond(slf: PyRef<Self>) -> Value {
+        let instruction = slf.into_super();
+        let cond = instruction.0.get_operand(0).unwrap().left().unwrap();
+        let context = instruction.into_super().context.clone();
+        unsafe { Value::new(context, cond) }
+    }
+
+    #[getter]
+    fn default(slf: PyRef<Self>, py: Python) -> PyResult<Py<BasicBlock>> {
+        let instruction = slf.into_super();
+        let block = instruction.0.get_operand(1).unwrap().right().unwrap();
+        let context = instruction.into_super().context.clone();
+        Py::new(py, unsafe { BasicBlock::new(context, block) })
+    }
+
+    #[getter]
+    fn cases(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(Py<IntConstant>, Py<BasicBlock>)>> {
+        let instruction_ref = slf.into_super();
+        let instruction = instruction_ref.0;
+        let context = &instruction_ref.into_super().context;
+
+        (2..instruction.get_num_operands())
+            .step_by(2)
+            .map(|i| {
+                let cond = instruction.get_operand(i).unwrap().left().unwrap();
+                let cond = PyClassInitializer::from((Constant, unsafe {
+                    Value::new(context.clone(), cond)
+                }))
+                .add_subclass(IntConstant);
+                let succ = instruction.get_operand(i + 1).unwrap().right().unwrap();
+                let succ = unsafe { BasicBlock::new(context.clone(), succ) };
+                Ok((Py::new(py, cond)?, Py::new(py, succ)?))
+            })
+            .collect()
+    }
+}
+
 #[pyclass(extends = Instruction)]
 struct ICmp;
 
@@ -971,8 +1011,36 @@ impl FCmp {
 #[pyclass(extends = Instruction, unsendable)]
 struct Call(CallSiteValue<'static>);
 
+#[pymethods]
+impl Call {
+    #[getter]
+    fn callee(slf: PyRef<Self>) -> Value {
+        let callee = slf.0.get_called_fn_value();
+        let context = slf.into_super().into_super().context.clone();
+        unsafe { Value::new(context, callee) }
+    }
+}
+
 #[pyclass(extends = Instruction, unsendable)]
 struct Phi(PhiValue<'static>);
+
+#[pymethods]
+impl Phi {
+    #[getter]
+    fn incoming(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(Value, Py<BasicBlock>)>> {
+        let phi = slf.0;
+        let context = &slf.into_super().into_super().context;
+
+        (0..phi.count_incoming())
+            .map(|i| {
+                let (value, block) = phi.get_incoming(i).unwrap();
+                let value = unsafe { Value::new(context.clone(), value) };
+                let block = Py::new(py, unsafe { BasicBlock::new(context.clone(), block) })?;
+                Ok((value, block))
+            })
+            .collect()
+    }
+}
 
 /// An instruction builder.
 #[pyclass(unsendable)]
