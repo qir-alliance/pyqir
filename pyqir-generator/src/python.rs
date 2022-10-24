@@ -18,6 +18,7 @@ use crate::utils::{
     any_to_meta, basic_to_any, call_if_some, clone_module, extract_constant, function_type,
     is_all_same, try_callable_value, AnyValue,
 };
+use either::Either::{Left, Right};
 use inkwell::{
     attributes::{Attribute as InkwellAttribute, AttributeLoc},
     basic_block::BasicBlock as InkwellBasicBlock,
@@ -37,6 +38,7 @@ use inkwell::{
     },
 };
 use pyo3::{
+    conversion::ToPyObject,
     exceptions::{PyOSError, PyValueError},
     prelude::*,
     types::{PyBytes, PySequence, PyString, PyUnicode},
@@ -286,10 +288,6 @@ impl Module {
         Ok(Self { module, context })
     }
 
-    fn __str__(&self) -> String {
-        self.module.to_string()
-    }
-
     #[getter]
     fn functions(&self, py: Python) -> PyResult<Vec<Py<Function>>> {
         self.module
@@ -301,6 +299,10 @@ impl Module {
     #[getter]
     fn bitcode<'py>(&self, py: Python<'py>) -> &'py PyBytes {
         PyBytes::new(py, self.module.write_bitcode_to_memory().as_slice())
+    }
+
+    fn __str__(&self) -> String {
+        self.module.to_string()
     }
 }
 
@@ -446,6 +448,10 @@ impl Value {
             .name()
             .to_str()
             .expect("Name is not valid UTF-8.")
+    }
+
+    fn __repr__(&self) -> String {
+        format!("<Value of {:?}>", self.value)
     }
 }
 
@@ -974,26 +980,34 @@ impl Instruction {
     }
 
     #[getter]
-    fn operands(slf: PyRef<Self>) -> Vec<Value> {
+    fn operands(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let instruction = slf.0;
         let context = &slf.into_super().context;
         (0..instruction.get_num_operands())
-            .filter_map(|i| {
-                let value = instruction.get_operand(i).unwrap().left()?;
-                Some(unsafe { Value::new(context.clone(), value) })
+            .map(|i| match instruction.get_operand(i).unwrap() {
+                Left(value) => {
+                    let value = unsafe { Value::new(context.clone(), value) };
+                    Ok(Py::new(py, value)?.to_object(py))
+                }
+                Right(block) => {
+                    let block = unsafe { BasicBlock::new(context.clone(), block) };
+                    Ok(Py::new(py, block)?.to_object(py))
+                }
             })
             .collect()
     }
 
     #[getter]
-    fn successors(slf: PyRef<Self>, py: Python) -> PyResult<Vec<Py<BasicBlock>>> {
-        let instruction = slf.0;
-        let context = &slf.into_super().context;
-        (0..instruction.get_num_operands())
-            .filter_map(|i| {
-                let block = instruction.get_operand(i).unwrap().right()?;
-                let block = unsafe { BasicBlock::new(context.clone(), block) };
-                Some(Py::new(py, block))
+    fn successors(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
+        // then_some is stabilized in Rust 1.62.
+        #[allow(clippy::unnecessary_lazy_evaluations)]
+        Self::operands(slf, py)?
+            .into_iter()
+            .filter_map(|o| {
+                o.as_ref(py)
+                    .is_instance_of::<BasicBlock>()
+                    .map(|b| b.then(|| o))
+                    .transpose()
             })
             .collect()
     }

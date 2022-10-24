@@ -43,7 +43,7 @@ impl From<ConversionError> for PyErr {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(crate) enum AnyValue<'ctx> {
     Any(AnyValueEnum<'ctx>),
     BasicBlock(BasicBlock<'ctx>),
