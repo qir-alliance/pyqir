@@ -4,7 +4,8 @@
 use crate::types;
 use inkwell::{
     attributes::AttributeLoc,
-    values::{AnyValueEnum, FunctionValue},
+    types::{ArrayType, BasicTypeEnum},
+    values::{AnyValueEnum, BasicValueEnum, FunctionValue, InstructionOpcode},
 };
 
 #[must_use]
@@ -51,6 +52,27 @@ pub fn required_num_results(function: FunctionValue) -> Option<u64> {
     attribute.get_string_value().to_str().ok()?.parse().ok()
 }
 
+#[must_use]
+pub fn global_byte_string_value_name(value: AnyValueEnum) -> Option<String> {
+    let instruction = match value {
+        AnyValueEnum::PointerValue(p) => p.as_instruction(),
+        AnyValueEnum::InstructionValue(i) => Some(i),
+        _ => None,
+    }
+    .filter(|i| i.get_opcode() == InstructionOpcode::GetElementPtr)?;
+
+    match instruction.get_operand(0)?.left()? {
+        BasicValueEnum::ArrayValue(array) if is_byte_array(array.get_type()) => Some(
+            array
+                .get_name()
+                .to_str()
+                .expect("Name is not valid UTF-8.")
+                .to_string(),
+        ),
+        _ => None,
+    }
+}
+
 fn pointer_to_int(value: AnyValueEnum) -> Option<u64> {
     match value {
         AnyValueEnum::PointerValue(p) => {
@@ -59,5 +81,12 @@ fn pointer_to_int(value: AnyValueEnum) -> Option<u64> {
                 .get_zero_extended_constant()
         }
         _ => None,
+    }
+}
+
+fn is_byte_array(ty: ArrayType) -> bool {
+    match ty.get_element_type() {
+        BasicTypeEnum::IntType(i) => i.get_bit_width() == 8,
+        _ => false,
     }
 }

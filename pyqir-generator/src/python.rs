@@ -80,6 +80,8 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Value>()?;
     m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
     m.add("const", wrap_pyfunction!(constant, m)?)?;
+    m.add_function(wrap_pyfunction!(global_byte_string_value, m)?)?;
+    m.add_function(wrap_pyfunction!(global_byte_string_value_name, m)?)?;
     m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
     m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(is_interop_friendly, m)?)?;
@@ -309,6 +311,11 @@ impl Module {
         };
         Self { module, context }
     }
+}
+
+#[pyfunction]
+fn global_byte_string_value(module: &Module, name: &str) -> Option<Vec<u8>> {
+    module::global_byte_string_value(&module.module, name)
 }
 
 /// Provides access to all supported types.
@@ -615,6 +622,11 @@ fn required_num_qubits(function: &Function) -> Option<u64> {
 #[pyfunction]
 fn required_num_results(function: &Function) -> Option<u64> {
     values::required_num_results(function.0)
+}
+
+#[pyfunction]
+fn global_byte_string_value_name(value: &Value) -> Option<String> {
+    values::global_byte_string_value_name(value.value.try_into().ok()?)
 }
 
 #[pyclass]

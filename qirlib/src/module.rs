@@ -8,7 +8,7 @@ use inkwell::{
     memory_buffer::MemoryBuffer,
     module::Module,
     passes::{PassManager, PassManagerBuilder},
-    values::FunctionValue,
+    values::{BasicValueEnum, FunctionValue},
     OptimizationLevel,
 };
 
@@ -68,6 +68,13 @@ pub fn simple_init(
 pub fn simple_finalize(module: &Module) -> Result<(), String> {
     run_basic_passes(module);
     module.verify().map_err(|e| e.to_string())
+}
+
+pub fn global_byte_string_value(module: &Module, name: &str) -> Option<Vec<u8>> {
+    match module.get_global(name)?.get_initializer()? {
+        BasicValueEnum::ArrayValue(array) => Some(array.to_string().as_bytes().to_vec()),
+        _ => None,
+    }
 }
 
 /// # Errors
