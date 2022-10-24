@@ -175,28 +175,28 @@ impl TypeFactory {
 
     /// A function type.
     ///
-    /// :param Type return_: The return type.
+    /// :param Type ret: The return type.
     /// :param List[Type] params: The parameter types.
     /// :returns: The function type.
     /// :rtype: Type
     #[staticmethod]
-    #[pyo3(text_signature = "(return_, params)")]
+    #[pyo3(text_signature = "(ret, params)")]
     #[allow(clippy::needless_pass_by_value)]
-    fn function(py: Python, return_: &Type, params: Vec<Py<Type>>) -> PyResult<Py<Type>> {
+    fn function(py: Python, ret: &Type, params: Vec<Py<Type>>) -> PyResult<Py<Type>> {
         Context::require_same(
             py,
             params
                 .iter()
                 .map(|t| t.borrow(py).context.clone())
-                .chain([return_.context.clone()]),
+                .chain([ret.context.clone()]),
         )?;
 
-        let ty = function_type(&return_.ty, params.iter().map(|t| t.borrow(py).ty))
+        let ty = function_type(&ret.ty, params.iter().map(|t| t.borrow(py).ty))
             .ok_or_else(|| PyValueError::new_err("Invalid return or parameter type."))?
             .into();
 
         let ty = unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) };
-        let context = return_.context.clone();
+        let context = ret.context.clone();
         Py::new(py, Type { ty, context })
     }
 }
