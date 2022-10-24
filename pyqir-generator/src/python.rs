@@ -78,8 +78,10 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Type>()?;
     m.add_class::<TypeFactory>()?;
     m.add_class::<Value>()?;
-    m.add("const", wrap_pyfunction!(constant, m)?)?;
     m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
+    m.add("const", wrap_pyfunction!(constant, m)?)?;
+    m.add_function(wrap_pyfunction!(is_qubit, m)?)?;
+    m.add_function(wrap_pyfunction!(is_result, m)?)?;
     m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
     Ok(())
 }
@@ -231,6 +233,16 @@ impl PointerType {
     fn address_space(&self) -> u32 {
         self.0.get_address_space() as u32
     }
+}
+
+#[pyfunction]
+fn is_qubit(ty: &Type) -> bool {
+    types::is_qubit(ty.ty)
+}
+
+#[pyfunction]
+fn is_result(ty: &Type) -> bool {
+    types::is_result(ty.ty)
 }
 
 #[pyclass(unsendable)]
