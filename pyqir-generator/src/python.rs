@@ -41,7 +41,7 @@ use pyo3::{
     prelude::*,
     types::{PyBytes, PySequence, PyString, PyUnicode},
 };
-use qirlib::{module, types, BuilderBasicQisExt};
+use qirlib::{module, types, values, BuilderBasicQisExt};
 use std::{
     borrow::Borrow,
     convert::{Into, TryFrom, TryInto},
@@ -80,9 +80,15 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Value>()?;
     m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
     m.add("const", wrap_pyfunction!(constant, m)?)?;
+    m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
+    m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
+    m.add_function(wrap_pyfunction!(is_interop_friendly, m)?)?;
     m.add_function(wrap_pyfunction!(is_qubit, m)?)?;
     m.add_function(wrap_pyfunction!(is_result, m)?)?;
-    m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
+    m.add_function(wrap_pyfunction!(qubit_id, m)?)?;
+    m.add_function(wrap_pyfunction!(required_num_qubits, m)?)?;
+    m.add_function(wrap_pyfunction!(required_num_results, m)?)?;
+    m.add_function(wrap_pyfunction!(result_id, m)?)?;
     Ok(())
 }
 
@@ -579,6 +585,36 @@ impl Attribute {
             .to_str()
             .expect("Value is not valid UTF-8.")
     }
+}
+
+#[pyfunction]
+fn qubit_id(value: &Value) -> Option<u64> {
+    values::qubit_id(value.value.try_into().ok()?)
+}
+
+#[pyfunction]
+fn result_id(value: &Value) -> Option<u64> {
+    values::result_id(value.value.try_into().ok()?)
+}
+
+#[pyfunction]
+fn is_entry_point(function: &Function) -> bool {
+    values::is_entry_point(function.0)
+}
+
+#[pyfunction]
+fn is_interop_friendly(function: &Function) -> bool {
+    values::is_interop_friendly(function.0)
+}
+
+#[pyfunction]
+fn required_num_qubits(function: &Function) -> Option<u64> {
+    values::required_num_qubits(function.0)
+}
+
+#[pyfunction]
+fn required_num_results(function: &Function) -> Option<u64> {
+    values::required_num_results(function.0)
 }
 
 #[pyclass]
