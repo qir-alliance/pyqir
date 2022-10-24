@@ -57,11 +57,21 @@ impl<'ctx> AnyValue<'ctx> {
         }
     }
 
-    pub(crate) fn name(&self) -> Option<&CStr> {
+    pub(crate) fn name(&self) -> &CStr {
         match self {
-            Self::Any(AnyValueEnum::InstructionValue(i)) => i.get_name(),
-            Self::Any(_) => None,
-            Self::BasicBlock(b) => Some(b.get_name()),
+            Self::Any(AnyValueEnum::ArrayValue(a)) => a.get_name(),
+            Self::Any(AnyValueEnum::IntValue(i)) => i.get_name(),
+            Self::Any(AnyValueEnum::FloatValue(f)) => f.get_name(),
+            Self::Any(AnyValueEnum::PhiValue(p)) => p.get_name(),
+            Self::Any(AnyValueEnum::FunctionValue(f)) => f.get_name(),
+            Self::Any(AnyValueEnum::PointerValue(p)) => p.get_name(),
+            Self::Any(AnyValueEnum::StructValue(s)) => s.get_name(),
+            Self::Any(AnyValueEnum::VectorValue(v)) => v.get_name(),
+            Self::Any(AnyValueEnum::InstructionValue(i)) => i
+                .get_name()
+                .unwrap_or_else(|| CStr::from_bytes_with_nul(b"\0").unwrap()),
+            Self::Any(AnyValueEnum::MetadataValue(m)) => m.get_name(),
+            Self::BasicBlock(b) => b.get_name(),
         }
     }
 

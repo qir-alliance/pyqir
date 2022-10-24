@@ -290,6 +290,7 @@ impl Module {
         self.module.to_string()
     }
 
+    #[getter]
     fn functions(&self, py: Python) -> PyResult<Vec<Py<Function>>> {
         self.module
             .get_functions()
@@ -297,6 +298,7 @@ impl Module {
             .collect()
     }
 
+    #[getter]
     fn bitcode<'py>(&self, py: Python<'py>) -> &'py PyBytes {
         PyBytes::new(py, self.module.write_bitcode_to_memory().as_slice())
     }
@@ -439,10 +441,11 @@ impl Value {
     }
 
     #[getter]
-    fn name(&self) -> Option<&str> {
+    fn name(&self) -> &str {
         self.value
             .name()
-            .map(|n| n.to_str().expect("Name is not valid UTF-8."))
+            .to_str()
+            .expect("Name is not valid UTF-8.")
     }
 }
 
