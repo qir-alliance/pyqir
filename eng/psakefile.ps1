@@ -14,7 +14,7 @@ Properties {
     $CargoConfigToml = Join-Path $Root .cargo config.toml
     $VscodeSettingsJson = Join-Path $Root .vscode settings.json
     $DocsRoot = Join-Path $Root docs
-    $DocsBuild = Join-Path $Docs _build
+    $DocsBuild = Join-Path $DocsRoot _build
     $RustVersion = "1.57.0"
     $ManylinuxTag = "manylinux2014_x86_64_maturin"
     $ManylinuxRoot = "/io"
@@ -97,7 +97,7 @@ task docs -depends wheelhouse {
     Create-PyEnv `
         -EnvironmentPath $envPath `
         -RequirementsPath (Join-Path $Root eng docs-requirements.txt) `
-        -ArtifactPaths (Get-Item $Wheels)
+        -ArtifactPaths (Get-ChildItem $Wheels)
 
     & (Join-Path $envPath bin Activate.ps1)
     try {
