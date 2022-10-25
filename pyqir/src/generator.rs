@@ -32,20 +32,6 @@ use pyo3::{
 use qirlib::{module, types, BuilderBasicQisExt};
 use std::{borrow::Borrow, convert::Into, mem::transmute, result::Result};
 
-#[pymodule]
-fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<BasicQisBuilder>()?;
-    m.add_class::<Builder>()?;
-    m.add_class::<SimpleModule>()?;
-    m.add_class::<Type>()?;
-    m.add_class::<TypeFactory>()?;
-    m.add_class::<Value>()?;
-    m.add("const", wrap_pyfunction!(constant, m)?)?;
-    m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
-    m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
-    Ok(())
-}
-
 struct PyIntPredicate(IntPredicate);
 
 impl<'source> FromPyObject<'source> for PyIntPredicate {
@@ -93,7 +79,7 @@ impl Context {
 
 /// A type.
 #[pyclass(unsendable)]
-struct Type {
+pub(crate) struct Type {
     ty: AnyTypeEnum<'static>,
     context: Py<Context>,
 }
@@ -117,7 +103,7 @@ impl Module {
 
 /// Provides access to all supported types.
 #[pyclass]
-struct TypeFactory {
+pub(crate) struct TypeFactory {
     module: Py<Module>,
 }
 
@@ -220,7 +206,7 @@ impl TypeFactory {
 /// A value.
 #[pyclass(unsendable)]
 #[derive(Clone)]
-struct Value {
+pub(crate) struct Value {
     value: AnyValueEnum<'static>,
     context: Py<Context>,
 }
@@ -241,7 +227,7 @@ impl Value {
 
 /// An instruction builder.
 #[pyclass(unsendable)]
-struct Builder {
+pub(crate) struct Builder {
     builder: InkwellBuilder<'static>,
     context: Py<Context>,
     // TODO: In principle, the module could be extracted from the builder.
@@ -493,7 +479,7 @@ impl Builder {
 /// :param int num_results: The number of statically allocated results.
 #[pyclass(unsendable)]
 #[pyo3(text_signature = "(name, num_qubits, num_results)")]
-struct SimpleModule {
+pub(crate) struct SimpleModule {
     module: Py<Module>,
     builder: Py<Builder>,
     types: Py<TypeFactory>,
@@ -622,7 +608,7 @@ impl SimpleModule {
 /// :param Builder builder: The underlying builder used to build QIS instructions.
 #[pyclass]
 #[pyo3(text_signature = "(builder)")]
-struct BasicQisBuilder {
+pub(crate) struct BasicQisBuilder {
     builder: Py<Builder>,
 }
 
@@ -916,7 +902,7 @@ impl BasicQisBuilder {
 /// :rtype: Value
 #[pyfunction]
 #[pyo3(text_signature = "(ty, value)")]
-fn constant(ty: &Type, value: &PyAny) -> PyResult<Value> {
+pub(crate) fn r#const(ty: &Type, value: &PyAny) -> PyResult<Value> {
     let context = ty.context.clone();
     let value = extract_constant(&ty.ty, value)?;
     Ok(unsafe { Value::new(context, &value) })
@@ -931,7 +917,7 @@ fn constant(ty: &Type, value: &PyAny) -> PyResult<Value> {
 /// :rtype: bytes
 #[pyfunction]
 #[pyo3(text_signature = "(ir, module_name=None, source_file_name=None)")]
-fn ir_to_bitcode<'a>(
+pub(crate) fn ir_to_bitcode<'a>(
     py: Python<'a>,
     ir: &str,
     module_name: Option<&str>,
@@ -951,7 +937,7 @@ fn ir_to_bitcode<'a>(
 /// :rtype: str
 #[pyfunction]
 #[pyo3(text_signature = "(bitcode, module_name=None, source_file_name=None)")]
-fn bitcode_to_ir<'a>(
+pub(crate) fn bitcode_to_ir<'a>(
     py: Python<'a>,
     bitcode: &PyBytes,
     module_name: Option<&str>,

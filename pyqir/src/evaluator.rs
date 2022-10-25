@@ -9,14 +9,8 @@ use pyo3::{
 };
 use qirlib::evaluation::{interop::Instruction, jit::run_module_file};
 
-#[pymodule]
-#[pyo3(name = "_native")]
-fn native_module(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyNonadaptiveJit>()
-}
-
 #[pyclass]
-pub struct PyNonadaptiveJit {}
+pub(crate) struct PyNonadaptiveJit;
 
 #[pymethods]
 impl PyNonadaptiveJit {
