@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from abc import ABCMeta, abstractmethod
-from pyqir.generator import BasicQisBuilder, IntPredicate, SimpleModule, const, types
+from pyqir.generator import BasicQisBuilder, IntPredicate, SimpleModule, const
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
 import pytest
 import tempfile
@@ -72,9 +72,10 @@ class _ResultBrancher(_Brancher):
 class _BoolBrancher(_Brancher):
     def __init__(self, num_queries: int) -> None:
         self._brancher = _ResultBrancher(num_queries)
+        types = self.module.types
         self._read_result = self._brancher.module.add_external_function(
             "__quantum__qis__read_result__body",
-            types.Function([types.RESULT], types.BOOL),
+            types.function(types.bool, [types.result]),
         )
 
     @property
@@ -312,7 +313,6 @@ def test_nested_else_then_if(brancher: _Brancher) -> None:
         ),
     )
 
-    print(brancher.module.ir())
     logger = GateLogger()
     _eval(brancher.module, logger, [False, True])
     assert logger.instructions == [
@@ -341,7 +341,7 @@ def test_icmp_if_true() -> None:
     brancher = _BoolBrancher(1)
     x = brancher.oracle()
     module = brancher.module
-    cond = module.builder.icmp(IntPredicate.EQ, x, const(types.Int(1), 0))
+    cond = module.builder.icmp(IntPredicate.EQ, x, const(module.types.bool, 0))
 
     qis = BasicQisBuilder(module.builder)
     brancher.if_(
@@ -359,7 +359,7 @@ def test_icmp_if_false() -> None:
     brancher = _BoolBrancher(1)
     x = brancher.oracle()
     module = brancher.module
-    cond = module.builder.icmp(IntPredicate.EQ, x, const(types.Int(1), 0))
+    cond = module.builder.icmp(IntPredicate.EQ, x, const(module.types.bool, 0))
 
     qis = BasicQisBuilder(brancher.module.builder)
     brancher.if_(
@@ -379,7 +379,7 @@ def test_arithmetic_in_branch(result: bool) -> None:
     cond = brancher.oracle()
     module = brancher.module
     qis = BasicQisBuilder(module.builder)
-    i32 = types.Int(32)
+    i32 = module.types.int(32)
 
     def true() -> None:
         four = module.builder.add(const(i32, 2), const(i32, 2))
@@ -398,8 +398,10 @@ def test_arithmetic_in_branch(result: bool) -> None:
 def test_call_in_branch(result: bool) -> None:
     brancher = _BoolBrancher(1)
     module = brancher.module
+    types = module.types
     x = module.add_external_function(
-        "__quantum__qis__x__body", types.Function([types.QUBIT], types.VOID)
+        "__quantum__qis__x__body",
+        types.function(types.void, [types.qubit]),
     )
 
     cond = brancher.oracle()

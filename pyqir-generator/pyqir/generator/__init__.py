@@ -11,16 +11,15 @@ the generation of QIR rather than directly consumed by an end-user. It is not
 intended to be used as a framework for algorithm and application development.
 """
 
+from pyqir.generator._builder import IntPredicate as IntPredicate
 from pyqir.generator._native import (
     BasicQisBuilder as BasicQisBuilder,
     Builder as Builder,
-    Function as Function,
     SimpleModule as SimpleModule,
+    Type as Type,
+    TypeFactory as TypeFactory,
     Value as Value,
-    const as const,
     bitcode_to_ir as bitcode_to_ir,
+    const as const,
     ir_to_bitcode as ir_to_bitcode,
 )
-
-from pyqir.generator._builder import IntPredicate as IntPredicate
-from pyqir.generator.types import Type as Type

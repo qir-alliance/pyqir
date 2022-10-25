@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, SimpleModule, Value, const, types
+from pyqir.generator import BasicQisBuilder, SimpleModule, TypeFactory, Value, const
 from typing import Callable, List, Tuple, Union
 import unittest
 
@@ -20,11 +20,11 @@ class QisTest(unittest.TestCase):
             ("z", lambda qis: qis.z),
         ]
 
-        for name, gate in cases:
+        for name, get_gate in cases:
             with self.subTest(name):
                 mod = SimpleModule("test_single", 1, 0)
                 qis = BasicQisBuilder(mod.builder)
-                gate(qis)(mod.qubits[0])
+                get_gate(qis)(mod.qubits[0])
                 call = f"call void @__quantum__qis__{name}__body(%Qubit* null)"
                 self.assertIn(call, mod.ir())
 
@@ -36,11 +36,11 @@ class QisTest(unittest.TestCase):
             ("cz", lambda qis: qis.cz),
         ]
 
-        for name, gate in cases:
+        for name, get_gate in cases:
             with self.subTest(name):
                 mod = SimpleModule("test_controlled", 2, 0)
                 qis = BasicQisBuilder(mod.builder)
-                gate(qis)(mod.qubits[0], mod.qubits[1])
+                get_gate(qis)(mod.qubits[0], mod.qubits[1])
                 call = f"call void @__quantum__qis__{name}__body(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*))"
                 self.assertIn(call, mod.ir())
 
@@ -52,11 +52,11 @@ class QisTest(unittest.TestCase):
             ("t", lambda qis: qis.t_adj),
         ]
 
-        for name, gate in cases:
+        for name, get_gate in cases:
             with self.subTest(name):
                 mod = SimpleModule("test_adjoint", 1, 0)
                 qis = BasicQisBuilder(mod.builder)
-                gate(qis)(mod.qubits[0])
+                get_gate(qis)(mod.qubits[0])
                 call = f"call void @__quantum__qis__{name}__adj(%Qubit* null)"
                 self.assertIn(call, mod.ir())
 
@@ -74,14 +74,17 @@ class QisTest(unittest.TestCase):
             ("rz", lambda qis: qis.rz),
         ]
 
-        values: List[Union[Value, float]] = [const(types.DOUBLE, 1.0), 1.0]
+        values: List[Tuple[str, Callable[[TypeFactory], Union[Value, float]]]] = [
+            ("const", lambda types: const(types.double, 1.0)),
+            ("literal", lambda _: 1.0),
+        ]
 
-        for name, gate in cases:
-            for value in values:
-                with self.subTest(f"{name} ({value})"):
+        for name, get_gate in cases:
+            for value_name, get_value in values:
+                with self.subTest(f"{name}_{value_name}"):
                     mod = SimpleModule("test_rotated", 1, 0)
                     qis = BasicQisBuilder(mod.builder)
-                    gate(qis)(value, mod.qubits[0])
+                    get_gate(qis)(get_value(mod.types), mod.qubits[0])
                     call = f"call void @__quantum__qis__{name}__body(double 1.000000e+00, %Qubit* null)"
                     self.assertIn(call, mod.ir())
 

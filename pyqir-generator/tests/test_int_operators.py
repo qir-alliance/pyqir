@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from functools import partial
-from pyqir.generator import Builder, IntPredicate, SimpleModule, Value, const, types
+from pyqir.generator import Builder, IntPredicate, SimpleModule, Value, const
 from typing import Callable, List, Tuple
 import unittest
 
@@ -33,12 +33,13 @@ class IntOperatorsTest(unittest.TestCase):
         for (name, build) in _OPERATORS:
             with self.subTest(name):
                 mod = SimpleModule("test " + name, 0, 0)
+                types = mod.types
                 source = mod.add_external_function(
-                    "source", types.Function([], types.Int(64))
+                    "source", types.function(types.int(64), [])
                 )
-                ty = types.BOOL if name.startswith("icmp") else types.Int(64)
+                ty = types.bool if name.startswith("icmp") else types.int(64)
                 sink = mod.add_external_function(
-                    "sink", types.Function([ty], types.VOID)
+                    "sink", types.function(types.void, [ty])
                 )
 
                 x = mod.builder.call(source, [])
@@ -54,31 +55,34 @@ class IntOperatorsTest(unittest.TestCase):
         for (name, build) in _OPERATORS:
             with self.subTest(name):
                 mod = SimpleModule("test " + name, 0, 0)
+                types = mod.types
                 source = mod.add_external_function(
-                    "source", types.Function([], types.Int(64))
+                    "source", types.function(types.int(64), [])
                 )
-                ty = types.BOOL if name.startswith("icmp") else types.Int(64)
+                ty = types.bool if name.startswith("icmp") else types.int(64)
                 sink = mod.add_external_function(
-                    "sink", types.Function([ty], types.VOID)
+                    "sink", types.function(types.void, [ty])
                 )
 
                 x = mod.builder.call(source, [])
                 assert x is not None
-                y = build(mod.builder)(const(types.Int(64), 1), x)
+                y = build(mod.builder)(const(types.int(64), 1), x)
                 mod.builder.call(sink, [y])
 
                 self.assertIn(f"%1 = {name} i64 1, %0", mod.ir())
 
     def test_type_mismatch(self) -> None:
         mod = SimpleModule("test_type_mismatch", 0, 0)
-        source = mod.add_external_function("source", types.Function([], types.Int(16)))
+        types = mod.types
+        source = mod.add_external_function("source", types.function(types.int(16), []))
         sink = mod.add_external_function(
-            "sink", types.Function([types.Int(16)], types.VOID)
+            "sink",
+            types.function(types.void, [types.int(16)]),
         )
 
         x = mod.builder.call(source, [])
         assert x is not None
-        y = mod.builder.add(x, const(types.Int(18), 2))
+        y = mod.builder.add(x, const(types.int(18), 2))
         mod.builder.call(sink, [y])
 
         with self.assertRaises(OSError):

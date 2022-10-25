@@ -1,23 +1,26 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::evaluation::{
-    interop::SemanticModel,
-    intrinsics::{reset_max_qubit_id, reset_static_result_cache, set_measure_stream},
-    runtime::Simulator,
+use crate::{
+    evaluation::{
+        interop::SemanticModel,
+        intrinsics::{reset_max_qubit_id, reset_static_result_cache, set_measure_stream},
+        runtime::Simulator,
+    },
+    module,
 };
-use crate::{module, passes::run_basic_passes_on};
 use bitvec::prelude::BitVec;
 use inkwell::{
     attributes::AttributeLoc,
     context::Context,
     execution_engine::ExecutionEngine,
+    memory_buffer::MemoryBuffer,
     module::Module,
     targets::{InitializationConfig, Target, TargetMachine},
     values::FunctionValue,
     OptimizationLevel,
 };
-use std::path::Path;
+use std::{ffi::OsStr, path::Path};
 
 /// # Errors
 ///
@@ -32,7 +35,7 @@ pub fn run_module_file(
     result_stream: Option<BitVec>,
 ) -> Result<SemanticModel, String> {
     let context = Context::create();
-    let module = module::load_file(path, &context)?;
+    let module = load_file(path, &context)?;
     run_module(&module, entry_point, result_stream)
 }
 
@@ -58,7 +61,7 @@ pub fn run_module(
         return Err("Target doesn't have a target machine.".to_owned());
     }
 
-    run_basic_passes_on(module);
+    module::run_basic_passes(module);
     let entry_point = choose_entry_point(module_functions(module), entry_point)?;
 
     // load the symbols for the current process (empty/null string)
@@ -134,6 +137,23 @@ pub(crate) fn module_functions<'ctx>(
     }
 
     FunctionValueIter(module.get_first_function())
+}
+
+/// # Errors
+///
+/// - Path has an unsupported extension.
+/// - Module fails to load.
+fn load_file(path: impl AsRef<Path>, context: &Context) -> Result<Module, String> {
+    let path = path.as_ref();
+    let extension = path.extension().and_then(OsStr::to_str);
+
+    match extension {
+        Some("ll") => MemoryBuffer::create_from_file(path)
+            .and_then(|buffer| context.create_module_from_ir(buffer))
+            .map_err(|e| e.to_string()),
+        Some("bc") => Module::parse_bitcode_from_path(path, context).map_err(|e| e.to_string()),
+        _ => Err(format!("Unsupported file extension '{:?}'.", extension)),
+    }
 }
 
 #[cfg(test)]

@@ -22,23 +22,22 @@
 ## Types
 
 ```{eval-rst}
-.. automodule:: pyqir.generator.types
+.. autoclass:: pyqir.generator.Type
+
+.. autoclass:: pyqir.generator.TypeFactory
    :members:
 ```
 
 ## Values
 
 ```{eval-rst}
-.. autoclass:: pyqir.generator.Function
-   :members:
-
 .. autoclass:: pyqir.generator.Value
    :members:
 
 .. autofunction:: pyqir.generator.const
 ```
 
-## IR and bitcode
+## Parsing
 
 ```{eval-rst}
 .. autofunction:: pyqir.generator.ir_to_bitcode

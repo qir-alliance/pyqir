@@ -7,7 +7,8 @@ IR string without errors. These tests are not meant to make detailed assertions
 about the generated IR.
 """
 
-from pyqir.generator import BasicQisBuilder, SimpleModule, types
+from pyqir.generator import BasicQisBuilder, SimpleModule
+import pytest
 
 
 def test_bell() -> None:
@@ -102,8 +103,9 @@ def test_all_gates() -> None:
 
 def test_if() -> None:
     module = SimpleModule("If", num_qubits=1, num_results=1)
+    types = module.types
     qis = BasicQisBuilder(module.builder)
-    f = module.add_external_function("f", types.Function([], types.Int(1)))
+    f = module.add_external_function("f", types.function(types.int(1), []))
 
     b = module.builder.call(f, [])
     assert b is not None
@@ -130,3 +132,42 @@ def test_if_result() -> None:
 
     ir = module.ir()
     assert ir.startswith("; ModuleID = 'If Result'")
+
+
+def test_multiple_contexts() -> None:
+    m1 = SimpleModule("m1", 0, 0)
+    m2 = SimpleModule("m2", 0, 0)
+    with pytest.raises(
+        ValueError, match=r"^Some objects come from a different context\.$"
+    ):
+        m1.add_external_function("f", m1.types.function(m2.types.result, []))
+
+
+def test_ir_idempotence() -> None:
+    m = SimpleModule("ir_idempotence", num_qubits=1, num_results=0)
+    qis = BasicQisBuilder(m.builder)
+    qis.x(m.qubits[0])
+    ir1 = m.ir()
+    assert ir1.startswith("; ModuleID = 'ir_idempotence")
+    ir2 = m.ir()
+    assert ir1 == ir2
+
+
+def test_bitcode_idempotence() -> None:
+    m = SimpleModule("bitcode_idempotence", num_qubits=1, num_results=0)
+    qis = BasicQisBuilder(m.builder)
+    qis.x(m.qubits[0])
+    bc1 = m.bitcode()
+    bc2 = m.bitcode()
+    assert bc1 == bc2
+
+
+def test_ir_gate_ir() -> None:
+    m = SimpleModule("ir_gate_ir", num_qubits=1, num_results=0)
+    qis = BasicQisBuilder(m.builder)
+    qis.x(m.qubits[0])
+    ir1 = m.ir()
+    assert "call void @__quantum__qis__x__body(%Qubit* null)" in ir1
+    qis.h(m.qubits[0])
+    ir2 = m.ir()
+    assert "call void @__quantum__qis__h__body(%Qubit* null)" in ir2

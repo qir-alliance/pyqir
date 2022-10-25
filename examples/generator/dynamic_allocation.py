@@ -1,27 +1,28 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, SimpleModule, types
+from pyqir.generator import BasicQisBuilder, SimpleModule
 
 # PyQIR Generator assumes you want to use static allocation for qubits and
 # results, but you can still use dynamic allocation by manually calling the
 # appropriate runtime functions.
 mod = SimpleModule("dynamic_allocation", num_qubits=0, num_results=0)
+types = mod.types
 qubit_allocate = mod.add_external_function(
-    "__quantum__rt__qubit_allocate", types.Function([], types.QUBIT)
+    "__quantum__rt__qubit_allocate", types.function(types.qubit, [])
 )
 qubit_release = mod.add_external_function(
-    "__quantum__rt__qubit_release", types.Function([types.QUBIT], types.VOID)
+    "__quantum__rt__qubit_release", types.function(types.void, [types.qubit])
 )
 result_get_one = mod.add_external_function(
-    "__quantum__rt__result_get_one", types.Function([], types.RESULT)
+    "__quantum__rt__result_get_one", types.function(types.result, [])
 )
 result_equal = mod.add_external_function(
     "__quantum__rt__result_equal",
-    types.Function([types.RESULT, types.RESULT], types.BOOL),
+    types.function(types.bool, [types.result, types.result]),
 )
 m = mod.add_external_function(
-    "__quantum__qis__m__body", types.Function([types.QUBIT], types.RESULT)
+    "__quantum__qis__m__body", types.function(types.result, [types.qubit])
 )
 
 # Instead of mod.qubits[i], use __quantum__rt__qubit_allocate.
