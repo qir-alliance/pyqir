@@ -67,4 +67,3 @@ This project has adopted the community covenant [Code of
 Conduct](https://github.com/qir-alliance/.github/blob/main/Code_of_Conduct.md#contributor-covenant-code-of-conduct).
 Please contact [qiralliance@mail.com](mailto:qiralliance@mail.com) for Code of
 Conduct issues or inquiries.
-
