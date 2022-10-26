@@ -2,11 +2,7 @@
 
 `qirlib` is a set of APIs for generating, parsing, and evaluating [Quantum
 Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec). It
-is also the native implementation behind the PyQIR packages:
-
-- [**pyqir-generator**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-generator)
-- [**pyqir-evaluator**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-evaluator)
-- [**pyqir-parser**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-parser)
+is also the native implementation behind PyQIR.
 
 ## Requirements
 

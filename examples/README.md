@@ -18,10 +18,9 @@ It's intended for easily testing and experimenting with QIR code and connecting
 it to low-level Python-based lab software such as
 [QCoDeS](https://qcodes.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html#Introduction).
 
-The [`pyqir-parser`](https://github.com/qir-alliance/pyqir/tree/main/pyqir-parser)
-package provides a Python API for loading QIR for basic analysis and
-transformation. For more advanced scenarios, we recommend taking a look at the
-LLVM-based infrastructure provided by the
+The [`pyqir-parser`](../pyqir-parser) package provides a Python API for loading
+QIR for basic analysis and transformation. For more advanced scenarios, we
+recommend taking a look at the LLVM-based infrastructure provided by the
 [QAT tool](https://qir-alliance.github.io/qat/).
 
 ## Installation
@@ -55,12 +54,10 @@ python mock_to_qir.py bernstein_vazirani.txt 7 >> bernstein_vazirani_output.txt
 
 This example shows how to log the executed gate sequence for a quantum program
 compiled to [LLVM bitcode](https://www.llvm.org/docs/BitCodeFormat.html).
-It consists of a
-[Python program](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator/bernstein_vazirani.py)
-that loads the
-[compiled bitcode](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator/bernstein_vazirani.bc)
-and then uses the `NonadaptiveEvaluator`, and a `GateLogger` to print out a
-simple log of the quantum gates applied during execution.
+It consists of a [Python program](bernstein_vazirani.py) that loads the
+[compiled bitcode](bernstein_vazirani.bc) and then uses the
+`NonadaptiveEvaluator`, and a `GateLogger` to print out a simple log of the
+quantum gates applied during execution.
 
 The example can be run using python:
 
@@ -109,16 +106,15 @@ Here, we transform a Qiskit circuit without using the Qiskit package.
 
 ## Teleport
 
-This example shows how to log the executed gate sequence leveraging
-a supplied result stream. The `NonadaptiveEvaluator`'s `eval` call accepts
-a list of boolean result values representing the QIS measure results
-simulated while evaluating the compiled quantum program. It consists of
-a
-[Python program](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator/teleport.py)
-which generates QIR using PyQIR and then uses the `NonadaptiveEvaluator`, and a
-`GateLogger` to print out a log of the quantum gates applied during execution
-leveraging the supplied result stream. The example shows the output with all
-possible measurement combinations for the circuit.
+This example shows how to log the executed gate sequence leveraging a supplied
+result stream. The `NonadaptiveEvaluator`'s `eval` call accepts a list of
+boolean result values representing the QIS measure results simulated while
+evaluating the compiled quantum program. It consists of a
+[Python program](teleport.py) which generates QIR using PyQIR and then uses the
+`NonadaptiveEvaluator`, and a `GateLogger` to print out a log of the quantum
+gates applied during execution leveraging the supplied result stream. The
+example shows the output with all possible measurement combinations for the
+circuit.
 
 The example can be run using python:
 
