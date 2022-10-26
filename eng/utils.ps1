@@ -287,37 +287,6 @@ function Build-PyQIR([string] $project) {
     Invoke-LoggedCommand -workingDirectory $projectDir { pytest }
 }
 
-function Create-PyEnv() {
-    param(
-        [string]
-        $EnvironmentPath,
-        [string]
-        $RequirementsPath,
-        [string[]]
-        $ArtifactPaths
-    )
-
-    Write-Host "##[info]Creating virtual environment for use with docs at $EnvironmentPath..."
-    python -m venv $EnvironmentPath
-
-    $activateScript = (Join-Path $EnvironmentPath bin Activate.ps1)
-    if (-not (Test-Path $activateScript -ErrorAction SilentlyContinue)) {
-        Get-ChildItem $EnvironmentPath | Write-Host
-        throw "No activate script found for virtual environment at $EnvironmentPath; environment creation failed."
-    }
-
-    & $activateScript
-    try {
-        pip install -r $RequirementsPath
-        foreach ($artifact in $ArtifactPaths) {
-            pip install --force-reinstall $artifact
-        }
-    }
-    finally {
-        deactivate
-    }
-}
-
 function install-llvm {
     Param(
         [Parameter(Mandatory)]

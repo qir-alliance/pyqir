@@ -21,7 +21,8 @@ Properties {
     $Python = Resolve-Python
 }
 
-task default -depends qirlib, pyqir, pyqir-parser, run-examples
+task default -depends build, run-examples
+task build -depends qirlib, pyqir, pyqir-parser
 task checks -depends cargo-fmt, cargo-clippy, black, mypy
 task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers 
 
@@ -90,22 +91,9 @@ task wheelhouse -precondition { -not (Test-Path (Join-Path $Wheels *.whl)) } {
     Invoke-Task build
 }
 
-task docs -depends wheelhouse {
-    # - Install artifacts into new venv along with sphinx.
-    # - Run sphinx from within new venv.
-    $envPath = Join-Path $Root .docs-venv
-    Create-PyEnv `
-        -EnvironmentPath $envPath `
-        -RequirementsPath (Join-Path $Root eng docs-requirements.txt) `
-        -ArtifactPaths (Get-ChildItem $Wheels)
-
-    & (Join-Path $envPath bin Activate.ps1)
-    try {
-        sphinx-build -M html $DocsRoot $DocsBuild
-    }
-    finally {
-        deactivate
-    }
+task docs -depends check-environment, wheelhouse {
+    Invoke-LoggedCommand { pip install --requirement (Join-Path $DocsRoot requirements.txt) }
+    Invoke-LoggedCommand { sphinx-build -M html $DocsRoot $DocsBuild }
 }
 
 task check-environment {
