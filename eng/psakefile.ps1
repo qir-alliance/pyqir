@@ -10,7 +10,7 @@ Properties {
     $PyqirParser = Join-Path $Root pyqir-parser
     $Examples = Join-Path $Root examples
     $Target = Join-Path $Root target
-    $Wheels = Join-Path $Root wheels
+    $Wheels = Join-Path $Target wheels
     $CargoConfigToml = Join-Path $Root .cargo config.toml
     $VscodeSettingsJson = Join-Path $Root .vscode settings.json
     $DocsRoot = Join-Path $Root docs
