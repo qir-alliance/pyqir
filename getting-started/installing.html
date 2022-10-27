@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Installing PyQIR &#8212; PyQIR  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -38,29 +38,9 @@
   <section id="installing-pyqir">
 <h1>Installing PyQIR<a class="headerlink" href="#installing-pyqir" title="Permalink to this heading">¶</a></h1>
 <p>Releases are published to both Python Package Index (PyPI) and GitHub releases. To install via pip:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install pyqir-generator
-pip install pyqir-evaluator
-pip install pyqir-parser
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install pyqir pyqir-parser
 </pre></div>
 </div>
-<section id="install-all-the-packages">
-<h2>Install all the Packages<a class="headerlink" href="#install-all-the-packages" title="Permalink to this heading">¶</a></h2>
-<p>Alternatively, you can run the installation script which will install them all for you:</p>
-<ul class="simple">
-<li><p>Windows</p>
-<ul>
-<li><p>Command Prompt: <code class="docutils literal notranslate"><span class="pre">install.cmd</span></code></p></li>
-<li><p>PowerShell: <code class="docutils literal notranslate"><span class="pre">install.ps1</span></code></p></li>
-</ul>
-</li>
-<li><p>Linux</p>
-<ul>
-<li><p>Bash/sh: <code class="docutils literal notranslate"><span class="pre">install.sh</span></code></p></li>
-<li><p>PowerShell: <code class="docutils literal notranslate"><span class="pre">install.ps1</span></code></p></li>
-</ul>
-</li>
-</ul>
-</section>
 <section id="supported-platforms">
 <h2>Supported Platforms<a class="headerlink" href="#supported-platforms" title="Permalink to this heading">¶</a></h2>
 <p>For more information about what platforms are supported, please see
@@ -70,27 +50,9 @@ PyQIR from source can be found at <a class="reference internal" href="../develop
 <section id="uninstalling-the-packages">
 <h2>Uninstalling the Packages<a class="headerlink" href="#uninstalling-the-packages" title="Permalink to this heading">¶</a></h2>
 <p>To uninstall the PyQIR packages, run</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python -m pip uninstall -y pyqir-generator pyqir-parser pyqir-evaluator
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip uninstall pyqir pyqir-parser
 </pre></div>
 </div>
-</section>
-<section id="troubleshooting">
-<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this heading">¶</a></h2>
-<section id="error-when-running-the-examples">
-<h3>Error when running the examples<a class="headerlink" href="#error-when-running-the-examples" title="Permalink to this heading">¶</a></h3>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">ModuleNotFoundError:</span> <span class="pre">No</span> <span class="pre">module</span> <span class="pre">named</span> <span class="pre">'(pyqir|pyqir.generator|pyqir.parser|pyqir.evaluator)'</span></code>:
-Install the library by running one of the <code class="docutils literal notranslate"><span class="pre">install.(sh|ps1|cmd)</span></code> scripts.</p></li>
-</ul>
-</section>
-<section id="other-errors">
-<h3>Other errors<a class="headerlink" href="#other-errors" title="Permalink to this heading">¶</a></h3>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">Python</span> <span class="pre">was</span> <span class="pre">not</span> <span class="pre">found</span></code>: If you are running <code class="docutils literal notranslate"><span class="pre">python3</span></code> in a terminal window, run
-<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">--version</span></code>. If the output starts <code class="docutils literal notranslate"><span class="pre">Python</span> <span class="pre">3</span></code> then use <code class="docutils literal notranslate"><span class="pre">python</span></code> instead.
-This can happen on some platforms that don’t create an alias.</p></li>
-</ul>
-</section>
 </section>
 </section>
 

@@ -97,10 +97,9 @@ the solution, run
 ./build.ps1
 ```
 
-Alternatively, you can use `build.sh` or `build.cmd`. This will compile
-`qirlib` and its dependencies with the appropriate environment
-variables set for their build scripts. After this is run, the build
-commands below can be used instead of `build.(ps1|sh|cmd)`.
+This will compile `qirlib` and its dependencies with the appropriate environment
+variables set for their build scripts. After this is run, the build commands
+below can be used instead of `build.ps1`.
 
 The {ref}`building/environment-variables` section
 details ways to change this behavior.
@@ -153,9 +152,9 @@ be linked into the rest of the build.
 
 ### Packaging
 
-The `build.(ps1|sh|cmd)`, `maturin` builds all generate Python wheels
-to the `target/wheels` folder. The default Python3 installation will be used
-targeting Python ABI 3.7.
+The `build.ps1`, `maturin` builds all generate Python wheels to the
+`target/wheels` folder. The default Python3 installation will be used targeting
+Python ABI 3.7.
 
 The manylinux support uses a Docker image in the build scripts to run the builds
 in the CI environment.

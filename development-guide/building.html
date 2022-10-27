@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Building PyQIR from Source &#8212; PyQIR  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -142,10 +142,9 @@ the solution, run</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./build.ps1
 </pre></div>
 </div>
-<p>Alternatively, you can use <code class="docutils literal notranslate"><span class="pre">build.sh</span></code> or <code class="docutils literal notranslate"><span class="pre">build.cmd</span></code>. This will compile
-<code class="docutils literal notranslate"><span class="pre">qirlib</span></code> and its dependencies with the appropriate environment
-variables set for their build scripts. After this is run, the build
-commands below can be used instead of <code class="docutils literal notranslate"><span class="pre">build.(ps1|sh|cmd)</span></code>.</p>
+<p>This will compile <code class="docutils literal notranslate"><span class="pre">qirlib</span></code> and its dependencies with the appropriate environment
+variables set for their build scripts. After this is run, the build commands
+below can be used instead of <code class="docutils literal notranslate"><span class="pre">build.ps1</span></code>.</p>
 <p>The <span class="xref std std-ref">building/environment-variables</span> section
 details ways to change this behavior.</p>
 <p>Within each project folder, the build can be run specifically for that project.</p>
@@ -194,9 +193,9 @@ be linked into the rest of the build.</p>
 </section>
 <section id="packaging">
 <h3>Packaging<a class="headerlink" href="#packaging" title="Permalink to this heading">¶</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">build.(ps1|sh|cmd)</span></code>, <code class="docutils literal notranslate"><span class="pre">maturin</span></code> builds all generate Python wheels
-to the <code class="docutils literal notranslate"><span class="pre">target/wheels</span></code> folder. The default Python3 installation will be used
-targeting Python ABI 3.7.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">build.ps1</span></code>, <code class="docutils literal notranslate"><span class="pre">maturin</span></code> builds all generate Python wheels to the
+<code class="docutils literal notranslate"><span class="pre">target/wheels</span></code> folder. The default Python3 installation will be used targeting
+Python ABI 3.7.</p>
 <p>The manylinux support uses a Docker image in the build scripts to run the builds
 in the CI environment.</p>
 </section>
