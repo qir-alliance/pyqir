@@ -7,8 +7,8 @@ use inkwell::{
     module::Module,
     types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FunctionType},
     values::{
-        AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, CallableValue, FloatValue,
-        FunctionValue, InstructionValue, IntValue, PointerValue,
+        AnyValue as InkwellAnyValue, AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum,
+        CallableValue, FloatValue, FunctionValue, InstructionValue, IntValue, PointerValue,
     },
 };
 use pyo3::{
@@ -20,6 +20,7 @@ use std::{
     borrow::Borrow,
     convert::{Into, TryFrom},
     ffi::CStr,
+    fmt::{self, Display, Formatter},
 };
 
 #[derive(Debug)]
@@ -79,6 +80,15 @@ impl<'ctx> AnyValue<'ctx> {
         match self {
             Self::Any(AnyValueEnum::PointerValue(p)) => p.is_null(),
             Self::Any(_) | Self::BasicBlock(_) => false,
+        }
+    }
+}
+
+impl<'ctx> Display for AnyValue<'ctx> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            Self::Any(any) => write!(f, "{}", any.print_to_string()),
+            Self::BasicBlock(_) => todo!(),
         }
     }
 }

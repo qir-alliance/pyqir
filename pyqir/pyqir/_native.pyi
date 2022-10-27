@@ -3,7 +3,6 @@
 
 from enum import Enum
 from pyqir.evaluator import GateSet
-from pyqir.generator import IntPredicate
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 class TypeFactory:
@@ -292,6 +291,8 @@ class FCmp(Instruction):
 class Call(Instruction):
     @property
     def callee(self) -> Value: ...
+    @property
+    def args(self) -> List[Value]: ...
 
 class Phi(Instruction):
     @property

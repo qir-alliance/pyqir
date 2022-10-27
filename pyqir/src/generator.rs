@@ -32,10 +32,7 @@ use inkwell::{
         StructType as InkwellStructType,
     },
     values::InstructionOpcode,
-    values::{
-        AnyValueEnum, CallSiteValue, FloatValue, FunctionValue, InstructionValue, IntValue,
-        PhiValue,
-    },
+    values::{AnyValueEnum, FloatValue, FunctionValue, InstructionValue, IntValue, PhiValue},
 };
 use pyo3::{
     conversion::ToPyObject,
@@ -418,8 +415,12 @@ impl Value {
             .expect("Name is not valid UTF-8.")
     }
 
+    fn __str__(&self) -> String {
+        self.value.to_string()
+    }
+
     fn __repr__(&self) -> String {
-        format!("<Value of {:?}>", self.value)
+        format!("<Value {:?}>", self.value)
     }
 }
 
@@ -442,20 +443,18 @@ pub(crate) struct BasicBlock(InkwellBasicBlock<'static>);
 #[pymethods]
 impl BasicBlock {
     #[getter]
-    fn instructions(slf: PyRef<Self>, py: Python) -> PyResult<Vec<Py<Instruction>>> {
+    fn instructions(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let block = slf.0;
         let context = &slf.into_super().context;
-        let mut instructions = Vec::new();
-        let mut instruction = block.get_first_instruction();
+        let mut insts = Vec::new();
+        let mut inst = block.get_first_instruction();
 
-        while let Some(i) = instruction {
-            instructions.push(Py::new(py, unsafe {
-                Instruction::new(context.clone(), i)
-            })?);
-            instruction = i.get_next_instruction();
+        while let Some(i) = inst {
+            insts.push(unsafe { Instruction::new_subtype(py, context.clone(), i) }?);
+            inst = i.get_next_instruction();
         }
 
-        Ok(instructions)
+        Ok(insts)
     }
 
     #[getter]
@@ -949,10 +948,10 @@ impl Instruction {
 
     #[getter]
     fn operands(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        let instruction = slf.0;
+        let inst = slf.0;
         let context = &slf.into_super().context;
-        (0..instruction.get_num_operands())
-            .map(|i| match instruction.get_operand(i).unwrap() {
+        (0..inst.get_num_operands())
+            .map(|i| match inst.get_operand(i).unwrap() {
                 Left(value) => {
                     let value = unsafe { Value::new(context.clone(), value) };
                     Ok(Py::new(py, value)?.to_object(py))
@@ -982,9 +981,24 @@ impl Instruction {
 }
 
 impl Instruction {
-    unsafe fn new(context: Py<Context>, instruction: InstructionValue) -> (Self, Value) {
-        let instruction = transmute::<InstructionValue<'_>, InstructionValue<'static>>(instruction);
-        (Self(instruction), Value::new(context, instruction))
+    unsafe fn new_subtype(
+        py: Python,
+        context: Py<Context>,
+        inst: InstructionValue,
+    ) -> PyResult<PyObject> {
+        let inst = transmute::<InstructionValue<'_>, InstructionValue<'static>>(inst);
+        let base = PyClassInitializer::from((Self(inst), Value::new(context, inst)));
+        match inst.get_opcode() {
+            InstructionOpcode::Switch => Ok(Py::new(py, base.add_subclass(Switch))?.to_object(py)),
+            InstructionOpcode::ICmp => Ok(Py::new(py, base.add_subclass(ICmp))?.to_object(py)),
+            InstructionOpcode::FCmp => Ok(Py::new(py, base.add_subclass(FCmp))?.to_object(py)),
+            InstructionOpcode::Call => Ok(Py::new(py, base.add_subclass(Call))?.to_object(py)),
+            InstructionOpcode::Phi => {
+                let phi = Phi(inst.try_into().unwrap());
+                Ok(Py::new(py, base.add_subclass(phi))?.to_object(py))
+            }
+            _ => Ok(Py::new(py, base)?.to_object(py)),
+        }
     }
 }
 
@@ -995,35 +1009,35 @@ pub(crate) struct Switch;
 impl Switch {
     #[getter]
     fn cond(slf: PyRef<Self>) -> Value {
-        let instruction = slf.into_super();
-        let cond = instruction.0.get_operand(0).unwrap().left().unwrap();
-        let context = instruction.into_super().context.clone();
+        let inst = slf.into_super();
+        let cond = inst.0.get_operand(0).unwrap().left().unwrap();
+        let context = inst.into_super().context.clone();
         unsafe { Value::new(context, cond) }
     }
 
     #[getter]
     fn default(slf: PyRef<Self>, py: Python) -> PyResult<Py<BasicBlock>> {
-        let instruction = slf.into_super();
-        let block = instruction.0.get_operand(1).unwrap().right().unwrap();
-        let context = instruction.into_super().context.clone();
+        let inst = slf.into_super();
+        let block = inst.0.get_operand(1).unwrap().right().unwrap();
+        let context = inst.into_super().context.clone();
         Py::new(py, unsafe { BasicBlock::new(context, block) })
     }
 
     #[getter]
     fn cases(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(Py<IntConstant>, Py<BasicBlock>)>> {
-        let instruction_ref = slf.into_super();
-        let instruction = instruction_ref.0;
-        let context = &instruction_ref.into_super().context;
+        let inst_ref = slf.into_super();
+        let inst = inst_ref.0;
+        let context = &inst_ref.into_super().context;
 
-        (2..instruction.get_num_operands())
+        (2..inst.get_num_operands())
             .step_by(2)
             .map(|i| {
-                let cond = instruction.get_operand(i).unwrap().left().unwrap();
+                let cond = inst.get_operand(i).unwrap().left().unwrap();
                 let cond = PyClassInitializer::from((Constant, unsafe {
                     Value::new(context.clone(), cond)
                 }))
                 .add_subclass(IntConstant);
-                let succ = instruction.get_operand(i + 1).unwrap().right().unwrap();
+                let succ = inst.get_operand(i + 1).unwrap().right().unwrap();
                 let succ = unsafe { BasicBlock::new(context.clone(), succ) };
                 Ok((Py::new(py, cond)?, Py::new(py, succ)?))
             })
@@ -1054,15 +1068,25 @@ impl FCmp {
 }
 
 #[pyclass(extends = Instruction, unsendable)]
-pub(crate) struct Call(CallSiteValue<'static>);
+pub(crate) struct Call;
 
 #[pymethods]
 impl Call {
     #[getter]
     fn callee(slf: PyRef<Self>) -> Value {
-        let callee = slf.0.get_called_fn_value();
-        let context = slf.into_super().into_super().context.clone();
+        let inst = slf.into_super();
+        let last = inst.0.get_operand(inst.0.get_num_operands() - 1);
+        let callee = last.unwrap().left().unwrap();
+        let context = inst.into_super().context.clone();
         unsafe { Value::new(context, callee) }
+    }
+
+    #[getter]
+    fn args(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
+        let inst = slf.into_super();
+        let mut args = Instruction::operands(inst, py)?;
+        args.pop().unwrap();
+        Ok(args)
     }
 }
 
