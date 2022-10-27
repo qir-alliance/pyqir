@@ -146,6 +146,33 @@ impl Type {
     }
 }
 
+impl Type {
+    unsafe fn new_subtype(py: Python, context: Py<Context>, ty: AnyTypeEnum) -> PyResult<PyObject> {
+        let ty = transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty);
+        let base = Self { ty, context };
+        match ty {
+            AnyTypeEnum::ArrayType(a) => {
+                Ok(Py::new(py, PyClassInitializer::from((ArrayType(a), base)))?.to_object(py))
+            }
+            AnyTypeEnum::FunctionType(f) => {
+                Ok(Py::new(py, PyClassInitializer::from((FunctionType(f), base)))?.to_object(py))
+            }
+            AnyTypeEnum::IntType(i) => {
+                Ok(Py::new(py, PyClassInitializer::from((IntType(i), base)))?.to_object(py))
+            }
+            AnyTypeEnum::PointerType(p) => {
+                Ok(Py::new(py, PyClassInitializer::from((PointerType(p), base)))?.to_object(py))
+            }
+            AnyTypeEnum::StructType(s) => {
+                Ok(Py::new(py, PyClassInitializer::from((StructType(s), base)))?.to_object(py))
+            }
+            AnyTypeEnum::FloatType(_) | AnyTypeEnum::VectorType(_) | AnyTypeEnum::VoidType(_) => {
+                Ok(Py::new(py, base)?.to_object(py))
+            }
+        }
+    }
+}
+
 #[pyclass(extends = Type, unsendable)]
 struct IntType(InkwellIntType<'static>);
 
@@ -163,22 +190,19 @@ struct FunctionType(InkwellFunctionType<'static>);
 #[pymethods]
 impl FunctionType {
     #[getter]
-    fn return_(slf: PyRef<Self>) -> Type {
+    fn return_(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let ty = basic_to_any(slf.0.get_return_type().unwrap());
         let context = slf.into_super().context.clone();
-        Type { ty, context }
+        unsafe { Type::new_subtype(py, context, ty) }
     }
 
     #[getter]
-    fn params(slf: PyRef<Self>) -> Vec<Type> {
+    fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let params = slf.0.get_param_types();
         let context = &slf.into_super().context;
         params
             .into_iter()
-            .map(|ty| Type {
-                ty: basic_to_any(ty),
-                context: context.clone(),
-            })
+            .map(|ty| unsafe { Type::new_subtype(py, context.clone(), basic_to_any(ty)) })
             .collect()
     }
 }
@@ -196,15 +220,12 @@ impl StructType {
     }
 
     #[getter]
-    fn fields(slf: PyRef<Self>) -> Vec<Type> {
+    fn fields(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let fields = slf.0.get_field_types();
         let context = &slf.into_super().context;
         fields
             .into_iter()
-            .map(|ty| Type {
-                ty: basic_to_any(ty),
-                context: context.clone(),
-            })
+            .map(|ty| unsafe { Type::new_subtype(py, context.clone(), basic_to_any(ty)) })
             .collect()
     }
 }
@@ -215,10 +236,10 @@ struct ArrayType(InkwellArrayType<'static>);
 #[pymethods]
 impl ArrayType {
     #[getter]
-    fn element(slf: PyRef<Self>) -> Type {
+    fn element(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let ty = basic_to_any(slf.0.get_element_type());
         let context = slf.into_super().context.clone();
-        Type { ty, context }
+        unsafe { Type::new_subtype(py, context, ty) }
     }
 
     #[getter]
@@ -233,10 +254,10 @@ struct PointerType(InkwellPointerType<'static>);
 #[pymethods]
 impl PointerType {
     #[getter]
-    fn pointee(slf: PyRef<Self>) -> Type {
+    fn pointee(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let ty = slf.0.get_element_type();
         let context = slf.into_super().context.clone();
-        Type { ty, context }
+        unsafe { Type::new_subtype(py, context, ty) }
     }
 
     #[getter]
@@ -334,7 +355,7 @@ impl TypeFactory {
     ///
     /// :type: Type
     #[getter]
-    fn void(&self, py: Python) -> PyResult<Py<Type>> {
+    fn void(&self, py: Python) -> PyResult<PyObject> {
         self.create_type(py, |m| m.get_context().void_type().into())
     }
 
@@ -342,7 +363,7 @@ impl TypeFactory {
     ///
     /// :type: Type
     #[getter]
-    fn bool(&self, py: Python) -> PyResult<Py<Type>> {
+    fn bool(&self, py: Python) -> PyResult<PyObject> {
         self.create_type(py, |m| m.get_context().bool_type().into())
     }
 
@@ -352,7 +373,7 @@ impl TypeFactory {
     /// :returns: The integer type.
     /// :rtype: Type
     #[pyo3(text_signature = "(width)")]
-    fn int(&self, py: Python, width: u32) -> PyResult<Py<Type>> {
+    fn int(&self, py: Python, width: u32) -> PyResult<PyObject> {
         self.create_type(py, |m| m.get_context().custom_width_int_type(width).into())
     }
 
@@ -360,7 +381,7 @@ impl TypeFactory {
     ///
     /// :type: Type
     #[getter]
-    fn double(&self, py: Python) -> PyResult<Py<Type>> {
+    fn double(&self, py: Python) -> PyResult<PyObject> {
         self.create_type(py, |m| m.get_context().f64_type().into())
     }
 
@@ -368,7 +389,7 @@ impl TypeFactory {
     ///
     /// :type: Type
     #[getter]
-    fn qubit(&self, py: Python) -> PyResult<Py<Type>> {
+    fn qubit(&self, py: Python) -> PyResult<PyObject> {
         self.create_type(py, |m| types::qubit(m).into())
     }
 
@@ -376,7 +397,7 @@ impl TypeFactory {
     ///
     /// :type: Type
     #[getter]
-    fn result(&self, py: Python) -> PyResult<Py<Type>> {
+    fn result(&self, py: Python) -> PyResult<PyObject> {
         self.create_type(py, |m| types::result(m).into())
     }
 
@@ -389,7 +410,7 @@ impl TypeFactory {
     #[staticmethod]
     #[pyo3(text_signature = "(ret, params)")]
     #[allow(clippy::needless_pass_by_value)]
-    fn function(py: Python, ret: &Type, params: Vec<Py<Type>>) -> PyResult<Py<Type>> {
+    fn function(py: Python, ret: &Type, params: Vec<Py<Type>>) -> PyResult<PyObject> {
         Context::require_same(
             py,
             params
@@ -402,9 +423,7 @@ impl TypeFactory {
             .ok_or_else(|| PyValueError::new_err("Invalid return or parameter type."))?
             .into();
 
-        let ty = unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) };
-        let context = ret.context.clone();
-        Py::new(py, Type { ty, context })
+        unsafe { Type::new_subtype(py, ret.context.clone(), ty) }
     }
 }
 
@@ -413,14 +432,11 @@ impl TypeFactory {
         &self,
         py: Python,
         f: impl for<'ctx> Fn(&InkwellModule<'ctx>) -> AnyTypeEnum<'ctx>,
-    ) -> PyResult<Py<Type>> {
+    ) -> PyResult<PyObject> {
         let module = self.module.borrow(py);
         let context = module.context.clone();
-        let ty = {
-            let ty = f(&module.module);
-            unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
-        };
-        Py::new(py, Type { ty, context })
+        let ty = f(&module.module);
+        unsafe { Type::new_subtype(py, context, ty) }
     }
 }
 
@@ -435,11 +451,8 @@ struct Value {
 #[pymethods]
 impl Value {
     #[getter]
-    fn r#type(&self) -> Type {
-        Type {
-            ty: self.value.ty(),
-            context: self.context.clone(),
-        }
+    fn r#type(&self, py: Python) -> PyResult<PyObject> {
+        unsafe { Type::new_subtype(py, self.context.clone(), self.value.ty()) }
     }
 
     #[getter]
