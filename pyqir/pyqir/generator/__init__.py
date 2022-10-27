@@ -11,8 +11,8 @@ the generation of QIR rather than directly consumed by an end-user. It is not
 intended to be used as a framework for algorithm and application development.
 """
 
-from pyqir.generator._builder import IntPredicate as IntPredicate
-from pyqir.generator._native import (
+from enum import Enum, auto
+from pyqir._native import (
     BasicQisBuilder as BasicQisBuilder,
     Builder as Builder,
     SimpleModule as SimpleModule,
@@ -23,3 +23,37 @@ from pyqir.generator._native import (
     const as const,
     ir_to_bitcode as ir_to_bitcode,
 )
+
+
+class IntPredicate(Enum):
+    """An integer comparison predicate."""
+
+    EQ = auto()
+    """Equal."""
+
+    NE = auto()
+    """Not equal."""
+
+    UGT = auto()
+    """Unsigned greater than."""
+
+    UGE = auto()
+    """Unsigned greater or equal."""
+
+    ULT = auto()
+    """Unsigned less than."""
+
+    ULE = auto()
+    """Unsigned less or equal."""
+
+    SGT = auto()
+    """Signed greater than."""
+
+    SGE = auto()
+    """Signed greater or equal."""
+
+    SLT = auto()
+    """Signed less than."""
+
+    SLE = auto()
+    """Signed less or equal."""

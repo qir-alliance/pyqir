@@ -1,10 +1,10 @@
 [package]
 authors = ["Microsoft"]
-name = "pyqir-generator"
+name = "pyqir"
 version = "0.7.0-alpha.1"
 edition = "2018"
 license = "MIT"
-description = "Python based QIR generator library."
+description = "PyQIR generates and evaluates the Quantum Intermediate Representation."
 readme = "README.md"
 homepage = "https://github.com/qir-alliance/pyqir"
 repository = "https://github.com/qir-alliance/pyqir"
@@ -21,22 +21,7 @@ llvm13-0 = ["qirlib/llvm13-0"]
 llvm14-0 = ["qirlib/llvm14-0"]
 
 [lib]
-name = "pyqir_generator"
 crate-type = ["cdylib"]
 
 [package.metadata.maturin]
-name = "pyqir.generator._native"
-classifier = [
-    "License :: OSI Approved :: MIT License",
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python",
-    "Programming Language :: Rust",
-    "Operating System :: MacOS",
-    "Operating System :: Microsoft :: Windows",
-    "Operating System :: POSIX :: Linux",
-]
+name = "pyqir._native"

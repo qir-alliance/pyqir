@@ -437,16 +437,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pyqir-evaluator"
-version = "0.7.0-alpha.1"
-dependencies = [
- "pyo3",
- "qirlib",
- "serial_test",
-]
-
-[[package]]
-name = "pyqir-generator"
+name = "pyqir"
 version = "0.7.0-alpha.1"
 dependencies = [
  "inkwell",
