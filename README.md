@@ -4,18 +4,14 @@ PyQIR is a set of APIs for generating, parsing, and evaluating [Quantum
 Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec). It
 consists of the following components:
 
-- [**pyqir-generator**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-generator)
-  [[examples](https://github.com/qir-alliance/pyqir/tree/main/examples/generator)]:
-  <br/>
+- [**pyqir**](pyqir) ([examples](examples)):
+
   This package provides a Python API for generating QIR
   ([bitcode](https://www.llvm.org/docs/BitCodeFormat.html) and
   [IR](https://llvm.org/docs/LangRef.html)). It is intended to easily integrate
   the QIR toolchain into existing Python-based frontends.
 
-- [**pyqir-evaluator**](https://github.com/qir-alliance/pyqir/tree/main/pyqir-evaluator)
-  [[examples](https://github.com/qir-alliance/pyqir/tree/main/examples/evaluator)]:
-  <br/>
-  This package provides an easy way to execute generated QIR. It contains the
+  It also provides an easy way to execute generated QIR. It contains the
   necessary [just-in-time
   compilation](https://en.wikipedia.org/wiki/Just-in-time_compilation)
   infrastructure as well an extensibility mechanism to define what actions to

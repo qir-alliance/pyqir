@@ -51,51 +51,6 @@ use std::{
     result::Result,
 };
 
-#[pymodule]
-fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<ArrayType>()?;
-    m.add_class::<Attribute>()?;
-    m.add_class::<BasicBlock>()?;
-    m.add_class::<BasicQisBuilder>()?;
-    m.add_class::<Builder>()?;
-    m.add_class::<Call>()?;
-    m.add_class::<Constant>()?;
-    m.add_class::<FCmp>()?;
-    m.add_class::<FloatConstant>()?;
-    m.add_class::<FloatPredicate>()?;
-    m.add_class::<Function>()?;
-    m.add_class::<FunctionType>()?;
-    m.add_class::<ICmp>()?;
-    m.add_class::<Instruction>()?;
-    m.add_class::<IntConstant>()?;
-    m.add_class::<IntPredicate>()?;
-    m.add_class::<IntType>()?;
-    m.add_class::<Module>()?;
-    m.add_class::<Opcode>()?;
-    m.add_class::<Phi>()?;
-    m.add_class::<PointerType>()?;
-    m.add_class::<SimpleModule>()?;
-    m.add_class::<StructType>()?;
-    m.add_class::<Switch>()?;
-    m.add_class::<Type>()?;
-    m.add_class::<TypeFactory>()?;
-    m.add_class::<Value>()?;
-    m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
-    m.add("const", wrap_pyfunction!(constant, m)?)?;
-    m.add_function(wrap_pyfunction!(global_byte_string_value, m)?)?;
-    m.add_function(wrap_pyfunction!(global_byte_string_value_name, m)?)?;
-    m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
-    m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
-    m.add_function(wrap_pyfunction!(is_interop_friendly, m)?)?;
-    m.add_function(wrap_pyfunction!(is_qubit, m)?)?;
-    m.add_function(wrap_pyfunction!(is_result, m)?)?;
-    m.add_function(wrap_pyfunction!(qubit_id, m)?)?;
-    m.add_function(wrap_pyfunction!(required_num_qubits, m)?)?;
-    m.add_function(wrap_pyfunction!(required_num_results, m)?)?;
-    m.add_function(wrap_pyfunction!(result_id, m)?)?;
-    Ok(())
-}
-
 #[pyclass]
 #[derive(Eq, PartialEq)]
 struct Context(InkwellContext);
@@ -123,7 +78,7 @@ impl Context {
 
 /// A type.
 #[pyclass(subclass, unsendable)]
-struct Type {
+pub(crate) struct Type {
     ty: AnyTypeEnum<'static>,
     context: Py<Context>,
 }
@@ -174,7 +129,7 @@ impl Type {
 }
 
 #[pyclass(extends = Type, unsendable)]
-struct IntType(InkwellIntType<'static>);
+pub(crate) struct IntType(InkwellIntType<'static>);
 
 #[pymethods]
 impl IntType {
@@ -185,7 +140,7 @@ impl IntType {
 }
 
 #[pyclass(extends = Type, unsendable)]
-struct FunctionType(InkwellFunctionType<'static>);
+pub(crate) struct FunctionType(InkwellFunctionType<'static>);
 
 #[pymethods]
 impl FunctionType {
@@ -208,7 +163,7 @@ impl FunctionType {
 }
 
 #[pyclass(extends = Type, unsendable)]
-struct StructType(InkwellStructType<'static>);
+pub(crate) struct StructType(InkwellStructType<'static>);
 
 #[pymethods]
 impl StructType {
@@ -231,7 +186,7 @@ impl StructType {
 }
 
 #[pyclass(extends = Type, unsendable)]
-struct ArrayType(InkwellArrayType<'static>);
+pub(crate) struct ArrayType(InkwellArrayType<'static>);
 
 #[pymethods]
 impl ArrayType {
@@ -249,7 +204,7 @@ impl ArrayType {
 }
 
 #[pyclass(extends = Type, unsendable)]
-struct PointerType(InkwellPointerType<'static>);
+pub(crate) struct PointerType(InkwellPointerType<'static>);
 
 #[pymethods]
 impl PointerType {
@@ -267,17 +222,17 @@ impl PointerType {
 }
 
 #[pyfunction]
-fn is_qubit(ty: &Type) -> bool {
+pub(crate) fn is_qubit(ty: &Type) -> bool {
     types::is_qubit(ty.ty)
 }
 
 #[pyfunction]
-fn is_result(ty: &Type) -> bool {
+pub(crate) fn is_result(ty: &Type) -> bool {
     types::is_result(ty.ty)
 }
 
 #[pyclass(unsendable)]
-struct Module {
+pub(crate) struct Module {
     module: InkwellModule<'static>,
     context: Py<Context>,
 }
@@ -339,13 +294,13 @@ impl Module {
 }
 
 #[pyfunction]
-fn global_byte_string_value(module: &Module, name: &str) -> Option<Vec<u8>> {
+pub(crate) fn global_byte_string_value(module: &Module, name: &str) -> Option<Vec<u8>> {
     module::global_byte_string_value(&module.module, name)
 }
 
 /// Provides access to all supported types.
 #[pyclass]
-struct TypeFactory {
+pub(crate) struct TypeFactory {
     module: Py<Module>,
 }
 
@@ -443,7 +398,7 @@ impl TypeFactory {
 /// A value.
 #[pyclass(subclass, unsendable)]
 #[derive(Clone)]
-struct Value {
+pub(crate) struct Value {
     value: AnyValue<'static>,
     context: Py<Context>,
 }
@@ -482,7 +437,7 @@ impl Value {
 }
 
 #[pyclass(extends = Value, unsendable)]
-struct BasicBlock(InkwellBasicBlock<'static>);
+pub(crate) struct BasicBlock(InkwellBasicBlock<'static>);
 
 #[pymethods]
 impl BasicBlock {
@@ -527,7 +482,7 @@ impl BasicBlock {
 }
 
 #[pyclass(extends = Value, subclass)]
-struct Constant;
+pub(crate) struct Constant;
 
 #[pymethods]
 impl Constant {
@@ -538,7 +493,7 @@ impl Constant {
 }
 
 #[pyclass(extends = Constant)]
-struct IntConstant;
+pub(crate) struct IntConstant;
 
 #[pymethods]
 impl IntConstant {
@@ -550,7 +505,7 @@ impl IntConstant {
 }
 
 #[pyclass(extends = Constant)]
-struct FloatConstant;
+pub(crate) struct FloatConstant;
 
 #[pymethods]
 impl FloatConstant {
@@ -562,7 +517,7 @@ impl FloatConstant {
 }
 
 #[pyclass(extends = Constant, unsendable)]
-struct Function(FunctionValue<'static>);
+pub(crate) struct Function(FunctionValue<'static>);
 
 #[pymethods]
 impl Function {
@@ -603,7 +558,7 @@ impl Function {
 }
 
 #[pyclass(unsendable)]
-struct Attribute(InkwellAttribute);
+pub(crate) struct Attribute(InkwellAttribute);
 
 #[pymethods]
 impl Attribute {
@@ -617,42 +572,42 @@ impl Attribute {
 }
 
 #[pyfunction]
-fn qubit_id(value: &Value) -> Option<u64> {
+pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
     values::qubit_id(value.value.try_into().ok()?)
 }
 
 #[pyfunction]
-fn result_id(value: &Value) -> Option<u64> {
+pub(crate) fn result_id(value: &Value) -> Option<u64> {
     values::result_id(value.value.try_into().ok()?)
 }
 
 #[pyfunction]
-fn is_entry_point(function: &Function) -> bool {
+pub(crate) fn is_entry_point(function: &Function) -> bool {
     values::is_entry_point(function.0)
 }
 
 #[pyfunction]
-fn is_interop_friendly(function: &Function) -> bool {
+pub(crate) fn is_interop_friendly(function: &Function) -> bool {
     values::is_interop_friendly(function.0)
 }
 
 #[pyfunction]
-fn required_num_qubits(function: &Function) -> Option<u64> {
+pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
     values::required_num_qubits(function.0)
 }
 
 #[pyfunction]
-fn required_num_results(function: &Function) -> Option<u64> {
+pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
     values::required_num_results(function.0)
 }
 
 #[pyfunction]
-fn global_byte_string_value_name(value: &Value) -> Option<String> {
+pub(crate) fn global_byte_string_value_name(value: &Value) -> Option<String> {
     values::global_byte_string_value_name(value.value.try_into().ok()?)
 }
 
 #[pyclass]
-enum Opcode {
+pub(crate) enum Opcode {
     #[pyo3(name = "ADD")]
     Add,
     #[pyo3(name = "ADDR_SPACE_CAST")]
@@ -865,7 +820,7 @@ impl From<InstructionOpcode> for Opcode {
 
 #[pyclass]
 #[derive(Clone)]
-enum IntPredicate {
+pub(crate) enum IntPredicate {
     #[pyo3(name = "EQ")]
     Eq,
     #[pyo3(name = "NE")]
@@ -924,7 +879,7 @@ impl From<IntPredicate> for inkwell::IntPredicate {
 
 #[pyclass]
 #[derive(Clone)]
-enum FloatPredicate {
+pub(crate) enum FloatPredicate {
     #[pyo3(name = "FALSE")]
     False,
     #[pyo3(name = "OEQ")]
@@ -983,7 +938,7 @@ impl From<inkwell::FloatPredicate> for FloatPredicate {
 }
 
 #[pyclass(extends = Value, subclass, unsendable)]
-struct Instruction(InstructionValue<'static>);
+pub(crate) struct Instruction(InstructionValue<'static>);
 
 #[pymethods]
 impl Instruction {
@@ -1034,7 +989,7 @@ impl Instruction {
 }
 
 #[pyclass(extends = Instruction)]
-struct Switch;
+pub(crate) struct Switch;
 
 #[pymethods]
 impl Switch {
@@ -1077,7 +1032,7 @@ impl Switch {
 }
 
 #[pyclass(extends = Instruction)]
-struct ICmp;
+pub(crate) struct ICmp;
 
 #[pymethods]
 impl ICmp {
@@ -1088,7 +1043,7 @@ impl ICmp {
 }
 
 #[pyclass(extends = Instruction)]
-struct FCmp;
+pub(crate) struct FCmp;
 
 #[pymethods]
 impl FCmp {
@@ -1099,7 +1054,7 @@ impl FCmp {
 }
 
 #[pyclass(extends = Instruction, unsendable)]
-struct Call(CallSiteValue<'static>);
+pub(crate) struct Call(CallSiteValue<'static>);
 
 #[pymethods]
 impl Call {
@@ -1112,7 +1067,7 @@ impl Call {
 }
 
 #[pyclass(extends = Instruction, unsendable)]
-struct Phi(PhiValue<'static>);
+pub(crate) struct Phi(PhiValue<'static>);
 
 #[pymethods]
 impl Phi {
@@ -1134,7 +1089,7 @@ impl Phi {
 
 /// An instruction builder.
 #[pyclass(unsendable)]
-struct Builder {
+pub(crate) struct Builder {
     builder: InkwellBuilder<'static>,
     context: Py<Context>,
     // TODO: In principle, the module could be extracted from the builder.
@@ -1392,7 +1347,7 @@ impl Builder {
 /// :param int num_results: The number of statically allocated results.
 #[pyclass(unsendable)]
 #[pyo3(text_signature = "(name, num_qubits, num_results)")]
-struct SimpleModule {
+pub(crate) struct SimpleModule {
     module: Py<Module>,
     builder: Py<Builder>,
     types: Py<TypeFactory>,
@@ -1521,7 +1476,7 @@ impl SimpleModule {
 /// :param Builder builder: The underlying builder used to build QIS instructions.
 #[pyclass]
 #[pyo3(text_signature = "(builder)")]
-struct BasicQisBuilder {
+pub(crate) struct BasicQisBuilder {
     builder: Py<Builder>,
 }
 
@@ -1806,7 +1761,7 @@ impl BasicQisBuilder {
 /// :rtype: Value
 #[pyfunction]
 #[pyo3(text_signature = "(ty, value)")]
-fn constant(ty: &Type, value: &PyAny) -> PyResult<Value> {
+pub(crate) fn r#const(ty: &Type, value: &PyAny) -> PyResult<Value> {
     let context = ty.context.clone();
     let value = extract_constant(&ty.ty, value)?;
     Ok(unsafe { Value::new(context, value) })
@@ -1821,7 +1776,7 @@ fn constant(ty: &Type, value: &PyAny) -> PyResult<Value> {
 /// :rtype: bytes
 #[pyfunction]
 #[pyo3(text_signature = "(ir, module_name=None, source_file_name=None)")]
-fn ir_to_bitcode<'a>(
+pub(crate) fn ir_to_bitcode<'a>(
     py: Python<'a>,
     ir: &str,
     module_name: Option<&str>,
@@ -1841,7 +1796,7 @@ fn ir_to_bitcode<'a>(
 /// :rtype: str
 #[pyfunction]
 #[pyo3(text_signature = "(bitcode, module_name=None, source_file_name=None)")]
-fn bitcode_to_ir<'a>(
+pub(crate) fn bitcode_to_ir<'a>(
     py: Python<'a>,
     bitcode: &PyBytes,
     module_name: Option<&str>,

@@ -2,6 +2,8 @@
 # Licensed under the MIT License.
 
 from enum import Enum
+from pyqir.evaluator import GateSet
+from pyqir.generator import IntPredicate
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 class TypeFactory:
@@ -315,3 +317,12 @@ def bitcode_to_ir(
     module_name: Optional[str] = ...,
     source_file_name: Optional[str] = ...,
 ) -> str: ...
+
+class PyNonadaptiveJit:
+    def eval(
+        self,
+        file_path: str,
+        gateset: GateSet,
+        entry_point: Optional[str],
+        result_stream: Optional[List[bool]],
+    ) -> None: ...

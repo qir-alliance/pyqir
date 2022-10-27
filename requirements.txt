@@ -1,3 +1,0 @@
-pyqir-generator
-pyqir-parser
-pyqir-evaluator

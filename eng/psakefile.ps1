@@ -1,189 +1,99 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-properties {
-    $repo = @{}
-    $repo.root = Resolve-Path (Split-Path -parent $PSScriptRoot)
-    $repo.examples = Join-Path $repo.root "examples"
-    $repo.target = Join-Path $repo.root "target"
-    $repo.wheels = Join-Path $repo.target "wheels"
-    $repo.dot_cargo = Join-Path $repo.root ".cargo"
-    $repo.workspace_config_file = Join-Path $repo.dot_cargo "config.toml"
-    $repo.dot_vscode = Join-Path $repo.root ".vscode"
-    $repo.vscode_config_file = Join-Path $repo.dot_vscode "settings.json"
+Include utils.ps1
 
-    $pyqir = @{}
-
-    $pyqir.qirlib = @{}
-    $pyqir.qirlib.name = "qirlib"
-    $pyqir.qirlib.dir = Join-Path $repo.root $pyqir.qirlib.name
-
-    $pyqir.meta = @{}
-    $pyqir.meta.name = "pyqir"
-    $pyqir.meta.dir = Join-Path $repo.root $pyqir.meta.name
-
-    $pyqir.parser = @{}
-    $pyqir.parser.name = "pyqir-parser"
-    $pyqir.parser.dir = Join-Path $repo.root $pyqir.parser.name
-    $pyqir.parser.python_dir = Join-Path $pyqir.parser.dir "pyqir" "parser"
-
-    $pyqir.generator = @{}
-    $pyqir.generator.name = "pyqir-generator"
-    $pyqir.generator.dir = Join-Path $repo.root $pyqir.generator.name
-    $pyqir.generator.examples_dir = Join-Path $repo.examples "generator"
-    $pyqir.generator.python_dir = Join-Path $pyqir.generator.dir "pyqir" "generator"
-
-    $pyqir.evaluator = @{}
-    $pyqir.evaluator.name = "pyqir-evaluator"
-    $pyqir.evaluator.dir = Join-Path $repo.root $pyqir.evaluator.name
-    $pyqir.evaluator.examples_dir = Join-Path $repo.examples "evaluator"
-    $pyqir.evaluator.python_dir = Join-Path $pyqir.evaluator.dir "pyqir" "evaluator"
-
-    $pyqir.tests = @{}
-    $pyqir.tests.name = "pyqir-tests"
-    $pyqir.tests.dir = Join-Path $repo.root $pyqir.tests.name
-
-    $docs = @{}
-    $docs.root = Join-Path $repo.root "docs"
-    $docs.build = @{}
-    $docs.build.dir = Join-Path $docs.root "_build"
-    $docs.build.opts = @()
-
-    $rust = @{}
-    $rust.version = "1.57.0"
-
-    $linux = @{}
-    $linux.manylinux_tag = "manylinux2014_x86_64_maturin"
-    $linux.manylinux_root = "/io"
-
-    [Diagnostics.CodeAnalysis.SuppressMessage("PSUseDeclaredVarsMoreThanAssignments", "")]
-    $wheelhouse = Join-Path $repo.wheels "*.whl"
+Properties {
+    $Root = Resolve-Path (Split-Path -Parent $PSScriptRoot)
+    $Qirlib = Join-Path $Root qirlib
+    $Pyqir = Join-Path $Root pyqir
+    $PyqirParser = Join-Path $Root pyqir-parser
+    $Examples = Join-Path $Root examples
+    $Target = Join-Path $Root target
+    $Wheels = Join-Path $Target wheels
+    $CargoConfigToml = Join-Path $Root .cargo config.toml
+    $VscodeSettingsJson = Join-Path $Root .vscode settings.json
+    $DocsRoot = Join-Path $Root docs
+    $DocsBuild = Join-Path $DocsRoot _build
+    $RustVersion = "1.57.0"
+    $ManylinuxTag = "manylinux2014_x86_64_maturin"
+    $ManylinuxRoot = "/io"
+    $Python = Resolve-Python
 }
 
-include settings.ps1
-include utils.ps1
-
-task default -depends qirlib, pyqir-tests, parser, generator, evaluator, metawheel, run-examples
-
-task build -depends qirlib, generator, evaluator, parser
-
+task default -depends build, run-examples
+task build -depends qirlib, pyqir, pyqir-parser
 task checks -depends cargo-fmt, cargo-clippy, black, mypy
-
 task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers 
 
 task run-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    $srcPath = $repo.root
-
     # For any of the volumes mapped, if the dir doesn't exist,
     # docker will create it and it will be owned by root and
     # the caching/install breaks with permission errors.
     # New-Item is idempotent so we don't need to check for existence
-
     $cacheMount, $cacheEnv = Get-CCacheParams
-
-    Write-BuildLog "Running container image: $($linux.manylinux_tag)"
-    $ioVolume = "$($srcPath):$($linux.manylinux_root)"
+    Write-BuildLog "Running container image: $ManylinuxTag"
+    $ioVolume = "${Root}:$ManylinuxRoot"
     $userName = Get-LinuxContainerUserName
 
     Invoke-LoggedCommand {
-        docker run --rm --user $userName -v $ioVolume @cacheMount @cacheEnv -e QIRLIB_CACHE_DIR="/tmp/llvm" -w "$($linux.manylinux_root)" "$($linux.manylinux_tag)" conda run --no-capture-output pwsh build.ps1 -t default
+        docker run --rm `
+            --user $userName `
+            --volume $ioVolume @cacheMount @cacheEnv `
+            --env QIRLIB_CACHE_DIR=/tmp/llvm `
+            --workdir $ManylinuxRoot `
+            $ManylinuxTag `
+            conda run --no-capture-output pwsh build.ps1 -t default
     }
 }
 
 task cargo-fmt {
-    Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please run 'cargo fmt --all' before pushing" {
+    Invoke-LoggedCommand -workingDirectory $Root -errorMessage "Please run 'cargo fmt --all' before pushing" {
         cargo fmt --all -- --check
     }
 }
 
 task cargo-clippy -depends init {
-    Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above clippy errors" {
+    Invoke-LoggedCommand -workingDirectory $Root -errorMessage "Please fix the above clippy errors" {
         cargo clippy --workspace --all-targets @(Get-CargoArgs) -- -D warnings
     }
 }
 
 task black -depends check-environment {
     exec { pip install black }
-    Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please run black before pushing" {
-        black --check --extend-exclude "^/examples/generator/mock_language/" .
+    Invoke-LoggedCommand -workingDirectory $Root -errorMessage "Please run black before pushing" {
+        black --check --extend-exclude "^/examples/mock_language/" .
     }
 }
 
 task mypy -depends check-environment {
-    $projects = @(
-        "$($pyqir.parser.dir)[test]",
-        "$($pyqir.generator.dir)[test]",
-        "$($pyqir.evaluator.dir)[test]",
-        $pyqir.tests.dir
-    )
-
-    $reqs = Resolve-PythonRequirements($projects)
-    exec { pip install --requirement (Join-Path $repo.examples requirements.txt) @reqs mypy }
-    Invoke-LoggedCommand -workingDirectory $repo.root -errorMessage "Please fix the above mypy errors" {
+    $reqs = Resolve-PythonRequirements(@("$Pyqir[test]", "$PyqirParser[test]"))
+    exec { pip install --requirement (Join-Path $Examples requirements.txt) @reqs mypy }
+    Invoke-LoggedCommand -workingDirectory $Root -errorMessage "Please fix the above mypy errors" {
         mypy
     }
 }
 
-task generator -depends init {
-    Build-PyQIR($pyqir.generator.name)
-}
-
-task evaluator -depends init {
-    Build-PyQIR($pyqir.evaluator.name)
-}
-
-task parser -depends init {
-    Build-PyQIR($pyqir.parser.name)
-}
-
-task pyqir-tests -depends init, generator, evaluator {
-    exec -workingDirectory $pyqir.tests.dir {
-        pytest
-    }
-}
-
 task qirlib -depends init {
-    Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-        cargo test --release @(Get-CargoArgs)
-    }
-    Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
-        cargo build --release @(Get-CargoArgs)
-    }
+    Invoke-LoggedCommand -workingDirectory $Qirlib { cargo test --release @(Get-CargoArgs) }
+    Invoke-LoggedCommand -workingDirectory $Qirlib { cargo build --release @(Get-CargoArgs) }
 }
 
-task metawheel {
-    $wheelDir = Split-Path -Parent $wheelhouse
-    if (!(Test-Path $wheelDir)) {
-        New-Item -Path $wheelDir -ItemType Directory | Out-Null
-    }
-    Invoke-LoggedCommand {
-        & $python -m pip wheel --no-deps --wheel-dir $wheelDir "$($pyqir.meta.dir)"
-    }
+task pyqir -depends init {
+    Build-PyQIR pyqir
 }
 
-task wheelhouse `
-    -precondition { -not (Test-Path $wheelhouse -ErrorAction SilentlyContinue) } `
-{ Invoke-Task build }
+task pyqir-parser -depends init {
+    Build-PyQIR pyqir-parser
+}
 
-task docs -depends wheelhouse {
-    # Write out the wheels available
-    Write-Host (Get-ChildItem $wheelhouse -Include *.whl)
+task wheelhouse -precondition { -not (Test-Path (Join-Path $Wheels *.whl)) } {
+    Invoke-Task build
+}
 
-    # - Install artifacts into new venv along with sphinx.
-    # - Run sphinx from within new venv.
-    $envPath = Join-Path $repo.root ".docs-venv"
-    $sphinxOpts = $docs.build.opts
-    Create-PyEnv `
-        -EnvironmentPath $envPath `
-        -RequirementsPath (Join-Path $repo.root "eng" "docs-requirements.txt") `
-        -ArtifactPaths (Get-Item $wheelhouse)
-    & (Join-Path $envPath "bin" "Activate.ps1")
-    try {
-        sphinx-build -M html $docs.root $docs.build.dir @sphinxOpts
-    }
-    finally {
-        deactivate
-    }
+task docs -depends check-environment, wheelhouse {
+    Invoke-LoggedCommand { pip install --requirement (Join-Path $DocsRoot requirements.txt) }
+    Invoke-LoggedCommand { sphinx-build -M html $DocsRoot $DocsBuild }
 }
 
 task check-environment {
@@ -195,22 +105,22 @@ task check-environment {
 
     if ((Test-InVirtualEnvironment) -eq $false) {
         Write-BuildLog "No virtual environment found."
-        $pyenv = Join-Path $repo.target ".env"
-        Write-BuildLog "Setting up virtual environment in $($pyenv)"
-        & $python -m venv $pyenv
+        $pyenv = Join-Path $Target ".env"
+        Write-BuildLog "Setting up virtual environment in $pyenv"
+        & $Python -m venv $pyenv
         if ($IsWindows) {
-            . (Join-Path $pyenv "Scripts" "Activate.ps1")
+            . (Join-Path $pyenv Scripts Activate.ps1)
         }
         else {
-            . (Join-Path $pyenv "bin" "Activate.ps1")
+            . (Join-Path $pyenv bin Activate.ps1)
         }
     }
     else {
         Write-BuildLog "Virtual environment found."
     }
 
-    Assert ((Test-InVirtualEnvironment) -eq $true) "$($env_message -join ' ')"
-    exec { & $python -m pip install pip~=22.3 }
+    Assert ((Test-InVirtualEnvironment) -eq $true) ($env_message -Join ' ')
+    exec { & $Python -m pip install pip~=22.3 }
 }
 
 task init -depends check-environment {
@@ -249,7 +159,7 @@ task init -depends check-environment {
 }
 
 task install-llvm-from-archive {
-    install-llvm $pyqir.qirlib.dir "download"
+    install-llvm $Qirlib download
     $installationDirectory = Resolve-InstallationDirectory
     Assert (Test-LlvmConfig $installationDirectory) "install-llvm-from-archive failed to install a usable LLVM installation"
 }
@@ -259,27 +169,29 @@ task install-llvm-from-source -depends configure-sccache -postaction { Write-Cac
     if ($IsWindows) {
         Include vcvars.ps1
     }
-    install-llvm "$($pyqir.qirlib.dir)" "build" "$(Get-LLVMFeatureVersion)"
+    install-llvm $Qirlib build (Get-LLVMFeatureVersion)
     $installationDirectory = Resolve-InstallationDirectory
     Assert (Test-LlvmConfig $installationDirectory) "install-llvm-from-source failed to install a usable LLVM installation"
 }
 
 task package-manylinux-llvm -depends build-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    $srcPath = $repo.root
-
     # For any of the volumes mapped, if the dir doesn't exist,
     # docker will create it and it will be owned by root and
     # the caching/install breaks with permission errors.
     # New-Item is idempotent so we don't need to check for existence
-
     $cacheMount, $cacheEnv = Get-CCacheParams
-
-    Write-BuildLog "Running container image: $($linux.manylinux_tag)"
-    $ioVolume = "$($srcPath):$($linux.manylinux_root)"
+    Write-BuildLog "Running container image: $ManylinuxTag"
+    $ioVolume = "${Root}:$ManylinuxRoot"
     $userName = Get-LinuxContainerUserName
 
     Invoke-LoggedCommand {
-        docker run --rm --user $userName -v $ioVolume @cacheMount @cacheEnv -w "$($linux.manylinux_root)" -e QIRLIB_PKG_DEST="$($linux.manylinux_root)/target/manylinux" "$($linux.manylinux_tag)" conda run --no-capture-output pwsh build.ps1 -t package-llvm
+        docker run --rm `
+            --user $userName `
+            --volume $ioVolume @cacheMount @cacheEnv `
+            --workdir $ManylinuxRoot `
+            --env QIRLIB_PKG_DEST=$ManylinuxRoot/target/manylinux `
+            $ManylinuxTag `
+            conda run --no-capture-output pwsh build.ps1 -t package-llvm
     }
 }
 
@@ -290,11 +202,11 @@ task package-llvm {
     $clear_pkg_dest_var = $false
     if (!(Test-Path env:\QIRLIB_PKG_DEST)) {
         $clear_pkg_dest_var = $true
-        $env:QIRLIB_PKG_DEST = Join-Path $repo.root "target"
+        $env:QIRLIB_PKG_DEST = $Target
     }
     New-Item $env:QIRLIB_PKG_DEST -ItemType Directory -Force
     try {
-        Invoke-LoggedCommand -wd $pyqir.qirlib.dir {
+        Invoke-LoggedCommand -workingDirectory $Qirlib {
             cargo build --release --no-default-features --features "package-llvm,$(Get-LLVMFeatureVersion)-no-llvm-linking" -vv
         }
     }
@@ -306,20 +218,18 @@ task package-llvm {
 }
 
 task build-manylinux-container-image {
-    $srcPath = $repo.root
     Write-BuildLog "Building container image manylinux-llvm-builder"
-    Invoke-LoggedCommand -workingDirectory (Join-Path $srcPath eng) {
-        $user = "$(Get-LinuxContainerUserName)"
-        $uid = "$(Get-LinuxContainerUserId)"
-        $gid = "$(Get-LinuxContainerGroupId)"
-        $rustv = "$($rust.version)"
-        $tag = "$($linux.manylinux_tag)"
+    Invoke-LoggedCommand -workingDirectory (Join-Path $Root eng) {
+        $user = Get-LinuxContainerUserName
+        $uid = Get-LinuxContainerUserId
+        $gid = Get-LinuxContainerGroupId
         Get-Content Dockerfile.manylinux | docker build `
             --build-arg USERNAME=$user `
             --build-arg USER_UID=$uid `
             --build-arg USER_GID=$gid `
-            --build-arg RUST_VERSION=$rustv `
-            -t $tag -
+            --build-arg RUST_VERSION=$RustVersion `
+            --tag $ManylinuxTag `
+            -
     }
 }
 
@@ -328,62 +238,64 @@ task run-examples-in-containers {
     $user = Get-LinuxContainerUserName
     $uid = Get-LinuxContainerUserId
     $gid = Get-LinuxContainerGroupId
-    $releases = @("buster", "bullseye", "focal", "jammy")
-    foreach ($release in $releases) {
-        exec -workingDirectory (Join-Path $repo.root "eng") {
+
+    foreach ($release in @("buster", "bullseye", "focal", "jammy")) {
+        exec -workingDirectory (Join-Path $Root eng) {
             Get-Content Dockerfile.examples | docker build `
                 --build-arg RELEASE=$release `
                 --build-arg USERNAME=$user `
                 --build-arg USER_UID=$uid `
                 --build-arg USER_GID=$gid `
-                -t "pyqir-$release-examples" -
+                --tag pyqir-$release-examples `
+                -
         }
+
         exec {
-            docker run --rm --user $user -v "$($repo.root):/home/$user" "pyqir-$release-examples" build.ps1 -t run-examples
+            docker run --rm `
+                --user $user `
+                --volume ${Root}:/home/$user `
+                pyqir-$release-examples `
+                build.ps1 -t run-examples
         }
     }
 }
 
 # run-examples assumes the wheels have already been installed locally
 task run-examples {
-    exec { & $python -m pip install --requirement (Join-Path $repo.examples "requirements.txt") }
+    exec -workingDirectory $Examples {
+        & $Python -m pip install --requirement requirements.txt
+        & $Python -m pip install --force-reinstall (Get-Wheel pyqir)
 
-    exec -workingDirectory $pyqir.generator.examples_dir {
-        & $python -m pip install --force-reinstall (Get-Wheel pyqir-generator)
-
-        & $python "bell_pair.py" | Tee-Object -Variable output
+        & $Python bell_pair.py | Tee-Object -Variable output
         $head = $output | Select-Object -First 1
         Assert ($head -eq "; ModuleID = 'Bell'") "bell_pair.py doesn't print expected module ID."
 
-        $output = Join-Path $($env:TEMP) "bz.ll"
-        & $python "mock_to_qir.py" -o $output "bernstein_vazirani.txt" 7
+        $output = Join-Path $env:TEMP bz.ll
+        & $Python mock_to_qir.py -o $output bernstein_vazirani.txt 7
         $head = Get-Content $output | Select-Object -First 1
         Assert ($head -eq "; ModuleID = 'bernstein_vazirani'") "mock_to_qir.py doesn't print expected module ID."
 
-        & $python "if_result.py" | Tee-Object -Variable output
+        & $Python if_result.py | Tee-Object -Variable output
         $head = $output | Select-Object -First 1
         Assert ($head -eq "; ModuleID = 'if_result'") "if_result.py doesn't print expected module ID."
 
-        & $python "if_bool.py" | Tee-Object -Variable output
+        & $Python if_bool.py | Tee-Object -Variable output
         $head = $output | Select-Object -First 1
         Assert ($head -eq "; ModuleID = 'if_bool'") "if_bool.py doesn't print expected module ID."
 
-        & $python "external_functions.py" | Tee-Object -Variable output
+        & $Python external_functions.py | Tee-Object -Variable output
         $head = $output | Select-Object -First 1
         Assert ($head -eq "; ModuleID = 'external_functions'") "external_functions.py doesn't print expected module ID."
 
-        & $python "arithmetic.py" | Tee-Object -Variable output
+        & $Python arithmetic.py | Tee-Object -Variable output
         $head = $output | Select-Object -First 1
         Assert ($head -eq "; ModuleID = 'arithmetic'") "arithmetic.py doesn't print expected module ID."
 
-        & $python "dynamic_allocation.py" | Tee-Object -Variable output
+        & $Python dynamic_allocation.py | Tee-Object -Variable output
         $head = $output | Select-Object -First 1
         Assert ($head -eq "; ModuleID = 'dynamic_allocation'") "dynamic_allocation.py doesn't print expected module ID."
-    }
 
-    exec -workingDirectory $pyqir.evaluator.examples_dir {
-        & $python -m pip install --force-reinstall (Get-Wheel pyqir-evaluator)
-        & $python "bernstein_vazirani.py" | Tee-Object -Variable bz_output
+        & $Python bernstein_vazirani.py | Tee-Object -Variable bz_output
         $bz_first_lines = @($bz_output | Select-Object -first 5)
         $bz_expected = @(
             "# output from GateLogger",
@@ -393,10 +305,8 @@ task run-examples {
             "h qubit[0]"
         )
         Assert (@(Compare-Object $bz_first_lines $bz_expected).Length -eq 0) "Expected $bz_expected found $bz_first_lines"
-    }
-   
-    exec -workingDirectory $pyqir.evaluator.examples_dir {
-        & $python "teleport.py" | Tee-Object -Variable teleport_output
+
+        & $Python teleport.py | Tee-Object -Variable teleport_output
         $teleport_first_lines = @($teleport_output | Select-Object -first 5)
         $teleport_expected = @(
             "# Evaluating both results as 0's",
@@ -426,10 +336,10 @@ task update-noticefiles {
     # llvm special license is already in the template
     # as it is a hidden transitive dependency.
     # https://github.com/EmbarkStudios/cargo-about
-    $config = Join-Path $repo.root notice.toml
-    $template = Join-Path $repo.root notice.hbs
-    foreach ($project in @($pyqir.parser.dir, $pyqir.generator.dir, $pyqir.evaluator.dir)) {
-        Invoke-LoggedCommand -wd $project {
+    $config = Join-Path $Root notice.toml
+    $template = Join-Path $Root notice.hbs
+    foreach ($project in @($Pyqir, $PyqirParser)) {
+        Invoke-LoggedCommand -workingDirectory $project {
             $notice = Join-Path $project NOTICE-WHEEL.txt
             cargo about generate --config $config --all-features --output-file $notice $template
             $contents = Get-Content -Raw $notice
@@ -439,7 +349,7 @@ task update-noticefiles {
 }
 
 task configure-sccache -postaction { Write-CacheStats } {
-    if (Test-CommandExists("sccache")) {
+    if (Test-CommandExists sccache) {
         Write-BuildLog "Starting sccache server"
         & { sccache --start-server } -ErrorAction SilentlyContinue
         Write-BuildLog "Started sccache server"

@@ -68,21 +68,21 @@ function Use-LlvmInstallation {
     }
 
     # Create the workspace cofig.toml and set the LLVM_SYS env var
-    New-Item -ItemType File -Path $repo.workspace_config_file -Force
-    Add-Content -Path $repo.workspace_config_file -Value "[env]"
-    Add-Content -Path $repo.workspace_config_file -Value "$($prefix) = `"$($path)`""
+    New-Item -ItemType File -Path $CargoConfigToml -Force
+    Add-Content -Path $CargoConfigToml -Value "[env]"
+    Add-Content -Path $CargoConfigToml -Value "$($prefix) = `"$($path)`""
 
     # Add llvm feature version for rust-analyzer extension
     $vscode_settings = @{}
-    if (!(Test-Path $repo.vscode_config_file)) {
-        New-Item -ItemType File -Path $repo.vscode_config_file -Force
+    if (!(Test-Path $VscodeSettingsJson)) {
+        New-Item -ItemType File -Path $VscodeSettingsJson -Force
     }
     else {
-        $vscode_settings = Get-Content $repo.vscode_config_file | ConvertFrom-Json -AsHashtable
+        $vscode_settings = Get-Content $VscodeSettingsJson | ConvertFrom-Json -AsHashtable
     }
 
     $vscode_settings."rust-analyzer.cargo.features" = @("$(Get-LLVMFeatureVersion)")
-    $vscode_settings | ConvertTo-Json | Set-Content -Path $repo.vscode_config_file
+    $vscode_settings | ConvertTo-Json | Set-Content -Path $VscodeSettingsJson
 }
 
 function Test-LlvmConfig {
@@ -121,7 +121,7 @@ function Get-DefaultInstallDirectory {
         $env:QIRLIB_CACHE_DIR
     }
     else {
-        Join-Path "$($repo.target)" "$(Get-LLVMFeatureVersion)"
+        Join-Path $Target (Get-LLVMFeatureVersion)
     }
 }
 
@@ -191,7 +191,7 @@ function Get-LinuxContainerUserId {
         $env:PYQIR_CONTAINER_USERID
     }
     else {
-        "$(id -u)"
+        id -u
     }
 }
 
@@ -200,7 +200,7 @@ function Get-LinuxContainerGroupId {
         $env:PYQIR_CONTAINER_GROUPID
     }
     else {
-        "$(id -g)"
+        id -g
     }
 }
 
@@ -214,13 +214,13 @@ function Get-LinuxContainerUserName {
 }
 
 function Write-CacheStats {
-    if (Test-CommandExists("ccache")) {
+    if (Test-CommandExists ccache) {
         Write-BuildLog "ccache config:"
         & { ccache --show-config } -ErrorAction SilentlyContinue
         Write-BuildLog "ccache stats:"
         & { ccache --show-stats } -ErrorAction SilentlyContinue
     }
-    if (Test-CommandExists("sccache")) {
+    if (Test-CommandExists sccache) {
         Write-BuildLog "sccache config/stats:"
         & { sccache --show-stats } -ErrorAction SilentlyContinue
     }
@@ -242,7 +242,7 @@ function Get-CargoArgs {
 
 function Get-Wheels([string] $project) {
     $name = $project.Replace('-', '_')
-    $pattern = Join-Path $repo.wheels "$name-*.whl"
+    $pattern = Join-Path $Wheels $name-*.whl
     Get-Item -ErrorAction Ignore $pattern
 }
 
@@ -251,6 +251,16 @@ function Get-Wheel([string] $project) {
     Assert ($wheels.Length -gt 0) "Missing wheels for $project."
     Assert ($wheels.Length -le 1) "Multiple wheels for $project ($wheels). Clean the wheels directory."
     $wheels[0]
+}
+
+function Resolve-Python() {
+    $hasPython = $null -ne (Get-Command python -ErrorAction Ignore)
+    if ($hasPython -and ((python --version) -Match "Python 3.*")) {
+        "python"
+    }
+    else {
+        "python3"
+    }
 }
 
 function Resolve-PythonRequirements([string[]] $projects) {
@@ -262,50 +272,19 @@ function Resolve-PythonRequirements([string[]] $projects) {
 
 function Build-PyQIR([string] $project) {
     $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
-    $projectDir = Join-Path $repo.root $project
+    $projectDir = Join-Path $Root $project
     Get-Wheels $project | Remove-Item
-    Invoke-LoggedCommand { pip --verbose wheel --wheel-dir $repo.wheels $projectDir }
+    Invoke-LoggedCommand { pip --verbose wheel --wheel-dir $Wheels $projectDir }
 
     if (Test-CommandExists auditwheel) {
         $unauditedWheels = Get-Wheels $project
-        Invoke-LoggedCommand { auditwheel repair --wheel-dir $repo.wheels $unauditedWheels }
+        Invoke-LoggedCommand { auditwheel repair --wheel-dir $Wheels $unauditedWheels }
         $unauditedWheels | Remove-Item
     }
 
     $packages = Get-Wheels $project | ForEach-Object { "$_[test]" }
     Invoke-LoggedCommand { pip install --force-reinstall $packages }
     Invoke-LoggedCommand -workingDirectory $projectDir { pytest }
-}
-
-function Create-PyEnv() {
-    param(
-        [string]
-        $EnvironmentPath,
-        [string]
-        $RequirementsPath,
-        [string[]]
-        $ArtifactPaths
-    )
-
-    Write-Host "##[info]Creating virtual environment for use with docs at $EnvironmentPath..."
-    python -m venv $EnvironmentPath
-
-    $activateScript = (Join-Path $EnvironmentPath "bin" "Activate.ps1")
-    if (-not (Test-Path $activateScript -ErrorAction SilentlyContinue)) {
-        Get-ChildItem $EnvironmentPath | Write-Host
-        throw "No activate script found for virtual environment at $EnvironmentPath; environment creation failed."
-    }
-
-    & $activateScript
-    try {
-        pip install -r $RequirementsPath
-        foreach ($artifact in $ArtifactPaths) {
-            pip install --force-reinstall $artifact
-        }
-    }
-    finally {
-        deactivate
-    }
 }
 
 function install-llvm {
@@ -329,7 +308,7 @@ function install-llvm {
     }
     try {
         Invoke-LoggedCommand -wd $qirlibDir {
-            cargo build --release --no-default-features --features "$($operation)-llvm,$feature-no-llvm-linking" -vv
+            cargo build --release --no-default-features --features "$operation-llvm,$feature-no-llvm-linking" -vv
         }
     }
     finally {
@@ -343,7 +322,7 @@ function Get-CCacheParams {
     # only ccache is supported in the container for now.
     # we would need a way to specify which cache is used to
     # support both.
-    if (Test-CommandExists("ccache")) {
+    if (Test-CommandExists ccache) {
         # we need to map the local cache dir into the
         # container. If the env var isn't set, ask ccache
         $cacheDir = ""
@@ -358,7 +337,7 @@ function Get-CCacheParams {
             
             $cacheDir = Resolve-Path $cacheDir
             # mount the cache outside of any runner mappings
-            $cacheMount = @("-v", "$($cacheDir):/ccache")
+            $cacheMount = @("-v", "${cacheDir}:/ccache")
             $cacheEnv = @("-e", "CCACHE_DIR=`"/ccache`"")
             return $cacheMount, $cacheEnv
         }

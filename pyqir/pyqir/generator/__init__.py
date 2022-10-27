@@ -11,7 +11,7 @@ the generation of QIR rather than directly consumed by an end-user. It is not
 intended to be used as a framework for algorithm and application development.
 """
 
-from pyqir.generator._native import (
+from pyqir._native import (
     ArrayType as ArrayType,
     Attribute as Attribute,
     BasicBlock as BasicBlock,

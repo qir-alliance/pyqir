@@ -1,9 +1,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.evaluator._gateset import GateSet
-from pyqir.evaluator._native import PyNonadaptiveJit
 from typing import List, Optional
+from pyqir.evaluator._gates import GateLogger as GateLogger, GateSet as GateSet
+from pyqir._native import PyNonadaptiveJit
 
 
 class NonadaptiveEvaluator:
