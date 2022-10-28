@@ -132,35 +132,33 @@ def test_global_string() -> None:
     assert value.decode("utf-8") == "Hello World!\0"
 
 
-# def test_parser_zext_support() -> None:
-#     mod = QirModule("tests/select.bc")
-#     func = mod.get_funcs_by_attr("EntryPoint")[0]
-#     block = func.blocks[0]
-#     instr = block.instructions[7]
-#     assert isinstance(instr, QirZExtInstr)
-#     assert isinstance(instr.type, QirIntegerType)
-#     assert instr.type.width == 64
-#     assert instr.output_name == "2"
-#     assert len(instr.target_operands) == 1
-#     assert isinstance(instr.target_operands[0], QirLocalOperand)
-#     assert instr.target_operands[0].name == "1"
-#     assert isinstance(instr.target_operands[0].type, QirIntegerType)
-#     assert instr.target_operands[0].type.width == 1
+def test_parser_zext_support() -> None:
+    bitcode = Path("../pyqir-parser/tests/select.bc").read_bytes()
+    mod = Module.from_bitcode(bitcode)
+    func = next(filter(is_entry_point, mod.functions))
+    block = func.basic_blocks[0]
+    inst = block.instructions[7]
+    assert inst.opcode == Opcode.ZEXT
+
+    ty = inst.type
+    assert isinstance(ty, IntType)
+    assert ty.width == 64
+    assert inst.name == ""
+    assert len(inst.operands) == 1
+
+    operand = inst.operands[0]
+    assert operand.name == ""
+
+    operand_ty = operand.type
+    assert isinstance(operand_ty, IntType)
+    assert operand_ty.width == 1
 
 
-# def test_loading_invalid_bitcode() -> None:
-#     path = "tests/teleportchain.ll.reference"
-#     with pytest.raises(RuntimeError) as exc_info:
-#         _ = module_from_bitcode(path)
-#     assert str(exc_info.value).lower() == "invalid bitcode signature"
-
-
-# def test_loading_bad_bitcode_file_path() -> None:
-#     path = "tests/does_not_exist.bc"
-#     with pytest.raises(RuntimeError) as exc_info:
-#         module_from_bitcode(path)
-#     assert str(exc_info.value).lower() == "no such file or directory"
-
+def test_loading_invalid_bitcode() -> None:
+    bitcode = Path("../pyqir-parser/tests/teleportchain.ll.reference").read_bytes()
+    with pytest.raises(ValueError) as e:
+        Module.from_bitcode(bitcode)
+    assert e.value.args[0] == "Invalid bitcode signature"
 
 # def test_parser_internals() -> None:
 #     mod = module_from_bitcode("tests/teleportchain.baseprofile.bc")
