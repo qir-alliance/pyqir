@@ -425,9 +425,36 @@ impl Value {
 }
 
 impl Value {
-    unsafe fn new<'ctx>(context: Py<Context>, value: impl Into<AnyValue<'ctx>>) -> Self {
-        let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value.into());
-        Self { value, context }
+    unsafe fn new_subtype<'ctx>(
+        py: Python,
+        context: Py<Context>,
+        value: impl Into<AnyValue<'ctx>>,
+    ) -> PyResult<PyObject> {
+        let value = value.into();
+        if let Ok(inst) = value.try_into() {
+            Instruction::new_subtype(py, context, inst)
+        } else {
+            let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
+            let base = Self { value, context };
+            match value.try_into() {
+                Ok(AnyValueEnum::IntValue(i)) if i.is_constant_int() => Ok(Py::new(
+                    py,
+                    PyClassInitializer::from((Constant, base)).add_subclass(IntConstant),
+                )?
+                .to_object(py)),
+                Ok(AnyValueEnum::FloatValue(f)) if f.is_const() => Ok(Py::new(
+                    py,
+                    PyClassInitializer::from((Constant, base)).add_subclass(FloatConstant),
+                )?
+                .to_object(py)),
+                Ok(AnyValueEnum::FunctionValue(f)) => Ok(Py::new(
+                    py,
+                    PyClassInitializer::from((Constant, base)).add_subclass(Function(f)),
+                )?
+                .to_object(py)),
+                _ => Ok(Py::new(py, base)?.to_object(py)),
+            }
+        }
     }
 
     unsafe fn extract<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyValueEnum<'ctx>> {
@@ -458,15 +485,11 @@ impl BasicBlock {
     }
 
     #[getter]
-    fn terminator(slf: PyRef<Self>, py: Python) -> PyResult<Option<Py<Instruction>>> {
+    fn terminator(slf: PyRef<Self>, py: Python) -> PyResult<Option<PyObject>> {
         match slf.0.get_terminator() {
             Some(terminator) => {
                 let context = slf.into_super().context.clone();
-                let value = unsafe { Value::new(context, terminator) };
-                Ok(Some(Py::new(
-                    py,
-                    PyClassInitializer::from((Instruction(terminator), value)),
-                )?))
+                unsafe { Instruction::new_subtype(py, context, terminator) }.map(Some)
             }
             None => Ok(None),
         }
@@ -476,7 +499,13 @@ impl BasicBlock {
 impl BasicBlock {
     unsafe fn new(context: Py<Context>, block: InkwellBasicBlock) -> PyClassInitializer<Self> {
         let block = transmute::<InkwellBasicBlock<'_>, InkwellBasicBlock<'static>>(block);
-        PyClassInitializer::from((Self(block), Value::new(context, block)))
+        PyClassInitializer::from((
+            Self(block),
+            Value {
+                value: block.into(),
+                context,
+            },
+        ))
     }
 }
 
@@ -521,12 +550,12 @@ pub(crate) struct Function(FunctionValue<'static>);
 #[pymethods]
 impl Function {
     #[getter]
-    fn params(slf: PyRef<Self>) -> Vec<Value> {
+    fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let params = slf.0.get_params();
         let context = &slf.into_super().into_super().context;
         params
             .into_iter()
-            .map(|p| unsafe { Value::new(context.clone(), p) })
+            .map(|p| unsafe { Value::new_subtype(py, context.clone(), p) })
             .collect()
     }
 
@@ -551,8 +580,14 @@ impl Function {
 impl Function {
     unsafe fn new(context: Py<Context>, function: FunctionValue) -> PyClassInitializer<Function> {
         let function = transmute::<FunctionValue<'_>, FunctionValue<'static>>(function);
-        PyClassInitializer::from((Constant, Value::new(context, function)))
-            .add_subclass(Function(function))
+        PyClassInitializer::from((
+            Constant,
+            Value {
+                value: function.into(),
+                context,
+            },
+        ))
+        .add_subclass(Function(function))
     }
 }
 
@@ -952,10 +987,7 @@ impl Instruction {
         let context = &slf.into_super().context;
         (0..inst.get_num_operands())
             .map(|i| match inst.get_operand(i).unwrap() {
-                Left(value) => {
-                    let value = unsafe { Value::new(context.clone(), value) };
-                    Ok(Py::new(py, value)?.to_object(py))
-                }
+                Left(value) => unsafe { Value::new_subtype(py, context.clone(), value) },
                 Right(block) => {
                     let block = unsafe { BasicBlock::new(context.clone(), block) };
                     Ok(Py::new(py, block)?.to_object(py))
@@ -987,7 +1019,14 @@ impl Instruction {
         inst: InstructionValue,
     ) -> PyResult<PyObject> {
         let inst = transmute::<InstructionValue<'_>, InstructionValue<'static>>(inst);
-        let base = PyClassInitializer::from((Self(inst), Value::new(context, inst)));
+        let base = PyClassInitializer::from((
+            Self(inst),
+            Value {
+                value: inst.into(),
+                context,
+            },
+        ));
+
         match inst.get_opcode() {
             InstructionOpcode::Switch => Ok(Py::new(py, base.add_subclass(Switch))?.to_object(py)),
             InstructionOpcode::ICmp => Ok(Py::new(py, base.add_subclass(ICmp))?.to_object(py)),
@@ -1008,11 +1047,11 @@ pub(crate) struct Switch;
 #[pymethods]
 impl Switch {
     #[getter]
-    fn cond(slf: PyRef<Self>) -> Value {
+    fn cond(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let inst = slf.into_super();
         let cond = inst.0.get_operand(0).unwrap().left().unwrap();
         let context = inst.into_super().context.clone();
-        unsafe { Value::new(context, cond) }
+        unsafe { Value::new_subtype(py, context, cond) }
     }
 
     #[getter]
@@ -1033,9 +1072,13 @@ impl Switch {
             .step_by(2)
             .map(|i| {
                 let cond = inst.get_operand(i).unwrap().left().unwrap();
-                let cond = PyClassInitializer::from((Constant, unsafe {
-                    Value::new(context.clone(), cond)
-                }))
+                let cond = PyClassInitializer::from((
+                    Constant,
+                    Value {
+                        value: cond.into(),
+                        context: context.clone(),
+                    },
+                ))
                 .add_subclass(IntConstant);
                 let succ = inst.get_operand(i + 1).unwrap().right().unwrap();
                 let succ = unsafe { BasicBlock::new(context.clone(), succ) };
@@ -1073,12 +1116,12 @@ pub(crate) struct Call;
 #[pymethods]
 impl Call {
     #[getter]
-    fn callee(slf: PyRef<Self>) -> Value {
+    fn callee(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let inst = slf.into_super();
         let last = inst.0.get_operand(inst.0.get_num_operands() - 1);
         let callee = last.unwrap().left().unwrap();
         let context = inst.into_super().context.clone();
-        unsafe { Value::new(context, callee) }
+        unsafe { Value::new_subtype(py, context, callee) }
     }
 
     #[getter]
@@ -1096,14 +1139,14 @@ pub(crate) struct Phi(PhiValue<'static>);
 #[pymethods]
 impl Phi {
     #[getter]
-    fn incoming(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(Value, Py<BasicBlock>)>> {
+    fn incoming(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(PyObject, Py<BasicBlock>)>> {
         let phi = slf.0;
         let context = &slf.into_super().into_super().context;
 
         (0..phi.count_incoming())
             .map(|i| {
                 let (value, block) = phi.get_incoming(i).unwrap();
-                let value = unsafe { Value::new(context.clone(), value) };
+                let value = unsafe { Value::new_subtype(py, context.clone(), value) }?;
                 let block = Py::new(py, unsafe { BasicBlock::new(context.clone(), block) })?;
                 Ok((value, block))
             })
@@ -1147,12 +1190,12 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn and_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+    fn and_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_and::<IntValue>(lhs.value.try_into()?, rhs.value.try_into()?, "");
-        Ok(unsafe { Value::new(self.context.clone(), value) })
+        unsafe { Value::new_subtype(py, self.context.clone(), value) }
     }
 
     /// Inserts a bitwise logical or instruction.
@@ -1162,12 +1205,12 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn or_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+    fn or_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_or::<IntValue>(lhs.value.try_into()?, rhs.value.try_into()?, "");
-        Ok(unsafe { Value::new(self.context.clone(), value) })
+        unsafe { Value::new_subtype(py, self.context.clone(), value) }
     }
 
     /// Inserts a bitwise logical exclusive or instruction.
@@ -1177,12 +1220,12 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn xor(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+    fn xor(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value =
             self.builder
                 .build_xor::<IntValue>(lhs.value.try_into()?, rhs.value.try_into()?, "");
-        Ok(unsafe { Value::new(self.context.clone(), value) })
+        unsafe { Value::new_subtype(py, self.context.clone(), value) }
     }
 
     /// Inserts an addition instruction.
@@ -1192,14 +1235,14 @@ impl Builder {
     /// :returns: The sum.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn add(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+    fn add(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value = self.builder.build_int_add::<IntValue>(
             lhs.value.try_into()?,
             rhs.value.try_into()?,
             "",
         );
-        Ok(unsafe { Value::new(self.context.clone(), value) })
+        unsafe { Value::new_subtype(py, self.context.clone(), value) }
     }
 
     /// Inserts a subtraction instruction.
@@ -1209,14 +1252,14 @@ impl Builder {
     /// :returns: The difference.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn sub(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+    fn sub(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value = self.builder.build_int_sub::<IntValue>(
             lhs.value.try_into()?,
             rhs.value.try_into()?,
             "",
         );
-        Ok(unsafe { Value::new(self.context.clone(), value) })
+        unsafe { Value::new_subtype(py, self.context.clone(), value) }
     }
 
     /// Inserts a multiplication instruction.
@@ -1226,14 +1269,14 @@ impl Builder {
     /// :returns: The product.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn mul(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+    fn mul(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value = self.builder.build_int_mul::<IntValue>(
             lhs.value.try_into()?,
             rhs.value.try_into()?,
             "",
         );
-        Ok(unsafe { Value::new(self.context.clone(), value) })
+        unsafe { Value::new_subtype(py, self.context.clone(), value) }
     }
 
     /// Inserts a shift left instruction.
@@ -1243,14 +1286,14 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn shl(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+    fn shl(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value = self.builder.build_left_shift::<IntValue>(
             lhs.value.try_into()?,
             rhs.value.try_into()?,
             "",
         );
-        Ok(unsafe { Value::new(self.context.clone(), value) })
+        unsafe { Value::new_subtype(py, self.context.clone(), value) }
     }
 
     /// Inserts a logical (zero fill) shift right instruction.
@@ -1260,7 +1303,7 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn lshr(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<Value> {
+    fn lshr(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value = self.builder.build_right_shift::<IntValue>(
             lhs.value.try_into()?,
@@ -1268,7 +1311,7 @@ impl Builder {
             false,
             "",
         );
-        Ok(unsafe { Value::new(self.context.clone(), value) })
+        unsafe { Value::new_subtype(py, self.context.clone(), value) }
     }
 
     /// Inserts an integer comparison instruction.
@@ -1280,7 +1323,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, pred, lhs, rhs)")]
     #[allow(clippy::needless_pass_by_value)]
-    fn icmp(&self, py: Python, pred: IntPredicate, lhs: Value, rhs: Value) -> PyResult<Value> {
+    fn icmp(&self, py: Python, pred: IntPredicate, lhs: Value, rhs: Value) -> PyResult<PyObject> {
         Context::require_same(py, [&self.context, &lhs.context, &rhs.context])?;
         let value = self.builder.build_int_compare::<IntValue>(
             pred.into(),
@@ -1288,7 +1331,7 @@ impl Builder {
             rhs.value.try_into()?,
             "",
         );
-        Ok(unsafe { Value::new(self.context.clone(), value) })
+        unsafe { Value::new_subtype(py, self.context.clone(), value) }
     }
 
     /// Inserts a call instruction.
@@ -1298,7 +1341,7 @@ impl Builder {
     /// :returns: The return value, or None if the function has a void return type.
     /// :rtype: Optional[Value]
     #[pyo3(text_signature = "(self, callee, args)")]
-    fn call(&self, py: Python, callee: &Value, args: &PySequence) -> PyResult<Option<Value>> {
+    fn call(&self, py: Python, callee: &Value, args: &PySequence) -> PyResult<Option<PyObject>> {
         Context::require_same(
             py,
             Context::from_values(args.iter()?.filter_map(Result::ok))
@@ -1327,7 +1370,9 @@ impl Builder {
 
         let call = self.builder.build_call(callable, &args, "");
         let value = call.try_as_basic_value().left();
-        Ok(value.map(|v| unsafe { Value::new(callee.context.clone(), v) }))
+        value
+            .map(|v| unsafe { Value::new_subtype(py, callee.context.clone(), v) })
+            .transpose()
     }
 
     /// Inserts a branch conditioned on a boolean.
@@ -1418,12 +1463,14 @@ impl SimpleModule {
     ///
     /// :type: Tuple[Value, ...]
     #[getter]
-    fn qubits(&self, py: Python) -> Vec<Value> {
+    fn qubits(&self, py: Python) -> PyResult<Vec<PyObject>> {
         let builder = self.builder.borrow(py);
         let module = self.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
         (0..self.num_qubits)
-            .map(|id| unsafe { Value::new(module.context.clone(), builder.build_qubit(id)) })
+            .map(|id| unsafe {
+                Value::new_subtype(py, module.context.clone(), builder.build_qubit(id))
+            })
             .collect()
     }
 
@@ -1431,12 +1478,14 @@ impl SimpleModule {
     ///
     /// :type: Tuple[Value, ...]
     #[getter]
-    fn results(&self, py: Python) -> Vec<Value> {
+    fn results(&self, py: Python) -> PyResult<Vec<PyObject>> {
         let builder = self.builder.borrow(py);
         let module = self.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
         (0..self.num_results)
-            .map(|id| unsafe { Value::new(module.context.clone(), builder.build_result(id)) })
+            .map(|id| unsafe {
+                Value::new_subtype(py, module.context.clone(), builder.build_result(id))
+            })
             .collect()
     }
 
@@ -1471,14 +1520,14 @@ impl SimpleModule {
     /// :return: The function value.
     /// :rtype: Function
     #[pyo3(text_signature = "(self, name, ty)")]
-    fn add_external_function(&mut self, py: Python, name: &str, ty: &Type) -> PyResult<Value> {
+    fn add_external_function(&mut self, py: Python, name: &str, ty: &Type) -> PyResult<PyObject> {
         let module = self.module.borrow(py);
         Context::require_same(py, [&module.context, &ty.context])?;
 
         let context = ty.context.clone();
         let ty = ty.ty.into_function_type();
         let function = module.module.add_function(name, ty, None);
-        Ok(unsafe { Value::new(context, function) })
+        unsafe { Value::new_subtype(py, context, function) }
     }
 }
 
@@ -1601,7 +1650,10 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
         let theta = unsafe { Value::extract(&context.0.f64_type(), theta)? };
-        builder.build_rx(theta.into_float_value(), qubit.value.try_into()?);
+        builder.build_rx(
+            any_to_meta(theta).unwrap().into_float_value(),
+            qubit.value.try_into()?,
+        );
         Ok(())
     }
 
@@ -1622,7 +1674,10 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
         let theta = unsafe { Value::extract(&context.0.f64_type(), theta)? };
-        builder.build_ry(theta.into_float_value(), qubit.value.try_into()?);
+        builder.build_ry(
+            any_to_meta(theta).unwrap().into_float_value(),
+            qubit.value.try_into()?,
+        );
         Ok(())
     }
 
@@ -1643,7 +1698,10 @@ impl BasicQisBuilder {
         let module = builder.module.borrow(py);
         let builder = qirlib::Builder::from(&builder.builder, &module.module);
         let theta = unsafe { Value::extract(&context.0.f64_type(), theta)? };
-        builder.build_rz(theta.into_float_value(), qubit.value.try_into()?);
+        builder.build_rz(
+            any_to_meta(theta).unwrap().into_float_value(),
+            qubit.value.try_into()?,
+        );
         Ok(())
     }
 
@@ -1785,10 +1843,10 @@ impl BasicQisBuilder {
 /// :rtype: Value
 #[pyfunction]
 #[pyo3(text_signature = "(ty, value)")]
-pub(crate) fn r#const(ty: &Type, value: &PyAny) -> PyResult<Value> {
+pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject> {
     let context = ty.context.clone();
     let value = extract_constant(&ty.ty, value)?;
-    Ok(unsafe { Value::new(context, value) })
+    unsafe { Value::new_subtype(py, context, value) }
 }
 
 /// Converts the supplied QIR string to its bitcode equivalent.

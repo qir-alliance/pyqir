@@ -59,15 +59,12 @@ def test_parser() -> None:
     term = block.terminator
     assert term is not None
     assert term.opcode == Opcode.BR
-    assert len(term.operands) == 1
+    assert len(term.operands) == 3
 
-    var_name = term.operands[0].name
-    inst = [i for b in func.basic_blocks for i in b.instructions if i.name == var_name][
-        0
-    ]
+    inst = term.operands[0]
     assert isinstance(inst, Call)
     assert inst.callee.name == "__quantum__qir__read_result"
-    assert result_id(inst.operands[0]) == 3
+    assert result_id(inst.args[0]) == 3
 
     inst_type = inst.type
     assert isinstance(inst_type, IntType)
@@ -78,7 +75,7 @@ def test_parser() -> None:
     assert isinstance(call_mz, Call)
     assert call_mz.callee.name == "__quantum__qis__mz__body"
     assert call_mz.type.is_void
-    assert call_mz.name is None
+    assert call_mz.name == ""
 
 
 # def test_parser_select_support() -> None:

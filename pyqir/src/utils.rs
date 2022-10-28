@@ -18,7 +18,7 @@ use pyo3::{
 };
 use std::{
     borrow::Borrow,
-    convert::{Into, TryFrom},
+    convert::{Into, TryFrom, TryInto},
     ffi::CStr,
     fmt::{self, Display, Formatter},
 };
@@ -150,9 +150,11 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for IntValue<'ctx> {
     type Error = ConversionError;
 
     fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        let err = || ConversionError::new("value", "integer value");
         match value {
             AnyValue::Any(AnyValueEnum::IntValue(i)) => Ok(i),
-            _ => Err(ConversionError::new("value", "integer value")),
+            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i.try_into().map_err(|()| err()),
+            _ => Err(err()),
         }
     }
 }
@@ -161,9 +163,11 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for FloatValue<'ctx> {
     type Error = ConversionError;
 
     fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        let err = || ConversionError::new("value", "float value");
         match value {
             AnyValue::Any(AnyValueEnum::FloatValue(f)) => Ok(f),
-            _ => Err(ConversionError::new("value", "float value")),
+            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i.try_into().map_err(|()| err()),
+            _ => Err(err()),
         }
     }
 }
@@ -172,10 +176,32 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for PointerValue<'ctx> {
     type Error = ConversionError;
 
     fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        let err = || ConversionError::new("value", "pointer value");
         match value {
             AnyValue::Any(AnyValueEnum::PointerValue(p)) => Ok(p),
-            _ => Err(ConversionError::new("value", "pointer value")),
+            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i.try_into().map_err(|()| err()),
+            _ => Err(err()),
         }
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for InstructionValue<'ctx> {
+    type Error = ConversionError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(AnyValueEnum::ArrayValue(a)) => a.as_instruction(),
+            AnyValue::Any(AnyValueEnum::IntValue(i)) => i.as_instruction(),
+            AnyValue::Any(AnyValueEnum::FloatValue(f)) => f.as_instruction(),
+            AnyValue::Any(AnyValueEnum::PhiValue(p)) => Some(p.as_instruction()),
+            AnyValue::Any(AnyValueEnum::PointerValue(p)) => p.as_instruction(),
+            AnyValue::Any(AnyValueEnum::StructValue(s)) => s.as_instruction(),
+            AnyValue::Any(AnyValueEnum::VectorValue(v)) => v.as_instruction(),
+            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => Some(i),
+            AnyValue::Any(AnyValueEnum::FunctionValue(_) | AnyValueEnum::MetadataValue(_))
+            | AnyValue::BasicBlock(_) => None,
+        }
+        .ok_or_else(|| ConversionError::new("value", "instruction value"))
     }
 }
 
@@ -233,9 +259,13 @@ pub(crate) fn any_to_meta(value: AnyValueEnum) -> Option<BasicMetadataValueEnum>
         AnyValueEnum::StructValue(s) => Some(BasicMetadataValueEnum::StructValue(s)),
         AnyValueEnum::VectorValue(v) => Some(BasicMetadataValueEnum::VectorValue(v)),
         AnyValueEnum::MetadataValue(m) => Some(BasicMetadataValueEnum::MetadataValue(m)),
-        AnyValueEnum::PhiValue(_)
-        | AnyValueEnum::FunctionValue(_)
-        | AnyValueEnum::InstructionValue(_) => None,
+        AnyValueEnum::InstructionValue(i) => i
+            .try_into()
+            .map(BasicMetadataValueEnum::IntValue)
+            .or_else(|()| i.try_into().map(BasicMetadataValueEnum::FloatValue))
+            .or_else(|()| i.try_into().map(BasicMetadataValueEnum::PointerValue))
+            .ok(),
+        AnyValueEnum::PhiValue(_) | AnyValueEnum::FunctionValue(_) => None,
     }
 }
 
