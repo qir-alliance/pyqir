@@ -3,10 +3,15 @@
 
 from pathlib import Path
 from pyqir.generator import (
+    BasicBlock,
     Call,
+    Function,
+    IntConstant,
     IntType,
     Module,
     Opcode,
+    constant_bytes,
+    is_entry_point,
     is_interop_friendly,
     qubit_id,
     result_id,
@@ -78,46 +83,53 @@ def test_parser() -> None:
     assert call_mz.name == ""
 
 
-# def test_parser_select_support() -> None:
-#     mod = QirModule("tests/select.bc")
-#     func = mod.get_funcs_by_attr("EntryPoint")[0]
-#     block = func.blocks[0]
-#     instr = block.instructions[5]
-#     assert isinstance(instr, QirSelectInstr)
-#     assert isinstance(
-#         func.get_instruction_by_output_name("spec.select"),
-#         QirSelectInstr,
-#     )
-#     assert isinstance(instr.condition, QirLocalOperand)
-#     assert instr.condition.name == "0"
-#     assert isinstance(instr.true_value, QirIntConstant)
-#     assert instr.true_value.value == 2
-#     assert instr.true_value.width == 64
-#     assert isinstance(instr.false_value, QirIntConstant)
-#     assert instr.false_value.value == 0
-#     assert instr.false_value.width == 64
-#     instr2 = block.instructions[9]
-#     assert isinstance(instr2, QirSelectInstr)
-#     assert isinstance(instr2.true_value, QirLocalOperand)
-#     assert instr2.true_value.name == "spec.select"
-#     assert isinstance(instr2.false_value, QirLocalOperand)
-#     assert instr2.false_value.name == "val.i.1"
+def test_parser_select_support() -> None:
+    bitcode = Path("../pyqir-parser/tests/select.bc").read_bytes()
+    mod = Module.from_bitcode(bitcode)
+    func = next(filter(is_entry_point, mod.functions))
+    block = func.basic_blocks[0]
+    select = block.instructions[5]
+    assert select.opcode == Opcode.SELECT
+    assert select.name == "spec.select"
+
+    cond = select.operands[0]
+    assert isinstance(cond, Call)
+    assert cond.callee.name == "__quantum__qis__read_result__body"
+    assert result_id(cond.args[0]) == 0
+
+    true = select.operands[1]
+    assert isinstance(true, IntConstant)
+    assert true.value == 2
+    assert true.type.width == 64
+
+    false = select.operands[2]
+    assert isinstance(false, IntConstant)
+    assert false.value == 0
+    assert false.type.width == 64
+
+    select2 = block.instructions[9]
+    assert select2.opcode == Opcode.SELECT
+    assert select2.name == "val.i.2"
+    assert select2.operands[1].name == "spec.select"
+    assert select2.operands[2].name == "val.i.1"
 
 
-# def test_global_string() -> None:
-#     mod = QirModule("tests/hello.bc")
-#     func_name = "program__main__body"
-#     func = mod.get_func_by_name(func_name)
-#     assert isinstance(func, QirFunction)
-#     assert isinstance(func.blocks[0], QirBlock)
-#     assert func.blocks[0].name == "entry"
-#     instr = func.blocks[0].instructions[0]
-#     assert isinstance(instr, QirRtCallInstr)
-#     assert instr.func_name == "__quantum__rt__string_create"
-#     assert isinstance(instr.func_args[0], QirGlobalByteArrayConstant)
-#     value = mod.get_global_bytes_value(instr.func_args[0])
-#     assert value is not None
-#     assert value.decode("utf-8") == "Hello World!\0"
+def test_global_string() -> None:
+    bitcode = Path("../pyqir-parser/tests/hello.bc").read_bytes()
+    mod = Module.from_bitcode(bitcode)
+    func_name = "program__main__body"
+    func = next(filter(lambda f: f.name == func_name, mod.functions))
+    assert isinstance(func, Function)
+    assert isinstance(func.basic_blocks[0], BasicBlock)
+    assert func.basic_blocks[0].name == "entry"
+
+    call = func.basic_blocks[0].instructions[0]
+    assert isinstance(call, Call)
+    assert call.callee.name == "__quantum__rt__string_create"
+
+    value = constant_bytes(call.args[0])
+    assert value is not None
+    assert value.decode("utf-8") == "Hello World!\0"
 
 
 # def test_parser_zext_support() -> None:

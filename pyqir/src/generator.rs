@@ -290,11 +290,6 @@ impl Module {
     }
 }
 
-#[pyfunction]
-pub(crate) fn global_byte_string_value(module: &Module, name: &str) -> Option<Vec<u8>> {
-    module::global_byte_string_value(&module.module, name)
-}
-
 /// Provides access to all supported types.
 #[pyclass]
 pub(crate) struct TypeFactory {
@@ -636,8 +631,9 @@ pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
 }
 
 #[pyfunction]
-pub(crate) fn global_byte_string_value_name(value: &Value) -> Option<String> {
-    values::global_byte_string_value_name(value.value.try_into().ok()?)
+pub(crate) fn constant_bytes<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
+    let bytes = values::constant_bytes(value.value.try_into().ok()?)?;
+    Some(PyBytes::new(py, bytes))
 }
 
 #[pyclass]

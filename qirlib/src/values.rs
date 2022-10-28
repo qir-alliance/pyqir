@@ -2,11 +2,21 @@
 // Licensed under the MIT License.
 
 use crate::types;
+use core::slice;
 use inkwell::{
     attributes::AttributeLoc,
-    types::{ArrayType, BasicTypeEnum},
-    values::{AnyValueEnum, BasicValueEnum, FunctionValue, InstructionOpcode},
+    types::{AnyTypeEnum, PointerType},
+    values::{AnyValueEnum, FunctionValue},
+    LLVMReference,
 };
+use llvm_sys::{
+    core::{
+        LLVMConstIntGetZExtValue, LLVMGetAsString, LLVMGetConstOpcode, LLVMGetInitializer,
+        LLVMGetOperand, LLVMIsAConstantDataSequential, LLVMIsAConstantExpr,
+    },
+    LLVMOpcode,
+};
+use std::convert::TryFrom;
 
 #[must_use]
 pub fn qubit_id(value: AnyValueEnum) -> Option<u64> {
@@ -53,24 +63,31 @@ pub fn required_num_results(function: FunctionValue) -> Option<u64> {
 }
 
 #[must_use]
-pub fn global_byte_string_value_name(value: AnyValueEnum) -> Option<String> {
-    let instruction = match value {
-        AnyValueEnum::PointerValue(p) => p.as_instruction(),
-        AnyValueEnum::InstructionValue(i) => Some(i),
+#[allow(clippy::missing_panics_doc)]
+pub fn constant_bytes(value: AnyValueEnum) -> Option<&[u8]> {
+    let pointer = match value {
+        AnyValueEnum::PointerValue(p) if is_byte_string(p.get_type()) => Some(p),
         _ => None,
-    }
-    .filter(|i| i.get_opcode() == InstructionOpcode::GetElementPtr)?;
+    }?;
 
-    match instruction.get_operand(0)?.left()? {
-        BasicValueEnum::ArrayValue(array) if is_byte_array(array.get_type()) => Some(
-            array
-                .get_name()
-                .to_str()
-                .expect("Name is not valid UTF-8.")
-                .to_string(),
-        ),
-        _ => None,
+    let expr = unsafe { LLVMIsAConstantExpr(pointer.get_ref()) };
+    let opcode = unsafe { LLVMGetConstOpcode(expr) };
+    if opcode != LLVMOpcode::LLVMGetElementPtr {
+        return None;
     }
+
+    let element = unsafe { LLVMGetOperand(expr, 0) };
+    let offset = unsafe { LLVMConstIntGetZExtValue(LLVMGetOperand(expr, 1)) };
+    let offset = usize::try_from(offset).expect("Pointer offset larger than usize.");
+    let init = unsafe { LLVMIsAConstantDataSequential(LLVMGetInitializer(element)) };
+    if init.is_null() {
+        return None;
+    }
+
+    let mut len = 0;
+    let data = unsafe { LLVMGetAsString(init, &mut len) };
+    let data = unsafe { slice::from_raw_parts(data.cast(), len) };
+    Some(&data[offset..])
 }
 
 fn pointer_to_int(value: AnyValueEnum) -> Option<u64> {
@@ -84,9 +101,9 @@ fn pointer_to_int(value: AnyValueEnum) -> Option<u64> {
     }
 }
 
-fn is_byte_array(ty: ArrayType) -> bool {
+fn is_byte_string(ty: PointerType) -> bool {
     match ty.get_element_type() {
-        BasicTypeEnum::IntType(i) => i.get_bit_width() == 8,
+        AnyTypeEnum::IntType(i) => i.get_bit_width() == 8,
         _ => false,
     }
 }

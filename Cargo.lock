@@ -115,7 +115,7 @@ checksum = "adab1eaa3408fb7f0c777a73e7465fd5656136fc93b670eb6df3c88c2c1344e3"
 [[package]]
 name = "inkwell"
 version = "0.1.0"
-source = "git+https://github.com/TheDan64/inkwell?branch=master#27b8ab5623696709c8948fabfc62ce47d5a32edd"
+source = "git+https://github.com/samarsha/inkwell?branch=fix-internal-getters#47fbdd55efbdd9f65df4eba806f5897090ffab40"
 dependencies = [
  "either",
  "inkwell_internals",
@@ -131,7 +131,7 @@ dependencies = [
 [[package]]
 name = "inkwell_internals"
 version = "0.5.0"
-source = "git+https://github.com/TheDan64/inkwell?branch=master#27b8ab5623696709c8948fabfc62ce47d5a32edd"
+source = "git+https://github.com/samarsha/inkwell?branch=fix-internal-getters#47fbdd55efbdd9f65df4eba806f5897090ffab40"
 dependencies = [
  "proc-macro2",
  "quote",

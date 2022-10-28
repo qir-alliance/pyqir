@@ -4,12 +4,12 @@
 use crate::{
     evaluator::PyNonadaptiveJit,
     generator::{
-        bitcode_to_ir, global_byte_string_value, global_byte_string_value_name, ir_to_bitcode,
-        is_entry_point, is_interop_friendly, is_qubit, is_result, qubit_id, r#const,
-        required_num_qubits, required_num_results, result_id, ArrayType, Attribute, BasicBlock,
-        BasicQisBuilder, Builder, Call, Constant, FCmp, FloatConstant, FloatPredicate, Function,
-        FunctionType, ICmp, Instruction, IntConstant, IntPredicate, IntType, Module, Opcode, Phi,
-        PointerType, SimpleModule, StructType, Switch, Type, TypeFactory, Value,
+        bitcode_to_ir, constant_bytes, ir_to_bitcode, is_entry_point, is_interop_friendly,
+        is_qubit, is_result, qubit_id, r#const, required_num_qubits, required_num_results,
+        result_id, ArrayType, Attribute, BasicBlock, BasicQisBuilder, Builder, Call, Constant,
+        FCmp, FloatConstant, FloatPredicate, Function, FunctionType, ICmp, Instruction,
+        IntConstant, IntPredicate, IntType, Module, Opcode, Phi, PointerType, SimpleModule,
+        StructType, Switch, Type, TypeFactory, Value,
     },
 };
 use pyo3::prelude::*;
@@ -45,8 +45,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<TypeFactory>()?;
     m.add_class::<Value>()?;
     m.add_function(wrap_pyfunction!(bitcode_to_ir, m)?)?;
-    m.add_function(wrap_pyfunction!(global_byte_string_value_name, m)?)?;
-    m.add_function(wrap_pyfunction!(global_byte_string_value, m)?)?;
+    m.add_function(wrap_pyfunction!(constant_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(ir_to_bitcode, m)?)?;
     m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(is_interop_friendly, m)?)?;
