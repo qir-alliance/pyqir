@@ -53,7 +53,16 @@ pub(crate) enum AnyValue<'ctx> {
 impl<'ctx> AnyValue<'ctx> {
     pub(crate) fn ty(&self) -> AnyTypeEnum<'ctx> {
         match self {
-            Self::Any(a) => a.get_type(),
+            Self::Any(AnyValueEnum::ArrayValue(a)) => a.get_type().into(),
+            Self::Any(AnyValueEnum::IntValue(i)) => i.get_type().into(),
+            Self::Any(AnyValueEnum::FloatValue(f)) => f.get_type().into(),
+            Self::Any(AnyValueEnum::PhiValue(p)) => p.as_instruction().get_type(),
+            Self::Any(AnyValueEnum::FunctionValue(f)) => f.get_type().into(),
+            Self::Any(AnyValueEnum::PointerValue(p)) => p.get_type().into(),
+            Self::Any(AnyValueEnum::StructValue(s)) => s.get_type().into(),
+            Self::Any(AnyValueEnum::VectorValue(v)) => v.get_type().into(),
+            Self::Any(AnyValueEnum::InstructionValue(i)) => i.get_type(),
+            Self::Any(AnyValueEnum::MetadataValue(m)) => m.as_any_value_enum().get_type(),
             Self::BasicBlock(b) => b.get_context().void_type().into(),
         }
     }
@@ -73,6 +82,20 @@ impl<'ctx> AnyValue<'ctx> {
                 .unwrap_or_else(|| CStr::from_bytes_with_nul(b"\0").unwrap()),
             Self::Any(AnyValueEnum::MetadataValue(m)) => m.get_name(),
             Self::BasicBlock(b) => b.get_name(),
+        }
+    }
+
+    pub(crate) fn is_const(&self) -> bool {
+        match self {
+            Self::Any(AnyValueEnum::ArrayValue(a)) => a.is_const(),
+            Self::Any(AnyValueEnum::IntValue(i)) => i.is_const(),
+            Self::Any(AnyValueEnum::FloatValue(f)) => f.is_const(),
+            Self::Any(AnyValueEnum::PointerValue(p)) => p.is_const(),
+            Self::Any(AnyValueEnum::StructValue(_)) => todo!(),
+            Self::Any(AnyValueEnum::VectorValue(v)) => v.is_const(),
+            Self::Any(AnyValueEnum::PhiValue(_) | AnyValueEnum::InstructionValue(_)) => false,
+            Self::Any(AnyValueEnum::FunctionValue(_) | AnyValueEnum::MetadataValue(_))
+            | AnyValue::BasicBlock(_) => true,
         }
     }
 

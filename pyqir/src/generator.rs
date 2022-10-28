@@ -447,6 +447,9 @@ impl Value {
                     PyClassInitializer::from((Constant, base)).add_subclass(Function(f)),
                 )?
                 .to_object(py)),
+                _ if value.is_const() => {
+                    Ok(Py::new(py, PyClassInitializer::from((Constant, base)))?.to_object(py))
+                }
                 _ => Ok(Py::new(py, base)?.to_object(py)),
             }
         }

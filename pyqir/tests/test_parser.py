@@ -5,6 +5,7 @@ from pathlib import Path
 from pyqir.generator import (
     BasicBlock,
     Call,
+    Constant,
     Function,
     IntConstant,
     IntType,
@@ -13,7 +14,9 @@ from pyqir.generator import (
     constant_bytes,
     is_entry_point,
     is_interop_friendly,
+    is_qubit,
     qubit_id,
+    required_num_qubits,
     result_id,
 )
 import pytest
@@ -160,71 +163,96 @@ def test_loading_invalid_bitcode() -> None:
         Module.from_bitcode(bitcode)
     assert e.value.args[0] == "Invalid bitcode signature"
 
-# def test_parser_internals() -> None:
-#     mod = module_from_bitcode("tests/teleportchain.baseprofile.bc")
-#     func_name = (
-#         "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
-#     )
-#     func = mod.get_func_by_name(func_name)
-#     assert func is not None
-#     assert func.name == func_name
-#     assert len(func.parameters) == 0
-#     assert func.return_type.is_integer
-#     func_list = mod.functions
-#     assert len(func_list) == 1
-#     assert func_list[0].name == func_name
-#     interop_funcs = mod.get_funcs_by_attr("InteropFriendly")
-#     assert len(interop_funcs) == 1
-#     assert interop_funcs[0].name == func_name
-#     assert interop_funcs[0].get_attribute_value("requiredQubits") == "6"
-#     assert interop_funcs[0].required_qubits == 6
-#     blocks = func.blocks
-#     assert len(blocks) == 9
-#     assert blocks[0].name == "entry"
-#     entry_block = func.get_block_by_name("entry")
-#     assert entry_block is not None
-#     assert entry_block.name == "entry"
-#     assert entry_block.terminator.is_condbr
-#     assert not entry_block.terminator.is_ret
-#     assert entry_block.terminator.condbr_true_dest == "then0__1.i.i.i"
-#     assert entry_block.terminator.condbr_false_dest == "continue__1.i.i.i"
-#     assert blocks[1].terminator.is_br
-#     assert blocks[1].terminator.br_dest == "continue__1.i.i.i"
-#     assert blocks[8].terminator.is_ret
-#     assert len(entry_block.instructions) == 11
-#     assert entry_block.instructions[0].is_call
-#     assert entry_block.instructions[0].call_func_name == "__quantum__qis__h__body"
-#     assert entry_block.instructions[0].is_qis_call
-#     param_list = entry_block.instructions[0].call_func_params
-#     assert param_list is not None
-#     assert len(param_list) == 1
-#     assert param_list[0].is_constant
-#     assert param_list[0].constant is not None
-#     assert param_list[0].constant.is_qubit
-#     assert param_list[0].constant.qubit_static_id == 0
-#     assert entry_block.instructions[8].is_qis_call
-#     assert entry_block.instructions[8].call_func_name == "__quantum__qis__mz__body"
-#     assert entry_block.instructions[8].call_func_params is not None
-#     assert entry_block.instructions[8].call_func_params[0].constant is not None
-#     assert entry_block.instructions[8].call_func_params[0].constant.qubit_static_id == 1
-#     assert entry_block.instructions[8].call_func_params[1].constant is not None
-#     assert (
-#         entry_block.instructions[8].call_func_params[1].constant.result_static_id == 0
-#     )
-#     branch_cond = entry_block.terminator.condbr_condition
-#     assert branch_cond is not None
-#     assert branch_cond.local_name == "0"
-#     assert entry_block.instructions[10].is_qir_call
-#     assert entry_block.instructions[10].call_func_name == "__quantum__qir__read_result"
-#     assert entry_block.instructions[10].call_func_params is not None
-#     assert entry_block.instructions[10].call_func_params[0].constant is not None
-#     assert (
-#         entry_block.instructions[10].call_func_params[0].constant.result_static_id == 0
-#     )
-#     assert entry_block.instructions[10].has_output
-#     assert entry_block.instructions[10].output_name == "0"
-#     source_instr = func.get_instruction_by_output_name(branch_cond.local_name)
-#     assert source_instr is not None
-#     assert source_instr.call_func_params is not None
-#     assert source_instr.call_func_params[0].constant is not None
-#     assert source_instr.call_func_params[0].constant.result_static_id == 0
+
+def test_parser_internals() -> None:
+    bitcode = Path("../pyqir-parser/tests/teleportchain.baseprofile.bc").read_bytes()
+    mod = Module.from_bitcode(bitcode)
+    func_name = (
+        "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
+    )
+    func = next(filter(lambda f: f.name == func_name, mod.functions))
+    assert len(func.params) == 0
+    assert isinstance(func.type.return_, IntType)
+
+    func_list = mod.functions
+    assert len(func_list) == 21
+    assert func_list[0].name == func_name
+
+    interop_funcs = list(filter(is_interop_friendly, mod.functions))
+    assert len(interop_funcs) == 1
+    assert interop_funcs[0].name == func_name
+    assert required_num_qubits(interop_funcs[0]) == 6
+
+    attribute = interop_funcs[0].attribute("requiredQubits")
+    assert attribute is not None
+    assert attribute.value == "6"
+
+    blocks = func.basic_blocks
+    assert len(blocks) == 9
+
+    entry_block = blocks[0]
+    assert entry_block.name == "entry"
+    assert len(entry_block.instructions) == 12
+
+    term = entry_block.terminator
+    assert term is not None
+    assert term.opcode == Opcode.BR
+    assert term.operands[2].name == "then0__1.i.i.i"
+    assert term.operands[1].name == "continue__1.i.i.i"
+
+    term = blocks[1].terminator
+    assert term is not None
+    assert term.opcode == Opcode.BR
+    assert isinstance(term.operands[0], BasicBlock)
+    assert term.operands[0].name == "continue__1.i.i.i"
+
+    term = blocks[8].terminator
+    assert term is not None
+    assert term.opcode == Opcode.RET
+
+    call = entry_block.instructions[0]
+    assert isinstance(call, Call)
+    assert call.callee.name == "__quantum__qis__h__body"
+
+    args = call.args
+    assert len(args) == 1
+
+    arg = args[0]
+    assert isinstance(arg, Constant)
+    assert is_qubit(arg.type)
+    assert qubit_id(arg) == 0
+
+    call = entry_block.instructions[8]
+    assert isinstance(call, Call)
+    assert call.callee.name == "__quantum__qis__mz__body"
+
+    arg = call.args[0]
+    assert isinstance(arg, Constant)
+    assert qubit_id(arg) == 1
+
+    arg = call.args[1]
+    assert isinstance(arg, Constant)
+    assert result_id(arg) == 0
+
+    term = entry_block.terminator
+    assert term is not None
+    assert term.opcode == Opcode.BR
+
+    branch_cond = term.operands[0]
+    assert isinstance(branch_cond, Call)
+
+    arg = branch_cond.args[0]
+    assert isinstance(arg, Constant)
+    assert result_id(arg) == 0
+    assert branch_cond.name == ""
+
+    call = entry_block.instructions[10]
+    assert isinstance(call, Call)
+    assert call.callee.name == "__quantum__qir__read_result"
+
+    arg = call.args[0]
+    assert isinstance(arg, Constant)
+    assert result_id(arg) == 0
+
+    assert not entry_block.instructions[10].type.is_void
+    assert entry_block.instructions[10].name == ""
