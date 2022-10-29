@@ -93,9 +93,9 @@ impl<'ctx> AnyValue<'ctx> {
             Self::Any(AnyValueEnum::PointerValue(p)) => p.is_const(),
             Self::Any(AnyValueEnum::StructValue(_)) => todo!(),
             Self::Any(AnyValueEnum::VectorValue(v)) => v.is_const(),
-            Self::Any(AnyValueEnum::PhiValue(_) | AnyValueEnum::InstructionValue(_)) => false,
-            Self::Any(AnyValueEnum::FunctionValue(_) | AnyValueEnum::MetadataValue(_))
-            | AnyValue::BasicBlock(_) => true,
+            Self::Any(AnyValueEnum::PhiValue(_) | AnyValueEnum::InstructionValue(_))
+            | AnyValue::BasicBlock(_) => false,
+            Self::Any(AnyValueEnum::FunctionValue(_) | AnyValueEnum::MetadataValue(_)) => true,
         }
     }
 
@@ -225,6 +225,17 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for InstructionValue<'ctx> {
             | AnyValue::BasicBlock(_) => None,
         }
         .ok_or_else(|| ConversionError::new("value", "instruction value"))
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicBlock<'ctx> {
+    type Error = ConversionError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(_) => Err(ConversionError::new("value", "basic block")),
+            AnyValue::BasicBlock(b) => Ok(b),
+        }
     }
 }
 

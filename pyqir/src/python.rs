@@ -6,11 +6,11 @@ use crate::{
     generator::{
         bitcode_to_ir, constant_bytes, ir_to_bitcode, is_entry_point, is_interop_friendly,
         qubit_id, r#const, required_num_qubits, required_num_results, result_id, Attribute,
-        BasicBlock, BasicQisBuilder, Builder, Call, Constant, FCmp, FloatConstant, FloatPredicate,
-        Function, ICmp, Instruction, IntConstant, IntPredicate, Module, Opcode, Phi, SimpleModule,
-        Switch, TypeFactory, Value,
+        BasicQisBuilder, Builder, Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate,
+        Module, Opcode, Phi, SimpleModule, Switch, TypeFactory,
     },
     types::{is_qubit, is_result, ArrayType, FunctionType, IntType, PointerType, StructType, Type},
+    values::{BasicBlock, Constant, FloatConstant, Function, IntConstant, Value},
 };
 use pyo3::prelude::*;
 

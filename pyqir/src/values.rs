@@ -1,0 +1,234 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+#![allow(clippy::used_underscore_binding)]
+
+use crate::{
+    context::Context,
+    generator::{Attribute, Instruction},
+    types::Type,
+    utils::{extract_constant, AnyValue},
+};
+use inkwell::{
+    attributes::AttributeLoc,
+    types::AnyType,
+    values::{AnyValueEnum, FloatValue, FunctionValue, IntValue},
+};
+use pyo3::{conversion::ToPyObject, exceptions::PyValueError, prelude::*};
+use std::{
+    convert::{Into, TryFrom, TryInto},
+    mem::transmute,
+};
+
+/// A value.
+#[pyclass(subclass, unsendable)]
+#[derive(Clone)]
+pub(crate) struct Value {
+    value: AnyValue<'static>,
+    context: Py<Context>,
+}
+
+#[pymethods]
+impl Value {
+    #[getter]
+    fn r#type(&self, py: Python) -> PyResult<PyObject> {
+        unsafe { Type::from_any(py, self.context.clone(), self.value.ty()) }
+    }
+
+    #[getter]
+    fn name(&self) -> &str {
+        self.value
+            .name()
+            .to_str()
+            .expect("Name is not valid UTF-8.")
+    }
+
+    fn __str__(&self) -> String {
+        self.value.to_string()
+    }
+
+    fn __repr__(&self) -> String {
+        format!("<{:?}>", self.value)
+    }
+}
+
+impl Value {
+    pub(crate) unsafe fn from_any<'ctx>(
+        py: Python,
+        context: Py<Context>,
+        value: impl Into<AnyValue<'ctx>>,
+    ) -> PyResult<PyObject> {
+        let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value.into());
+        #[allow(clippy::same_functions_in_if_condition)]
+        if let Ok(inst) = value.try_into() {
+            Instruction::new_subtype(py, context, inst)
+        } else if let Ok(block) = value.try_into() {
+            let base = PyClassInitializer::from(Self { value, context });
+            let block = base.add_subclass(BasicBlock(block));
+            Ok(Py::new(py, block)?.to_object(py))
+        } else if value.is_const() {
+            Constant::from_any(py, context, value)
+        } else {
+            Ok(Py::new(py, Self { value, context })?.to_object(py))
+        }
+    }
+
+    pub(crate) unsafe fn init(context: Py<Context>, value: AnyValue) -> PyClassInitializer<Self> {
+        let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
+        PyClassInitializer::from(Self { value, context })
+    }
+
+    pub(crate) fn get(&self) -> AnyValue {
+        self.value
+    }
+
+    pub(crate) fn context(&self) -> &Py<Context> {
+        &self.context
+    }
+}
+
+#[pyclass(extends = Value, unsendable)]
+pub(crate) struct BasicBlock(inkwell::basic_block::BasicBlock<'static>);
+
+#[pymethods]
+impl BasicBlock {
+    #[getter]
+    fn instructions(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
+        let block = slf.0;
+        let context = &slf.into_super().context;
+        let mut insts = Vec::new();
+        let mut inst = block.get_first_instruction();
+
+        while let Some(i) = inst {
+            insts.push(unsafe { Instruction::new_subtype(py, context.clone(), i) }?);
+            inst = i.get_next_instruction();
+        }
+
+        Ok(insts)
+    }
+
+    #[getter]
+    fn terminator(slf: PyRef<Self>, py: Python) -> PyResult<Option<PyObject>> {
+        match slf.0.get_terminator() {
+            Some(terminator) => {
+                let context = slf.into_super().context.clone();
+                unsafe { Instruction::new_subtype(py, context, terminator) }.map(Some)
+            }
+            None => Ok(None),
+        }
+    }
+}
+
+#[pyclass(extends = Value, subclass)]
+pub(crate) struct Constant;
+
+#[pymethods]
+impl Constant {
+    #[getter]
+    fn is_null(slf: PyRef<Self>) -> bool {
+        slf.into_super().value.is_null()
+    }
+}
+
+impl Constant {
+    unsafe fn from_any(py: Python, context: Py<Context>, value: AnyValue) -> PyResult<PyObject> {
+        if value.is_const() {
+            let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
+            let base = PyClassInitializer::from(Value { value, context }).add_subclass(Constant);
+            match value.try_into() {
+                Ok(AnyValueEnum::IntValue(_)) => {
+                    Ok(Py::new(py, base.add_subclass(IntConstant))?.to_object(py))
+                }
+                Ok(AnyValueEnum::FloatValue(_)) => {
+                    Ok(Py::new(py, base.add_subclass(FloatConstant))?.to_object(py))
+                }
+                Ok(AnyValueEnum::FunctionValue(f)) => {
+                    Ok(Py::new(py, base.add_subclass(Function(f)))?.to_object(py))
+                }
+                _ => Ok(Py::new(py, base)?.to_object(py)),
+            }
+        } else {
+            Err(PyValueError::new_err("Value is not constant."))
+        }
+    }
+}
+
+#[pyclass(extends = Constant)]
+pub(crate) struct IntConstant;
+
+#[pymethods]
+impl IntConstant {
+    #[getter]
+    fn value(slf: PyRef<Self>) -> u64 {
+        let int: IntValue = slf.into_super().into_super().value.try_into().unwrap();
+        int.get_zero_extended_constant().unwrap()
+    }
+}
+
+#[pyclass(extends = Constant)]
+pub(crate) struct FloatConstant;
+
+#[pymethods]
+impl FloatConstant {
+    #[getter]
+    fn value(slf: PyRef<Self>) -> f64 {
+        let float: FloatValue = slf.into_super().into_super().value.try_into().unwrap();
+        float.get_constant().unwrap().0
+    }
+}
+
+#[pyclass(extends = Constant, unsendable)]
+pub(crate) struct Function(FunctionValue<'static>);
+
+#[pymethods]
+impl Function {
+    #[getter]
+    fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
+        let params = slf.0.get_params();
+        let context = &slf.into_super().into_super().context;
+        params
+            .into_iter()
+            .map(|p| unsafe { Value::from_any(py, context.clone(), p) })
+            .collect()
+    }
+
+    #[getter]
+    fn basic_blocks(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
+        let function = slf.0;
+        let context = &slf.into_super().into_super().context;
+        function
+            .get_basic_blocks()
+            .into_iter()
+            .map(|b| unsafe { Value::from_any(py, context.clone(), b) })
+            .collect()
+    }
+
+    fn attribute(&self, name: &str) -> Option<Attribute> {
+        Some(Attribute(
+            self.0.get_string_attribute(AttributeLoc::Function, name)?,
+        ))
+    }
+}
+
+impl Function {
+    pub(crate) fn get(&self) -> FunctionValue {
+        self.0
+    }
+}
+
+pub(crate) unsafe fn extract_inkwell<'ctx>(
+    ty: &impl AnyType<'ctx>,
+    ob: &PyAny,
+) -> PyResult<AnyValueEnum<'ctx>> {
+    ob.extract()
+        .and_then(|v: Value| AnyValueEnum::try_from(v.value).map_err(Into::into))
+        .or_else(|_| extract_constant(ty, ob))
+}
+
+pub(crate) fn extract_contexts<'a>(
+    values: impl IntoIterator<Item = &'a PyAny> + 'a,
+) -> impl Iterator<Item = Py<Context>> + 'a {
+    values
+        .into_iter()
+        .filter_map(|v| Some(v.extract::<Value>().ok()?.context))
+}

@@ -62,7 +62,7 @@ impl Type {
         })
     }
 
-    pub(crate) fn ty(&self) -> AnyTypeEnum {
+    pub(crate) fn get(&self) -> AnyTypeEnum {
         self.ty
     }
 
