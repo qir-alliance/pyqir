@@ -4,13 +4,16 @@
 use crate::{
     evaluator::PyNonadaptiveJit,
     generator::{
-        bitcode_to_ir, constant_bytes, ir_to_bitcode, is_entry_point, is_interop_friendly,
-        qubit_id, r#const, required_num_qubits, required_num_results, result_id, Attribute,
-        BasicQisBuilder, Builder, Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate,
-        Module, Opcode, Phi, SimpleModule, Switch, TypeFactory,
+        bitcode_to_ir, ir_to_bitcode, r#const, Attribute, BasicQisBuilder, Builder, Call, FCmp,
+        FloatPredicate, ICmp, Instruction, IntPredicate, Module, Opcode, Phi, SimpleModule, Switch,
+        TypeFactory,
     },
     types::{is_qubit, is_result, ArrayType, FunctionType, IntType, PointerType, StructType, Type},
-    values::{BasicBlock, Constant, FloatConstant, Function, IntConstant, Value},
+    values::{
+        constant_bytes, is_entry_point, is_interop_friendly, qubit_id, required_num_qubits,
+        required_num_results, result_id, BasicBlock, Constant, FloatConstant, Function,
+        IntConstant, Value,
+    },
 };
 use pyo3::prelude::*;
 

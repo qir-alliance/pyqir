@@ -21,7 +21,7 @@ use crate::{
         any_to_meta, call_if_some, clone_module, extract_constant, function_type,
         try_callable_value,
     },
-    values::{self, BasicBlock, Function, Value},
+    values::{self, BasicBlock, Value},
 };
 use either::Either::{Left, Right};
 use inkwell::{
@@ -222,42 +222,6 @@ impl Attribute {
             .to_str()
             .expect("Value is not valid UTF-8.")
     }
-}
-
-#[pyfunction]
-pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
-    qirlib::values::qubit_id(value.get().try_into().ok()?)
-}
-
-#[pyfunction]
-pub(crate) fn result_id(value: &Value) -> Option<u64> {
-    qirlib::values::result_id(value.get().try_into().ok()?)
-}
-
-#[pyfunction]
-pub(crate) fn is_entry_point(function: &Function) -> bool {
-    qirlib::values::is_entry_point(function.get())
-}
-
-#[pyfunction]
-pub(crate) fn is_interop_friendly(function: &Function) -> bool {
-    qirlib::values::is_interop_friendly(function.get())
-}
-
-#[pyfunction]
-pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
-    qirlib::values::required_num_qubits(function.get())
-}
-
-#[pyfunction]
-pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
-    qirlib::values::required_num_results(function.get())
-}
-
-#[pyfunction]
-pub(crate) fn constant_bytes<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
-    let bytes = qirlib::values::constant_bytes(value.get().try_into().ok()?)?;
-    Some(PyBytes::new(py, bytes))
 }
 
 #[pyclass]
