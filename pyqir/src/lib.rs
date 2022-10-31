@@ -6,7 +6,6 @@
 mod builder;
 mod context;
 mod evaluator;
-mod generator;
 mod instructions;
 mod module;
 mod python;

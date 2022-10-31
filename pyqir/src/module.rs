@@ -15,10 +15,11 @@ pub(crate) struct Module {
 #[pymethods]
 impl Module {
     #[staticmethod]
-    #[pyo3(text_signature = "(ir)")]
-    fn from_ir(py: Python, ir: &str) -> PyResult<Self> {
+    #[pyo3(text_signature = "(ir, name=\"\")")]
+    fn from_ir(py: Python, ir: &str, name: Option<&str>) -> PyResult<Self> {
         let context = inkwell::context::Context::create();
-        let buffer = MemoryBuffer::create_from_memory_range(ir.as_bytes(), "");
+        let buffer =
+            MemoryBuffer::create_from_memory_range(ir.as_bytes(), name.unwrap_or_default());
         let module = context
             .create_module_from_ir(buffer)
             .map_err(|e| PyValueError::new_err(e.to_string()))?;
@@ -30,10 +31,10 @@ impl Module {
     }
 
     #[staticmethod]
-    #[pyo3(text_signature = "(bitcode)")]
-    fn from_bitcode(py: Python, bitcode: &[u8]) -> PyResult<Self> {
+    #[pyo3(text_signature = "(bitcode, name=\"\")")]
+    fn from_bitcode(py: Python, bitcode: &[u8], name: Option<&str>) -> PyResult<Self> {
         let context = inkwell::context::Context::create();
-        let buffer = MemoryBuffer::create_from_memory_range(bitcode, "");
+        let buffer = MemoryBuffer::create_from_memory_range(bitcode, name.unwrap_or_default());
         let module = inkwell::module::Module::parse_bitcode_from_buffer(&buffer, &context)
             .map_err(|e| PyValueError::new_err(e.to_string()))?;
         let module = unsafe {
@@ -41,6 +42,19 @@ impl Module {
         };
         let context = Py::new(py, Context::new(context))?;
         Ok(Self { module, context })
+    }
+
+    #[getter]
+    fn source_filename(&self) -> &str {
+        self.module
+            .get_source_file_name()
+            .to_str()
+            .expect("Name is not valid UTF-8.")
+    }
+
+    #[setter]
+    fn set_source_filename(&self, value: &str) {
+        self.module.set_source_file_name(value);
     }
 
     #[getter]
@@ -79,5 +93,19 @@ impl Module {
 
     pub(crate) fn context(&self) -> &Py<Context> {
         &self.context
+    }
+}
+
+#[pyclass(unsendable)]
+pub(crate) struct Attribute(pub(crate) inkwell::attributes::Attribute);
+
+#[pymethods]
+impl Attribute {
+    #[getter]
+    fn value(&self) -> &str {
+        self.0
+            .get_string_value()
+            .to_str()
+            .expect("Value is not valid UTF-8.")
     }
 }

@@ -5,8 +5,8 @@
 
 use crate::{
     context::Context,
-    generator::Attribute,
     instructions::Instruction,
+    module::Attribute,
     types::Type,
     utils::{extract_constant, AnyValue},
 };
@@ -216,6 +216,20 @@ impl Function {
     pub(crate) fn get(&self) -> FunctionValue {
         self.0
     }
+}
+
+/// Creates a constant value.
+///
+/// :param Type ty: The type of the value.
+/// :param Union[int, float] value: The value of the constant.
+/// :returns: The constant value.
+/// :rtype: Value
+#[pyfunction]
+#[pyo3(text_signature = "(ty, value)")]
+pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject> {
+    let context = ty.context().clone();
+    let value = extract_constant(&ty.get(), value)?;
+    unsafe { Value::from_any(py, context, value) }
 }
 
 #[pyfunction]
