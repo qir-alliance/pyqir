@@ -3,14 +3,13 @@
 
 use crate::{
     context::{self, Context},
-    generator::{Builder, Module},
+    generator::Builder,
+    module::Module,
     types::Type,
     utils::{clone_module, function_type},
     values::Value,
 };
-use inkwell::{
-    context::Context as InkwellContext, module::Module as InkwellModule, types::AnyTypeEnum,
-};
+use inkwell::types::AnyTypeEnum;
 use pyo3::{
     exceptions::{PyOSError, PyValueError},
     prelude::*,
@@ -42,7 +41,7 @@ pub(crate) struct SimpleModule {
 impl SimpleModule {
     #[new]
     fn new(py: Python, name: &str, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
-        let context = Py::new(py, Context::new(InkwellContext::create()))?;
+        let context = Py::new(py, Context::new(inkwell::context::Context::create()))?;
         let module = Py::new(py, Module::new(py, context, name))?;
         let builder = Py::new(py, Builder::new(py, module.clone()))?;
 
@@ -147,11 +146,11 @@ impl SimpleModule {
 }
 
 impl SimpleModule {
-    fn emit<T>(&self, py: Python, f: impl Fn(&InkwellModule) -> T) -> PyResult<T> {
+    fn emit<T>(&self, py: Python, f: impl Fn(&inkwell::module::Module) -> T) -> PyResult<T> {
         let module = self.module.borrow(py);
         let builder = self.builder.borrow(py);
         let ret = builder.get().build_return(None);
-        let new_context = InkwellContext::create();
+        let new_context = inkwell::context::Context::create();
         let new_module = clone_module(module.get(), &new_context)?;
         ret.erase_from_basic_block();
         module::simple_finalize(&new_module).map_err(PyOSError::new_err)?;
@@ -251,7 +250,7 @@ impl TypeFactory {
     fn create_type(
         &self,
         py: Python,
-        f: impl for<'ctx> Fn(&InkwellModule<'ctx>) -> AnyTypeEnum<'ctx>,
+        f: impl for<'ctx> Fn(&inkwell::module::Module<'ctx>) -> AnyTypeEnum<'ctx>,
     ) -> PyResult<PyObject> {
         let module = self.module.borrow(py);
         let context = module.context().clone();
