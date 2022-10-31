@@ -3,6 +3,7 @@
 
 #![warn(clippy::all, clippy::pedantic)]
 
+mod builder;
 mod context;
 mod evaluator;
 mod generator;

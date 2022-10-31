@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
+    builder::Builder,
     context::{self, Context},
-    generator::Builder,
     module::Module,
     types::Type,
     utils::{clone_module, function_type},
