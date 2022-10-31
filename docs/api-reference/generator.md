@@ -36,10 +36,3 @@
 
 .. autofunction:: pyqir.generator.const
 ```
-
-## Parsing
-
-```{eval-rst}
-.. autofunction:: pyqir.generator.ir_to_bitcode
-.. autofunction:: pyqir.generator.bitcode_to_ir
-```
