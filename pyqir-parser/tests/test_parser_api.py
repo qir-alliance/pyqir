@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.parser import *
+from pyqir_parser import *
 import pytest
 
 
