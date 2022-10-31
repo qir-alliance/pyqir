@@ -1,6 +1,6 @@
 # PyQIR
 
-##  Safety
+## Safety
 
 To store Inkwell objects in Python classes, we transmute the `'ctx` lifetime to static.
 You need to be careful when using Inkwell types with unsafely extended lifetimes.
