@@ -4,11 +4,12 @@
 use crate::{
     builder::Builder,
     evaluator::PyNonadaptiveJit,
-    generator::{bitcode_to_ir, ir_to_bitcode, r#const, Attribute, BasicQisBuilder},
+    generator::{bitcode_to_ir, ir_to_bitcode, r#const, Attribute},
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
     module::Module,
+    qis::BasicQisBuilder,
     simple::{SimpleModule, TypeFactory},
     types::{is_qubit, is_result, ArrayType, FunctionType, IntType, PointerType, StructType, Type},
     values::{

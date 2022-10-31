@@ -10,6 +10,7 @@ mod generator;
 mod instructions;
 mod module;
 mod python;
+mod qis;
 mod simple;
 mod types;
 mod utils;
