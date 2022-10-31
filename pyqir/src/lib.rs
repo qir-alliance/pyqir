@@ -8,6 +8,7 @@ mod evaluator;
 mod generator;
 mod instructions;
 mod python;
+mod simple;
 mod types;
 mod utils;
 mod values;
