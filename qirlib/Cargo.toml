@@ -19,7 +19,7 @@ llvm-sys-130 = { package = "llvm-sys", version = "130.0.2", optional = true }
 llvm-sys-140 = { package = "llvm-sys", version = "140.0.2", optional = true }
 
 # The llvm version of inkwell is controlled through this crates features.
-inkwell = { git = "https://github.com/samarsha/inkwell", branch = "fix-internal-getters", default-features = false, features = ["internal-getters", "target-x86"] }
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["internal-getters", "target-x86"] }
 log = "0.4.14"
 cty = "0.2.1"
 rand = "0.8.4"
