@@ -5,7 +5,8 @@
 
 use crate::{
     context::Context,
-    generator::{Attribute, Instruction},
+    generator::Attribute,
+    instructions::Instruction,
     types::Type,
     utils::{extract_constant, AnyValue},
 };
@@ -62,7 +63,7 @@ impl Value {
         let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value.into());
         #[allow(clippy::same_functions_in_if_condition)]
         if let Ok(inst) = value.try_into() {
-            Instruction::new_subtype(py, context, inst)
+            Instruction::from_inst(py, context, inst)
         } else if let Ok(block) = value.try_into() {
             let base = PyClassInitializer::from(Self { value, context });
             let block = base.add_subclass(BasicBlock(block));
@@ -101,7 +102,7 @@ impl BasicBlock {
         let mut inst = block.get_first_instruction();
 
         while let Some(i) = inst {
-            insts.push(unsafe { Instruction::new_subtype(py, context.clone(), i) }?);
+            insts.push(unsafe { Instruction::from_inst(py, context.clone(), i) }?);
             inst = i.get_next_instruction();
         }
 
@@ -113,7 +114,7 @@ impl BasicBlock {
         match slf.0.get_terminator() {
             Some(terminator) => {
                 let context = slf.into_super().context.clone();
-                unsafe { Instruction::new_subtype(py, context, terminator) }.map(Some)
+                unsafe { Instruction::from_inst(py, context, terminator) }.map(Some)
             }
             None => Ok(None),
         }
