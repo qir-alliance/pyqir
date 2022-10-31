@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, SimpleModule, const
+from pyqir import BasicQisBuilder, SimpleModule, const
 
 mod = SimpleModule("external_functions", num_qubits=1, num_results=0)
 qis = BasicQisBuilder(mod.builder)

@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from pathlib import Path
-from pyqir.generator import (
+from pyqir import (
     BasicBlock,
     Call,
     Constant,

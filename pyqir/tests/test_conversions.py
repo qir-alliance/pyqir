@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, SimpleModule, Module
+from pyqir import BasicQisBuilder, SimpleModule, Module
 
 
 def get_module() -> SimpleModule:

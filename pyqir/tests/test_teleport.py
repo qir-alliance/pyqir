@@ -1,8 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+from pyqir import BasicQisBuilder, SimpleModule, Value
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
-from pyqir.generator import BasicQisBuilder, SimpleModule, Value
 import tempfile
 from typing import List, Sequence
 
