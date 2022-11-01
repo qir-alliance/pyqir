@@ -70,6 +70,19 @@ impl Module {
     }
 
     #[getter]
+    fn name(&self) -> &str {
+        self.module
+            .get_name()
+            .to_str()
+            .expect("Name is not valid UTF-8.")
+    }
+
+    #[setter]
+    fn set_name(&self, value: &str) {
+        self.module.set_name(value);
+    }
+
+    #[getter]
     fn functions(&self, py: Python) -> PyResult<Vec<PyObject>> {
         self.module
             .get_functions()

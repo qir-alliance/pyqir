@@ -1,8 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from importlib.metadata import entry_points
-from pyqir import BasicQisBuilder, SimpleModule, Context, Module, is_entry_point
+from pyqir import BasicQisBuilder, SimpleModule, Context, Module
 import pytest
 
 def bell(m) -> SimpleModule:
@@ -17,7 +16,7 @@ def bell(m) -> SimpleModule:
 
 
 def bell_no_measure(m) -> SimpleModule:
-    module = SimpleModule(m, 2, 0, "bell")
+    module = SimpleModule(m, 2, 0, "bell_no_measure")
     qis = BasicQisBuilder(module.builder)
     qis.h(module.qubits[0])
     qis.cx(module.qubits[0], module.qubits[1])
@@ -25,51 +24,52 @@ def bell_no_measure(m) -> SimpleModule:
     return module
 
 
-def bernstein_vazirani(m) -> SimpleModule:
-    module = SimpleModule(m, 6, 5, "Bernstein_Vazirani")
-    qis = BasicQisBuilder(module.builder)
-    inputs = module.qubits[:5]
-    target = module.qubits[5]
-    outputs = module.results
+def test_module_creation_with_non_str_name() -> None:
+    with pytest.raises(TypeError) as e:
+        Module(Context(), 5)
 
-    qis.x(target)
 
-    qis.h(inputs[0])
-    qis.h(inputs[1])
-    qis.h(inputs[2])
-    qis.h(inputs[3])
-    qis.h(inputs[4])
+def test_module_creation_with_name() -> None:
+    expected = "module's name"
+    module = Module(Context(), expected)
+    assert expected == module.name
 
-    qis.h(target)
 
-    qis.cx(inputs[1], target)
-    qis.cx(inputs[3], target)
-    qis.cx(inputs[4], target)
+def test_module_creation_with_name_can_change() -> None:
+    initial = "source module's name"
+    module = Module(Context(), initial)
+    assert initial == module.name
+    # make sure setter/getter work
+    expected = "new name"
+    module.name = expected
+    assert expected == module.name
+    # make sure set value flows through into IR
+    ir = str(module)
+    assert ir.startswith(f"; ModuleID = '{expected}'")
 
-    qis.h(inputs[0])
-    qis.h(inputs[1])
-    qis.h(inputs[2])
-    qis.h(inputs[3])
-    qis.h(inputs[4])
 
-    qis.mz(inputs[0], outputs[0])
-    qis.mz(inputs[1], outputs[1])
-    qis.mz(inputs[2], outputs[2])
-    qis.mz(inputs[3], outputs[3])
-    qis.mz(inputs[4], outputs[4])
+def test_simple_module_creation_with_name() -> None:
+    expected = "module's name"
+    module = SimpleModule(expected, 2, 2)
+    ir = module.ir()
+    assert ir.startswith(f"; ModuleID = '{expected}'")
 
-    return module
 
-def test_link() -> None:
-    parent = Module(Context(), "batch")
-    simple_modules = [bell(parent), bell_no_measure(parent), bernstein_vazirani(parent)]
-    entry_points = [x.entry_point for x in simple_modules]
+def test_simple_module_creation_with_parent_module() -> None:
+    expected = "module's name"
+    parent = Module(Context(), expected)
+    module = SimpleModule(parent, 2, 2)
+    ir = module.ir()
+    assert ir.startswith(f"; ModuleID = '{expected}'")
+
+
+def test_module_composition_with_conflicting_entry_points_uniques_them() -> None:
+    expected = "module's name"
+    parent = Module(Context(), expected)
+    module0 = SimpleModule(parent, 2, 2, "entry")
+    assert module0.entry_point == "entry"
+
+    module1 = SimpleModule(parent, 2, 2, "entry")
+    assert module1.entry_point != "entry"
     
-    for f in parent.functions:
-        print(f.name)
-    print("entry points:")
-    print(entry_points)
-    
-    ir = str(parent)
-    #print(entry_point_names)
-    #print(ir)
+    assert module1.entry_point.startswith("entry")
