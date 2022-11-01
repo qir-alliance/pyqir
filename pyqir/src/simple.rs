@@ -40,7 +40,13 @@ pub(crate) struct SimpleModule {
 #[pymethods]
 impl SimpleModule {
     #[new]
-    fn new(py: Python, name: &str, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
+    fn new(
+        py: Python,
+        name: &str,
+        num_qubits: u64,
+        num_results: u64,
+        entry_point: Option<&str>,
+    ) -> PyResult<SimpleModule> {
         let context = Py::new(py, Context::new(inkwell::context::Context::create()))?;
         let module = Py::new(py, Module::new(py, context, name))?;
         let builder = Py::new(py, Builder::new(py, module.clone()))?;
@@ -48,7 +54,13 @@ impl SimpleModule {
         {
             let builder = builder.borrow(py);
             let module = module.borrow(py);
-            module::simple_init(module.get(), builder.get(), num_qubits, num_results);
+            module::simple_init(
+                module.get(),
+                builder.get(),
+                num_qubits,
+                num_results,
+                entry_point,
+            );
         }
 
         let types = Py::new(

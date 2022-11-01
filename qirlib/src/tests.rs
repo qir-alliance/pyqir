@@ -55,7 +55,13 @@ fn build_ir(
     let context = Context::create();
     let module = context.create_module(name);
     let builder = Builder::new(&module);
-    module::simple_init(&module, &builder, required_num_qubits, required_num_results);
+    module::simple_init(
+        &module,
+        &builder,
+        required_num_qubits,
+        required_num_results,
+        None,
+    );
     build(&builder);
     builder.build_return(None);
     module::simple_finalize(&module)?;

@@ -38,7 +38,15 @@ endif()
 
 set(CMAKE_BUILD_TYPE MinSizeRel CACHE STRING "")
 
-set(LLVM_TARGETS_TO_BUILD "Native;X86" CACHE STRING "")
+if(APPLE)
+  if (${CMAKE_OSX_ARCHITECTURES} MATCHES "arm64")
+    set(LLVM_TARGETS_TO_BUILD "ARM;AArch64" CACHE STRING "")
+  else()
+    set(LLVM_TARGETS_TO_BUILD "X86" CACHE STRING "")
+  endif()
+else()
+  set(LLVM_TARGETS_TO_BUILD "Native;X86" CACHE STRING "")
+endif()
 
 set(PACKAGE_VENDOR LLVM.org CACHE STRING "")
 
@@ -80,4 +88,14 @@ else()
 endif()
 
 
-
+# Apple specific changes to match their toolchain
+if(APPLE)
+  set(COMPILER_RT_ENABLE_IOS OFF CACHE BOOL "")
+  set(COMPILER_RT_ENABLE_WATCHOS OFF CACHE BOOL "")
+  set(COMPILER_RT_ENABLE_TVOS OFF CACHE BOOL "")
+ 
+  set(CMAKE_MACOSX_RPATH ON CACHE BOOL "")
+  set(CLANG_SPAWN_CC1 ON CACHE BOOL "")
+  set(CMAKE_C_FLAGS "-fno-stack-protector -fno-common -Wno-profile-instr-unprofiled" CACHE STRING "")
+  set(CMAKE_CXX_FLAGS "-fno-stack-protector -fno-common -Wno-profile-instr-unprofiled" CACHE STRING "")
+endif()
