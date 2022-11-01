@@ -9,6 +9,7 @@ from pyqir._native import (
     Builder as Builder,
     Call as Call,
     Constant as Constant,
+    Context as Context,
     FCmp as FCmp,
     FloatConstant as FloatConstant,
     FloatPredicate as FloatPredicate,

@@ -35,6 +35,7 @@ pub(crate) struct SimpleModule {
     types: Py<TypeFactory>,
     num_qubits: u64,
     num_results: u64,
+    entry_point: String,
 }
 
 #[pymethods]
@@ -42,16 +43,19 @@ impl SimpleModule {
     #[new]
     fn new(
         py: Python,
-        name: &str,
+        name_or_module: &PyAny,
         num_qubits: u64,
         num_results: u64,
         entry_point: Option<&str>,
     ) -> PyResult<SimpleModule> {
-        let context = Py::new(py, Context::new(inkwell::context::Context::create()))?;
-        let module = Py::new(py, Module::new(py, context, name))?;
+        let context = Py::new(py, Context::new())?;
+        let module = if let Ok(name) = name_or_module.extract::<&str>() {
+            Py::new(py, Module::new(py, context, name))?
+        } else {
+            name_or_module.extract::<Py<Module>>()?
+        };
         let builder = Py::new(py, Builder::new(py, module.clone()))?;
-
-        {
+        let name = {
             let builder = builder.borrow(py);
             let module = module.borrow(py);
             module::simple_init(
@@ -60,8 +64,8 @@ impl SimpleModule {
                 num_qubits,
                 num_results,
                 entry_point,
-            );
-        }
+            )
+        };
 
         let types = Py::new(
             py,
@@ -76,6 +80,7 @@ impl SimpleModule {
             types,
             num_qubits,
             num_results,
+            entry_point: name,
         })
     }
 
@@ -120,6 +125,11 @@ impl SimpleModule {
     #[getter]
     fn builder(&self) -> Py<Builder> {
         self.builder.clone()
+    }
+
+    #[getter]
+    fn entry_point(&self) -> &str {
+        &self.entry_point
     }
 
     /// Emits the LLVM IR for the module as plain text.

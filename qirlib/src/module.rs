@@ -4,8 +4,6 @@
 use inkwell::{
     attributes::AttributeLoc,
     builder::Builder,
-    context::Context,
-    memory_buffer::MemoryBuffer,
     module::Module,
     passes::{PassManager, PassManagerBuilder},
     values::FunctionValue,
@@ -18,13 +16,14 @@ pub fn simple_init(
     required_num_qubits: u64,
     required_num_results: u64,
     name: Option<&str>,
-) {
+) -> String {
     let context = module.get_context();
     let entry_point = create_entry_point(module, name);
     add_num_attribute(entry_point, "requiredQubits", required_num_qubits);
     add_num_attribute(entry_point, "requiredResults", required_num_results);
     let entry = context.append_basic_block(entry_point, "entry");
     builder.position_at_end(entry);
+    entry_point.get_name().to_str().unwrap().to_owned()
 }
 
 #[allow(clippy::missing_errors_doc)]
@@ -42,59 +41,6 @@ pub(crate) fn run_basic_passes(module: &Module) -> bool {
     fpm.add_strip_dead_prototypes_pass();
     pass_manager_builder.populate_module_pass_manager(&fpm);
     fpm.run_on(module)
-}
-
-pub fn link<'ctx>(
-    context: &'ctx Context,
-    modules: Vec<(&[u8], String)>,
-    name: Option<&str>,
-) -> Result<(Module<'ctx>, Vec<String>), String> {
-    let module: Module<'ctx> = context.create_module(name.unwrap_or("default"));
-    let mut names = vec![];
-    for (bytes, n) in modules {
-        let buffer = MemoryBuffer::create_from_memory_range_copy(bytes, n.as_str());
-        let m = Module::parse_bitcode_from_buffer(&buffer, context).map_err(|e| e.to_string())?;
-        let mm = choose_entry_points(module_functions(&m), None)?;
-        for mz in mm {
-            names.push(mz.get_name().to_str().unwrap().to_owned());
-        }
-        module.link_in_module(m).map_err(|e| e.to_string())?;
-    }
-    Ok((module, names))
-}
-
-fn choose_entry_points<'ctx>(
-    functions: impl Iterator<Item = FunctionValue<'ctx>>,
-    name: Option<&str>,
-) -> Result<Vec<FunctionValue<'ctx>>, String> {
-    let entry_points = functions
-        .filter(|f| is_entry_point(*f) && name.iter().all(|n| f.get_name().to_str() == Ok(n)))
-        .collect::<Vec<FunctionValue<'ctx>>>();
-    Ok(entry_points)
-}
-
-fn is_entry_point(function: FunctionValue) -> bool {
-    function
-        .get_string_attribute(AttributeLoc::Function, "EntryPoint")
-        .is_some()
-}
-
-pub(crate) fn module_functions<'ctx>(
-    module: &Module<'ctx>,
-) -> impl Iterator<Item = FunctionValue<'ctx>> {
-    struct FunctionValueIter<'ctx>(Option<FunctionValue<'ctx>>);
-
-    impl<'ctx> Iterator for FunctionValueIter<'ctx> {
-        type Item = FunctionValue<'ctx>;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            let function = self.0;
-            self.0 = function.and_then(inkwell::values::FunctionValue::get_next_function);
-            function
-        }
-    }
-
-    FunctionValueIter(module.get_first_function())
 }
 
 fn create_entry_point<'ctx>(module: &Module<'ctx>, name: Option<&str>) -> FunctionValue<'ctx> {

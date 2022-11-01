@@ -9,9 +9,17 @@ use std::{borrow::Borrow, ops::Deref};
 #[derive(Eq, PartialEq)]
 pub(crate) struct Context(inkwell::context::Context);
 
+#[pymethods]
 impl Context {
-    pub(crate) fn new(context: inkwell::context::Context) -> Self {
-        Self(context)
+    #[new]
+    pub(crate) fn new() -> Self {
+        Self(inkwell::context::Context::create())
+    }
+}
+
+impl From<inkwell::context::Context> for Context {
+    fn from(value: inkwell::context::Context) -> Self {
+        Self(value)
     }
 }
 

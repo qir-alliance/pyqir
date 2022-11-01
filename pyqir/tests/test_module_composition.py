@@ -1,11 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir import BasicQisBuilder, SimpleModule, Module
+from importlib.metadata import entry_points
+from pyqir import BasicQisBuilder, SimpleModule, Context, Module, is_entry_point
 import pytest
 
-def bell() -> SimpleModule:
-    module = SimpleModule("Bell circuit", 2, 2, "bell")
+def bell(m) -> SimpleModule:
+    module = SimpleModule(m, 2, 2, "bell")
     qis = BasicQisBuilder(module.builder)
     qis.h(module.qubits[0])
     qis.cx(module.qubits[0], module.qubits[1])
@@ -15,8 +16,8 @@ def bell() -> SimpleModule:
     return module
 
 
-def bell_no_measure() -> SimpleModule:
-    module = SimpleModule("Bell circuit", 2, 0, "bell_no_measure")
+def bell_no_measure(m) -> SimpleModule:
+    module = SimpleModule(m, 2, 0, "bell")
     qis = BasicQisBuilder(module.builder)
     qis.h(module.qubits[0])
     qis.cx(module.qubits[0], module.qubits[1])
@@ -24,8 +25,8 @@ def bell_no_measure() -> SimpleModule:
     return module
 
 
-def bernstein_vazirani() -> SimpleModule:
-    module = SimpleModule("Bernstein-Vazirani", 6, 5, "Bernstein_Vazirani")
+def bernstein_vazirani(m) -> SimpleModule:
+    module = SimpleModule(m, 6, 5, "Bernstein_Vazirani")
     qis = BasicQisBuilder(module.builder)
     inputs = module.qubits[:5]
     target = module.qubits[5]
@@ -59,10 +60,16 @@ def bernstein_vazirani() -> SimpleModule:
 
     return module
 
-def test_foo() -> None:
-    a, b, c = bell(), bell_no_measure(), bernstein_vazirani()
-
-    names, module = Module.link([Module.from_bitcode(a.bitcode()), Module.from_bitcode(b.bitcode()), Module.from_bitcode(c.bitcode())], "combined")
-    ir = str(module)
-    print(names)
-    print(ir)
+def test_link() -> None:
+    parent = Module(Context(), "batch")
+    simple_modules = [bell(parent), bell_no_measure(parent), bernstein_vazirani(parent)]
+    entry_points = [x.entry_point for x in simple_modules]
+    
+    for f in parent.functions:
+        print(f.name)
+    print("entry points:")
+    print(entry_points)
+    
+    ir = str(parent)
+    #print(entry_point_names)
+    #print(ir)

@@ -3,6 +3,7 @@
 
 use crate::{
     builder::Builder,
+    context::Context,
     evaluator::PyNonadaptiveJit,
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
@@ -28,6 +29,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Builder>()?;
     m.add_class::<Call>()?;
     m.add_class::<Constant>()?;
+    m.add_class::<Context>()?;
     m.add_class::<FCmp>()?;
     m.add_class::<FloatConstant>()?;
     m.add_class::<FloatPredicate>()?;
