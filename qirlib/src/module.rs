@@ -23,7 +23,7 @@ pub fn simple_init(
     add_num_attribute(entry_point, "requiredResults", required_num_results);
     let entry = context.append_basic_block(entry_point, "entry");
     builder.position_at_end(entry);
-    entry_point.get_name().to_str().unwrap().to_owned()
+    entry_point.get_name().to_str().expect("Name is not valid UTF-8.").to_owned()
 }
 
 #[allow(clippy::missing_errors_doc)]

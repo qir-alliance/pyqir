@@ -25,7 +25,7 @@ def bell_no_measure(m) -> SimpleModule:
 
 
 def test_module_creation_with_non_str_name() -> None:
-    with pytest.raises(TypeError) as e:
+    with pytest.raises(TypeError):
         Module(Context(), 5)
 
 
@@ -33,6 +33,17 @@ def test_module_creation_with_name() -> None:
     expected = "module's name"
     module = Module(Context(), expected)
     assert expected == module.name
+
+
+def test_module_creation_with_empty_name() -> None:
+    expected = ""
+    module = Module(Context(), expected)
+    assert expected == module.name
+
+
+def test_module_creation_with_none_name() -> None:
+    with pytest.raises(TypeError):
+        Module(Context(), None)
 
 
 def test_module_creation_with_name_can_change() -> None:
