@@ -24,7 +24,7 @@ def bell_no_measure(m) -> SimpleModule:
     return module
 
 
-def test_module_creation_with_non_str_name() -> None:
+def test_module_creation_with_non_str_name_should_fail() -> None:
     with pytest.raises(TypeError):
         Module(Context(), 5)
 
@@ -41,7 +41,7 @@ def test_module_creation_with_empty_name() -> None:
     assert expected == module.name
 
 
-def test_module_creation_with_none_name() -> None:
+def test_module_creation_with_none_name_should_fail() -> None:
     with pytest.raises(TypeError):
         Module(Context(), None)
 
@@ -66,12 +66,31 @@ def test_simple_module_creation_with_name() -> None:
     assert ir.startswith(f"; ModuleID = '{expected}'")
 
 
+def test_simple_module_creation_without_entry_point_name() -> None:
+    module_name = "module's name"
+    module = SimpleModule(module_name, 2, 2)
+    expected = "main"
+    assert expected == module.entry_point
+
+
+def test_simple_module_creation_with_entry_point_name() -> None:
+    module_name = "module's name"
+    expected = "entry point"
+    module = SimpleModule(module_name, 2, 2, expected)
+    assert expected == module.entry_point
+
+
 def test_simple_module_creation_with_parent_module() -> None:
     expected = "module's name"
     parent = Module(Context(), expected)
     module = SimpleModule(parent, 2, 2)
     ir = module.ir()
     assert ir.startswith(f"; ModuleID = '{expected}'")
+
+
+def test_simple_module_creation_with_invalid_parent_or_name_should_fail() -> None:
+    with pytest.raises(TypeError):
+        SimpleModule(5, 2, 2)
 
 
 def test_module_composition_with_conflicting_entry_points_uniques_them() -> None:
