@@ -4,8 +4,8 @@
 from pyqir import BasicQisBuilder, SimpleModule, Context, Module
 import pytest
 
-def bell(m) -> SimpleModule:
-    module = SimpleModule(m, 2, 2, "bell")
+def bell(parent: Module) -> SimpleModule:
+    module = SimpleModule(parent, 2, 2, "bell")
     qis = BasicQisBuilder(module.builder)
     qis.h(module.qubits[0])
     qis.cx(module.qubits[0], module.qubits[1])
@@ -15,8 +15,8 @@ def bell(m) -> SimpleModule:
     return module
 
 
-def bell_no_measure(m) -> SimpleModule:
-    module = SimpleModule(m, 2, 0, "bell_no_measure")
+def bell_no_measure(parent: Module) -> SimpleModule:
+    module = SimpleModule(parent, 2, 0, "bell_no_measure")
     qis = BasicQisBuilder(module.builder)
     qis.h(module.qubits[0])
     qis.cx(module.qubits[0], module.qubits[1])

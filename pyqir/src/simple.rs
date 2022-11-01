@@ -24,11 +24,12 @@ use std::{convert::Into, mem::transmute};
 ///   allocated with a fixed size.
 /// - There is only a single function that runs as the entry point.
 ///
-/// :param str name: The name of the module.
+/// :param str name_or_module: The name of the module or the parent module to build on.
 /// :param int num_qubits: The number of statically allocated qubits.
 /// :param int num_results: The number of statically allocated results.
+/// :param Optional[str] entry_point: The entry point name or "main" if None.
 #[pyclass(unsendable)]
-#[pyo3(text_signature = "(name, num_qubits, num_results)")]
+#[pyo3(text_signature = "(name_or_module, num_qubits, num_results, entry_point)")]
 pub(crate) struct SimpleModule {
     module: Py<Module>,
     builder: Py<Builder>,
