@@ -172,7 +172,7 @@ def test_parser_internals() -> None:
     )
     func = next(filter(lambda f: f.name == func_name, mod.functions))
     assert len(func.params) == 0
-    assert isinstance(func.type.return_, IntType)
+    assert isinstance(func.type.ret, IntType)
 
     func_list = mod.functions
     assert len(func_list) == 21

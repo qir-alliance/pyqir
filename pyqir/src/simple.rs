@@ -41,14 +41,14 @@ pub(crate) struct SimpleModule {
 impl SimpleModule {
     #[new]
     fn new(py: Python, name: &str, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
-        let context = Py::new(py, Context::new(inkwell::context::Context::create()))?;
+        let context = Py::new(py, Context::new())?;
         let module = Py::new(py, Module::new(py, context, name))?;
         let builder = Py::new(py, Builder::new(py, module.clone()))?;
 
         {
             let builder = builder.borrow(py);
             let module = module.borrow(py);
-            module::simple_init(module.get(), builder.get(), num_qubits, num_results);
+            unsafe { module::simple_init(module.get(), builder.get(), num_qubits, num_results) };
         }
 
         let types = Py::new(
@@ -79,7 +79,7 @@ impl SimpleModule {
     fn qubits(&self, py: Python) -> PyResult<Vec<PyObject>> {
         let builder = self.builder.borrow(py);
         let module = self.module.borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
         (0..self.num_qubits)
             .map(|id| unsafe {
                 Value::from_any(py, module.context().clone(), builder.build_qubit(id))
@@ -94,7 +94,7 @@ impl SimpleModule {
     fn results(&self, py: Python) -> PyResult<Vec<PyObject>> {
         let builder = self.builder.borrow(py);
         let module = self.module.borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
         (0..self.num_results)
             .map(|id| unsafe {
                 Value::from_any(py, module.context().clone(), builder.build_result(id))
@@ -140,7 +140,7 @@ impl SimpleModule {
         let context = ty.context().clone();
         let ty = unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty.get()) }
             .into_function_type();
-        let function = module.get().add_function(name, ty, None);
+        let function = unsafe { module.get() }.add_function(name, ty, None);
         unsafe { Value::from_any(py, context, function) }
     }
 }
@@ -149,9 +149,9 @@ impl SimpleModule {
     fn emit<T>(&self, py: Python, f: impl Fn(&inkwell::module::Module) -> T) -> PyResult<T> {
         let module = self.module.borrow(py);
         let builder = self.builder.borrow(py);
-        let ret = builder.get().build_return(None);
+        let ret = unsafe { builder.get() }.build_return(None);
         let new_context = inkwell::context::Context::create();
-        let new_module = clone_module(module.get(), &new_context)?;
+        let new_module = clone_module(unsafe { module.get() }, &new_context)?;
         ret.erase_from_basic_block();
         module::simple_finalize(&new_module).map_err(PyOSError::new_err)?;
         Ok(f(&new_module))
@@ -171,7 +171,7 @@ impl TypeFactory {
     /// :type: Type
     #[getter]
     fn void(&self, py: Python) -> PyResult<PyObject> {
-        self.create_type(py, |m| m.get_context().void_type().into())
+        self.new_type(py, |m| m.get_context().void_type().into())
     }
 
     /// The boolean type.
@@ -179,7 +179,7 @@ impl TypeFactory {
     /// :type: Type
     #[getter]
     fn bool(&self, py: Python) -> PyResult<PyObject> {
-        self.create_type(py, |m| m.get_context().bool_type().into())
+        self.new_type(py, |m| m.get_context().bool_type().into())
     }
 
     /// An integer type.
@@ -189,7 +189,7 @@ impl TypeFactory {
     /// :rtype: Type
     #[pyo3(text_signature = "(width)")]
     fn int(&self, py: Python, width: u32) -> PyResult<PyObject> {
-        self.create_type(py, |m| m.get_context().custom_width_int_type(width).into())
+        self.new_type(py, |m| m.get_context().custom_width_int_type(width).into())
     }
 
     /// The double type.
@@ -197,7 +197,7 @@ impl TypeFactory {
     /// :type: Type
     #[getter]
     fn double(&self, py: Python) -> PyResult<PyObject> {
-        self.create_type(py, |m| m.get_context().f64_type().into())
+        self.new_type(py, |m| m.get_context().f64_type().into())
     }
 
     /// The qubit type.
@@ -205,7 +205,7 @@ impl TypeFactory {
     /// :type: Type
     #[getter]
     fn qubit(&self, py: Python) -> PyResult<PyObject> {
-        self.create_type(py, |m| types::qubit(m).into())
+        self.new_type(py, |m| types::qubit(m).into())
     }
 
     /// The measurement result type.
@@ -213,7 +213,7 @@ impl TypeFactory {
     /// :type: Type
     #[getter]
     fn result(&self, py: Python) -> PyResult<PyObject> {
-        self.create_type(py, |m| types::result(m).into())
+        self.new_type(py, |m| types::result(m).into())
     }
 
     /// A function type.
@@ -235,7 +235,7 @@ impl TypeFactory {
         )?;
 
         let ty = function_type(
-            &ret.get(),
+            unsafe { &ret.get() },
             params.iter().map(|t| unsafe {
                 transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(t.borrow(py).get())
             }),
@@ -247,14 +247,14 @@ impl TypeFactory {
 }
 
 impl TypeFactory {
-    fn create_type(
+    fn new_type(
         &self,
         py: Python,
         f: impl for<'ctx> Fn(&inkwell::module::Module<'ctx>) -> AnyTypeEnum<'ctx>,
     ) -> PyResult<PyObject> {
         let module = self.module.borrow(py);
         let context = module.context().clone();
-        let ty = f(module.get());
+        let ty = f(unsafe { module.get() });
         unsafe { Type::from_any(py, context, ty) }
     }
 }

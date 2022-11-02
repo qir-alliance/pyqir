@@ -18,7 +18,7 @@ use inkwell::{
 use pyo3::{conversion::ToPyObject, exceptions::PyValueError, prelude::*, types::PyBytes};
 use qirlib::values;
 use std::{
-    convert::{Into, TryFrom, TryInto},
+    convert::{Into, TryInto},
     mem::transmute,
 };
 
@@ -80,7 +80,7 @@ impl Value {
         PyClassInitializer::from(Self { value, context })
     }
 
-    pub(crate) fn get(&self) -> AnyValue {
+    pub(crate) unsafe fn get(&self) -> AnyValue<'static> {
         self.value
     }
 
@@ -213,7 +213,7 @@ impl Function {
 }
 
 impl Function {
-    pub(crate) fn get(&self) -> FunctionValue {
+    pub(crate) unsafe fn get(&self) -> FunctionValue<'static> {
         self.0
     }
 }
@@ -228,52 +228,52 @@ impl Function {
 #[pyo3(text_signature = "(ty, value)")]
 pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject> {
     let context = ty.context().clone();
-    let value = extract_constant(&ty.get(), value)?;
+    let value = extract_constant(unsafe { &ty.get() }, value)?;
     unsafe { Value::from_any(py, context, value) }
 }
 
 #[pyfunction]
 pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
-    values::qubit_id(value.get().try_into().ok()?)
+    values::qubit_id(unsafe { value.get() }.try_into().ok()?)
 }
 
 #[pyfunction]
 pub(crate) fn result_id(value: &Value) -> Option<u64> {
-    values::result_id(value.get().try_into().ok()?)
+    values::result_id(unsafe { value.get() }.try_into().ok()?)
 }
 
 #[pyfunction]
 pub(crate) fn is_entry_point(function: &Function) -> bool {
-    values::is_entry_point(function.get())
+    values::is_entry_point(unsafe { function.get() })
 }
 
 #[pyfunction]
 pub(crate) fn is_interop_friendly(function: &Function) -> bool {
-    values::is_interop_friendly(function.get())
+    values::is_interop_friendly(unsafe { function.get() })
 }
 
 #[pyfunction]
 pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
-    values::required_num_qubits(function.get())
+    values::required_num_qubits(unsafe { function.get() })
 }
 
 #[pyfunction]
 pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
-    values::required_num_results(function.get())
+    values::required_num_results(unsafe { function.get() })
 }
 
 #[pyfunction]
 pub(crate) fn constant_bytes<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
-    let bytes = values::constant_bytes(value.get().try_into().ok()?)?;
+    let bytes = values::constant_bytes(unsafe { value.get() }.try_into().ok()?)?;
     Some(PyBytes::new(py, bytes))
 }
 
-pub(crate) unsafe fn extract_inkwell<'ctx>(
+pub(crate) unsafe fn extract_any<'ctx>(
     ty: &impl AnyType<'ctx>,
     ob: &PyAny,
-) -> PyResult<AnyValueEnum<'ctx>> {
+) -> PyResult<AnyValue<'ctx>> {
     ob.extract()
-        .and_then(|v: Value| AnyValueEnum::try_from(v.value).map_err(Into::into))
+        .map(|v: Value| v.value)
         .or_else(|_| extract_constant(ty, ob))
 }
 

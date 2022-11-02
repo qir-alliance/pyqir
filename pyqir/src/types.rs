@@ -62,7 +62,7 @@ impl Type {
         })
     }
 
-    pub(crate) fn get(&self) -> AnyTypeEnum {
+    pub(crate) unsafe fn get(&self) -> AnyTypeEnum<'static> {
         self.ty
     }
 
@@ -88,7 +88,7 @@ pub(crate) struct FunctionType(inkwell::types::FunctionType<'static>);
 #[pymethods]
 impl FunctionType {
     #[getter]
-    fn return_(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
+    fn ret(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let ty = basic_to_any(slf.0.get_return_type().unwrap());
         let context = slf.into_super().context.clone();
         unsafe { Type::from_any(py, context, ty) }

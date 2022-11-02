@@ -17,31 +17,33 @@ impl Module {
     #[staticmethod]
     #[pyo3(text_signature = "(ir, name=\"\")")]
     fn from_ir(py: Python, ir: &str, name: Option<&str>) -> PyResult<Self> {
-        let context = inkwell::context::Context::create();
+        let context = Context::new();
         let buffer =
             MemoryBuffer::create_from_memory_range(ir.as_bytes(), name.unwrap_or_default());
         let module = context
             .create_module_from_ir(buffer)
             .map_err(|e| PyValueError::new_err(e.to_string()))?;
-        let module = unsafe {
-            transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
-        };
-        let context = Py::new(py, Context::new(context))?;
-        Ok(Self { module, context })
+        Ok(Self {
+            module: unsafe {
+                transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
+            },
+            context: Py::new(py, context)?,
+        })
     }
 
     #[staticmethod]
     #[pyo3(text_signature = "(bitcode, name=\"\")")]
     fn from_bitcode(py: Python, bitcode: &[u8], name: Option<&str>) -> PyResult<Self> {
-        let context = inkwell::context::Context::create();
+        let context = Context::new();
         let buffer = MemoryBuffer::create_from_memory_range(bitcode, name.unwrap_or_default());
         let module = inkwell::module::Module::parse_bitcode_from_buffer(&buffer, &context)
             .map_err(|e| PyValueError::new_err(e.to_string()))?;
-        let module = unsafe {
-            transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
-        };
-        let context = Py::new(py, Context::new(context))?;
-        Ok(Self { module, context })
+        Ok(Self {
+            module: unsafe {
+                transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
+            },
+            context: Py::new(py, context)?,
+        })
     }
 
     #[getter]
@@ -87,7 +89,7 @@ impl Module {
         Self { module, context }
     }
 
-    pub(crate) fn get(&self) -> &inkwell::module::Module<'static> {
+    pub(crate) unsafe fn get(&self) -> &inkwell::module::Module<'static> {
         &self.module
     }
 

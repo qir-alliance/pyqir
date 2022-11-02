@@ -316,7 +316,9 @@ class ExternalFunctionsTest(unittest.TestCase):
 
         x = mod.builder.call(foo, [])
         assert x is not None
-        with self.assertRaisesRegex(BaseException, "^Found IntValue"):
+        with self.assertRaisesRegex(
+            ValueError, r"^Couldn't convert value to float value\.$"
+        ):
             qis.rz(x, mod.qubits[0])
 
     def test_two_variables(self) -> None:

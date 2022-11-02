@@ -5,7 +5,7 @@ use crate::{
     context::{self, Context},
     instructions::IntPredicate,
     module::Module,
-    utils::{any_to_meta, call_if_some, try_callable_value},
+    utils::{call_if_some, try_callable_value},
     values::{self, Value},
 };
 use inkwell::values::IntValue;
@@ -37,9 +37,11 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn and_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
-        let value =
-            self.builder
-                .build_and::<IntValue>(lhs.get().try_into()?, rhs.get().try_into()?, "");
+        let value = self.builder.build_and::<IntValue>(
+            unsafe { lhs.get() }.try_into()?,
+            unsafe { rhs.get() }.try_into()?,
+            "",
+        );
         unsafe { Value::from_any(py, self.context.clone(), value) }
     }
 
@@ -52,9 +54,11 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn or_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
-        let value =
-            self.builder
-                .build_or::<IntValue>(lhs.get().try_into()?, rhs.get().try_into()?, "");
+        let value = self.builder.build_or::<IntValue>(
+            unsafe { lhs.get() }.try_into()?,
+            unsafe { rhs.get() }.try_into()?,
+            "",
+        );
         unsafe { Value::from_any(py, self.context.clone(), value) }
     }
 
@@ -67,9 +71,11 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn xor(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
-        let value =
-            self.builder
-                .build_xor::<IntValue>(lhs.get().try_into()?, rhs.get().try_into()?, "");
+        let value = self.builder.build_xor::<IntValue>(
+            unsafe { lhs.get() }.try_into()?,
+            unsafe { rhs.get() }.try_into()?,
+            "",
+        );
         unsafe { Value::from_any(py, self.context.clone(), value) }
     }
 
@@ -83,8 +89,8 @@ impl Builder {
     fn add(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
         let value = self.builder.build_int_add::<IntValue>(
-            lhs.get().try_into()?,
-            rhs.get().try_into()?,
+            unsafe { lhs.get() }.try_into()?,
+            unsafe { rhs.get() }.try_into()?,
             "",
         );
         unsafe { Value::from_any(py, self.context.clone(), value) }
@@ -100,8 +106,8 @@ impl Builder {
     fn sub(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
         let value = self.builder.build_int_sub::<IntValue>(
-            lhs.get().try_into()?,
-            rhs.get().try_into()?,
+            unsafe { lhs.get() }.try_into()?,
+            unsafe { rhs.get() }.try_into()?,
             "",
         );
         unsafe { Value::from_any(py, self.context.clone(), value) }
@@ -117,8 +123,8 @@ impl Builder {
     fn mul(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
         let value = self.builder.build_int_mul::<IntValue>(
-            lhs.get().try_into()?,
-            rhs.get().try_into()?,
+            unsafe { lhs.get() }.try_into()?,
+            unsafe { rhs.get() }.try_into()?,
             "",
         );
         unsafe { Value::from_any(py, self.context.clone(), value) }
@@ -134,8 +140,8 @@ impl Builder {
     fn shl(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
         let value = self.builder.build_left_shift::<IntValue>(
-            lhs.get().try_into()?,
-            rhs.get().try_into()?,
+            unsafe { lhs.get() }.try_into()?,
+            unsafe { rhs.get() }.try_into()?,
             "",
         );
         unsafe { Value::from_any(py, self.context.clone(), value) }
@@ -151,8 +157,8 @@ impl Builder {
     fn lshr(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
         let value = self.builder.build_right_shift::<IntValue>(
-            lhs.get().try_into()?,
-            rhs.get().try_into()?,
+            unsafe { lhs.get() }.try_into()?,
+            unsafe { rhs.get() }.try_into()?,
             false,
             "",
         );
@@ -172,8 +178,8 @@ impl Builder {
         context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
         let value = self.builder.build_int_compare::<IntValue>(
             pred.into(),
-            lhs.get().try_into()?,
-            rhs.get().try_into()?,
+            unsafe { lhs.get() }.try_into()?,
+            unsafe { rhs.get() }.try_into()?,
             "",
         );
         unsafe { Value::from_any(py, self.context.clone(), value) }
@@ -193,7 +199,7 @@ impl Builder {
                 .chain([self.context.clone(), callee.context().clone()]),
         )?;
 
-        let (callable, param_types) = try_callable_value(callee.get())
+        let (callable, param_types) = try_callable_value(unsafe { callee.get() })
             .ok_or_else(|| PyValueError::new_err("Value is not callable."))?;
 
         if param_types.len() != args.len()? {
@@ -208,8 +214,9 @@ impl Builder {
             .iter()?
             .zip(param_types)
             .map(|(v, t)| {
-                let value = unsafe { values::extract_inkwell(&t, v?) }?;
-                any_to_meta(value).ok_or_else(|| PyValueError::new_err("Invalid argument."))
+                unsafe { values::extract_any(&t, v?) }?
+                    .try_into()
+                    .map_err(Into::into)
             })
             .collect::<PyResult<Vec<_>>>()?;
 
@@ -241,9 +248,9 @@ impl Builder {
     ) -> PyResult<()> {
         context::require_same(py, [&self.context, cond.context()])?;
         let module = self.module.borrow(py);
-        let builder = qirlib::Builder::from(&self.builder, module.get());
+        let builder = qirlib::Builder::from(&self.builder, unsafe { module.get() });
         builder.try_build_if(
-            cond.get().try_into()?,
+            unsafe { cond.get() }.try_into()?,
             |_| call_if_some(r#true),
             |_| call_if_some(r#false),
         )
@@ -270,7 +277,7 @@ impl Builder {
         }
     }
 
-    pub(crate) fn get(&self) -> &inkwell::builder::Builder<'static> {
+    pub(crate) unsafe fn get(&self) -> &inkwell::builder::Builder<'static> {
         &self.builder
     }
 

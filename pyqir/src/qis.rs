@@ -4,7 +4,7 @@
 use crate::{
     builder::Builder,
     context,
-    utils::{any_to_meta, call_if_some},
+    utils::call_if_some,
     values::{self, Value},
 };
 use inkwell::values::PointerValue;
@@ -38,8 +38,11 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), control.context(), target.context()])?;
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        builder.build_cx(control.get().try_into()?, target.get().try_into()?);
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        builder.build_cx(
+            unsafe { control.get() }.try_into()?,
+            unsafe { target.get() }.try_into()?,
+        );
         Ok(())
     }
 
@@ -53,8 +56,11 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), control.context(), target.context()])?;
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        builder.build_cz(control.get().try_into()?, target.get().try_into()?);
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        builder.build_cz(
+            unsafe { control.get() }.try_into()?,
+            unsafe { target.get() }.try_into()?,
+        );
         Ok(())
     }
 
@@ -67,8 +73,8 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), qubit.context()])?;
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        builder.build_h(qubit.get().try_into()?);
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        builder.build_h(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
@@ -82,8 +88,11 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), qubit.context(), result.context()])?;
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        builder.build_mz(qubit.get().try_into()?, result.get().try_into()?);
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        builder.build_mz(
+            unsafe { qubit.get() }.try_into()?,
+            unsafe { result.get() }.try_into()?,
+        );
         Ok(())
     }
 
@@ -96,8 +105,8 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), qubit.context()])?;
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        builder.build_reset(qubit.get().try_into()?);
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        builder.build_reset(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
@@ -117,12 +126,9 @@ impl BasicQisBuilder {
 
         let context = builder.context().borrow(py);
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        let theta = unsafe { values::extract_inkwell(&context.f64_type(), theta)? };
-        builder.build_rx(
-            any_to_meta(theta).unwrap().into_float_value(),
-            qubit.get().try_into()?,
-        );
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        let theta = unsafe { values::extract_any(&context.f64_type(), theta)? };
+        builder.build_rx(theta.try_into()?, unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
@@ -142,12 +148,9 @@ impl BasicQisBuilder {
 
         let context = builder.context().borrow(py);
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        let theta = unsafe { values::extract_inkwell(&context.f64_type(), theta)? };
-        builder.build_ry(
-            any_to_meta(theta).unwrap().into_float_value(),
-            qubit.get().try_into()?,
-        );
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        let theta = unsafe { values::extract_any(&context.f64_type(), theta)? };
+        builder.build_ry(theta.try_into()?, unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
@@ -167,12 +170,9 @@ impl BasicQisBuilder {
 
         let context = builder.context().borrow(py);
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        let theta = unsafe { values::extract_inkwell(&context.f64_type(), theta)? };
-        builder.build_rz(
-            any_to_meta(theta).unwrap().into_float_value(),
-            qubit.get().try_into()?,
-        );
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        let theta = unsafe { values::extract_any(&context.f64_type(), theta)? };
+        builder.build_rz(theta.try_into()?, unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
@@ -185,8 +185,8 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), qubit.context()])?;
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        builder.build_s(qubit.get().try_into()?);
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        builder.build_s(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
@@ -199,8 +199,8 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), qubit.context()])?;
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        builder.build_s_adj(qubit.get().try_into()?);
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        builder.build_s_adj(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
@@ -213,8 +213,8 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), qubit.context()])?;
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        builder.build_t(qubit.get().try_into()?);
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        builder.build_t(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
@@ -227,8 +227,8 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), qubit.context()])?;
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        builder.build_t_adj(qubit.get().try_into()?);
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        builder.build_t_adj(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
@@ -241,8 +241,8 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), qubit.context()])?;
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        builder.build_x(qubit.get().try_into()?);
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        builder.build_x(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
@@ -255,8 +255,8 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), qubit.context()])?;
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        builder.build_y(qubit.get().try_into()?);
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        builder.build_y(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
@@ -269,8 +269,8 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), qubit.context()])?;
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        builder.build_z(qubit.get().try_into()?);
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        builder.build_z(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
@@ -297,8 +297,8 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), cond.context()])?;
         let module = builder.module().borrow(py);
-        let builder = qirlib::Builder::from(builder.get(), module.get());
-        let cond: PointerValue = cond.get().try_into()?;
+        let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
+        let cond: PointerValue = unsafe { cond.get() }.try_into()?;
         let cond = unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(cond) };
         builder.try_build_if_result(cond, |_| call_if_some(one), |_| call_if_some(zero))
     }

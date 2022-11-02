@@ -10,8 +10,8 @@ use std::{borrow::Borrow, ops::Deref};
 pub(crate) struct Context(inkwell::context::Context);
 
 impl Context {
-    pub(crate) fn new(context: inkwell::context::Context) -> Self {
-        Self(context)
+    pub(crate) fn new() -> Self {
+        Self(inkwell::context::Context::create())
     }
 }
 

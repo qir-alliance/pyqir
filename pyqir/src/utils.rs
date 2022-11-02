@@ -7,8 +7,8 @@ use inkwell::{
     module::Module,
     types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FunctionType},
     values::{
-        AnyValue as InkwellAnyValue, AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum,
-        CallableValue, FloatValue, FunctionValue, InstructionValue, IntValue, PointerValue,
+        AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, CallableValue, FloatValue,
+        FunctionValue, InstructionValue, IntValue, PointerValue,
     },
 };
 use pyo3::{
@@ -62,7 +62,9 @@ impl<'ctx> AnyValue<'ctx> {
             Self::Any(AnyValueEnum::StructValue(s)) => s.get_type().into(),
             Self::Any(AnyValueEnum::VectorValue(v)) => v.get_type().into(),
             Self::Any(AnyValueEnum::InstructionValue(i)) => i.get_type(),
-            Self::Any(AnyValueEnum::MetadataValue(m)) => m.as_any_value_enum().get_type(),
+            Self::Any(AnyValueEnum::MetadataValue(m)) => {
+                inkwell::values::AnyValue::as_any_value_enum(m).get_type()
+            }
             Self::BasicBlock(b) => b.get_context().void_type().into(),
         }
     }
@@ -110,7 +112,7 @@ impl<'ctx> AnyValue<'ctx> {
 impl<'ctx> Display for AnyValue<'ctx> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::Any(any) => write!(f, "{}", any.print_to_string()),
+            Self::Any(any) => write!(f, "{}", inkwell::values::AnyValue::print_to_string(any)),
             Self::BasicBlock(_) => todo!(),
         }
     }
@@ -131,6 +133,12 @@ impl<'ctx> From<BasicValueEnum<'ctx>> for AnyValue<'ctx> {
 impl<'ctx> From<IntValue<'ctx>> for AnyValue<'ctx> {
     fn from(int: IntValue<'ctx>) -> Self {
         Self::Any(int.into())
+    }
+}
+
+impl<'ctx> From<FloatValue<'ctx>> for AnyValue<'ctx> {
+    fn from(float: FloatValue<'ctx>) -> Self {
+        Self::Any(float.into())
     }
 }
 
@@ -165,6 +173,30 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for AnyValueEnum<'ctx> {
         match value {
             AnyValue::Any(a) => Ok(a),
             AnyValue::BasicBlock(_) => Err(ConversionError::new("value", "any value")),
+        }
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicMetadataValueEnum<'ctx> {
+    type Error = ConversionError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(AnyValueEnum::ArrayValue(a)) => Ok(a.into()),
+            AnyValue::Any(AnyValueEnum::IntValue(i)) => Ok(i.into()),
+            AnyValue::Any(AnyValueEnum::FloatValue(f)) => Ok(f.into()),
+            AnyValue::Any(AnyValueEnum::PointerValue(p)) => Ok(p.into()),
+            AnyValue::Any(AnyValueEnum::StructValue(s)) => Ok(s.into()),
+            AnyValue::Any(AnyValueEnum::VectorValue(v)) => Ok(v.into()),
+            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i
+                .try_into()
+                .map(BasicMetadataValueEnum::IntValue)
+                .or_else(|()| i.try_into().map(BasicMetadataValueEnum::FloatValue))
+                .or_else(|()| i.try_into().map(BasicMetadataValueEnum::PointerValue))
+                .map_err(|_| ConversionError::new("instruction value", "basic metadata value")),
+            AnyValue::Any(AnyValueEnum::MetadataValue(m)) => Ok(m.into()),
+            AnyValue::Any(AnyValueEnum::PhiValue(_) | AnyValueEnum::FunctionValue(_))
+            | AnyValue::BasicBlock(_) => Err(ConversionError::new("value", "basic metadata value")),
         }
     }
 }
@@ -242,7 +274,7 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicBlock<'ctx> {
 pub(crate) fn extract_constant<'ctx>(
     ty: &impl AnyType<'ctx>,
     ob: &PyAny,
-) -> PyResult<AnyValueEnum<'ctx>> {
+) -> PyResult<AnyValue<'ctx>> {
     match ty.as_any_type_enum() {
         AnyTypeEnum::IntType(int) => Ok(int.const_int(ob.extract()?, true).into()),
         AnyTypeEnum::FloatType(float) => Ok(float.const_float(ob.extract()?).into()),
@@ -281,25 +313,6 @@ pub(crate) fn try_callable_value(value: AnyValue) -> Option<(CallableValue, Vec<
             _ => None,
         },
         _ => None,
-    }
-}
-
-pub(crate) fn any_to_meta(value: AnyValueEnum) -> Option<BasicMetadataValueEnum> {
-    match value {
-        AnyValueEnum::ArrayValue(a) => Some(BasicMetadataValueEnum::ArrayValue(a)),
-        AnyValueEnum::IntValue(i) => Some(BasicMetadataValueEnum::IntValue(i)),
-        AnyValueEnum::FloatValue(f) => Some(BasicMetadataValueEnum::FloatValue(f)),
-        AnyValueEnum::PointerValue(p) => Some(BasicMetadataValueEnum::PointerValue(p)),
-        AnyValueEnum::StructValue(s) => Some(BasicMetadataValueEnum::StructValue(s)),
-        AnyValueEnum::VectorValue(v) => Some(BasicMetadataValueEnum::VectorValue(v)),
-        AnyValueEnum::MetadataValue(m) => Some(BasicMetadataValueEnum::MetadataValue(m)),
-        AnyValueEnum::InstructionValue(i) => i
-            .try_into()
-            .map(BasicMetadataValueEnum::IntValue)
-            .or_else(|()| i.try_into().map(BasicMetadataValueEnum::FloatValue))
-            .or_else(|()| i.try_into().map(BasicMetadataValueEnum::PointerValue))
-            .ok(),
-        AnyValueEnum::PhiValue(_) | AnyValueEnum::FunctionValue(_) => None,
     }
 }
 
