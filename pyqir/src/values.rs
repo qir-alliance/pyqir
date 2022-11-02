@@ -13,7 +13,13 @@ use inkwell::{
     },
     LLVMReference,
 };
-use llvm_sys::core::{LLVMBasicBlockAsValue, LLVMDisposeMessage, LLVMPrintValueToString};
+use llvm_sys::{
+    core::{
+        LLVMBasicBlockAsValue, LLVMDisposeMessage, LLVMGetValueName2, LLVMIsConstant,
+        LLVMPrintValueToString,
+    },
+    prelude::*,
+};
 use pyo3::{
     conversion::ToPyObject,
     exceptions::{PyTypeError, PyValueError},
@@ -27,6 +33,7 @@ use std::{
     fmt::{self, Display, Formatter},
     mem::transmute,
     ops::Deref,
+    slice,
 };
 
 /// A value.
@@ -247,35 +254,14 @@ impl<'ctx> AnyValue<'ctx> {
     }
 
     fn name(&self) -> &CStr {
-        match self {
-            Self::Any(AnyValueEnum::ArrayValue(a)) => a.get_name(),
-            Self::Any(AnyValueEnum::IntValue(i)) => i.get_name(),
-            Self::Any(AnyValueEnum::FloatValue(f)) => f.get_name(),
-            Self::Any(AnyValueEnum::PhiValue(p)) => p.get_name(),
-            Self::Any(AnyValueEnum::FunctionValue(f)) => f.get_name(),
-            Self::Any(AnyValueEnum::PointerValue(p)) => p.get_name(),
-            Self::Any(AnyValueEnum::StructValue(s)) => s.get_name(),
-            Self::Any(AnyValueEnum::VectorValue(v)) => v.get_name(),
-            Self::Any(AnyValueEnum::InstructionValue(i)) => i
-                .get_name()
-                .unwrap_or_else(|| CStr::from_bytes_with_nul(b"\0").unwrap()),
-            Self::Any(AnyValueEnum::MetadataValue(m)) => m.get_name(),
-            Self::BasicBlock(b) => b.get_name(),
-        }
+        let mut len = 0;
+        let name = unsafe { LLVMGetValueName2(self.get_ref(), &mut len) };
+        let name = unsafe { slice::from_raw_parts(name.cast(), len + 1) };
+        CStr::from_bytes_with_nul(name).expect("Name is not a valid C string.")
     }
 
     fn is_const(&self) -> bool {
-        match self {
-            Self::Any(AnyValueEnum::ArrayValue(a)) => a.is_const(),
-            Self::Any(AnyValueEnum::IntValue(i)) => i.is_const(),
-            Self::Any(AnyValueEnum::FloatValue(f)) => f.is_const(),
-            Self::Any(AnyValueEnum::PointerValue(p)) => p.is_const(),
-            Self::Any(AnyValueEnum::StructValue(s)) => s.as_instruction().is_none(),
-            Self::Any(AnyValueEnum::VectorValue(v)) => v.is_const(),
-            Self::Any(AnyValueEnum::PhiValue(_) | AnyValueEnum::InstructionValue(_))
-            | AnyValue::BasicBlock(_) => false,
-            Self::Any(AnyValueEnum::FunctionValue(_) | AnyValueEnum::MetadataValue(_)) => true,
-        }
+        unsafe { LLVMIsConstant(self.get_ref()) != 0 }
     }
 
     fn is_null(&self) -> bool {
@@ -298,6 +284,15 @@ impl<'ctx> Display for AnyValue<'ctx> {
                 let message = unsafe { Message(LLVMPrintValueToString(value)) };
                 f.write_str(message.to_str().map_err(|_| fmt::Error)?)
             }
+        }
+    }
+}
+
+impl LLVMReference<LLVMValueRef> for AnyValue<'_> {
+    unsafe fn get_ref(&self) -> LLVMValueRef {
+        match self {
+            Self::Any(any) => any.get_ref(),
+            Self::BasicBlock(block) => LLVMBasicBlockAsValue(block.get_ref()),
         }
     }
 }
