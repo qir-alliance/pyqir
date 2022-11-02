@@ -3,8 +3,8 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::{context::Context, utils::basic_to_any};
-use inkwell::types::AnyTypeEnum;
+use crate::context::Context;
+use inkwell::types::{AnyTypeEnum, BasicTypeEnum};
 use pyo3::{conversion::ToPyObject, prelude::*};
 use qirlib::types;
 use std::mem::transmute;
@@ -172,4 +172,15 @@ pub(crate) fn is_qubit(ty: &Type) -> bool {
 #[pyfunction]
 pub(crate) fn is_result(ty: &Type) -> bool {
     types::is_result(ty.ty)
+}
+
+fn basic_to_any(ty: BasicTypeEnum) -> AnyTypeEnum {
+    match ty {
+        BasicTypeEnum::ArrayType(a) => a.into(),
+        BasicTypeEnum::FloatType(f) => f.into(),
+        BasicTypeEnum::IntType(i) => i.into(),
+        BasicTypeEnum::PointerType(p) => p.into(),
+        BasicTypeEnum::StructType(s) => s.into(),
+        BasicTypeEnum::VectorType(v) => v.into(),
+    }
 }

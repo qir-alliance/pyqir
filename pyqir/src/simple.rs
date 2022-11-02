@@ -6,17 +6,19 @@ use crate::{
     context::{self, Context},
     module::Module,
     types::Type,
-    utils::{clone_module, function_type},
     values::Value,
 };
-use inkwell::types::AnyTypeEnum;
+use inkwell::types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FunctionType};
 use pyo3::{
-    exceptions::{PyOSError, PyValueError},
+    exceptions::{PyOSError, PyUnicodeDecodeError, PyValueError},
     prelude::*,
     types::PyBytes,
 };
 use qirlib::{module, types};
-use std::{convert::Into, mem::transmute};
+use std::{
+    convert::{Into, TryFrom},
+    mem::transmute,
+};
 
 /// A simple module represents an executable program with these restrictions:
 ///
@@ -257,4 +259,41 @@ impl TypeFactory {
         let ty = f(unsafe { module.get() });
         unsafe { Type::from_any(py, context, ty) }
     }
+}
+
+fn function_type<'ctx>(
+    return_type: &impl AnyType<'ctx>,
+    params: impl IntoIterator<Item = AnyTypeEnum<'ctx>>,
+) -> Option<FunctionType<'ctx>> {
+    let params = params
+        .into_iter()
+        .map(|ty| BasicTypeEnum::try_from(ty).map(Into::into).ok())
+        .collect::<Option<Vec<_>>>()?;
+
+    match return_type.as_any_type_enum() {
+        AnyTypeEnum::VoidType(void) => Some(void.fn_type(&params, false)),
+        any => BasicTypeEnum::try_from(any)
+            .map(|basic| basic.fn_type(&params, false))
+            .ok(),
+    }
+}
+
+fn clone_module<'ctx>(
+    module: &inkwell::module::Module,
+    context: &'ctx inkwell::context::Context,
+) -> PyResult<inkwell::module::Module<'ctx>> {
+    let name = module
+        .get_name()
+        .to_str()
+        .map_err(PyUnicodeDecodeError::new_err)?;
+    let bitcode = module.write_bitcode_to_memory();
+    let new_module = inkwell::module::Module::parse_bitcode_from_buffer(&bitcode, context)
+        .map_err(|e| {
+            module.verify().err().map_or_else(
+                || PyOSError::new_err(e.to_string()),
+                |e| PyOSError::new_err(e.to_string()),
+            )
+        })?;
+    new_module.set_name(name);
+    Ok(new_module)
 }

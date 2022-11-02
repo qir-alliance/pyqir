@@ -3,22 +3,26 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::{
-    context::Context,
-    instructions::Instruction,
-    module::Attribute,
-    types::Type,
-    utils::{extract_constant, AnyValue},
-};
+use crate::{context::Context, instructions::Instruction, module::Attribute, types::Type};
 use inkwell::{
     attributes::AttributeLoc,
-    types::AnyType,
-    values::{AnyValueEnum, FloatValue, FunctionValue, IntValue},
+    types::{AnyType, AnyTypeEnum},
+    values::{
+        AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, FloatValue, FunctionValue,
+        InstructionValue, IntValue, PointerValue,
+    },
 };
-use pyo3::{conversion::ToPyObject, exceptions::PyValueError, prelude::*, types::PyBytes};
+use pyo3::{
+    conversion::ToPyObject,
+    exceptions::{PyTypeError, PyValueError},
+    prelude::*,
+    types::PyBytes,
+};
 use qirlib::values;
 use std::{
-    convert::{Into, TryInto},
+    convert::{Into, TryFrom, TryInto},
+    ffi::CStr,
+    fmt::{self, Display, Formatter},
     mem::transmute,
 };
 
@@ -218,6 +222,243 @@ impl Function {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum AnyValue<'ctx> {
+    Any(AnyValueEnum<'ctx>),
+    BasicBlock(inkwell::basic_block::BasicBlock<'ctx>),
+}
+
+impl<'ctx> AnyValue<'ctx> {
+    pub(crate) fn ty(&self) -> AnyTypeEnum<'ctx> {
+        match self {
+            Self::Any(AnyValueEnum::ArrayValue(a)) => a.get_type().into(),
+            Self::Any(AnyValueEnum::IntValue(i)) => i.get_type().into(),
+            Self::Any(AnyValueEnum::FloatValue(f)) => f.get_type().into(),
+            Self::Any(AnyValueEnum::PhiValue(p)) => p.as_instruction().get_type(),
+            Self::Any(AnyValueEnum::FunctionValue(f)) => f.get_type().into(),
+            Self::Any(AnyValueEnum::PointerValue(p)) => p.get_type().into(),
+            Self::Any(AnyValueEnum::StructValue(s)) => s.get_type().into(),
+            Self::Any(AnyValueEnum::VectorValue(v)) => v.get_type().into(),
+            Self::Any(AnyValueEnum::InstructionValue(i)) => i.get_type(),
+            Self::Any(AnyValueEnum::MetadataValue(m)) => {
+                inkwell::values::AnyValue::as_any_value_enum(m).get_type()
+            }
+            Self::BasicBlock(b) => b.get_context().void_type().into(),
+        }
+    }
+
+    pub(crate) fn name(&self) -> &CStr {
+        match self {
+            Self::Any(AnyValueEnum::ArrayValue(a)) => a.get_name(),
+            Self::Any(AnyValueEnum::IntValue(i)) => i.get_name(),
+            Self::Any(AnyValueEnum::FloatValue(f)) => f.get_name(),
+            Self::Any(AnyValueEnum::PhiValue(p)) => p.get_name(),
+            Self::Any(AnyValueEnum::FunctionValue(f)) => f.get_name(),
+            Self::Any(AnyValueEnum::PointerValue(p)) => p.get_name(),
+            Self::Any(AnyValueEnum::StructValue(s)) => s.get_name(),
+            Self::Any(AnyValueEnum::VectorValue(v)) => v.get_name(),
+            Self::Any(AnyValueEnum::InstructionValue(i)) => i
+                .get_name()
+                .unwrap_or_else(|| CStr::from_bytes_with_nul(b"\0").unwrap()),
+            Self::Any(AnyValueEnum::MetadataValue(m)) => m.get_name(),
+            Self::BasicBlock(b) => b.get_name(),
+        }
+    }
+
+    pub(crate) fn is_const(&self) -> bool {
+        match self {
+            Self::Any(AnyValueEnum::ArrayValue(a)) => a.is_const(),
+            Self::Any(AnyValueEnum::IntValue(i)) => i.is_const(),
+            Self::Any(AnyValueEnum::FloatValue(f)) => f.is_const(),
+            Self::Any(AnyValueEnum::PointerValue(p)) => p.is_const(),
+            Self::Any(AnyValueEnum::StructValue(_)) => todo!(),
+            Self::Any(AnyValueEnum::VectorValue(v)) => v.is_const(),
+            Self::Any(AnyValueEnum::PhiValue(_) | AnyValueEnum::InstructionValue(_))
+            | AnyValue::BasicBlock(_) => false,
+            Self::Any(AnyValueEnum::FunctionValue(_) | AnyValueEnum::MetadataValue(_)) => true,
+        }
+    }
+
+    pub(crate) fn is_null(&self) -> bool {
+        match self {
+            Self::Any(AnyValueEnum::PointerValue(p)) => p.is_null(),
+            Self::Any(_) | Self::BasicBlock(_) => false,
+        }
+    }
+}
+
+impl<'ctx> Display for AnyValue<'ctx> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            Self::Any(any) => write!(f, "{}", inkwell::values::AnyValue::print_to_string(any)),
+            Self::BasicBlock(_) => todo!(),
+        }
+    }
+}
+
+impl<'ctx> From<AnyValueEnum<'ctx>> for AnyValue<'ctx> {
+    fn from(any: AnyValueEnum<'ctx>) -> Self {
+        Self::Any(any)
+    }
+}
+
+impl<'ctx> From<BasicValueEnum<'ctx>> for AnyValue<'ctx> {
+    fn from(basic: BasicValueEnum<'ctx>) -> Self {
+        Self::Any(basic.into())
+    }
+}
+
+impl<'ctx> From<IntValue<'ctx>> for AnyValue<'ctx> {
+    fn from(int: IntValue<'ctx>) -> Self {
+        Self::Any(int.into())
+    }
+}
+
+impl<'ctx> From<FloatValue<'ctx>> for AnyValue<'ctx> {
+    fn from(float: FloatValue<'ctx>) -> Self {
+        Self::Any(float.into())
+    }
+}
+
+impl<'ctx> From<FunctionValue<'ctx>> for AnyValue<'ctx> {
+    fn from(function: FunctionValue<'ctx>) -> Self {
+        Self::Any(function.into())
+    }
+}
+
+impl<'ctx> From<PointerValue<'ctx>> for AnyValue<'ctx> {
+    fn from(pointer: PointerValue<'ctx>) -> Self {
+        Self::Any(pointer.into())
+    }
+}
+
+impl<'ctx> From<InstructionValue<'ctx>> for AnyValue<'ctx> {
+    fn from(instruction: InstructionValue<'ctx>) -> Self {
+        Self::Any(instruction.into())
+    }
+}
+
+impl<'ctx> From<inkwell::basic_block::BasicBlock<'ctx>> for AnyValue<'ctx> {
+    fn from(block: inkwell::basic_block::BasicBlock<'ctx>) -> Self {
+        Self::BasicBlock(block)
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for AnyValueEnum<'ctx> {
+    type Error = ConvertError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(a) => Ok(a),
+            AnyValue::BasicBlock(_) => Err(ConvertError("value excluding basic blocks")),
+        }
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicMetadataValueEnum<'ctx> {
+    type Error = ConvertError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(AnyValueEnum::ArrayValue(a)) => Some(a.into()),
+            AnyValue::Any(AnyValueEnum::IntValue(i)) => Some(i.into()),
+            AnyValue::Any(AnyValueEnum::FloatValue(f)) => Some(f.into()),
+            AnyValue::Any(AnyValueEnum::PointerValue(p)) => Some(p.into()),
+            AnyValue::Any(AnyValueEnum::StructValue(s)) => Some(s.into()),
+            AnyValue::Any(AnyValueEnum::VectorValue(v)) => Some(v.into()),
+            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i
+                .try_into()
+                .map(BasicMetadataValueEnum::IntValue)
+                .or_else(|()| i.try_into().map(BasicMetadataValueEnum::FloatValue))
+                .or_else(|()| i.try_into().map(BasicMetadataValueEnum::PointerValue))
+                .ok(),
+            AnyValue::Any(AnyValueEnum::MetadataValue(m)) => Some(m.into()),
+            AnyValue::Any(AnyValueEnum::PhiValue(_) | AnyValueEnum::FunctionValue(_))
+            | AnyValue::BasicBlock(_) => None,
+        }
+        .ok_or(ConvertError("argument value"))
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for IntValue<'ctx> {
+    type Error = ConvertError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(AnyValueEnum::IntValue(i)) => Some(i),
+            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i.try_into().ok(),
+            _ => None,
+        }
+        .ok_or(ConvertError("integer value"))
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for FloatValue<'ctx> {
+    type Error = ConvertError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(AnyValueEnum::FloatValue(f)) => Some(f),
+            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i.try_into().ok(),
+            _ => None,
+        }
+        .ok_or(ConvertError("float value"))
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for PointerValue<'ctx> {
+    type Error = ConvertError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(AnyValueEnum::PointerValue(p)) => Some(p),
+            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i.try_into().ok(),
+            _ => None,
+        }
+        .ok_or(ConvertError("pointer value"))
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for InstructionValue<'ctx> {
+    type Error = ConvertError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(AnyValueEnum::ArrayValue(a)) => a.as_instruction(),
+            AnyValue::Any(AnyValueEnum::IntValue(i)) => i.as_instruction(),
+            AnyValue::Any(AnyValueEnum::FloatValue(f)) => f.as_instruction(),
+            AnyValue::Any(AnyValueEnum::PhiValue(p)) => Some(p.as_instruction()),
+            AnyValue::Any(AnyValueEnum::PointerValue(p)) => p.as_instruction(),
+            AnyValue::Any(AnyValueEnum::StructValue(s)) => s.as_instruction(),
+            AnyValue::Any(AnyValueEnum::VectorValue(v)) => v.as_instruction(),
+            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => Some(i),
+            AnyValue::Any(AnyValueEnum::FunctionValue(_) | AnyValueEnum::MetadataValue(_))
+            | AnyValue::BasicBlock(_) => None,
+        }
+        .ok_or(ConvertError("instruction value"))
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for inkwell::basic_block::BasicBlock<'ctx> {
+    type Error = ConvertError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(_) => Err(ConvertError("basic block")),
+            AnyValue::BasicBlock(b) => Ok(b),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct ConvertError(&'static str);
+
+impl From<ConvertError> for PyErr {
+    fn from(error: ConvertError) -> Self {
+        PyValueError::new_err(format!("Couldn't convert value to {}.", error.0))
+    }
+}
+
 /// Creates a constant value.
 ///
 /// :param Type ty: The type of the value.
@@ -275,6 +516,16 @@ pub(crate) unsafe fn extract_any<'ctx>(
     ob.extract()
         .map(|v: Value| v.value)
         .or_else(|_| extract_constant(ty, ob))
+}
+
+fn extract_constant<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyValue<'ctx>> {
+    match ty.as_any_type_enum() {
+        AnyTypeEnum::IntType(int) => Ok(int.const_int(ob.extract()?, true).into()),
+        AnyTypeEnum::FloatType(float) => Ok(float.const_float(ob.extract()?).into()),
+        _ => Err(PyTypeError::new_err(
+            "Can't convert Python value into this type.",
+        )),
+    }
 }
 
 pub(crate) fn extract_contexts<'a>(

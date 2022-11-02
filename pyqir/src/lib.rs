@@ -12,5 +12,4 @@ mod python;
 mod qis;
 mod simple;
 mod types;
-mod utils;
 mod values;

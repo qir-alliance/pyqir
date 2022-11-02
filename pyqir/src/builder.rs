@@ -5,13 +5,15 @@ use crate::{
     context::{self, Context},
     instructions::IntPredicate,
     module::Module,
-    utils::{call_if_some, try_callable_value},
-    values::{self, Value},
+    values::{self, AnyValue, Value},
 };
-use inkwell::values::IntValue;
+use inkwell::{
+    types::{AnyTypeEnum, FunctionType},
+    values::{AnyValueEnum, CallableValue, IntValue},
+};
 use pyo3::{exceptions::PyValueError, prelude::*, types::PySequence};
 use std::{
-    convert::{Into, TryInto},
+    convert::{Into, TryFrom, TryInto},
     mem::transmute,
     result::Result,
 };
@@ -199,9 +201,8 @@ impl Builder {
                 .chain([self.context.clone(), callee.context().clone()]),
         )?;
 
-        let (callable, param_types) = try_callable_value(unsafe { callee.get() })
-            .ok_or_else(|| PyValueError::new_err("Value is not callable."))?;
-
+        let callable: Callable = unsafe { callee.get() }.try_into()?;
+        let param_types = callable.ty.get_param_types();
         if param_types.len() != args.len()? {
             return Err(PyValueError::new_err(format!(
                 "Expected {} arguments, got {}.",
@@ -220,7 +221,7 @@ impl Builder {
             })
             .collect::<PyResult<Vec<_>>>()?;
 
-        let call = self.builder.build_call(callable, &args, "");
+        let call = self.builder.build_call(callable.value, &args, "");
         let value = call.try_as_basic_value().left();
         value
             .map(|v| unsafe { Value::from_any(py, callee.context().clone(), v) })
@@ -251,8 +252,8 @@ impl Builder {
         let builder = qirlib::Builder::from(&self.builder, unsafe { module.get() });
         builder.try_build_if(
             unsafe { cond.get() }.try_into()?,
-            |_| call_if_some(r#true),
-            |_| call_if_some(r#false),
+            |_| r#true.iter().try_for_each(|f| f.call0().map(|_| ())),
+            |_| r#false.iter().try_for_each(|f| f.call0().map(|_| ())),
         )
     }
 }
@@ -287,5 +288,32 @@ impl Builder {
 
     pub(crate) fn module(&self) -> &Py<Module> {
         &self.module
+    }
+}
+
+struct Callable<'ctx> {
+    value: CallableValue<'ctx>,
+    ty: FunctionType<'ctx>,
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for Callable<'ctx> {
+    type Error = PyErr;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(AnyValueEnum::FunctionValue(f)) => Some(Self {
+                value: CallableValue::from(f),
+                ty: f.get_type(),
+            }),
+            AnyValue::Any(AnyValueEnum::PointerValue(p)) => match p.get_type().get_element_type() {
+                AnyTypeEnum::FunctionType(ty) => Some(Self {
+                    value: CallableValue::try_from(p).unwrap(),
+                    ty,
+                }),
+                _ => None,
+            },
+            _ => None,
+        }
+        .ok_or_else(|| PyValueError::new_err("Value is not callable."))
     }
 }

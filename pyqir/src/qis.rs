@@ -4,13 +4,11 @@
 use crate::{
     builder::Builder,
     context,
-    utils::call_if_some,
     values::{self, Value},
 };
-use inkwell::values::PointerValue;
 use pyo3::prelude::*;
 use qirlib::BuilderBasicQisExt;
-use std::{convert::TryInto, mem::transmute};
+use std::convert::TryInto;
 
 /// An instruction builder that generates instructions from the basic quantum instruction set.
 ///
@@ -298,8 +296,10 @@ impl BasicQisBuilder {
         context::require_same(py, [builder.context(), cond.context()])?;
         let module = builder.module().borrow(py);
         let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
-        let cond: PointerValue = unsafe { cond.get() }.try_into()?;
-        let cond = unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(cond) };
-        builder.try_build_if_result(cond, |_| call_if_some(one), |_| call_if_some(zero))
+        builder.try_build_if_result(
+            unsafe { cond.get() }.try_into()?,
+            |_| one.iter().try_for_each(|f| f.call0().map(|_| ())),
+            |_| zero.iter().try_for_each(|f| f.call0().map(|_| ())),
+        )
     }
 }
