@@ -11,7 +11,9 @@ use inkwell::{
         AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, FloatValue, FunctionValue,
         InstructionValue, IntValue, PointerValue,
     },
+    LLVMReference,
 };
+use llvm_sys::core::{LLVMBasicBlockAsValue, LLVMDisposeMessage, LLVMPrintValueToString};
 use pyo3::{
     conversion::ToPyObject,
     exceptions::{PyTypeError, PyValueError},
@@ -21,9 +23,10 @@ use pyo3::{
 use qirlib::values;
 use std::{
     convert::{Into, TryFrom, TryInto},
-    ffi::CStr,
+    ffi::{c_char, CStr},
     fmt::{self, Display, Formatter},
     mem::transmute,
+    ops::Deref,
 };
 
 /// A value.
@@ -51,10 +54,6 @@ impl Value {
 
     fn __str__(&self) -> String {
         self.value.to_string()
-    }
-
-    fn __repr__(&self) -> String {
-        format!("<{:?}>", self.value)
     }
 }
 
@@ -222,14 +221,14 @@ impl Function {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub(crate) enum AnyValue<'ctx> {
     Any(AnyValueEnum<'ctx>),
     BasicBlock(inkwell::basic_block::BasicBlock<'ctx>),
 }
 
 impl<'ctx> AnyValue<'ctx> {
-    pub(crate) fn ty(&self) -> AnyTypeEnum<'ctx> {
+    fn ty(&self) -> AnyTypeEnum<'ctx> {
         match self {
             Self::Any(AnyValueEnum::ArrayValue(a)) => a.get_type().into(),
             Self::Any(AnyValueEnum::IntValue(i)) => i.get_type().into(),
@@ -247,7 +246,7 @@ impl<'ctx> AnyValue<'ctx> {
         }
     }
 
-    pub(crate) fn name(&self) -> &CStr {
+    fn name(&self) -> &CStr {
         match self {
             Self::Any(AnyValueEnum::ArrayValue(a)) => a.get_name(),
             Self::Any(AnyValueEnum::IntValue(i)) => i.get_name(),
@@ -265,13 +264,13 @@ impl<'ctx> AnyValue<'ctx> {
         }
     }
 
-    pub(crate) fn is_const(&self) -> bool {
+    fn is_const(&self) -> bool {
         match self {
             Self::Any(AnyValueEnum::ArrayValue(a)) => a.is_const(),
             Self::Any(AnyValueEnum::IntValue(i)) => i.is_const(),
             Self::Any(AnyValueEnum::FloatValue(f)) => f.is_const(),
             Self::Any(AnyValueEnum::PointerValue(p)) => p.is_const(),
-            Self::Any(AnyValueEnum::StructValue(_)) => todo!(),
+            Self::Any(AnyValueEnum::StructValue(s)) => s.as_instruction().is_none(),
             Self::Any(AnyValueEnum::VectorValue(v)) => v.is_const(),
             Self::Any(AnyValueEnum::PhiValue(_) | AnyValueEnum::InstructionValue(_))
             | AnyValue::BasicBlock(_) => false,
@@ -279,7 +278,7 @@ impl<'ctx> AnyValue<'ctx> {
         }
     }
 
-    pub(crate) fn is_null(&self) -> bool {
+    fn is_null(&self) -> bool {
         match self {
             Self::Any(AnyValueEnum::PointerValue(p)) => p.is_null(),
             Self::Any(_) | Self::BasicBlock(_) => false,
@@ -290,8 +289,15 @@ impl<'ctx> AnyValue<'ctx> {
 impl<'ctx> Display for AnyValue<'ctx> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::Any(any) => write!(f, "{}", inkwell::values::AnyValue::print_to_string(any)),
-            Self::BasicBlock(_) => todo!(),
+            Self::Any(any) => {
+                let message = inkwell::values::AnyValue::print_to_string(any);
+                f.write_str(message.to_str().map_err(|_| fmt::Error)?)
+            }
+            Self::BasicBlock(block) => {
+                let value = unsafe { LLVMBasicBlockAsValue(block.get_ref()) };
+                let message = unsafe { Message(LLVMPrintValueToString(value)) };
+                f.write_str(message.to_str().map_err(|_| fmt::Error)?)
+            }
         }
     }
 }
@@ -456,6 +462,22 @@ pub(crate) struct ConvertError(&'static str);
 impl From<ConvertError> for PyErr {
     fn from(error: ConvertError) -> Self {
         PyValueError::new_err(format!("Couldn't convert value to {}.", error.0))
+    }
+}
+
+struct Message(*mut c_char);
+
+impl Deref for Message {
+    type Target = CStr;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { CStr::from_ptr(self.0) }
+    }
+}
+
+impl Drop for Message {
+    fn drop(&mut self) {
+        unsafe { LLVMDisposeMessage(self.0) }
     }
 }
 
