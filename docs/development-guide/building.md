@@ -4,7 +4,7 @@
 
 ### Requirements
 
-- [Rust 1.57+](https://rustup.rs/)
+- [Rust 1.59+](https://rustup.rs/)
 - [Python 3.7+](https://www.python.org)
 - [PowerShell 7+
   (Core)](https://github.com/powershell/powershell#get-powershell)
