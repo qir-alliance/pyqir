@@ -442,6 +442,7 @@ version = "0.7.0-alpha.1"
 dependencies = [
  "either",
  "inkwell",
+ "libc",
  "llvm-sys 110.0.4",
  "llvm-sys 120.2.5",
  "llvm-sys 130.0.5",

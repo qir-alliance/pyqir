@@ -13,6 +13,7 @@ use inkwell::{
     },
     LLVMReference,
 };
+use libc::c_char;
 use llvm_sys::{
     core::{
         LLVMBasicBlockAsValue, LLVMDisposeMessage, LLVMGetValueName2, LLVMIsConstant,
@@ -29,7 +30,7 @@ use pyo3::{
 use qirlib::values;
 use std::{
     convert::{Into, TryFrom, TryInto},
-    ffi::{c_char, CStr},
+    ffi::CStr,
     fmt::{self, Display, Formatter},
     mem::transmute,
     ops::Deref,
