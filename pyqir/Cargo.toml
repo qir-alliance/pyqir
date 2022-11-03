@@ -11,7 +11,7 @@ repository = "https://github.com/qir-alliance/pyqir"
 
 [dependencies]
 inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["target-x86"] }
-pyo3 = { version = "0.17.2", features = ["abi3-py37", "extension-module"] }
+pyo3 = { version = "0.17", features = ["abi3-py37", "extension-module"] }
 qirlib = { path = "../qirlib" }
 
 [features]
