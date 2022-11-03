@@ -1,9 +1,7 @@
-use crate::types;
-use inkwell::{
-    builder::Builder as BuilderBase,
-    module::Module,
-    values::{IntValue, PointerValue},
-};
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+use inkwell::{builder::Builder as BuilderBase, module::Module, values::IntValue};
 use std::{borrow::Borrow, convert::Infallible, ops::Deref};
 
 // TODO: With LLVM, it's possible to get the module that a builder is positioned in using only the
@@ -43,18 +41,6 @@ impl<'ctx, 'a> Builder<'ctx, 'a> {
     #[must_use]
     pub fn module(&self) -> &Module<'ctx> {
         self.module.borrow()
-    }
-
-    #[must_use]
-    pub fn build_qubit(&self, id: u64) -> PointerValue<'ctx> {
-        let value = self.module().get_context().i64_type().const_int(id, false);
-        self.build_int_to_ptr(value, types::qubit(self.module()), "")
-    }
-
-    #[must_use]
-    pub fn build_result(&self, id: u64) -> PointerValue<'ctx> {
-        let value = self.module().get_context().i64_type().const_int(id, false);
-        self.build_int_to_ptr(value, types::result(self.module()), "")
     }
 
     #[allow(clippy::missing_panics_doc)]

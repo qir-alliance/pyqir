@@ -29,7 +29,11 @@ use pyo3::{
     prelude::*,
     types::{PyBytes, PySequence, PyString, PyUnicode},
 };
-use qirlib::{module, types, BuilderBasicQisExt};
+use qirlib::{
+    module, types,
+    values::{qubit, result},
+    BuilderBasicQisExt,
+};
 use std::{borrow::Borrow, convert::Into, mem::transmute, result::Result};
 
 struct PyIntPredicate(IntPredicate);
@@ -527,11 +531,9 @@ impl SimpleModule {
     /// :type: Tuple[Value, ...]
     #[getter]
     fn qubits(&self, py: Python) -> Vec<Value> {
-        let builder = self.builder.borrow(py);
         let module = self.module.borrow(py);
-        let builder = qirlib::Builder::from(&builder.builder, &module.module);
         (0..self.num_qubits)
-            .map(|id| unsafe { Value::new(module.context.clone(), &builder.build_qubit(id)) })
+            .map(|id| unsafe { Value::new(module.context.clone(), &qubit(&module.module, id)) })
             .collect()
     }
 
@@ -540,11 +542,9 @@ impl SimpleModule {
     /// :type: Tuple[Value, ...]
     #[getter]
     fn results(&self, py: Python) -> Vec<Value> {
-        let builder = self.builder.borrow(py);
         let module = self.module.borrow(py);
-        let builder = qirlib::Builder::from(&builder.builder, &module.module);
         (0..self.num_results)
-            .map(|id| unsafe { Value::new(module.context.clone(), &builder.build_result(id)) })
+            .map(|id| unsafe { Value::new(module.context.clone(), &result(&module.module, id)) })
             .collect()
     }
 

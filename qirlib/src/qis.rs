@@ -244,75 +244,80 @@ fn declare<'ctx>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::assert_reference_ir;
+    use crate::{
+        tests::assert_reference_ir,
+        values::{qubit, result},
+    };
 
     #[test]
     fn cx() -> Result<(), String> {
         assert_reference_ir("qis/cx", 2, 0, |builder| {
-            builder.build_cx(builder.build_qubit(0), builder.build_qubit(1));
+            let module = builder.module();
+            builder.build_cx(qubit(module, 0), qubit(module, 1));
         })
     }
 
     #[test]
     fn cz() -> Result<(), String> {
         assert_reference_ir("qis/cz", 2, 0, |builder| {
-            builder.build_cz(builder.build_qubit(0), builder.build_qubit(1));
+            let module = builder.module();
+            builder.build_cz(qubit(module, 0), qubit(module, 1));
         })
     }
 
     #[test]
     fn h() -> Result<(), String> {
         assert_reference_ir("qis/h", 1, 0, |builder| {
-            builder.build_h(builder.build_qubit(0));
+            builder.build_h(qubit(builder.module(), 0));
         })
     }
 
     #[test]
     fn s() -> Result<(), String> {
         assert_reference_ir("qis/s", 1, 0, |builder| {
-            builder.build_s(builder.build_qubit(0));
+            builder.build_s(qubit(builder.module(), 0));
         })
     }
 
     #[test]
     fn s_adj() -> Result<(), String> {
         assert_reference_ir("qis/s_adj", 1, 0, |builder| {
-            builder.build_s_adj(builder.build_qubit(0));
+            builder.build_s_adj(qubit(builder.module(), 0));
         })
     }
 
     #[test]
     fn t() -> Result<(), String> {
         assert_reference_ir("qis/t", 1, 0, |builder| {
-            builder.build_t(builder.build_qubit(0));
+            builder.build_t(qubit(builder.module(), 0));
         })
     }
 
     #[test]
     fn t_adj() -> Result<(), String> {
         assert_reference_ir("qis/t_adj", 1, 0, |builder| {
-            builder.build_t_adj(builder.build_qubit(0));
+            builder.build_t_adj(qubit(builder.module(), 0));
         })
     }
 
     #[test]
     fn x() -> Result<(), String> {
         assert_reference_ir("qis/x", 1, 0, |builder| {
-            builder.build_x(builder.build_qubit(0));
+            builder.build_x(qubit(builder.module(), 0));
         })
     }
 
     #[test]
     fn y() -> Result<(), String> {
         assert_reference_ir("qis/y", 1, 0, |builder| {
-            builder.build_y(builder.build_qubit(0));
+            builder.build_y(qubit(builder.module(), 0));
         })
     }
 
     #[test]
     fn z() -> Result<(), String> {
         assert_reference_ir("qis/z", 1, 0, |builder| {
-            builder.build_z(builder.build_qubit(0));
+            builder.build_z(qubit(builder.module(), 0));
         })
     }
 
@@ -320,7 +325,7 @@ mod tests {
     fn rx() -> Result<(), String> {
         assert_reference_ir("qis/rx", 1, 0, |builder| {
             let double_type = builder.module().get_context().f64_type();
-            builder.build_rx(double_type.const_float(0.0), builder.build_qubit(0));
+            builder.build_rx(double_type.const_float(0.0), qubit(builder.module(), 0));
         })
     }
 
@@ -328,7 +333,7 @@ mod tests {
     fn ry() -> Result<(), String> {
         assert_reference_ir("qis/ry", 1, 0, |builder| {
             let double_type = builder.module().get_context().f64_type();
-            builder.build_ry(double_type.const_float(0.0), builder.build_qubit(0));
+            builder.build_ry(double_type.const_float(0.0), qubit(builder.module(), 0));
         })
     }
 
@@ -336,46 +341,49 @@ mod tests {
     fn rz() -> Result<(), String> {
         assert_reference_ir("qis/rz", 1, 0, |builder| {
             let double_type = builder.module().get_context().f64_type();
-            builder.build_rz(double_type.const_float(0.0), builder.build_qubit(0));
+            builder.build_rz(double_type.const_float(0.0), qubit(builder.module(), 0));
         })
     }
 
     #[test]
     fn reset() -> Result<(), String> {
         assert_reference_ir("qis/reset", 1, 0, |builder| {
-            builder.build_reset(builder.build_qubit(0));
+            builder.build_reset(qubit(builder.module(), 0));
         })
     }
 
     #[test]
     fn mz() -> Result<(), String> {
         assert_reference_ir("qis/mz", 1, 1, |builder| {
-            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            let module = builder.module();
+            builder.build_mz(qubit(module, 0), result(module, 0));
         })
     }
 
     #[test]
     fn read_result() -> Result<(), String> {
         assert_reference_ir("qis/read_result", 1, 1, |builder| {
-            build_read_result(builder, builder.build_result(0));
+            build_read_result(builder, result(builder.module(), 0));
         })
     }
 
     #[test]
     fn empty_if() -> Result<(), String> {
         assert_reference_ir("qis/empty_if", 1, 1, |builder| {
-            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
-            builder.build_if_result(builder.build_result(0), |_| (), |_| ());
+            let module = builder.module();
+            builder.build_mz(qubit(module, 0), result(module, 0));
+            builder.build_if_result(result(module, 0), |_| (), |_| ());
         })
     }
 
     #[test]
     fn if_then() -> Result<(), String> {
         assert_reference_ir("qis/if_then", 1, 1, |builder| {
-            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            let module = builder.module();
+            builder.build_mz(qubit(module, 0), result(module, 0));
             builder.build_if_result(
-                builder.build_result(0),
-                |builder| builder.build_x(builder.build_qubit(0)),
+                result(module, 0),
+                |builder| builder.build_x(qubit(module, 0)),
                 |_| (),
             );
         })
@@ -384,11 +392,12 @@ mod tests {
     #[test]
     fn if_else() -> Result<(), String> {
         assert_reference_ir("qis/if_else", 1, 1, |builder| {
-            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            let module = builder.module();
+            builder.build_mz(qubit(module, 0), result(module, 0));
             builder.build_if_result(
-                builder.build_result(0),
+                result(module, 0),
                 |_| (),
-                |builder| builder.build_x(builder.build_qubit(0)),
+                |builder| builder.build_x(qubit(module, 0)),
             );
         })
     }
@@ -396,53 +405,57 @@ mod tests {
     #[test]
     fn if_then_continue() -> Result<(), String> {
         assert_reference_ir("qis/if_then_continue", 1, 1, |builder| {
-            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            let module = builder.module();
+            builder.build_mz(qubit(module, 0), result(module, 0));
             builder.build_if_result(
-                builder.build_result(0),
-                |builder| builder.build_x(builder.build_qubit(0)),
+                result(module, 0),
+                |builder| builder.build_x(qubit(module, 0)),
                 |_| (),
             );
-            builder.build_h(builder.build_qubit(0));
+            builder.build_h(qubit(module, 0));
         })
     }
 
     #[test]
     fn if_else_continue() -> Result<(), String> {
         assert_reference_ir("qis/if_else_continue", 1, 1, |builder| {
-            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            let module = builder.module();
+            builder.build_mz(qubit(module, 0), result(module, 0));
             builder.build_if_result(
-                builder.build_result(0),
+                result(module, 0),
                 |_| (),
-                |builder| builder.build_x(builder.build_qubit(0)),
+                |builder| builder.build_x(qubit(module, 0)),
             );
-            builder.build_h(builder.build_qubit(0));
+            builder.build_h(qubit(module, 0));
         })
     }
 
     #[test]
     fn if_then_else_continue() -> Result<(), String> {
         assert_reference_ir("qis/if_then_else_continue", 1, 1, |builder| {
-            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+            let module = builder.module();
+            builder.build_mz(qubit(module, 0), result(module, 0));
             builder.build_if_result(
-                builder.build_result(0),
-                |builder| builder.build_x(builder.build_qubit(0)),
-                |builder| builder.build_y(builder.build_qubit(0)),
+                result(module, 0),
+                |builder| builder.build_x(qubit(module, 0)),
+                |builder| builder.build_y(qubit(module, 0)),
             );
-            builder.build_h(builder.build_qubit(0));
+            builder.build_h(qubit(module, 0));
         })
     }
 
     #[test]
     fn if_then_then() -> Result<(), String> {
         assert_reference_ir("qis/if_then_then", 1, 2, |builder| {
-            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
-            builder.build_mz(builder.build_qubit(0), builder.build_result(1));
+            let module = builder.module();
+            builder.build_mz(qubit(module, 0), result(module, 0));
+            builder.build_mz(qubit(module, 0), result(module, 1));
             builder.build_if_result(
-                builder.build_result(0),
+                result(module, 0),
                 |builder| {
                     builder.build_if_result(
-                        builder.build_result(1),
-                        |builder| builder.build_x(builder.build_qubit(0)),
+                        result(module, 1),
+                        |builder| builder.build_x(qubit(module, 0)),
                         |_| (),
                     );
                 },
@@ -454,16 +467,17 @@ mod tests {
     #[test]
     fn if_else_else() -> Result<(), String> {
         assert_reference_ir("qis/if_else_else", 1, 2, |builder| {
-            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
-            builder.build_mz(builder.build_qubit(0), builder.build_result(1));
+            let module = builder.module();
+            builder.build_mz(qubit(module, 0), result(module, 0));
+            builder.build_mz(qubit(module, 0), result(module, 1));
             builder.build_if_result(
-                builder.build_result(0),
+                result(module, 0),
                 |_| (),
                 |builder| {
                     builder.build_if_result(
-                        builder.build_result(1),
+                        result(module, 1),
                         |_| (),
-                        |builder| builder.build_x(builder.build_qubit(0)),
+                        |builder| builder.build_x(qubit(module, 0)),
                     );
                 },
             );
@@ -473,15 +487,16 @@ mod tests {
     #[test]
     fn if_then_else() -> Result<(), String> {
         assert_reference_ir("qis/if_then_else", 1, 2, |builder| {
-            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
-            builder.build_mz(builder.build_qubit(0), builder.build_result(1));
+            let module = builder.module();
+            builder.build_mz(qubit(module, 0), result(module, 0));
+            builder.build_mz(qubit(module, 0), result(module, 1));
             builder.build_if_result(
-                builder.build_result(0),
+                result(module, 0),
                 |builder| {
                     builder.build_if_result(
-                        builder.build_result(1),
+                        result(module, 1),
                         |_| (),
-                        |builder| builder.build_x(builder.build_qubit(0)),
+                        |builder| builder.build_x(qubit(module, 0)),
                     );
                 },
                 |_| (),
@@ -492,15 +507,16 @@ mod tests {
     #[test]
     fn if_else_then() -> Result<(), String> {
         assert_reference_ir("qis/if_else_then", 1, 2, |builder| {
-            builder.build_mz(builder.build_qubit(0), builder.build_result(0));
-            builder.build_mz(builder.build_qubit(0), builder.build_result(1));
+            let module = builder.module();
+            builder.build_mz(qubit(module, 0), result(module, 0));
+            builder.build_mz(qubit(module, 0), result(module, 1));
             builder.build_if_result(
-                builder.build_result(0),
+                result(module, 0),
                 |_| (),
                 |builder| {
                     builder.build_if_result(
-                        builder.build_result(1),
-                        |builder| builder.build_x(builder.build_qubit(0)),
+                        result(module, 1),
+                        |builder| builder.build_x(qubit(module, 0)),
                         |_| (),
                     );
                 },
@@ -511,10 +527,11 @@ mod tests {
     #[test]
     fn if_unmeasured_result() -> Result<(), String> {
         assert_reference_ir("qis/if_unmeasured_result", 1, 1, |builder| {
+            let module = builder.module();
             builder.build_if_result(
-                builder.build_result(0),
-                |builder| builder.build_x(builder.build_qubit(0)),
-                |builder| builder.build_h(builder.build_qubit(0)),
+                result(module, 0),
+                |builder| builder.build_x(qubit(module, 0)),
+                |builder| builder.build_h(qubit(module, 0)),
             );
         })
     }

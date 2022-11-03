@@ -116,6 +116,7 @@ mod tests {
         module::{self, create_entry_point},
         qis::BuilderBasicQisExt,
         tests::assert_reference_ir,
+        values::{qubit, result},
     };
     use inkwell::context::Context;
     use std::{fs::File, io::Read, path::Path};
@@ -141,7 +142,7 @@ mod tests {
         let module = context.create_module("test");
         let builder = Builder::new(&module);
         super::simple_init(&module, &builder, 1, 1);
-        builder.build_mz(builder.build_qubit(0), builder.build_result(0));
+        builder.build_mz(qubit(&module, 0), result(&module, 0));
         builder.build_return(None);
         module.print_to_string().to_string()
     }

@@ -20,3 +20,5 @@ mod qis;
 mod tests;
 #[cfg(not(feature = "no-llvm-linking"))]
 pub mod types;
+#[cfg(not(feature = "no-llvm-linking"))]
+pub mod values;
