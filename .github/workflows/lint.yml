@@ -23,4 +23,4 @@ jobs:
     - uses: gaurav-nelson/github-action-markdown-link-check@v1
       with:
         use-verbose-mode: yes
-        config-file: env/markdown-link-check.json
+        config-file: eng/markdown-link-check.json
