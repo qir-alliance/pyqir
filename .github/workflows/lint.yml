@@ -16,10 +16,9 @@ jobs:
             Write-Host "::add-matcher::$_"
         }
 
-    - uses: nosborn/github-action-markdown-cli@v2.0.0
+    - uses: nosborn/github-action-markdown-cli@v3
       with:
         files: .
-        config_file: env/markdown-lint.yaml
 
     - uses: gaurav-nelson/github-action-markdown-link-check@v1
       with:
