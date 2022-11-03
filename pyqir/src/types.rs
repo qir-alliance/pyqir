@@ -206,6 +206,7 @@ impl PointerType {
 /// :rtype: bool
 /// :returns: True if the type is the QIR qubit type.
 #[pyfunction]
+#[pyo3(text_signature = "(ty)")]
 pub(crate) fn is_qubit(ty: &Type) -> bool {
     types::is_qubit(ty.ty)
 }
@@ -216,6 +217,7 @@ pub(crate) fn is_qubit(ty: &Type) -> bool {
 /// :rtype: bool
 /// :returns: True if the type is the QIR result type.
 #[pyfunction]
+#[pyo3(text_signature = "(ty)")]
 pub(crate) fn is_result(ty: &Type) -> bool {
     types::is_result(ty.ty)
 }

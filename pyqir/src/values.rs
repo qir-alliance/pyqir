@@ -250,6 +250,7 @@ impl Function {
     /// :param str name: The name of the attribute.
     /// :rtype: Optional[Attribute]
     /// :returns: The attribute.
+    #[pyo3(text_signature = "(name)")]
     fn attribute(&self, name: &str) -> Option<Attribute> {
         Some(Attribute(
             self.0.get_string_attribute(AttributeLoc::Function, name)?,
@@ -531,6 +532,7 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject
 /// :rtype: Optional[int]
 /// :returns: The static qubit ID.
 #[pyfunction]
+#[pyo3(text_signature = "(value)")]
 pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
     values::qubit_id(unsafe { value.get() }.try_into().ok()?)
 }
@@ -541,6 +543,7 @@ pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
 /// :rtype: Optional[int]
 /// :returns: The static result ID.
 #[pyfunction]
+#[pyo3(text_signature = "(value)")]
 pub(crate) fn result_id(value: &Value) -> Option<u64> {
     values::result_id(unsafe { value.get() }.try_into().ok()?)
 }
@@ -551,6 +554,7 @@ pub(crate) fn result_id(value: &Value) -> Option<u64> {
 /// :rtype: bool
 /// :returns: True if the function is an entry point.
 #[pyfunction]
+#[pyo3(text_signature = "(function)")]
 pub(crate) fn is_entry_point(function: &Function) -> bool {
     values::is_entry_point(unsafe { function.get() })
 }
@@ -561,6 +565,7 @@ pub(crate) fn is_entry_point(function: &Function) -> bool {
 /// :rtype: bool
 /// :returns: True if the function is interop-friendly.
 #[pyfunction]
+#[pyo3(text_signature = "(function)")]
 pub(crate) fn is_interop_friendly(function: &Function) -> bool {
     values::is_interop_friendly(unsafe { function.get() })
 }
@@ -571,6 +576,7 @@ pub(crate) fn is_interop_friendly(function: &Function) -> bool {
 /// :rtype: Optional[int]
 /// :returns: The required number of qubits.
 #[pyfunction]
+#[pyo3(text_signature = "(function)")]
 pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
     values::required_num_qubits(unsafe { function.get() })
 }
@@ -581,6 +587,7 @@ pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
 /// :rtype: Optional[int]
 /// :returns: The required number of results.
 #[pyfunction]
+#[pyo3(text_signature = "(function)")]
 pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
     values::required_num_results(unsafe { function.get() })
 }
@@ -591,6 +598,7 @@ pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
 /// :rtype: Optional[bytes]
 /// :returns: The constant byte array.
 #[pyfunction]
+#[pyo3(text_signature = "(value)")]
 pub(crate) fn constant_bytes<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
     let bytes = values::constant_bytes(unsafe { value.get() }.try_into().ok()?)?;
     Some(PyBytes::new(py, bytes))
