@@ -11,23 +11,32 @@ use either::Either::{Left, Right};
 use inkwell::{
     values::InstructionOpcode,
     values::{InstructionValue, PhiValue},
+    LLVMReference,
 };
+use llvm_sys::core::LLVMIsATerminatorInst;
 use pyo3::{conversion::ToPyObject, prelude::*};
 use std::{
     convert::{Into, TryInto},
     mem::transmute,
 };
 
+/// An instruction.
 #[pyclass(extends = Value, subclass, unsendable)]
 pub(crate) struct Instruction(InstructionValue<'static>);
 
 #[pymethods]
 impl Instruction {
+    /// The instruction opcode.
+    ///
+    /// :type: Opcode
     #[getter]
     fn opcode(&self) -> Opcode {
         self.0.get_opcode().into()
     }
 
+    /// The operands to the instruction.
+    ///
+    /// :type: List[Value]
     #[getter]
     fn operands(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let inst = slf.0;
@@ -41,19 +50,27 @@ impl Instruction {
             .collect()
     }
 
+    /// The basic blocks that are successors to this instruction. If this is not a terminator, the
+    /// list is empty.
+    ///
+    /// :type: List[BasicBlock]
     #[getter]
     fn successors(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        // then_some is stabilized in Rust 1.62.
-        #[allow(clippy::unnecessary_lazy_evaluations)]
-        Self::operands(slf, py)?
-            .into_iter()
-            .filter_map(|o| {
-                o.as_ref(py)
-                    .is_instance_of::<BasicBlock>()
-                    .map(|b| b.then(|| o))
-                    .transpose()
-            })
-            .collect()
+        if unsafe { LLVMIsATerminatorInst(slf.0.get_ref()) }.is_null() {
+            Ok(Vec::new())
+        } else {
+            // then_some is stabilized in Rust 1.62.
+            #[allow(clippy::unnecessary_lazy_evaluations)]
+            Self::operands(slf, py)?
+                .into_iter()
+                .filter_map(|o| {
+                    o.as_ref(py)
+                        .is_instance_of::<BasicBlock>()
+                        .map(|b| b.then(|| o))
+                        .transpose()
+                })
+                .collect()
+        }
     }
 }
 
@@ -79,6 +96,7 @@ impl Instruction {
     }
 }
 
+/// An instruction opcode.
 #[pyclass]
 pub(crate) enum Opcode {
     #[pyo3(name = "ADD")]
@@ -291,11 +309,15 @@ impl From<InstructionOpcode> for Opcode {
     }
 }
 
+/// A switch instruction.
 #[pyclass(extends = Instruction)]
 pub(crate) struct Switch;
 
 #[pymethods]
 impl Switch {
+    /// The condition of the switch.
+    ///
+    /// :type: Value
     #[getter]
     fn cond(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let inst = slf.into_super();
@@ -304,6 +326,9 @@ impl Switch {
         unsafe { Value::from_any(py, context, cond) }
     }
 
+    /// The default successor block if none of the cases match.
+    ///
+    /// :type: BasicBlock
     #[getter]
     fn default(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let inst = slf.into_super();
@@ -312,6 +337,9 @@ impl Switch {
         unsafe { Value::from_any(py, context, block) }
     }
 
+    /// The switch cases.
+    ///
+    /// :type: List[Tuple[Value, BasicBlock]]
     #[getter]
     fn cases(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(PyObject, PyObject)>> {
         let inst_ref = slf.into_super();
@@ -332,17 +360,22 @@ impl Switch {
     }
 }
 
+/// An integer comparison instruction.
 #[pyclass(extends = Instruction)]
 pub(crate) struct ICmp;
 
 #[pymethods]
 impl ICmp {
+    /// The comparison predicate.
+    ///
+    /// :type: IntPredicate
     #[getter]
     fn predicate(slf: PyRef<Self>) -> IntPredicate {
         slf.into_super().0.get_icmp_predicate().unwrap().into()
     }
 }
 
+/// An integer comparison predicate.
 #[pyclass]
 #[derive(Clone)]
 pub(crate) enum IntPredicate {
@@ -402,17 +435,22 @@ impl From<IntPredicate> for inkwell::IntPredicate {
     }
 }
 
+/// A floating-point comparison instruction.
 #[pyclass(extends = Instruction)]
 pub(crate) struct FCmp;
 
 #[pymethods]
 impl FCmp {
+    /// The comparison predicate.
+    ///
+    /// :type: FloatPredicate
     #[getter]
     fn predicate(slf: PyRef<Self>) -> FloatPredicate {
         slf.into_super().0.get_fcmp_predicate().unwrap().into()
     }
 }
 
+/// A floating-point comparison predicate.
 #[pyclass]
 #[derive(Clone)]
 pub(crate) enum FloatPredicate {
@@ -473,11 +511,15 @@ impl From<inkwell::FloatPredicate> for FloatPredicate {
     }
 }
 
+/// A call instruction.
 #[pyclass(extends = Instruction, unsendable)]
 pub(crate) struct Call;
 
 #[pymethods]
 impl Call {
+    /// The value being called.
+    ///
+    /// :type: Value
     #[getter]
     fn callee(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let inst = slf.into_super();
@@ -487,6 +529,9 @@ impl Call {
         unsafe { Value::from_any(py, context, callee) }
     }
 
+    /// The arguments to the call.
+    ///
+    /// :type: List[Value]
     #[getter]
     fn args(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let inst = slf.into_super();
@@ -496,11 +541,15 @@ impl Call {
     }
 }
 
+/// A phi node instruction.
 #[pyclass(extends = Instruction, unsendable)]
 pub(crate) struct Phi(PhiValue<'static>);
 
 #[pymethods]
 impl Phi {
+    /// The incoming values and their preceding basic blocks.
+    ///
+    /// :type: List[Tuple[Value, BasicBlock]]
     #[getter]
     fn incoming(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(PyObject, PyObject)>> {
         let phi = slf.0;

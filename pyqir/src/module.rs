@@ -6,6 +6,7 @@ use inkwell::memory_buffer::MemoryBuffer;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use std::mem::transmute;
 
+/// A module.
 #[pyclass(unsendable)]
 pub(crate) struct Module {
     module: inkwell::module::Module<'static>,
@@ -14,6 +15,12 @@ pub(crate) struct Module {
 
 #[pymethods]
 impl Module {
+    /// Creates a module from LLVM IR.
+    ///
+    /// :param str ir: The LLVM IR for a module.
+    /// :param Optional[str] name: The name of the module.
+    /// :rtype: Module
+    /// :returns: The module.
     #[staticmethod]
     #[pyo3(text_signature = "(ir, name=\"\")")]
     fn from_ir(py: Python, ir: &str, name: Option<&str>) -> PyResult<Self> {
@@ -31,6 +38,12 @@ impl Module {
         })
     }
 
+    /// Creates a module from LLVM bitcode.
+    ///
+    /// :param bytes bitcode: The LLVM bitcode for a module.
+    /// :param Optional[str] name: The name of the module.
+    /// :rtype: Module
+    /// :returns: The module.
     #[staticmethod]
     #[pyo3(text_signature = "(bitcode, name=\"\")")]
     fn from_bitcode(py: Python, bitcode: &[u8], name: Option<&str>) -> PyResult<Self> {
@@ -46,6 +59,9 @@ impl Module {
         })
     }
 
+    /// The name of the original source file that this module was compiled from.
+    ///
+    /// :type: str
     #[getter]
     fn source_filename(&self) -> &str {
         self.module
@@ -59,6 +75,9 @@ impl Module {
         self.module.set_source_file_name(value);
     }
 
+    /// The functions declared in this module.
+    ///
+    /// :type: List[Function]
     #[getter]
     fn functions(&self, py: Python) -> PyResult<Vec<PyObject>> {
         self.module
@@ -67,6 +86,9 @@ impl Module {
             .collect()
     }
 
+    /// The LLVM bitcode for this module.
+    ///
+    /// :type: bytes
     #[getter]
     fn bitcode<'py>(&self, py: Python<'py>) -> &'py PyBytes {
         PyBytes::new(py, self.module.write_bitcode_to_memory().as_slice())
@@ -98,11 +120,13 @@ impl Module {
     }
 }
 
+/// An attribute.
 #[pyclass(unsendable)]
 pub(crate) struct Attribute(pub(crate) inkwell::attributes::Attribute);
 
 #[pymethods]
 impl Attribute {
+    /// The value of the attribute as a string.
     #[getter]
     fn value(&self) -> &str {
         self.0

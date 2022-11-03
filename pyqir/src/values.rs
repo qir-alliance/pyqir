@@ -46,11 +46,15 @@ pub(crate) struct Value {
 
 #[pymethods]
 impl Value {
+    /// The type of this value.
+    ///
+    /// :type: Type
     #[getter]
     fn r#type(&self, py: Python) -> PyResult<PyObject> {
         unsafe { Type::from_any(py, self.context.clone(), self.value.ty()) }
     }
 
+    /// The name of this value or the empty string if this value is anonymous.
     #[getter]
     fn name(&self) -> &str {
         self.value
@@ -99,11 +103,15 @@ impl Value {
     }
 }
 
+/// A basic block.
 #[pyclass(extends = Value, unsendable)]
 pub(crate) struct BasicBlock(inkwell::basic_block::BasicBlock<'static>);
 
 #[pymethods]
 impl BasicBlock {
+    /// The instructions in this basic block.
+    ///
+    /// :type: List[Instruction]
     #[getter]
     fn instructions(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let block = slf.0;
@@ -119,6 +127,9 @@ impl BasicBlock {
         Ok(insts)
     }
 
+    /// The terminating instruction of this basic block if there is one.
+    ///
+    /// :type: Optional[Instruction]
     #[getter]
     fn terminator(slf: PyRef<Self>, py: Python) -> PyResult<Option<PyObject>> {
         match slf.0.get_terminator() {
@@ -131,11 +142,15 @@ impl BasicBlock {
     }
 }
 
+/// A constant value.
 #[pyclass(extends = Value, subclass)]
 pub(crate) struct Constant;
 
 #[pymethods]
 impl Constant {
+    /// Whether this value is the null pointer.
+    ///
+    /// :type: bool
     #[getter]
     fn is_null(slf: PyRef<Self>) -> bool {
         slf.into_super().value.is_null()
@@ -165,11 +180,15 @@ impl Constant {
     }
 }
 
+/// A constant integer value.
 #[pyclass(extends = Constant)]
 pub(crate) struct IntConstant;
 
 #[pymethods]
 impl IntConstant {
+    /// The value.
+    ///
+    /// :type: int
     #[getter]
     fn value(slf: PyRef<Self>) -> u64 {
         let int: IntValue = slf.into_super().into_super().value.try_into().unwrap();
@@ -177,11 +196,15 @@ impl IntConstant {
     }
 }
 
+/// A constant floating-point value.
 #[pyclass(extends = Constant)]
 pub(crate) struct FloatConstant;
 
 #[pymethods]
 impl FloatConstant {
+    /// The value.
+    ///
+    /// :type: float
     #[getter]
     fn value(slf: PyRef<Self>) -> f64 {
         let float: FloatValue = slf.into_super().into_super().value.try_into().unwrap();
@@ -189,11 +212,15 @@ impl FloatConstant {
     }
 }
 
+/// A function value.
 #[pyclass(extends = Constant, unsendable)]
 pub(crate) struct Function(FunctionValue<'static>);
 
 #[pymethods]
 impl Function {
+    /// The parameters to this function.
+    ///
+    /// :type: List[Value]
     #[getter]
     fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let params = slf.0.get_params();
@@ -204,6 +231,9 @@ impl Function {
             .collect()
     }
 
+    /// The basic blocks in this function.
+    ///
+    /// :type: List[BasicBlock]
     #[getter]
     fn basic_blocks(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let function = slf.0;
@@ -215,6 +245,11 @@ impl Function {
             .collect()
     }
 
+    /// Gets an attribute of this function with the given name if it has one.
+    ///
+    /// :param str name: The name of the attribute.
+    /// :rtype: Optional[Attribute]
+    /// :returns: The attribute.
     fn attribute(&self, name: &str) -> Option<Attribute> {
         Some(Attribute(
             self.0.get_string_attribute(AttributeLoc::Function, name)?,
@@ -490,36 +525,71 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject
     unsafe { Value::from_any(py, context, value) }
 }
 
+/// If the value is a static qubit ID, extracts it.
+///
+/// :param Value value: The value.
+/// :rtype: Optional[int]
+/// :returns: The static qubit ID.
 #[pyfunction]
 pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
     values::qubit_id(unsafe { value.get() }.try_into().ok()?)
 }
 
+/// If the value is a static result ID, extracts it.
+///
+/// :param Value value: The value.
+/// :rtype: Optional[int]
+/// :returns: The static result ID.
 #[pyfunction]
 pub(crate) fn result_id(value: &Value) -> Option<u64> {
     values::result_id(unsafe { value.get() }.try_into().ok()?)
 }
 
+/// Whether the function is an entry point.
+///
+/// :param Function function: The function.
+/// :rtype: bool
+/// :returns: True if the function is an entry point.
 #[pyfunction]
 pub(crate) fn is_entry_point(function: &Function) -> bool {
     values::is_entry_point(unsafe { function.get() })
 }
 
+/// Whether the function is interop-friendly.
+///
+/// :param Function function: The function.
+/// :rtype: bool
+/// :returns: True if the function is interop-friendly.
 #[pyfunction]
 pub(crate) fn is_interop_friendly(function: &Function) -> bool {
     values::is_interop_friendly(unsafe { function.get() })
 }
 
+/// If the function declares a required number of qubits, extracts it.
+///
+/// :param Function function: The function.
+/// :rtype: Optional[int]
+/// :returns: The required number of qubits.
 #[pyfunction]
 pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
     values::required_num_qubits(unsafe { function.get() })
 }
 
+/// If the function declares a required number of results, extracts it.
+///
+/// :param Function function: The function.
+/// :rtype: Optional[int]
+/// :returns: The required number of results.
 #[pyfunction]
 pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
     values::required_num_results(unsafe { function.get() })
 }
 
+/// If the value is a pointer to a constant byte array, extracts it.
+///
+/// :param Value value: The value.
+/// :rtype: Optional[bytes]
+/// :returns: The constant byte array.
 #[pyfunction]
 pub(crate) fn constant_bytes<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
     let bytes = values::constant_bytes(unsafe { value.get() }.try_into().ok()?)?;
