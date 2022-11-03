@@ -93,7 +93,7 @@ task wheelhouse -precondition { -not (Test-Path (Join-Path $Wheels *.whl)) } {
 
 task docs -depends check-environment, wheelhouse {
     Invoke-LoggedCommand { pip install --requirement (Join-Path $DocsRoot requirements.txt) }
-    Invoke-LoggedCommand { sphinx-build -M html $DocsRoot $DocsBuild }
+    Invoke-LoggedCommand { sphinx-build -M html $DocsRoot $DocsBuild -W --keep-going }
 }
 
 task check-environment {
