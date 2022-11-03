@@ -1,3 +1,4 @@
+name: Lint
 on:
   pull_request:
     branches: [main]
@@ -8,22 +9,19 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - run: |
-        Get-ChildItem (Join-Path "eng" "problem-matchers") `
-          | ForEach-Object {
-            Write-Host "Adding matcher $_...";
-            Write-Host "::add-matcher::$_";
-          }
-      shell: pwsh
+    - shell: pwsh
+      run: |
+        Get-ChildItem (Join-Path eng problem-matchers) | ForEach-Object {
+            Write-Host "Adding matcher $_..."
+            Write-Host "::add-matcher::$_"
+        }
 
-    - name: markdownlint-cli
-      uses: nosborn/github-action-markdown-cli@v2.0.0
+    - uses: nosborn/github-action-markdown-cli@v2.0.0
       with:
         files: .
-        config_file: .markdownlint.yaml
+        config_file: env/markdown-lint.yaml
 
-    - name: Markdown link check
-      uses: gaurav-nelson/github-action-markdown-link-check@v1
+    - uses: gaurav-nelson/github-action-markdown-link-check@v1
       with:
         use-verbose-mode: yes
-        config-file: utils/mlc_config.json
+        config-file: env/markdown-link-check.json
