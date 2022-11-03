@@ -2,7 +2,7 @@
 authors = ["Microsoft"]
 name = "pyqir"
 version = "0.7.0-alpha.1"
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "PyQIR generates and evaluates the Quantum Intermediate Representation."
 readme = "README.md"
