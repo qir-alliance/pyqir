@@ -2,14 +2,15 @@
 // Licensed under the MIT License.
 
 use crate::{
-    builder::Builder,
+    builder::{qubit, result, Builder},
+    context::Context,
     evaluator::PyNonadaptiveJit,
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
     module::{Attribute, Module},
     qis::BasicQisBuilder,
-    simple::{SimpleModule, TypeFactory},
+    simple::{create_entry_point, SimpleModule, TypeFactory},
     types::{is_qubit, is_result, ArrayType, FunctionType, IntType, PointerType, StructType, Type},
     values::{
         constant_bytes, is_entry_point, is_interop_friendly, qubit_id, r#const,
@@ -28,6 +29,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Builder>()?;
     m.add_class::<Call>()?;
     m.add_class::<Constant>()?;
+    m.add_class::<Context>()?;
     m.add_class::<FCmp>()?;
     m.add_class::<FloatConstant>()?;
     m.add_class::<FloatPredicate>()?;
@@ -50,14 +52,17 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<TypeFactory>()?;
     m.add_class::<Value>()?;
     m.add_function(wrap_pyfunction!(constant_bytes, m)?)?;
+    m.add_function(wrap_pyfunction!(create_entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(is_interop_friendly, m)?)?;
     m.add_function(wrap_pyfunction!(is_qubit, m)?)?;
     m.add_function(wrap_pyfunction!(is_result, m)?)?;
+    m.add_function(wrap_pyfunction!(qubit, m)?)?;
     m.add_function(wrap_pyfunction!(qubit_id, m)?)?;
     m.add_function(wrap_pyfunction!(r#const, m)?)?;
     m.add_function(wrap_pyfunction!(required_num_qubits, m)?)?;
     m.add_function(wrap_pyfunction!(required_num_results, m)?)?;
+    m.add_function(wrap_pyfunction!(result, m)?)?;
     m.add_function(wrap_pyfunction!(result_id, m)?)?;
     Ok(())
 }

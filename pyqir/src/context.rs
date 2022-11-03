@@ -8,7 +8,9 @@ use std::{borrow::Borrow, ops::Deref};
 #[derive(Eq, PartialEq)]
 pub(crate) struct Context(inkwell::context::Context);
 
+#[pymethods]
 impl Context {
+    #[new]
     pub(crate) fn new() -> Self {
         Self(inkwell::context::Context::create())
     }

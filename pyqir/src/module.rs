@@ -15,6 +15,18 @@ pub(crate) struct Module {
 
 #[pymethods]
 impl Module {
+    #[new]
+    pub(crate) fn new(py: Python, context: Py<Context>, name: &str) -> Self {
+        let module = {
+            let context = context.borrow(py);
+            let module = context.create_module(name);
+            unsafe {
+                transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
+            }
+        };
+        Self { module, context }
+    }
+
     /// Creates a module from LLVM IR.
     ///
     /// :param str ir: The LLVM IR for a module.
@@ -100,17 +112,6 @@ impl Module {
 }
 
 impl Module {
-    pub(crate) fn new(py: Python, context: Py<Context>, name: &str) -> Self {
-        let module = {
-            let context = context.borrow(py);
-            let module = context.create_module(name);
-            unsafe {
-                transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
-            }
-        };
-        Self { module, context }
-    }
-
     pub(crate) unsafe fn get(&self) -> &inkwell::module::Module<'static> {
         &self.module
     }

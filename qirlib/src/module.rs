@@ -10,18 +10,16 @@ use inkwell::{
     OptimizationLevel,
 };
 
+#[allow(clippy::missing_panics_doc)]
 pub fn simple_init(
     module: &Module,
     builder: &Builder,
     required_num_qubits: u64,
     required_num_results: u64,
 ) {
-    let context = module.get_context();
-    let entry_point = create_entry_point(module);
-    add_num_attribute(entry_point, "requiredQubits", required_num_qubits);
-    add_num_attribute(entry_point, "requiredResults", required_num_results);
-    let entry = context.append_basic_block(entry_point, "entry");
-    builder.position_at_end(entry);
+    let entry_point = create_entry_point(module, "main", required_num_qubits, required_num_results);
+    let block = entry_point.get_first_basic_block().unwrap();
+    builder.position_at_end(block);
 }
 
 #[allow(clippy::missing_errors_doc)]
@@ -41,14 +39,23 @@ pub(crate) fn run_basic_passes(module: &Module) -> bool {
     fpm.run_on(module)
 }
 
-fn create_entry_point<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
+pub fn create_entry_point<'ctx>(
+    module: &Module<'ctx>,
+    name: &str,
+    required_num_qubits: u64,
+    required_num_results: u64,
+) -> FunctionValue<'ctx> {
     let context = module.get_context();
-    let fn_type = context.void_type().fn_type(&[], false);
-    let fn_value = module.add_function("main", fn_type, None);
-
-    let entry_point_attribute = context.create_string_attribute("EntryPoint", "");
-    fn_value.add_attribute(AttributeLoc::Function, entry_point_attribute);
-    fn_value
+    let ty = context.void_type().fn_type(&[], false);
+    let entry_point = module.add_function(name, ty, None);
+    entry_point.add_attribute(
+        AttributeLoc::Function,
+        context.create_string_attribute("EntryPoint", ""),
+    );
+    add_num_attribute(entry_point, "requiredQubits", required_num_qubits);
+    add_num_attribute(entry_point, "requiredResults", required_num_results);
+    context.append_basic_block(entry_point, "");
+    entry_point
 }
 
 fn add_num_attribute(function: FunctionValue, key: &str, value: u64) {
@@ -70,7 +77,7 @@ mod tests {
         let module = context.create_module("test");
         let builder = context.create_builder();
 
-        let entry_point = create_entry_point(&module);
+        let entry_point = create_entry_point(&module, "main", 1, 2);
         let entry = context.append_basic_block(entry_point, "entry");
         builder.position_at_end(entry);
         builder.build_return(None);

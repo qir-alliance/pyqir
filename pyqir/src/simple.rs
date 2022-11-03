@@ -261,6 +261,23 @@ impl TypeFactory {
     }
 }
 
+#[pyfunction]
+pub(crate) fn create_entry_point(
+    py: Python,
+    module: &Module,
+    name: &str,
+    required_num_qubits: u64,
+    required_num_results: u64,
+) -> PyResult<PyObject> {
+    let entry_point = module::create_entry_point(
+        unsafe { module.get() },
+        name,
+        required_num_qubits,
+        required_num_results,
+    );
+    unsafe { Value::from_any(py, module.context().clone(), entry_point) }
+}
+
 fn function_type<'ctx>(
     return_type: &impl AnyType<'ctx>,
     params: impl IntoIterator<Item = AnyTypeEnum<'ctx>>,

@@ -143,6 +143,12 @@ impl BasicBlock {
     }
 }
 
+impl BasicBlock {
+    pub(crate) unsafe fn get(&self) -> inkwell::basic_block::BasicBlock<'static> {
+        self.0
+    }
+}
+
 /// A constant value.
 #[pyclass(extends = Value, subclass)]
 pub(crate) struct Constant;
