@@ -15,7 +15,7 @@ use crate::{
     values::{
         constant_bytes, is_entry_point, is_interop_friendly, qubit_id, r#const,
         required_num_qubits, required_num_results, result_id, BasicBlock, Constant, FloatConstant,
-        Function, IntConstant, Value,
+        Function, IntConstant, Linkage, Value,
     },
 };
 use pyo3::prelude::*;
@@ -40,6 +40,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<IntConstant>()?;
     m.add_class::<IntPredicate>()?;
     m.add_class::<IntType>()?;
+    m.add_class::<Linkage>()?;
     m.add_class::<Module>()?;
     m.add_class::<Opcode>()?;
     m.add_class::<Phi>()?;

@@ -3,7 +3,12 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::{context::Context, instructions::Instruction, module::Attribute, types::Type};
+use crate::{
+    context::{self, Context},
+    instructions::Instruction,
+    module::{Attribute, Module},
+    types::{FunctionType, Type},
+};
 use inkwell::{
     attributes::AttributeLoc,
     types::{AnyType, AnyTypeEnum},
@@ -225,6 +230,24 @@ pub(crate) struct Function(FunctionValue<'static>);
 
 #[pymethods]
 impl Function {
+    #[new]
+    fn new(
+        py: Python,
+        ty: PyRef<FunctionType>,
+        linkage: Linkage,
+        name: &str,
+        module: &Module,
+    ) -> PyResult<PyClassInitializer<Self>> {
+        let function_ty = unsafe { ty.get() };
+        let context = module.context();
+        context::require_same(py, [ty.into_super().context(), context])?;
+        let function =
+            unsafe { module.get() }.add_function(name, function_ty, Some(linkage.into()));
+        Ok(unsafe { Value::init(context.clone(), function.into()) }
+            .add_subclass(Constant)
+            .add_subclass(Self(function)))
+    }
+
     /// The parameters to this function.
     ///
     /// :type: List[Value]
@@ -268,6 +291,51 @@ impl Function {
 impl Function {
     pub(crate) unsafe fn get(&self) -> FunctionValue<'static> {
         self.0
+    }
+}
+
+#[pyclass]
+#[derive(Clone)]
+pub(crate) enum Linkage {
+    #[pyo3(name = "APPENDING")]
+    Appending,
+    #[pyo3(name = "AVAILABLE_EXTERNALLY")]
+    AvailableExternally,
+    #[pyo3(name = "COMMON")]
+    Common,
+    #[pyo3(name = "EXTERNAL")]
+    External,
+    #[pyo3(name = "EXTERNAL_WEAK")]
+    ExternalWeak,
+    #[pyo3(name = "INTERNAL")]
+    Internal,
+    #[pyo3(name = "LINK_ONCE_ANY")]
+    LinkOnceAny,
+    #[pyo3(name = "LINK_ONCE_ODR")]
+    LinkOnceOdr,
+    #[pyo3(name = "PRIVATE")]
+    Private,
+    #[pyo3(name = "WEAK_ANY")]
+    WeakAny,
+    #[pyo3(name = "WEAK_ODR")]
+    WeakOdr,
+}
+
+impl From<Linkage> for inkwell::module::Linkage {
+    fn from(linkage: Linkage) -> Self {
+        match linkage {
+            Linkage::Appending => Self::Appending,
+            Linkage::AvailableExternally => Self::AvailableExternally,
+            Linkage::Common => Self::Common,
+            Linkage::External => Self::External,
+            Linkage::ExternalWeak => Self::ExternalWeak,
+            Linkage::Internal => Self::Internal,
+            Linkage::LinkOnceAny => Self::LinkOnceAny,
+            Linkage::LinkOnceOdr => Self::LinkOnceODR,
+            Linkage::Private => Self::Private,
+            Linkage::WeakAny => Self::WeakAny,
+            Linkage::WeakOdr => Self::WeakODR,
+        }
     }
 }
 

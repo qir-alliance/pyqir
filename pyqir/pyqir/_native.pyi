@@ -93,6 +93,8 @@ def create_entry_point(
 ) -> Function: ...
 
 class Type:
+    @staticmethod
+    def void(context: Context) -> Type: ...
     @property
     def is_void(self) -> bool: ...
     @property
@@ -103,6 +105,7 @@ class IntType(Type):
     def width(self) -> int: ...
 
 class FunctionType(Type):
+    def __init__(self, ret: Type, params: Sequence[Type]) -> None: ...
     @property
     def ret(self) -> Type: ...
     @property
@@ -156,6 +159,9 @@ class FloatConstant(Constant):
     def value(self) -> float: ...
 
 class Function(Constant):
+    def __init__(
+        self, ty: FunctionType, linkage: Linkage, name: str, module: Module
+    ) -> None: ...
     @property
     def type(self) -> FunctionType: ...
     @property
@@ -163,6 +169,19 @@ class Function(Constant):
     @property
     def basic_blocks(self) -> List[BasicBlock]: ...
     def attribute(self, name: str) -> Optional[Attribute]: ...
+
+class Linkage(Enum):
+    APPENDING: Linkage
+    AVAILABLE_EXTERNALLY: Linkage
+    COMMON: Linkage
+    EXTERNAL: Linkage
+    EXTERNAL_WEAK: Linkage
+    INTERNAL: Linkage
+    LINK_ONCE_ANY: Linkage
+    LINK_ONCE_ODR: Linkage
+    PRIVATE: Linkage
+    WEAK_ANY: Linkage
+    WEAK_ODR: Linkage
 
 class Attribute:
     @property
@@ -324,6 +343,8 @@ class Module:
     def functions(self) -> List[Function]: ...
     @property
     def bitcode(self) -> bytes: ...
+    @property
+    def context(self) -> Context: ...
     def __str__(self) -> str: ...
 
 class PyNonadaptiveJit:

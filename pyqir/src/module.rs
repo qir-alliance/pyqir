@@ -106,6 +106,11 @@ impl Module {
         PyBytes::new(py, self.module.write_bitcode_to_memory().as_slice())
     }
 
+    #[getter]
+    pub(crate) fn context(&self) -> &Py<Context> {
+        &self.context
+    }
+
     fn __str__(&self) -> String {
         self.module.to_string()
     }
@@ -114,10 +119,6 @@ impl Module {
 impl Module {
     pub(crate) unsafe fn get(&self) -> &inkwell::module::Module<'static> {
         &self.module
-    }
-
-    pub(crate) fn context(&self) -> &Py<Context> {
-        &self.context
     }
 }
 

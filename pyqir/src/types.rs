@@ -3,14 +3,15 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::context::Context;
-use inkwell::types::{AnyTypeEnum, BasicTypeEnum};
-use pyo3::{conversion::ToPyObject, prelude::*};
+use crate::context::{self, Context};
+use inkwell::types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum};
+use pyo3::{conversion::ToPyObject, exceptions::PyValueError, prelude::*};
 use qirlib::types;
-use std::mem::transmute;
+use std::{convert::TryFrom, mem::transmute};
 
 /// A type.
 #[pyclass(subclass, unsendable)]
+#[derive(Clone)]
 pub(crate) struct Type {
     ty: AnyTypeEnum<'static>,
     context: Py<Context>,
@@ -18,6 +19,20 @@ pub(crate) struct Type {
 
 #[pymethods]
 impl Type {
+    #[staticmethod]
+    fn void(py: Python, context: Py<Context>) -> Self {
+        let ty = {
+            let context = context.borrow(py);
+            let ty = context.void_type().into();
+            unsafe {
+                transmute::<inkwell::types::AnyTypeEnum<'_>, inkwell::types::AnyTypeEnum<'static>>(
+                    ty,
+                )
+            }
+        };
+        Type { ty, context }
+    }
+
     /// Whether this type is the void type.
     ///
     /// :type: bool
@@ -94,10 +109,31 @@ impl IntType {
 
 /// A function type.
 #[pyclass(extends = Type, unsendable)]
+#[derive(Clone)]
 pub(crate) struct FunctionType(inkwell::types::FunctionType<'static>);
 
 #[pymethods]
 impl FunctionType {
+    #[new]
+    #[allow(clippy::needless_pass_by_value)]
+    fn new(py: Python, ret: &Type, params: Vec<Type>) -> PyResult<(Self, Type)> {
+        context::require_same(
+            py,
+            params.iter().map(|ty| &ty.context).chain([&ret.context]),
+        )?;
+
+        let ty = function(&ret.ty, params.iter().map(|ty| ty.ty))
+            .ok_or_else(|| PyValueError::new_err("Not a valid function type."))?;
+
+        Ok((
+            FunctionType(ty),
+            Type {
+                ty: ty.into(),
+                context: ret.context.clone(),
+            },
+        ))
+    }
+
     /// The return type of the function.
     ///
     /// :type: Type
@@ -119,6 +155,12 @@ impl FunctionType {
             .into_iter()
             .map(|ty| unsafe { Type::from_any(py, context.clone(), basic_to_any(ty)) })
             .collect()
+    }
+}
+
+impl FunctionType {
+    pub(crate) unsafe fn get(&self) -> inkwell::types::FunctionType<'static> {
+        self.0
     }
 }
 
@@ -230,5 +272,22 @@ fn basic_to_any(ty: BasicTypeEnum) -> AnyTypeEnum {
         BasicTypeEnum::PointerType(p) => p.into(),
         BasicTypeEnum::StructType(s) => s.into(),
         BasicTypeEnum::VectorType(v) => v.into(),
+    }
+}
+
+pub(crate) fn function<'ctx>(
+    ret: &impl AnyType<'ctx>,
+    params: impl IntoIterator<Item = AnyTypeEnum<'ctx>>,
+) -> Option<inkwell::types::FunctionType<'ctx>> {
+    let params = params
+        .into_iter()
+        .map(|ty| BasicTypeEnum::try_from(ty).map(Into::into).ok())
+        .collect::<Option<Vec<_>>>()?;
+
+    match ret.as_any_type_enum() {
+        AnyTypeEnum::VoidType(void) => Some(void.fn_type(&params, false)),
+        any => BasicTypeEnum::try_from(any)
+            .map(|basic| basic.fn_type(&params, false))
+            .ok(),
     }
 }

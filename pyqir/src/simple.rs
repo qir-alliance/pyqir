@@ -8,17 +8,14 @@ use crate::{
     types::Type,
     values::Value,
 };
-use inkwell::types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FunctionType};
+use inkwell::types::AnyTypeEnum;
 use pyo3::{
     exceptions::{PyOSError, PyUnicodeDecodeError, PyValueError},
     prelude::*,
     types::PyBytes,
 };
 use qirlib::{module, types};
-use std::{
-    convert::{Into, TryFrom},
-    mem::transmute,
-};
+use std::{convert::Into, mem::transmute};
 
 /// A simple module represents an executable program with these restrictions:
 ///
@@ -236,7 +233,7 @@ impl TypeFactory {
                 .chain([ret.context().clone()]),
         )?;
 
-        let ty = function_type(
+        let ty = crate::types::function(
             unsafe { &ret.get() },
             params.iter().map(|t| unsafe {
                 transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(t.borrow(py).get())
@@ -276,23 +273,6 @@ pub(crate) fn create_entry_point(
         required_num_results,
     );
     unsafe { Value::from_any(py, module.context().clone(), entry_point) }
-}
-
-fn function_type<'ctx>(
-    return_type: &impl AnyType<'ctx>,
-    params: impl IntoIterator<Item = AnyTypeEnum<'ctx>>,
-) -> Option<FunctionType<'ctx>> {
-    let params = params
-        .into_iter()
-        .map(|ty| BasicTypeEnum::try_from(ty).map(Into::into).ok())
-        .collect::<Option<Vec<_>>>()?;
-
-    match return_type.as_any_type_enum() {
-        AnyTypeEnum::VoidType(void) => Some(void.fn_type(&params, false)),
-        any => BasicTypeEnum::try_from(any)
-            .map(|basic| basic.fn_type(&params, false))
-            .ok(),
-    }
 }
 
 fn clone_module<'ctx>(
