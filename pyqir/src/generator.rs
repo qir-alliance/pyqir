@@ -19,10 +19,10 @@ use crate::utils::{
 use inkwell::{
     builder::Builder as InkwellBuilder,
     context::Context as InkwellContext,
-    module::Module as InkwellModule,
-    types::{AnyType, AnyTypeEnum},
+    module::{Linkage, Module as InkwellModule},
+    types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum},
     values::{AnyValue, AnyValueEnum},
-    IntPredicate,
+    AddressSpace, IntPredicate,
 };
 use pyo3::{
     exceptions::{PyOSError, PyValueError},
@@ -30,7 +30,12 @@ use pyo3::{
     types::{PyBytes, PySequence, PyString, PyUnicode},
 };
 use qirlib::{module, types, BuilderBasicQisExt};
-use std::{borrow::Borrow, convert::Into, mem::transmute, result::Result};
+use std::{
+    borrow::Borrow,
+    convert::{Into, TryFrom},
+    mem::transmute,
+    result::Result,
+};
 
 struct PyIntPredicate(IntPredicate);
 
@@ -157,6 +162,23 @@ impl TypeFactory {
     #[getter]
     fn result(&self, py: Python) -> PyResult<Py<Type>> {
         self.create_type(py, |m| types::result(m).into())
+    }
+
+    /// A pointer type.
+    ///
+    /// :param ty: The type pointed to.
+    /// :returns: The pointer type.
+    /// :rtype: Type
+    #[staticmethod]
+    #[pyo3(text_signature = "(ty)")]
+    #[allow(clippy::similar_names)]
+    fn pointer_to(py: Python, ty: &Type) -> PyResult<Py<Type>> {
+        let pointee = BasicTypeEnum::try_from(ty.ty)
+            .map_err(|()| PyValueError::new_err("Type can't be pointed to."))?;
+        let pointer = pointee.ptr_type(AddressSpace::Generic);
+        let context = ty.context.clone();
+        let ty = unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(pointer.into()) };
+        Py::new(py, Type { ty, context })
     }
 
     /// A function type.
@@ -579,7 +601,7 @@ impl SimpleModule {
     /// :return: The function value.
     /// :rtype: Function
     #[pyo3(text_signature = "(self, name, ty)")]
-    fn add_external_function(&mut self, py: Python, name: &str, ty: &Type) -> PyResult<Value> {
+    fn add_external_function(&self, py: Python, name: &str, ty: &Type) -> PyResult<Value> {
         let module = self.module.borrow(py);
         Context::require_same(py, [&module.context, &ty.context])?;
 
@@ -587,6 +609,27 @@ impl SimpleModule {
         let ty = ty.ty.into_function_type();
         let function = module.module.add_function(name, ty, None);
         Ok(unsafe { Value::new(context, &function) })
+    }
+
+    /// Adds a global null-terminated string constant to the module.
+    ///
+    /// :param bytes Value: The string value without the null terminator.
+    /// :returns: The global value.
+    /// :rtype: Value
+    #[pyo3(text_signature = "(value)")]
+    fn add_global_string(&self, py: Python, value: &[u8]) -> Value {
+        let module = self.module.borrow(py);
+        let context = module.module.get_context();
+        let value = context.const_string(value, true);
+        let global = module.module.add_global(
+            context.i8_type().array_type(value.get_type().get_size()),
+            None,
+            "",
+        );
+        global.set_linkage(Linkage::Internal);
+        global.set_constant(true);
+        global.set_initializer(&value);
+        unsafe { Value::new(module.context.clone(), &global) }
     }
 }
 
@@ -906,6 +949,26 @@ pub(crate) fn r#const(ty: &Type, value: &PyAny) -> PyResult<Value> {
     let context = ty.context.clone();
     let value = extract_constant(&ty.ty, value)?;
     Ok(unsafe { Value::new(context, &value) })
+}
+
+/// Creates a `getelementptr` constant expression.
+///
+/// :param Value value: The aggregate value.
+/// :param Sequence[Value] indices: The indices of the element.
+/// :returns: A pointer to the element.
+/// :rtype: Value
+#[pyfunction]
+#[pyo3(text_signature = "(value, indices)")]
+#[allow(clippy::needless_pass_by_value)]
+pub(crate) fn const_getelementptr(value: &Value, indices: Vec<Value>) -> Value {
+    let indices: Vec<_> = indices.iter().map(|i| i.value.into_int_value()).collect();
+    let gep = unsafe {
+        value
+            .value
+            .into_pointer_value()
+            .const_in_bounds_gep(&indices)
+    };
+    unsafe { Value::new(value.context.clone(), &gep) }
 }
 
 /// Converts the supplied QIR string to its bitcode equivalent.

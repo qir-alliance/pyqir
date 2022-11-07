@@ -21,6 +21,7 @@ from pyqir._native import (
     Value as Value,
     bitcode_to_ir as bitcode_to_ir,
     const as const,
+    const_getelementptr as const_getelementptr,
     ir_to_bitcode as ir_to_bitcode,
 )
 
