@@ -7,7 +7,6 @@ Properties {
     $Root = Resolve-Path (Split-Path -Parent $PSScriptRoot)
     $Qirlib = Join-Path $Root qirlib
     $Pyqir = Join-Path $Root pyqir
-    $PyqirParser = Join-Path $Root pyqir-parser
     $Examples = Join-Path $Root examples
     $Target = Join-Path $Root target
     $Wheels = Join-Path $Target wheels
@@ -22,7 +21,7 @@ Properties {
 }
 
 task default -depends build, run-examples
-task build -depends qirlib, pyqir, pyqir-parser
+task build -depends qirlib, pyqir
 task checks -depends cargo-fmt, cargo-clippy, black, mypy
 task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers 
 
@@ -80,11 +79,19 @@ task qirlib -depends init {
 }
 
 task pyqir -depends init {
-    Build-PyQIR pyqir
-}
+    $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
+    Get-Wheels pyqir | Remove-Item
+    Invoke-LoggedCommand { pip --verbose wheel --wheel-dir $Wheels $Pyqir }
 
-task pyqir-parser -depends init {
-    Build-PyQIR pyqir-parser
+    if (Test-CommandExists auditwheel) {
+        $unauditedWheels = Get-Wheels pyqir
+        Invoke-LoggedCommand { auditwheel repair --wheel-dir $Wheels $unauditedWheels }
+        $unauditedWheels | Remove-Item
+    }
+
+    $packages = Get-Wheels pyqir | ForEach-Object { "$_[test]" }
+    Invoke-LoggedCommand { pip install --force-reinstall $packages }
+    Invoke-LoggedCommand -workingDirectory $Pyqir { pytest }
 }
 
 task wheelhouse -precondition { -not (Test-Path (Join-Path $Wheels *.whl)) } {
