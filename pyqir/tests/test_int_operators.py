@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from functools import partial
-from pyqir.generator import Builder, IntPredicate, SimpleModule, Value, const
+from pyqir import Builder, IntPredicate, SimpleModule, Value, const
 from typing import Callable, List, Tuple
 import unittest
 

@@ -6,8 +6,7 @@
 # Here, we transform a Qiskit circuit without using the Qiskit package
 
 import ast
-
-from pyqir.generator import BasicQisBuilder, SimpleModule
+from pyqir import BasicQisBuilder, SimpleModule
 
 
 def main() -> None:

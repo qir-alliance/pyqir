@@ -1,5 +1,8 @@
-pub mod gates;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+mod gates;
 pub mod interop;
-pub mod intrinsics;
+mod intrinsics;
 pub mod jit;
-pub mod runtime;
+mod runtime;
