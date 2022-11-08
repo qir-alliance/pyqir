@@ -4,51 +4,11 @@
 use inkwell::{
     attributes::AttributeLoc,
     builder::Builder,
-    context::Context,
-    memory_buffer::MemoryBuffer,
     module::Module,
     passes::{PassManager, PassManagerBuilder},
     values::FunctionValue,
     OptimizationLevel,
 };
-
-/// # Errors
-///
-/// Will return `Err` if a module cannot be created from the supplied IR
-pub fn ir_to_bitcode(
-    value: &str,
-    module_name: Option<&str>,
-    source_file_name: Option<&str>,
-) -> Result<Vec<u8>, String> {
-    let context = Context::create();
-    let buffer = MemoryBuffer::create_from_memory_range_copy(
-        value.as_bytes(),
-        module_name.unwrap_or_default(),
-    );
-    let module = context
-        .create_module_from_ir(buffer)
-        .map_err(|e| e.to_string())?;
-    if let Some(name) = source_file_name {
-        module.set_source_file_name(name);
-    }
-    Ok(module.write_bitcode_to_memory().as_slice().to_owned())
-}
-
-/// # Errors
-///
-/// Will return `Err` if a module cannot be created from the supplied bitcode
-pub fn bitcode_to_ir(
-    value: &[u8],
-    module_name: Option<&str>,
-    source_file_name: Option<&str>,
-) -> Result<String, String> {
-    let context = Context::create();
-    let module = load_memory(value, module_name.unwrap_or_default(), &context)?;
-    if let Some(name) = source_file_name {
-        module.set_source_file_name(name);
-    }
-    Ok(module.print_to_string().to_string())
-}
 
 pub fn simple_init(
     module: &Module,
@@ -68,18 +28,6 @@ pub fn simple_init(
 pub fn simple_finalize(module: &Module) -> Result<(), String> {
     run_basic_passes(module);
     module.verify().map_err(|e| e.to_string())
-}
-
-/// # Errors
-///
-/// - Module fails to load.
-pub(crate) fn load_memory<'a>(
-    bytes: &[u8],
-    name: &str,
-    context: &'a Context,
-) -> Result<Module<'a>, String> {
-    let buffer = MemoryBuffer::create_from_memory_range_copy(bytes, name);
-    Module::parse_bitcode_from_buffer(&buffer, context).map_err(|e| e.to_string())
 }
 
 // This method returns true if any of the passes modified the function or module and false otherwise.
@@ -111,12 +59,7 @@ fn add_num_attribute(function: FunctionValue, key: &str, value: u64) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        builder::Builder,
-        module::{self, create_entry_point},
-        qis::BuilderBasicQisExt,
-        tests::assert_reference_ir,
-    };
+    use crate::{module::create_entry_point, tests::assert_reference_ir};
     use inkwell::context::Context;
     use std::{fs::File, io::Read, path::Path};
     use tempfile::tempdir;
@@ -134,25 +77,6 @@ mod tests {
         let ir_string = module.print_to_string().to_string();
         let expected = "; ModuleID = 'test'\nsource_filename = \"test\"\n\ndefine void @main() #0 {\nentry:\n  ret void\n}\n\nattributes #0 = { \"EntryPoint\" }\n";
         assert_eq!(expected, ir_string);
-    }
-
-    fn example_ir() -> String {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let builder = Builder::new(&module);
-        super::simple_init(&module, &builder, 1, 1);
-        builder.build_mz(builder.build_qubit(0), builder.build_result(0));
-        builder.build_return(None);
-        module.print_to_string().to_string()
-    }
-
-    #[test]
-    fn ir_round_trip_is_identical() -> Result<(), String> {
-        let actual_ir = example_ir();
-        let bitcode = module::ir_to_bitcode(actual_ir.as_str(), None, None)?;
-        let converted_ir = module::bitcode_to_ir(bitcode.as_slice(), Some("test"), Some("test"))?;
-        assert_eq!(actual_ir, converted_ir);
-        Ok(())
     }
 
     #[test]

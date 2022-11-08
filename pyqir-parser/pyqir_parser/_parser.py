@@ -1,8 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-import pyqir.parser._native as native
-from pyqir.parser._native import module_from_bitcode
+import pyqir_parser._native as native
+from pyqir_parser._native import module_from_bitcode
 from typing import List, Optional, Tuple
 
 __all__ = [

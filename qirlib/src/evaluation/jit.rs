@@ -160,8 +160,7 @@ fn load_file(path: impl AsRef<Path>, context: &Context) -> Result<Module, String
 mod tests {
     use super::{run_module, run_module_file};
     use crate::evaluation::interop::{Instruction, SemanticModel, Single};
-    use crate::module;
-    use inkwell::context::Context;
+    use inkwell::{context::Context, memory_buffer::MemoryBuffer, module::Module};
     use serial_test::serial;
     use std::path::PathBuf;
 
@@ -298,7 +297,9 @@ mod tests {
 
     fn run_test_module(bytes: &[u8], entry_point: Option<&str>) -> Result<SemanticModel, String> {
         let context = Context::create();
-        let module = module::load_memory(bytes, "test", &context)?;
+        let buffer = MemoryBuffer::create_from_memory_range_copy(bytes, "test");
+        let module =
+            Module::parse_bitcode_from_buffer(&buffer, &context).map_err(|e| e.to_string())?;
         run_module(&module, entry_point, None)
     }
 }

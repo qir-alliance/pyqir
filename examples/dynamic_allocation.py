@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, SimpleModule
+from pyqir import BasicQisBuilder, SimpleModule
 
 # PyQIR Generator assumes you want to use static allocation for qubits and
 # results, but you can still use dynamic allocation by manually calling the

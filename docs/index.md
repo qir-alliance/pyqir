@@ -1,12 +1,4 @@
-# Welcome to PyQIR's Documentation
-
-## Introduction
-
-### Installing PyQIR
-
-## Contents
-
-% TODO
+# PyQIR
 
 ```{toctree}
 ---
@@ -14,11 +6,11 @@ maxdepth: 2
 ---
 
 getting-started/index
-api-reference/index
+api
 development-guide/index
 ```
 
-## Indices and tables
+## Indices
 
 - {ref}`genindex`
 - {ref}`modindex`
