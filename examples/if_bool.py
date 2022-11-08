@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, IntPredicate, SimpleModule, const
+from pyqir import BasicQisBuilder, IntPredicate, SimpleModule, const
 
 mod = SimpleModule("if_bool", num_qubits=2, num_results=2)
 qis = BasicQisBuilder(mod.builder)
