@@ -27,4 +27,4 @@ name = "pyqir_parser"
 crate-type = ["cdylib", "lib"]
 
 [package.metadata.maturin]
-name = "pyqir.parser._native"
+name = "pyqir_parser._native"

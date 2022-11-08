@@ -3,7 +3,7 @@
 
 use inkwell::{
     module::Module,
-    types::{PointerType, StructType},
+    types::{AnyTypeEnum, PointerType, StructType},
     AddressSpace,
 };
 
@@ -11,8 +11,18 @@ pub fn qubit<'ctx>(module: &Module<'ctx>) -> PointerType<'ctx> {
     get_or_create_struct(module, "Qubit").ptr_type(AddressSpace::Generic)
 }
 
+#[must_use]
+pub fn is_qubit(ty: AnyTypeEnum) -> bool {
+    is_opaque_pointer_to(ty, "Qubit")
+}
+
 pub fn result<'ctx>(module: &Module<'ctx>) -> PointerType<'ctx> {
     get_or_create_struct(module, "Result").ptr_type(AddressSpace::Generic)
+}
+
+#[must_use]
+pub fn is_result(ty: AnyTypeEnum) -> bool {
+    is_opaque_pointer_to(ty, "Result")
 }
 
 fn get_or_create_struct<'ctx>(module: &Module<'ctx>, name: &str) -> StructType<'ctx> {
@@ -20,6 +30,19 @@ fn get_or_create_struct<'ctx>(module: &Module<'ctx>, name: &str) -> StructType<'
         log::debug!("{} was not defined in the module", name);
         module.get_context().opaque_struct_type(name)
     })
+}
+
+fn is_opaque_pointer_to(ty: AnyTypeEnum, name: &str) -> bool {
+    match ty {
+        AnyTypeEnum::PointerType(p) => match p.get_element_type() {
+            AnyTypeEnum::StructType(s) => {
+                let struct_name = s.get_name().and_then(|n| n.to_str().ok());
+                struct_name == Some(name)
+            }
+            _ => false,
+        },
+        _ => false,
+    }
 }
 
 #[cfg(test)]
