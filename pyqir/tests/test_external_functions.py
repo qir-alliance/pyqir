@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import (
+from pyqir import (
     BasicQisBuilder,
     SimpleModule,
     Type,
@@ -318,7 +318,9 @@ def test_variable_wrong_angle_type() -> None:
 
     x = mod.builder.call(foo, [])
     assert x is not None
-    with pytest.raises(BaseException, match="^Found IntValue"):
+    with pytest.raises(
+        BaseException, match=r"^Couldn't convert value to float value\.$"
+    ):
         qis.rz(x, mod.qubits[0])
 
 

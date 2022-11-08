@@ -1,14 +1,14 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+from pyqir import BasicQisBuilder, SimpleModule, Value
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
-from pyqir.generator import BasicQisBuilder, SimpleModule, Value
 import tempfile
-from typing import List, Tuple
+from typing import List, Sequence
 
 
 def _teleport(
-    qis: BasicQisBuilder, qubits: Tuple[Value, ...], results: Tuple[Value, ...]
+    qis: BasicQisBuilder, qubits: Sequence[Value], results: Sequence[Value]
 ) -> None:
     msg = qubits[0]
     target = qubits[1]

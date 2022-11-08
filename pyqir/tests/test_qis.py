@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.generator import BasicQisBuilder, SimpleModule, TypeFactory, Value, const
+from pyqir import BasicQisBuilder, SimpleModule, TypeFactory, Value, const
 import pytest
 from typing import Callable, Union
 
