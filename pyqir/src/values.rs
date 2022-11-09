@@ -601,6 +601,16 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject
     unsafe { Value::from_any(py, context, value) }
 }
 
+#[pyfunction]
+pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
+    let value = {
+        let context = context.borrow(py);
+        let value = values::qubit(&context.void_type().get_context(), id);
+        unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
+    };
+    unsafe { Value::from_any(py, context, value) }
+}
+
 /// If the value is a static qubit ID, extracts it.
 ///
 /// :param Value value: The value.
@@ -610,6 +620,16 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
     values::qubit_id(unsafe { value.get() }.try_into().ok()?)
+}
+
+#[pyfunction]
+pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
+    let value = {
+        let context = context.borrow(py);
+        let value = values::result(&context.void_type().get_context(), id);
+        unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
+    };
+    unsafe { Value::from_any(py, context, value) }
 }
 
 /// If the value is a static result ID, extracts it.

@@ -1,7 +1,3 @@
 [workspace]
-members = [
-    "pyqir",
-    "pyqir-parser",
-    "qirlib",
-]
+members = ["pyqir", "qirlib"]
 resolver = "2"

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    builder::{qubit, result, Builder},
+    builder::Builder,
     context::Context,
     evaluator::PyNonadaptiveJit,
     instructions::{
@@ -13,9 +13,9 @@ use crate::{
     simple::{create_entry_point, SimpleModule, TypeFactory},
     types::{is_qubit, is_result, ArrayType, FunctionType, IntType, PointerType, StructType, Type},
     values::{
-        constant_bytes, is_entry_point, is_interop_friendly, qubit_id, r#const,
-        required_num_qubits, required_num_results, result_id, BasicBlock, Constant, FloatConstant,
-        Function, IntConstant, Linkage, Value,
+        constant_bytes, is_entry_point, is_interop_friendly, qubit, qubit_id, r#const,
+        required_num_qubits, required_num_results, result, result_id, BasicBlock, Constant,
+        FloatConstant, Function, IntConstant, Linkage, Value,
     },
 };
 use pyo3::prelude::*;

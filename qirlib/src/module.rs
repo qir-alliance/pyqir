@@ -68,8 +68,6 @@ fn add_num_attribute(function: FunctionValue, key: &str, value: u64) {
 mod tests {
     use crate::{module::create_entry_point, tests::assert_reference_ir};
     use inkwell::context::Context;
-    use std::{fs::File, io::Read, path::Path};
-    use tempfile::tempdir;
 
     #[test]
     fn entry_point_function_has_correct_signature_and_default_attribute() {
@@ -84,33 +82,6 @@ mod tests {
         let ir_string = module.print_to_string().to_string();
         let expected = "; ModuleID = 'test'\nsource_filename = \"test\"\n\ndefine void @main() #0 {\nentry:\n  ret void\n}\n\nattributes #0 = { \"EntryPoint\" }\n";
         assert_eq!(expected, ir_string);
-    }
-
-    #[test]
-    fn emitted_bitcode_files_are_identical_to_base64_encoded() {
-        let dir = tempdir().expect("");
-        let tmp_path = dir.into_path();
-        let name = "test";
-        let file_path = tmp_path.join(format!("{}.bc", name));
-        let file_path_string = file_path.display().to_string();
-
-        let context = Context::create();
-        let module = context.create_module(name);
-        module.write_bitcode_to_path(Path::new(&file_path_string));
-
-        let mut emitted_bitcode_file =
-            File::open(file_path_string.as_str()).expect("Could not open emitted bitcode file");
-        let mut emitted_bitcode_bytes = vec![];
-        emitted_bitcode_file
-            .read_to_end(&mut emitted_bitcode_bytes)
-            .expect("Could not read emitted bitcode file");
-
-        let decoded_bitcode_bytes = module.write_bitcode_to_memory();
-
-        assert_eq!(
-            emitted_bitcode_bytes.as_slice(),
-            decoded_bitcode_bytes.as_slice()
-        );
     }
 
     #[test]

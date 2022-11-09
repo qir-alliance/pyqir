@@ -23,6 +23,9 @@ param(
     [switch]$detailedDocs = $false
 )
 
+# PS 7.3 introduced exec alias which breaks the build.
+Remove-Item alias:exec -ErrorAction SilentlyContinue
+
 if ($null -eq (Import-Module -Name psake -PassThru -ErrorAction SilentlyContinue)) {    
     Install-Module -Name Psake -Scope CurrentUser -Repository PSGallery -Force -Verbose
 }

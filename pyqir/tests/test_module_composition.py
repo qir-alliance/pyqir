@@ -17,24 +17,26 @@ from pyqir import (
 
 
 def bell(module: Module) -> Function:
+    context = module.context
     entry = create_entry_point(module, "bell", 2, 2)
     builder = Builder(module)
     builder.set_insert_point(entry.basic_blocks[0])
     qis = BasicQisBuilder(builder)
-    qis.h(qubit(builder, 0))
-    qis.cx(qubit(builder, 0), qubit(builder, 1))
-    qis.mz(qubit(builder, 0), result(builder, 0))
-    qis.mz(qubit(builder, 1), result(builder, 1))
+    qis.h(qubit(context, 0))
+    qis.cx(qubit(context, 0), qubit(context, 1))
+    qis.mz(qubit(context, 0), result(context, 0))
+    qis.mz(qubit(context, 1), result(context, 1))
     return entry
 
 
 def bell_no_measure(module: Module) -> Function:
+    context = module.context
     entry = create_entry_point(module, "bell_no_measure", 2, 0)
     builder = Builder(module)
     builder.set_insert_point(entry.basic_blocks[0])
     qis = BasicQisBuilder(builder)
-    qis.h(qubit(builder, 0))
-    qis.cx(qubit(builder, 0), qubit(builder, 1))
+    qis.h(qubit(context, 0))
+    qis.cx(qubit(context, 0), qubit(context, 1))
     return entry
 
 

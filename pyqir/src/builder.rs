@@ -323,21 +323,3 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for Callable<'ctx> {
         .ok_or_else(|| PyValueError::new_err("Value is not callable."))
     }
 }
-
-// TODO: Shouldn't require builder for constant expression.
-#[pyfunction]
-pub(crate) fn qubit(py: Python, builder: &Builder, id: u64) -> PyResult<PyObject> {
-    let context = builder.context.clone();
-    let module = builder.module.borrow(py);
-    let builder = qirlib::Builder::from(&builder.builder, unsafe { module.get() });
-    unsafe { Value::from_any(py, context, builder.build_qubit(id)) }
-}
-
-// TODO: Shouldn't require builder for constant expression.
-#[pyfunction]
-pub(crate) fn result(py: Python, builder: &Builder, id: u64) -> PyResult<PyObject> {
-    let context = builder.context.clone();
-    let module = builder.module.borrow(py);
-    let builder = qirlib::Builder::from(&builder.builder, unsafe { module.get() });
-    unsafe { Value::from_any(py, context, builder.build_result(id)) }
-}
