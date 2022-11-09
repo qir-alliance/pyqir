@@ -9,32 +9,27 @@ use inkwell::{
 use llvm_sys::core::{LLVMGetTypeByName2, LLVMStructCreateNamed};
 use std::ffi::CStr;
 
+const QUBIT: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"Qubit\0") };
+const RESULT: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"Result\0") };
+
 #[must_use]
 pub fn qubit<'ctx>(context: &ContextRef<'ctx>) -> PointerType<'ctx> {
-    get_or_create_struct(context, qubit_name()).ptr_type(AddressSpace::Generic)
+    get_or_create_struct(context, QUBIT).ptr_type(AddressSpace::Generic)
 }
 
 #[must_use]
 pub fn is_qubit(ty: AnyTypeEnum) -> bool {
-    is_opaque_pointer_to(ty, qubit_name())
+    is_opaque_pointer_to(ty, QUBIT)
 }
 
 #[must_use]
 pub fn result<'ctx>(context: &ContextRef<'ctx>) -> PointerType<'ctx> {
-    get_or_create_struct(context, result_name()).ptr_type(AddressSpace::Generic)
+    get_or_create_struct(context, RESULT).ptr_type(AddressSpace::Generic)
 }
 
 #[must_use]
 pub fn is_result(ty: AnyTypeEnum) -> bool {
-    is_opaque_pointer_to(ty, result_name())
-}
-
-fn qubit_name() -> &'static CStr {
-    unsafe { CStr::from_bytes_with_nul_unchecked(b"Qubit\0") }
-}
-
-fn result_name() -> &'static CStr {
-    unsafe { CStr::from_bytes_with_nul_unchecked(b"Result\0") }
+    is_opaque_pointer_to(ty, RESULT)
 }
 
 fn get_or_create_struct<'ctx>(context: &ContextRef<'ctx>, name: &CStr) -> StructType<'ctx> {
