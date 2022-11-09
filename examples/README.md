@@ -18,11 +18,6 @@ It's intended for easily testing and experimenting with QIR code and connecting
 it to low-level Python-based lab software such as
 [QCoDeS](https://qcodes.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html#Introduction).
 
-The [`pyqir-parser`](../pyqir-parser) package provides a Python API for loading
-QIR for basic analysis and transformation. For more advanced scenarios, we
-recommend taking a look at the LLVM-based infrastructure provided by the
-[QAT tool](https://qir-alliance.github.io/qat/).
-
 ## Installation
 
 For more information about how to install the PyQIR packages to run the

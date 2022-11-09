@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from abc import ABCMeta, abstractmethod
-from pyqir.generator import BasicQisBuilder, IntPredicate, SimpleModule, const
+from pyqir import BasicQisBuilder, IntPredicate, SimpleModule, const
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
 import pytest
 import tempfile

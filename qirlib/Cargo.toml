@@ -1,7 +1,7 @@
 [package]
 name = "qirlib"
 version = "0.3.0"
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "Base Profile QIR library"
 build = "build.rs"
@@ -19,7 +19,7 @@ llvm-sys-130 = { package = "llvm-sys", version = "130.0.2", optional = true }
 llvm-sys-140 = { package = "llvm-sys", version = "140.0.2", optional = true }
 
 # The llvm version of inkwell is controlled through this crates features.
-inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["target-x86"] }
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["internal-getters", "target-x86"] }
 log = "0.4.14"
 cty = "0.2.1"
 rand = "0.8.4"
@@ -48,10 +48,10 @@ semver = "1.0.6"
 name = "qirlib"
 
 [features]
-llvm11-0 = ["inkwell/llvm11-0"]
-llvm12-0 = ["inkwell/llvm12-0"]
-llvm13-0 = ["inkwell/llvm13-0"]
-llvm14-0 = ["inkwell/llvm14-0"]
+llvm11-0 = ["inkwell/llvm11-0", "llvm-sys-110"]
+llvm12-0 = ["inkwell/llvm12-0", "llvm-sys-120"]
+llvm13-0 = ["inkwell/llvm13-0", "llvm-sys-130"]
+llvm14-0 = ["inkwell/llvm14-0", "llvm-sys-140"]
 
 # default to use llvm-sys/inkwell for llvm linking
 default = ["external-llvm-linking"]
