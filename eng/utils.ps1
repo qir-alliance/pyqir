@@ -270,23 +270,6 @@ function Resolve-PythonRequirements([string[]] $projects) {
     | ForEach-Object { "$($_.name)==$($_.version)" }
 }
 
-function Build-PyQIR([string] $project) {
-    $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
-    $projectDir = Join-Path $Root $project
-    Get-Wheels $project | Remove-Item
-    Invoke-LoggedCommand { pip --verbose wheel --wheel-dir $Wheels $projectDir }
-
-    if (Test-CommandExists auditwheel) {
-        $unauditedWheels = Get-Wheels $project
-        Invoke-LoggedCommand { auditwheel repair --wheel-dir $Wheels $unauditedWheels }
-        $unauditedWheels | Remove-Item
-    }
-
-    $packages = Get-Wheels $project | ForEach-Object { "$_[test]" }
-    Invoke-LoggedCommand { pip install --force-reinstall $packages }
-    Invoke-LoggedCommand -workingDirectory $projectDir { pytest }
-}
-
 function install-llvm {
     Param(
         [Parameter(Mandatory)]
