@@ -2,7 +2,7 @@
 authors = ["Microsoft"]
 name = "pyqir-parser"
 version = "0.7.0-alpha.1"
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "A parser for the Quantum Intermediate Representation (QIR)."
 readme = "README.md"
@@ -27,4 +27,4 @@ name = "pyqir_parser"
 crate-type = ["cdylib", "lib"]
 
 [package.metadata.maturin]
-name = "pyqir.parser._native"
+name = "pyqir_parser._native"

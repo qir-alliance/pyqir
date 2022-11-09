@@ -7,7 +7,7 @@ IR string without errors. These tests are not meant to make detailed assertions
 about the generated IR.
 """
 
-from pyqir.generator import BasicQisBuilder, SimpleModule
+from pyqir import BasicQisBuilder, SimpleModule
 import pytest
 
 
