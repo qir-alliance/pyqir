@@ -67,7 +67,7 @@ task black -depends check-environment {
 
 task mypy -depends check-environment {
     $reqs = Resolve-PythonRequirements(@("$Pyqir[test]", "$PyqirParser[test]"))
-    exec { pip install --requirement (Join-Path $Examples requirements.txt) @reqs mypy }
+    exec { pip install --requirement (Join-Path $Examples requirements.txt) @reqs "mypy < 0.990" }
     Invoke-LoggedCommand -workingDirectory $Root -errorMessage "Please fix the above mypy errors" {
         mypy
     }

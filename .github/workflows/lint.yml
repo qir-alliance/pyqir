@@ -1,0 +1,26 @@
+name: Lint
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - shell: pwsh
+      run: |
+        Get-ChildItem (Join-Path eng problem-matchers) | ForEach-Object {
+            Write-Host "Adding matcher $_..."
+            Write-Host "::add-matcher::$_"
+        }
+
+    - uses: nosborn/github-action-markdown-cli@v3
+      with:
+        files: .
+
+    - uses: gaurav-nelson/github-action-markdown-link-check@v1
+      with:
+        use-verbose-mode: yes
+        config-file: eng/markdown-link-check.json

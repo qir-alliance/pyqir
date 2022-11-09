@@ -49,7 +49,7 @@ impl Module {
     fn from_bitcode(py: Python, bitcode: &[u8], name: Option<&str>) -> PyResult<Self> {
         let context = Context::new();
         let buffer = MemoryBuffer::create_from_memory_range(bitcode, name.unwrap_or_default());
-        let module = inkwell::module::Module::parse_bitcode_from_buffer(&buffer, &context)
+        let module = inkwell::module::Module::parse_bitcode_from_buffer(&buffer, &*context)
             .map_err(|e| PyValueError::new_err(e.to_string()))?;
         Ok(Self {
             module: unsafe {

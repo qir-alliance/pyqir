@@ -5,8 +5,9 @@ use crate::types;
 use core::slice;
 use inkwell::{
     attributes::AttributeLoc,
+    context::ContextRef,
     types::{AnyTypeEnum, PointerType},
-    values::{AnyValueEnum, FunctionValue},
+    values::{AnyValueEnum, FunctionValue, PointerValue},
     LLVMReference,
 };
 use llvm_sys::{
@@ -19,12 +20,28 @@ use llvm_sys::{
 use std::convert::TryFrom;
 
 #[must_use]
+pub fn qubit<'ctx>(context: &ContextRef<'ctx>, id: u64) -> PointerValue<'ctx> {
+    context
+        .i64_type()
+        .const_int(id, false)
+        .const_to_pointer(types::qubit(context))
+}
+
+#[must_use]
 pub fn qubit_id(value: AnyValueEnum) -> Option<u64> {
     if types::is_qubit(value.get_type()) {
         pointer_to_int(value)
     } else {
         None
     }
+}
+
+#[must_use]
+pub fn result<'ctx>(context: &ContextRef<'ctx>, id: u64) -> PointerValue<'ctx> {
+    context
+        .i64_type()
+        .const_int(id, false)
+        .const_to_pointer(types::result(context))
 }
 
 #[must_use]
