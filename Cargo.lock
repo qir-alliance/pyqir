@@ -37,9 +37,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.0.75"
+version = "1.0.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41ca34107f97baef6cfb231b32f36115781856b8f8208e8c580e0bcaea374842"
+checksum = "76a284da2e6fe2092f2353e51713435363112dfd60030e22add80be333fb928f"
 
 [[package]]
 name = "cfg-if"
@@ -188,7 +188,7 @@ checksum = "adab1eaa3408fb7f0c777a73e7465fd5656136fc93b670eb6df3c88c2c1344e3"
 [[package]]
 name = "inkwell"
 version = "0.1.0"
-source = "git+https://github.com/TheDan64/inkwell?branch=master#a052c6b06bcdb73a66a349344fc5c6af7ad95001"
+source = "git+https://github.com/TheDan64/inkwell?branch=master#83dd54b9c1d1fbc0ca06e7ecf56abf4391c79b0f"
 dependencies = [
  "either",
  "inkwell_internals",
@@ -204,7 +204,7 @@ dependencies = [
 [[package]]
 name = "inkwell_internals"
 version = "0.5.0"
-source = "git+https://github.com/TheDan64/inkwell?branch=master#a052c6b06bcdb73a66a349344fc5c6af7ad95001"
+source = "git+https://github.com/TheDan64/inkwell?branch=master#83dd54b9c1d1fbc0ca06e7ecf56abf4391c79b0f"
 dependencies = [
  "proc-macro2",
  "quote",

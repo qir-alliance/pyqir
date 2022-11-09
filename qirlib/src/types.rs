@@ -2,43 +2,56 @@
 // Licensed under the MIT License.
 
 use inkwell::{
-    module::Module,
+    context::ContextRef,
     types::{AnyTypeEnum, PointerType, StructType},
-    AddressSpace,
+    AddressSpace, LLVMReference,
 };
+use llvm_sys::core::{LLVMGetTypeByName2, LLVMStructCreateNamed};
+use std::ffi::CStr;
 
-pub fn qubit<'ctx>(module: &Module<'ctx>) -> PointerType<'ctx> {
-    get_or_create_struct(module, "Qubit").ptr_type(AddressSpace::Generic)
+#[must_use]
+pub fn qubit<'ctx>(context: &ContextRef<'ctx>) -> PointerType<'ctx> {
+    get_or_create_struct(context, qubit_name()).ptr_type(AddressSpace::Generic)
 }
 
 #[must_use]
 pub fn is_qubit(ty: AnyTypeEnum) -> bool {
-    is_opaque_pointer_to(ty, "Qubit")
+    is_opaque_pointer_to(ty, qubit_name())
 }
 
-pub fn result<'ctx>(module: &Module<'ctx>) -> PointerType<'ctx> {
-    get_or_create_struct(module, "Result").ptr_type(AddressSpace::Generic)
+#[must_use]
+pub fn result<'ctx>(context: &ContextRef<'ctx>) -> PointerType<'ctx> {
+    get_or_create_struct(context, result_name()).ptr_type(AddressSpace::Generic)
 }
 
 #[must_use]
 pub fn is_result(ty: AnyTypeEnum) -> bool {
-    is_opaque_pointer_to(ty, "Result")
+    is_opaque_pointer_to(ty, result_name())
 }
 
-fn get_or_create_struct<'ctx>(module: &Module<'ctx>, name: &str) -> StructType<'ctx> {
-    module.get_struct_type(name).unwrap_or_else(|| {
-        log::debug!("{} was not defined in the module", name);
-        module.get_context().opaque_struct_type(name)
-    })
+fn qubit_name() -> &'static CStr {
+    unsafe { CStr::from_bytes_with_nul_unchecked(b"Qubit\0") }
 }
 
-fn is_opaque_pointer_to(ty: AnyTypeEnum, name: &str) -> bool {
+fn result_name() -> &'static CStr {
+    unsafe { CStr::from_bytes_with_nul_unchecked(b"Result\0") }
+}
+
+fn get_or_create_struct<'ctx>(context: &ContextRef<'ctx>, name: &CStr) -> StructType<'ctx> {
+    let context = unsafe { context.get_ref() };
+    let name = name.as_ptr().cast();
+    let ty = unsafe { LLVMGetTypeByName2(context, name) };
+    if ty.is_null() {
+        unsafe { StructType::new(LLVMStructCreateNamed(context, name)) }
+    } else {
+        unsafe { StructType::new(ty) }
+    }
+}
+
+fn is_opaque_pointer_to(ty: AnyTypeEnum, name: &CStr) -> bool {
     match ty {
         AnyTypeEnum::PointerType(p) => match p.get_element_type() {
-            AnyTypeEnum::StructType(s) => {
-                let struct_name = s.get_name().and_then(|n| n.to_str().ok());
-                struct_name == Some(name)
-            }
+            AnyTypeEnum::StructType(s) => s.get_name() == Some(name),
             _ => false,
         },
         _ => false,
@@ -53,15 +66,15 @@ mod tests {
     #[test]
     fn qubit_can_be_declared() {
         let context = Context::create();
-        let module = context.create_module("test");
-        verify_opaque_pointer("Qubit", qubit(&module));
+        let context = context.void_type().get_context();
+        verify_opaque_pointer("Qubit", qubit(&context));
     }
 
     #[test]
     fn result_can_be_declared() {
         let context = Context::create();
-        let module = context.create_module("test");
-        verify_opaque_pointer("Result", result(&module));
+        let context = context.void_type().get_context();
+        verify_opaque_pointer("Result", result(&context));
     }
 
     fn verify_opaque_pointer(name: &str, ty: PointerType) {
