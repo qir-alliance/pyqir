@@ -3,8 +3,8 @@
 
 from functools import partial
 from pyqir import Builder, IntPredicate, SimpleModule, Value, const
+import pytest
 from typing import Callable, List, Tuple
-import unittest
 
 _OPERATORS: List[Tuple[str, Callable[[Builder], Callable[[Value, Value], Value]]]] = [
     ("and", lambda b: b.and_),
@@ -28,62 +28,51 @@ _OPERATORS: List[Tuple[str, Callable[[Builder], Callable[[Value, Value], Value]]
 ]
 
 
-class IntOperatorsTest(unittest.TestCase):
-    def test_variable_variable(self) -> None:
-        for (name, build) in _OPERATORS:
-            with self.subTest(name):
-                mod = SimpleModule("test " + name, 0, 0)
-                types = mod.types
-                source = mod.add_external_function(
-                    "source", types.function(types.int(64), [])
-                )
-                ty = types.bool if name.startswith("icmp") else types.int(64)
-                sink = mod.add_external_function(
-                    "sink", types.function(types.void, [ty])
-                )
+@pytest.mark.parametrize("name, build", _OPERATORS)
+def test_variable_variable(
+    name: str, build: Callable[[Builder], Callable[[Value, Value], Value]]
+) -> None:
+    mod = SimpleModule("test " + name, 0, 0)
+    types = mod.types
+    source = mod.add_external_function("source", types.function(types.int(64), []))
+    ty = types.bool if name.startswith("icmp") else types.int(64)
+    sink = mod.add_external_function("sink", types.function(types.void, [ty]))
+    x = mod.builder.call(source, [])
+    assert x is not None
+    y = mod.builder.call(source, [])
+    assert y is not None
+    z = build(mod.builder)(x, y)
+    mod.builder.call(sink, [z])
+    assert f"%2 = {name} i64 %0, %1" in mod.ir()
 
-                x = mod.builder.call(source, [])
-                assert x is not None
-                y = mod.builder.call(source, [])
-                assert y is not None
-                z = build(mod.builder)(x, y)
-                mod.builder.call(sink, [z])
 
-                self.assertIn(f"%2 = {name} i64 %0, %1", mod.ir())
+@pytest.mark.parametrize("name, build", _OPERATORS)
+def test_constant_variable(
+    name: str, build: Callable[[Builder], Callable[[Value, Value], Value]]
+) -> None:
+    mod = SimpleModule("test " + name, 0, 0)
+    types = mod.types
+    source = mod.add_external_function("source", types.function(types.int(64), []))
+    ty = types.bool if name.startswith("icmp") else types.int(64)
+    sink = mod.add_external_function("sink", types.function(types.void, [ty]))
+    x = mod.builder.call(source, [])
+    assert x is not None
+    y = build(mod.builder)(const(types.int(64), 1), x)
+    mod.builder.call(sink, [y])
+    assert f"%1 = {name} i64 1, %0" in mod.ir()
 
-    def test_constant_variable(self) -> None:
-        for (name, build) in _OPERATORS:
-            with self.subTest(name):
-                mod = SimpleModule("test " + name, 0, 0)
-                types = mod.types
-                source = mod.add_external_function(
-                    "source", types.function(types.int(64), [])
-                )
-                ty = types.bool if name.startswith("icmp") else types.int(64)
-                sink = mod.add_external_function(
-                    "sink", types.function(types.void, [ty])
-                )
 
-                x = mod.builder.call(source, [])
-                assert x is not None
-                y = build(mod.builder)(const(types.int(64), 1), x)
-                mod.builder.call(sink, [y])
-
-                self.assertIn(f"%1 = {name} i64 1, %0", mod.ir())
-
-    def test_type_mismatch(self) -> None:
-        mod = SimpleModule("test_type_mismatch", 0, 0)
-        types = mod.types
-        source = mod.add_external_function("source", types.function(types.int(16), []))
-        sink = mod.add_external_function(
-            "sink",
-            types.function(types.void, [types.int(16)]),
-        )
-
-        x = mod.builder.call(source, [])
-        assert x is not None
-        y = mod.builder.add(x, const(types.int(18), 2))
-        mod.builder.call(sink, [y])
-
-        with self.assertRaises(OSError):
-            mod.ir()
+def test_type_mismatch() -> None:
+    mod = SimpleModule("test_type_mismatch", 0, 0)
+    types = mod.types
+    source = mod.add_external_function("source", types.function(types.int(16), []))
+    sink = mod.add_external_function(
+        "sink",
+        types.function(types.void, [types.int(16)]),
+    )
+    x = mod.builder.call(source, [])
+    assert x is not None
+    y = mod.builder.add(x, const(types.int(18), 2))
+    mod.builder.call(sink, [y])
+    with pytest.raises(OSError):
+        mod.ir()
