@@ -5,11 +5,11 @@ use crate::types;
 use core::slice;
 use inkwell::{
     attributes::AttributeLoc,
+    context::ContextRef,
     types::{AnyTypeEnum, PointerType},
-    values::{AnyValueEnum, FunctionValue},
+    values::{AnyValueEnum, FunctionValue, PointerValue},
     LLVMReference,
 };
-use inkwell::{module::Module, values::PointerValue};
 use llvm_sys::{
     core::{
         LLVMConstIntGetZExtValue, LLVMGetAsString, LLVMGetConstOpcode, LLVMGetInitializer,
@@ -19,12 +19,12 @@ use llvm_sys::{
 };
 use std::convert::TryFrom;
 
-pub fn qubit<'ctx>(module: &Module<'ctx>, id: u64) -> PointerValue<'ctx> {
-    module
-        .get_context()
+#[must_use]
+pub fn qubit<'ctx>(context: &ContextRef<'ctx>, id: u64) -> PointerValue<'ctx> {
+    context
         .i64_type()
         .const_int(id, false)
-        .const_to_pointer(types::qubit(module))
+        .const_to_pointer(types::qubit(context))
 }
 
 #[must_use]
@@ -36,12 +36,12 @@ pub fn qubit_id(value: AnyValueEnum) -> Option<u64> {
     }
 }
 
-pub fn result<'ctx>(module: &Module<'ctx>, id: u64) -> PointerValue<'ctx> {
-    module
-        .get_context()
+#[must_use]
+pub fn result<'ctx>(context: &ContextRef<'ctx>, id: u64) -> PointerValue<'ctx> {
+    context
         .i64_type()
         .const_int(id, false)
-        .const_to_pointer(types::result(module))
+        .const_to_pointer(types::result(context))
 }
 
 #[must_use]
