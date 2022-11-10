@@ -51,7 +51,7 @@ impl SimpleModule {
     fn new(py: Python, name: &str, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
         let context = Py::new(py, Context::new())?;
         let module = Py::new(py, Module::new(py, context.clone(), name))?;
-        let builder = Py::new(py, Builder::new(py, module.clone()))?;
+        let builder = Py::new(py, Builder::new(py, context.clone()))?;
 
         {
             let builder = builder.borrow(py);

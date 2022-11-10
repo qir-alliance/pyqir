@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{module, Builder};
-use inkwell::context::Context;
+use crate::module;
+use inkwell::{builder::Builder, context::Context};
 use normalize_line_endings::normalized;
 use std::{env, fs, path::PathBuf};
 
@@ -17,7 +17,7 @@ pub(crate) fn assert_reference_ir(
     id: &str,
     required_num_qubits: u64,
     required_num_results: u64,
-    build: impl for<'ctx> Fn(&Builder<'ctx, '_>),
+    build: impl for<'ctx> Fn(&Builder<'ctx>),
 ) -> Result<(), String> {
     const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
     let (prefix, name) = split_id(id);
@@ -50,11 +50,11 @@ fn build_ir(
     name: &str,
     required_num_qubits: u64,
     required_num_results: u64,
-    build: impl for<'ctx> Fn(&Builder<'ctx, '_>),
+    build: impl for<'ctx> Fn(&Builder<'ctx>),
 ) -> Result<String, String> {
     let context = Context::create();
     let module = context.create_module(name);
-    let builder = Builder::new(&module);
+    let builder = context.create_builder();
     module::simple_init(&module, &builder, required_num_qubits, required_num_results);
     build(&builder);
     builder.build_return(None);

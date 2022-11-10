@@ -2,10 +2,11 @@
 // Licensed under the MIT License.
 
 use crate::{
-    builder::{build_if_unchecked, try_build_if_unchecked, Builder},
+    builder::{build_if_unchecked, try_build_if_unchecked},
     types,
 };
 use inkwell::{
+    builder::Builder,
     values::{FloatValue, PointerValue},
     LLVMReference,
 };
@@ -20,7 +21,7 @@ use llvm_sys::{
 };
 use std::ffi::{c_uint, CString};
 
-pub trait BuilderBasicQisExt<'ctx> {
+pub trait BuilderExt<'ctx> {
     fn build_cx(&self, control: PointerValue, qubit: PointerValue);
 
     fn build_cz(&self, control: PointerValue, qubit: PointerValue);
@@ -67,7 +68,7 @@ pub trait BuilderBasicQisExt<'ctx> {
     ) -> Result<(), E>;
 }
 
-impl<'ctx, 'a> BuilderBasicQisExt<'ctx> for Builder<'ctx, 'a> {
+impl<'ctx> BuilderExt<'ctx> for Builder<'ctx> {
     fn build_cx(&self, control: PointerValue, qubit: PointerValue) {
         unsafe {
             build_call(
@@ -361,7 +362,7 @@ mod tests {
     #[test]
     fn cx() -> Result<(), String> {
         assert_reference_ir("qis/cx", 2, 0, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_cx(qubit(&context, 0), qubit(&context, 1));
         })
     }
@@ -369,7 +370,7 @@ mod tests {
     #[test]
     fn cz() -> Result<(), String> {
         assert_reference_ir("qis/cz", 2, 0, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_cz(qubit(&context, 0), qubit(&context, 1));
         })
     }
@@ -377,97 +378,106 @@ mod tests {
     #[test]
     fn h() -> Result<(), String> {
         assert_reference_ir("qis/h", 1, 0, |builder| {
-            builder.build_h(qubit(&builder.module().get_context(), 0));
+            let context = builder.get_insert_block().unwrap().get_context();
+            builder.build_h(qubit(&context, 0));
         })
     }
 
     #[test]
     fn s() -> Result<(), String> {
         assert_reference_ir("qis/s", 1, 0, |builder| {
-            builder.build_s(qubit(&builder.module().get_context(), 0));
+            let context = builder.get_insert_block().unwrap().get_context();
+            builder.build_s(qubit(&context, 0));
         })
     }
 
     #[test]
     fn s_adj() -> Result<(), String> {
         assert_reference_ir("qis/s_adj", 1, 0, |builder| {
-            builder.build_s_adj(qubit(&builder.module().get_context(), 0));
+            let context = builder.get_insert_block().unwrap().get_context();
+            builder.build_s_adj(qubit(&context, 0));
         })
     }
 
     #[test]
     fn t() -> Result<(), String> {
         assert_reference_ir("qis/t", 1, 0, |builder| {
-            builder.build_t(qubit(&builder.module().get_context(), 0));
+            let context = builder.get_insert_block().unwrap().get_context();
+            builder.build_t(qubit(&context, 0));
         })
     }
 
     #[test]
     fn t_adj() -> Result<(), String> {
         assert_reference_ir("qis/t_adj", 1, 0, |builder| {
-            builder.build_t_adj(qubit(&builder.module().get_context(), 0));
+            let context = builder.get_insert_block().unwrap().get_context();
+            builder.build_t_adj(qubit(&context, 0));
         })
     }
 
     #[test]
     fn x() -> Result<(), String> {
         assert_reference_ir("qis/x", 1, 0, |builder| {
-            builder.build_x(qubit(&builder.module().get_context(), 0));
+            let context = builder.get_insert_block().unwrap().get_context();
+            builder.build_x(qubit(&context, 0));
         })
     }
 
     #[test]
     fn y() -> Result<(), String> {
         assert_reference_ir("qis/y", 1, 0, |builder| {
-            builder.build_y(qubit(&builder.module().get_context(), 0));
+            let context = builder.get_insert_block().unwrap().get_context();
+            builder.build_y(qubit(&context, 0));
         })
     }
 
     #[test]
     fn z() -> Result<(), String> {
         assert_reference_ir("qis/z", 1, 0, |builder| {
-            builder.build_z(qubit(&builder.module().get_context(), 0));
+            let context = builder.get_insert_block().unwrap().get_context();
+            builder.build_z(qubit(&context, 0));
         })
     }
 
     #[test]
     fn rx() -> Result<(), String> {
         assert_reference_ir("qis/rx", 1, 0, |builder| {
-            let context = builder.module().get_context();
-            let double_type = context.f64_type();
-            builder.build_rx(double_type.const_float(0.0), qubit(&context, 0));
+            let context = builder.get_insert_block().unwrap().get_context();
+            let double = context.f64_type();
+            builder.build_rx(double.const_float(0.0), qubit(&context, 0));
         })
     }
 
     #[test]
     fn ry() -> Result<(), String> {
         assert_reference_ir("qis/ry", 1, 0, |builder| {
-            let context = builder.module().get_context();
-            let double_type = context.f64_type();
-            builder.build_ry(double_type.const_float(0.0), qubit(&context, 0));
+            let context = builder.get_insert_block().unwrap().get_context();
+            let double = context.f64_type();
+            builder.build_ry(double.const_float(0.0), qubit(&context, 0));
         })
     }
 
     #[test]
     fn rz() -> Result<(), String> {
         assert_reference_ir("qis/rz", 1, 0, |builder| {
-            let context = builder.module().get_context();
-            let double_type = context.f64_type();
-            builder.build_rz(double_type.const_float(0.0), qubit(&context, 0));
+            let context = builder.get_insert_block().unwrap().get_context();
+            let double = context.f64_type();
+            builder.build_rz(double.const_float(0.0), qubit(&context, 0));
         })
     }
 
     #[test]
     fn reset() -> Result<(), String> {
         assert_reference_ir("qis/reset", 1, 0, |builder| {
-            builder.build_reset(qubit(&builder.module().get_context(), 0));
+            let context = builder.get_insert_block().unwrap().get_context();
+            builder.build_reset(qubit(&context, 0));
         })
     }
 
     #[test]
     fn mz() -> Result<(), String> {
         assert_reference_ir("qis/mz", 1, 1, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_mz(qubit(&context, 0), result(&context, 0));
         })
     }
@@ -475,17 +485,15 @@ mod tests {
     #[test]
     fn read_result() -> Result<(), String> {
         assert_reference_ir("qis/read_result", 1, 1, |builder| unsafe {
-            build_read_result(
-                builder.get_ref(),
-                result(&builder.module().get_context(), 0).get_ref(),
-            );
+            let context = builder.get_insert_block().unwrap().get_context();
+            build_read_result(builder.get_ref(), result(&context, 0).get_ref());
         })
     }
 
     #[test]
     fn empty_if() -> Result<(), String> {
         assert_reference_ir("qis/empty_if", 1, 1, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_if_result(result(&context, 0), || (), || ());
         })
@@ -494,7 +502,7 @@ mod tests {
     #[test]
     fn if_then() -> Result<(), String> {
         assert_reference_ir("qis/if_then", 1, 1, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_if_result(
                 result(&context, 0),
@@ -507,7 +515,7 @@ mod tests {
     #[test]
     fn if_else() -> Result<(), String> {
         assert_reference_ir("qis/if_else", 1, 1, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_if_result(
                 result(&context, 0),
@@ -520,7 +528,7 @@ mod tests {
     #[test]
     fn if_then_continue() -> Result<(), String> {
         assert_reference_ir("qis/if_then_continue", 1, 1, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_if_result(
                 result(&context, 0),
@@ -534,7 +542,7 @@ mod tests {
     #[test]
     fn if_else_continue() -> Result<(), String> {
         assert_reference_ir("qis/if_else_continue", 1, 1, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_if_result(
                 result(&context, 0),
@@ -548,7 +556,7 @@ mod tests {
     #[test]
     fn if_then_else_continue() -> Result<(), String> {
         assert_reference_ir("qis/if_then_else_continue", 1, 1, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_if_result(
                 result(&context, 0),
@@ -562,7 +570,7 @@ mod tests {
     #[test]
     fn if_then_then() -> Result<(), String> {
         assert_reference_ir("qis/if_then_then", 1, 2, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_mz(qubit(&context, 0), result(&context, 1));
             builder.build_if_result(
@@ -582,7 +590,7 @@ mod tests {
     #[test]
     fn if_else_else() -> Result<(), String> {
         assert_reference_ir("qis/if_else_else", 1, 2, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_mz(qubit(&context, 0), result(&context, 1));
             builder.build_if_result(
@@ -602,7 +610,7 @@ mod tests {
     #[test]
     fn if_then_else() -> Result<(), String> {
         assert_reference_ir("qis/if_then_else", 1, 2, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_mz(qubit(&context, 0), result(&context, 1));
             builder.build_if_result(
@@ -622,7 +630,7 @@ mod tests {
     #[test]
     fn if_else_then() -> Result<(), String> {
         assert_reference_ir("qis/if_else_then", 1, 2, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_mz(qubit(&context, 0), result(&context, 1));
             builder.build_if_result(
@@ -642,7 +650,7 @@ mod tests {
     #[test]
     fn if_unmeasured_result() -> Result<(), String> {
         assert_reference_ir("qis/if_unmeasured_result", 1, 1, |builder| {
-            let context = builder.module().get_context();
+            let context = builder.get_insert_block().unwrap().get_context();
             builder.build_if_result(
                 result(&context, 0),
                 || builder.build_x(qubit(&context, 0)),

@@ -4,7 +4,6 @@
 use crate::{
     context::{self, Context},
     instructions::IntPredicate,
-    module::Module,
     values::{self, AnyValue, Value},
 };
 use inkwell::{
@@ -12,6 +11,7 @@ use inkwell::{
     values::{AnyValueEnum, CallableValue, IntValue},
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PySequence};
+use qirlib::builder::Ext;
 use std::{
     convert::{Into, TryFrom, TryInto},
     mem::transmute,
@@ -23,9 +23,6 @@ use std::{
 pub(crate) struct Builder {
     builder: inkwell::builder::Builder<'static>,
     context: Py<Context>,
-    // TODO: In principle, the module could be extracted from the builder.
-    // See https://github.com/TheDan64/inkwell/issues/347.
-    module: Py<Module>,
 }
 
 #[pymethods]
@@ -248,9 +245,7 @@ impl Builder {
         r#false: Option<&PyAny>,
     ) -> PyResult<()> {
         context::require_same(py, [&self.context, cond.context()])?;
-        let module = self.module.borrow(py);
-        let builder = qirlib::Builder::from(&self.builder, unsafe { module.get() });
-        builder.try_build_if(
+        self.builder.try_build_if(
             unsafe { cond.get() }.try_into()?,
             || r#true.iter().try_for_each(|f| f.call0().map(|_| ())),
             || r#false.iter().try_for_each(|f| f.call0().map(|_| ())),
@@ -259,8 +254,7 @@ impl Builder {
 }
 
 impl Builder {
-    pub(crate) fn new(py: Python, module: Py<Module>) -> Self {
-        let context = module.borrow(py).context().clone();
+    pub(crate) fn new(py: Python, context: Py<Context>) -> Self {
         let builder = {
             let context = context.borrow(py);
             let builder = context.create_builder();
@@ -271,11 +265,7 @@ impl Builder {
             }
         };
 
-        Self {
-            builder,
-            context,
-            module,
-        }
+        Self { builder, context }
     }
 
     pub(crate) unsafe fn get(&self) -> &inkwell::builder::Builder<'static> {
@@ -284,10 +274,6 @@ impl Builder {
 
     pub(crate) fn context(&self) -> &Py<Context> {
         &self.context
-    }
-
-    pub(crate) fn module(&self) -> &Py<Module> {
-        &self.module
     }
 }
 
