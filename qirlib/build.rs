@@ -16,8 +16,6 @@ use external::llvm_sys;
 extern crate cc;
 #[macro_use]
 extern crate lazy_static;
-extern crate regex;
-extern crate semver;
 
 // Make sure one version of llvm features is used
 #[cfg(all(

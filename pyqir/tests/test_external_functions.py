@@ -8,6 +8,7 @@ from pyqir import (
     TypeFactory,
     Value,
     const,
+    const_getelementptr,
 )
 import re
 import pytest
@@ -365,3 +366,26 @@ def test_computed_rotation() -> None:
     assert "call void @__quantum__qis__rx__body(double %0, %Qubit* null)" in ir
     assert "call void @__quantum__qis__ry__body(double %0, %Qubit* null)" in ir
     assert "call void @__quantum__qis__rz__body(double %0, %Qubit* null)" in ir
+
+
+def test_record_output() -> None:
+    m = SimpleModule("test", 0, 1)
+    result_record_output = m.add_external_function(
+        "__quantum__rt__result_record_output",
+        m.types.function(
+            m.types.void, [m.types.result, m.types.pointer_to(m.types.int(8))]
+        ),
+    )
+    tag = m.add_global_string(b"foo")
+    i32 = m.types.int(32)
+    m.builder.call(
+        result_record_output,
+        [m.results[0], const_getelementptr(tag, [const(i32, 0), const(i32, 0)])],
+    )
+
+    ir = m.ir()
+    assert r'@0 = internal constant [4 x i8] c"foo\00"' in ir
+    assert (
+        "call void @__quantum__rt__result_record_output(%Result* null, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0))"
+        in ir
+    )

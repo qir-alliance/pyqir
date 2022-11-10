@@ -4,12 +4,11 @@
 
 ### Requirements
 
-- [Rust 1.57+](https://rustup.rs/)
+- [Rust 1.59+](https://rustup.rs/)
 - [Python 3.7+](https://www.python.org)
 - [PowerShell 7+
   (Core)](https://github.com/powershell/powershell#get-powershell)
-- [LLVM/Clang 13.0.1](https://llvm.org/) - See [Installing
-  LLVM](#installing-llvm)
+- [LLVM/Clang 13.0.1](https://llvm.org/) - See [](#installing-llvm)
 - If compiling LLVM from source:
   - [CMake 3.10+](https://github.com/Kitware/CMake/releases/tag/v3.10.3)
   - [Ninja 1.10.0+](https://ninja-build.org/)
@@ -85,8 +84,8 @@ You can install Clang manually:
 ### Installing LLVM
 
 The build scripts will automatically download an LLVM toolchain which is
-detailed in the [Development](#development) section. The build installs the
-toolchain to `target/llvm-<version>`.
+detailed in the [](#development) section. The build installs the toolchain to
+`target/llvm-<version>`.
 
 ## Development
 
@@ -101,8 +100,7 @@ This will compile `qirlib` and its dependencies with the appropriate environment
 variables set for their build scripts. After this is run, the build commands
 below can be used instead of `build.ps1`.
 
-The {ref}`building/environment-variables` section
-details ways to change this behavior.
+The [](#environment-variables) section details ways to change this behavior.
 
 Within each project folder, the build can be run specifically for that project.
 
