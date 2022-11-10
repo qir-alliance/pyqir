@@ -251,7 +251,7 @@ impl BaseProfile {
     fn get_result_string(result: Option<RESULT>) -> String {
         match result {
             Some(value) => format!("{}", value),
-            None => "".to_owned(),
+            None => String::new(),
         }
     }
 }
