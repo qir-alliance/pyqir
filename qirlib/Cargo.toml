@@ -27,6 +27,7 @@ base64 = "0.13.0"
 lazy_static = "1.4.0"
 mut_static = "5.0.0"
 bitvec = "1.0.0"
+libc = "0.2"
 
 # TODO: Allowlist the Unicode-DFS-2016 license and remove the following version upper bounds.
 syn = "1.0, < 1.0.95"

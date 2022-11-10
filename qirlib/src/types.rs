@@ -50,7 +50,7 @@ fn result_name() -> &'static CStr {
 
 unsafe fn get_or_create_struct(context: LLVMContextRef, name: &CStr) -> LLVMTypeRef {
     let name = name.as_ptr().cast();
-    let ty = unsafe { LLVMGetTypeByName2(context, name) };
+    let ty = LLVMGetTypeByName2(context, name);
     if ty.is_null() {
         LLVMStructCreateNamed(context, name)
     } else {

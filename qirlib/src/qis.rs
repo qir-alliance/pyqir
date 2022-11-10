@@ -10,6 +10,7 @@ use inkwell::{
     values::{FloatValue, PointerValue},
     LLVMReference,
 };
+use libc::c_uint;
 use llvm_sys::{
     core::{
         LLVMAddFunction, LLVMBuildCall, LLVMDoubleTypeInContext, LLVMFunctionType,
@@ -19,7 +20,7 @@ use llvm_sys::{
     prelude::*,
     LLVMLinkage,
 };
-use std::ffi::{c_uint, CString};
+use std::ffi::CString;
 
 pub trait BuilderExt<'ctx> {
     fn build_cx(&self, control: PointerValue, qubit: PointerValue);
