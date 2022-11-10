@@ -46,8 +46,7 @@
 <li><p><a class="reference external" href="https://www.python.org">Python 3.7+</a></p></li>
 <li><p><a class="reference external" href="https://github.com/powershell/powershell#get-powershell">PowerShell 7+
 (Core)</a></p></li>
-<li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 13.0.1</a> - See <span class="xref myst">Installing
-LLVM</span></p></li>
+<li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 13.0.1</a> - See <a class="reference internal" href="#installing-llvm"><span class="std std-doc">Installing LLVM</span></a></p></li>
 <li><p>If compiling LLVM from source:</p>
 <ul>
 <li><p><a class="reference external" href="https://github.com/Kitware/CMake/releases/tag/v3.10.3">CMake 3.10+</a></p></li>
@@ -131,8 +130,8 @@ contains Clang and LLVM.</p></li>
 <section id="installing-llvm">
 <h3>Installing LLVM<a class="headerlink" href="#installing-llvm" title="Permalink to this heading">¶</a></h3>
 <p>The build scripts will automatically download an LLVM toolchain which is
-detailed in the <span class="xref myst">Development</span> section. The build installs the
-toolchain to <code class="docutils literal notranslate"><span class="pre">target/llvm-&lt;version&gt;</span></code>.</p>
+detailed in the <a class="reference internal" href="#development"><span class="std std-doc">Development</span></a> section. The build installs the toolchain to
+<code class="docutils literal notranslate"><span class="pre">target/llvm-&lt;version&gt;</span></code>.</p>
 </section>
 </section>
 <section id="development">
@@ -145,8 +144,7 @@ the solution, run</p>
 <p>This will compile <code class="docutils literal notranslate"><span class="pre">qirlib</span></code> and its dependencies with the appropriate environment
 variables set for their build scripts. After this is run, the build commands
 below can be used instead of <code class="docutils literal notranslate"><span class="pre">build.ps1</span></code>.</p>
-<p>The <span class="xref std std-ref">building/environment-variables</span> section
-details ways to change this behavior.</p>
+<p>The <a class="reference internal" href="#environment-variables"><span class="std std-doc">Environment Variables</span></a> section details ways to change this behavior.</p>
 <p>Within each project folder, the build can be run specifically for that project.</p>
 <p>For any of these commands, the LLVM version must be added via features. For <code class="docutils literal notranslate"><span class="pre">maturin</span></code>,
 they must be added to the <code class="docutils literal notranslate"><span class="pre">cargo-extra-args</span></code> option.</p>
@@ -225,7 +223,6 @@ in the CI environment.</p>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Development Guide</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Building PyQIR from Source</a></li>
 <li class="toctree-l2"><a class="reference internal" href="compatibility.html">PyQIR compatible systems</a></li>
-<li class="toctree-l2"><a class="reference internal" href="docs-authoring.html">Authoring PyQIR Documentation</a></li>
 </ul>
 </li>
 </ul>
@@ -264,7 +261,7 @@ in the CI environment.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2021, QIR Alliance.
+      &copy;2021-2022 QIR Alliance.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
