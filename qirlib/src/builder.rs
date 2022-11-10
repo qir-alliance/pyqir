@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::{builder::Builder, values::IntValue, LLVMReference};
+use inkwell::{basic_block::BasicBlock, builder::Builder, values::IntValue, LLVMReference};
 use llvm_sys::{core::LLVMBuildCondBr, prelude::*};
 use std::convert::Infallible;
 
@@ -60,9 +60,12 @@ pub(crate) unsafe fn try_build_if_unchecked<E>(
     build_true: impl FnOnce() -> Result<(), E>,
     build_false: impl FnOnce() -> Result<(), E>,
 ) -> Result<(), E> {
-    let insert_block = builder.get_insert_block().unwrap();
-    let context = insert_block.get_context();
-    let function = insert_block.get_parent().unwrap();
+    let function = builder
+        .get_insert_block()
+        .and_then(BasicBlock::get_parent)
+        .expect("The builder's position has not been set.");
+
+    let context = function.get_type().get_context();
     let then_block = context.append_basic_block(function, "then");
     let else_block = context.append_basic_block(function, "else");
     LLVMBuildCondBr(
@@ -71,7 +74,6 @@ pub(crate) unsafe fn try_build_if_unchecked<E>(
         then_block.get_ref(),
         else_block.get_ref(),
     );
-
     let continue_block = context.append_basic_block(function, "continue");
 
     builder.position_at_end(then_block);

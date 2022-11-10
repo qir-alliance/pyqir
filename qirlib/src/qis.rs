@@ -20,7 +20,7 @@ use llvm_sys::{
     prelude::*,
     LLVMLinkage,
 };
-use std::ffi::CString;
+use std::{ffi::CString, ptr::NonNull};
 
 pub trait BuilderExt<'ctx> {
     fn build_cx(&self, control: PointerValue, qubit: PointerValue);
@@ -270,7 +270,11 @@ unsafe fn build_call(
 }
 
 unsafe fn builder_module(builder: LLVMBuilderRef) -> LLVMModuleRef {
-    LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)))
+    NonNull::new(LLVMGetInsertBlock(builder))
+        .and_then(|b| NonNull::new(LLVMGetBasicBlockParent(b.as_ptr())))
+        .and_then(|v| NonNull::new(LLVMGetGlobalParent(v.as_ptr())))
+        .expect("The builder's position has not been set.")
+        .as_ptr()
 }
 
 unsafe fn simple_gate(module: LLVMModuleRef, name: &str, functor: Functor) -> LLVMValueRef {
@@ -359,6 +363,16 @@ mod tests {
         tests::assert_reference_ir,
         values::{qubit, result},
     };
+    use inkwell::context::Context;
+
+    #[test]
+    #[should_panic(expected = "The builder's position has not been set.")]
+    fn builder_not_positioned() {
+        let context = Context::create();
+        let builder = context.create_builder();
+        let context = context.void_type().get_context();
+        builder.build_x(qubit(&context, 0));
+    }
 
     #[test]
     fn cx() -> Result<(), String> {
