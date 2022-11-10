@@ -215,19 +215,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89"
 
 [[package]]
-name = "llvm-ir"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a4ab3db6c6256b7bfc0f19f8ca8e705ac40cf07a45a7555d0d53fb97681bc70"
-dependencies = [
- "either",
- "llvm-sys 110.0.4",
- "llvm-sys 120.2.5",
- "llvm-sys 130.0.5",
- "log",
-]
-
-[[package]]
 name = "llvm-sys"
 version = "110.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -485,15 +472,6 @@ dependencies = [
  "llvm-sys 140.0.3",
  "pyo3",
  "qirlib",
-]
-
-[[package]]
-name = "pyqir-parser"
-version = "0.7.0-alpha.1"
-dependencies = [
- "inkwell",
- "llvm-ir",
- "pyo3",
 ]
 
 [[package]]

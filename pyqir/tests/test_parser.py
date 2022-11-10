@@ -23,7 +23,7 @@ import pytest
 
 
 def test_parser() -> None:
-    bitcode = Path("../pyqir-parser/tests/teleportchain.baseprofile.bc").read_bytes()
+    bitcode = Path("tests/teleportchain.baseprofile.bc").read_bytes()
     mod = Module.from_bitcode(bitcode)
     assert len(mod.functions) == 21
 
@@ -87,7 +87,7 @@ def test_parser() -> None:
 
 
 def test_parser_select_support() -> None:
-    bitcode = Path("../pyqir-parser/tests/select.bc").read_bytes()
+    bitcode = Path("tests/select.bc").read_bytes()
     mod = Module.from_bitcode(bitcode)
     func = next(filter(is_entry_point, mod.functions))
     block = func.basic_blocks[0]
@@ -118,7 +118,7 @@ def test_parser_select_support() -> None:
 
 
 def test_global_string() -> None:
-    bitcode = Path("../pyqir-parser/tests/hello.bc").read_bytes()
+    bitcode = Path("tests/hello.bc").read_bytes()
     mod = Module.from_bitcode(bitcode)
     func_name = "program__main__body"
     func = next(filter(lambda f: f.name == func_name, mod.functions))
@@ -136,7 +136,7 @@ def test_global_string() -> None:
 
 
 def test_parser_zext_support() -> None:
-    bitcode = Path("../pyqir-parser/tests/select.bc").read_bytes()
+    bitcode = Path("tests/select.bc").read_bytes()
     mod = Module.from_bitcode(bitcode)
     func = next(filter(is_entry_point, mod.functions))
     block = func.basic_blocks[0]
@@ -158,14 +158,14 @@ def test_parser_zext_support() -> None:
 
 
 def test_loading_invalid_bitcode() -> None:
-    bitcode = Path("../pyqir-parser/tests/teleportchain.ll.reference").read_bytes()
+    bitcode = Path("tests/teleportchain.ll.reference").read_bytes()
     with pytest.raises(ValueError) as e:
         Module.from_bitcode(bitcode)
     assert e.value.args[0] == "Invalid bitcode signature"
 
 
 def test_parser_internals() -> None:
-    bitcode = Path("../pyqir-parser/tests/teleportchain.baseprofile.bc").read_bytes()
+    bitcode = Path("tests/teleportchain.baseprofile.bc").read_bytes()
     mod = Module.from_bitcode(bitcode)
     func_name = (
         "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"

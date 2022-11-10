@@ -12,9 +12,9 @@ use crate::{
     simple::{SimpleModule, TypeFactory},
     types::{is_qubit, is_result, ArrayType, FunctionType, IntType, PointerType, StructType, Type},
     values::{
-        constant_bytes, is_entry_point, is_interop_friendly, qubit_id, r#const,
-        required_num_qubits, required_num_results, result_id, BasicBlock, Constant, FloatConstant,
-        Function, IntConstant, Value,
+        const_getelementptr, constant_bytes, is_entry_point, is_interop_friendly, qubit_id,
+        r#const, required_num_qubits, required_num_results, result_id, BasicBlock, Constant,
+        FloatConstant, Function, IntConstant, Value,
     },
 };
 use pyo3::prelude::*;
@@ -49,6 +49,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Type>()?;
     m.add_class::<TypeFactory>()?;
     m.add_class::<Value>()?;
+    m.add_function(wrap_pyfunction!(const_getelementptr, m)?)?;
     m.add_function(wrap_pyfunction!(constant_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(is_interop_friendly, m)?)?;
