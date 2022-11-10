@@ -9,5 +9,4 @@ maxdepth: 2
 
 building
 compatibility
-docs-authoring
 ```
