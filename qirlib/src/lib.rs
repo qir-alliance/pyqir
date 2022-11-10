@@ -13,18 +13,13 @@ extern crate llvm_sys_130 as llvm_sys;
 extern crate llvm_sys_140 as llvm_sys;
 
 #[cfg(not(feature = "no-llvm-linking"))]
-pub use builder::Builder;
-#[cfg(not(feature = "no-llvm-linking"))]
-pub use qis::BuilderBasicQisExt;
-
-#[cfg(not(feature = "no-llvm-linking"))]
-mod builder;
+pub mod builder;
 #[cfg(not(feature = "no-llvm-linking"))]
 pub mod evaluation;
 #[cfg(not(feature = "no-llvm-linking"))]
 pub mod module;
 #[cfg(not(feature = "no-llvm-linking"))]
-mod qis;
+pub mod qis;
 #[cfg(all(test, not(feature = "no-llvm-linking")))]
 mod tests;
 #[cfg(not(feature = "no-llvm-linking"))]

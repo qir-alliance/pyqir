@@ -14,6 +14,7 @@ rust-version = "1.59"
 bitvec = "1.0"
 inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["internal-getters", "target-x86"] }
 lazy_static = "1.4"
+libc = "0.2"
 llvm-sys-110 = { package = "llvm-sys", version = "110.0", optional = true }
 llvm-sys-120 = { package = "llvm-sys", version = "120.2", optional = true }
 llvm-sys-130 = { package = "llvm-sys", version = "130.0", optional = true }

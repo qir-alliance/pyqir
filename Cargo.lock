@@ -483,6 +483,7 @@ dependencies = [
  "cmake",
  "inkwell",
  "lazy_static",
+ "libc",
  "llvm-sys 110.0.4",
  "llvm-sys 120.2.5",
  "llvm-sys 130.0.5",
