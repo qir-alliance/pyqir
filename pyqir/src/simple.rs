@@ -8,7 +8,12 @@ use crate::{
     types::Type,
     values::Value,
 };
-use inkwell::{context::ContextRef, types::AnyTypeEnum};
+use inkwell::{
+    context::ContextRef,
+    module::Linkage,
+    types::{AnyTypeEnum, BasicType, BasicTypeEnum},
+    AddressSpace,
+};
 use pyo3::{
     exceptions::{PyOSError, PyUnicodeDecodeError, PyValueError},
     prelude::*,
@@ -45,7 +50,7 @@ impl SimpleModule {
     fn new(py: Python, name: &str, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
         let context = Py::new(py, Context::new())?;
         let module = Py::new(py, Module::new(py, context.clone(), name))?;
-        let builder = Py::new(py, Builder::new(py, module.clone()))?;
+        let builder = Py::new(py, Builder::new(py, context.clone()))?;
 
         {
             let builder = builder.borrow(py);
@@ -134,6 +139,27 @@ impl SimpleModule {
         let function = unsafe { module.get() }.add_function(name, ty, None);
         unsafe { Value::from_any(py, context, function) }
     }
+
+    /// Adds a global null-terminated string constant to the module.
+    ///
+    /// :param bytes Value: The string value without the null terminator.
+    /// :returns: The global value.
+    /// :rtype: Value
+    #[pyo3(text_signature = "(value)")]
+    fn add_global_string(&self, py: Python, value: &[u8]) -> PyResult<PyObject> {
+        let module = self.module.borrow(py);
+        let context = unsafe { module.get().get_context() };
+        let value = context.const_string(value, true);
+        let global = unsafe { module.get() }.add_global(
+            context.i8_type().array_type(value.get_type().get_size()),
+            None,
+            "",
+        );
+        global.set_linkage(Linkage::Internal);
+        global.set_constant(true);
+        global.set_initializer(&value);
+        unsafe { Value::from_any(py, module.context().clone(), global) }
+    }
 }
 
 impl SimpleModule {
@@ -205,6 +231,21 @@ impl TypeFactory {
     #[getter]
     fn result(&self, py: Python) -> PyResult<PyObject> {
         self.new_type(py, |context| types::result(context).into())
+    }
+
+    /// A pointer type.
+    ///
+    /// :param ty: The type pointed to.
+    /// :returns: The pointer type.
+    /// :rtype: Type
+    #[staticmethod]
+    #[pyo3(text_signature = "(ty)")]
+    #[allow(clippy::similar_names)]
+    fn pointer_to(py: Python, ty: &Type) -> PyResult<PyObject> {
+        let pointee = BasicTypeEnum::try_from(unsafe { ty.get() })
+            .map_err(|()| PyValueError::new_err("Type can't be pointed to."))?;
+        let pointer = pointee.ptr_type(AddressSpace::Generic);
+        unsafe { Type::from_any(py, ty.context().clone(), pointer.into()) }
     }
 
     /// A function type.

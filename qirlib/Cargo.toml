@@ -8,41 +8,28 @@ build = "build.rs"
 readme = "README.md"
 homepage = "https://github.com/qir-alliance/pyqir"
 repository = "https://github.com/qir-alliance/pyqir"
-rust-version = "1.57"
+rust-version = "1.59"
 
 [dependencies]
-# We can't reference the disable-alltargets-init feature without including
-# llvm-sys as a dep, even though inkwell brings in these exact versions.
-llvm-sys-110 = { package = "llvm-sys", version = "110.0.3", optional = true }
-llvm-sys-120 = { package = "llvm-sys", version = "120.2.2", optional = true }
-llvm-sys-130 = { package = "llvm-sys", version = "130.0.2", optional = true }
-llvm-sys-140 = { package = "llvm-sys", version = "140.0.2", optional = true }
-
-# The llvm version of inkwell is controlled through this crates features.
+bitvec = "1.0"
 inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["internal-getters", "target-x86"] }
-log = "0.4.14"
-cty = "0.2.1"
-rand = "0.8.4"
-base64 = "0.13.0"
-lazy_static = "1.4.0"
-mut_static = "5.0.0"
-bitvec = "1.0.0"
-
-# TODO: Allowlist the Unicode-DFS-2016 license and remove the following version upper bounds.
-syn = "1.0, < 1.0.95"
-proc-macro2 = "1.0, < 1.0.39"
+lazy_static = "1.4"
+libc = "0.2"
+llvm-sys-110 = { package = "llvm-sys", version = "110.0", optional = true }
+llvm-sys-120 = { package = "llvm-sys", version = "120.2", optional = true }
+llvm-sys-130 = { package = "llvm-sys", version = "130.0", optional = true }
+llvm-sys-140 = { package = "llvm-sys", version = "140.0", optional = true }
+log = "0.4"
+mut_static = "5.0"
 
 [dev-dependencies]
-serial_test = "0.6.0"
-tempfile = "3.2.0"
-normalize-line-endings = "0.3.0"
+serial_test = "0.9"
+normalize-line-endings = "0.3"
 
 [build-dependencies]
-cmake = "0.1.48"
+cmake = "0.1"
 cc = "1.0"
-lazy_static = "1.0"
-regex = "1.0"
-semver = "1.0.6"
+lazy_static = "1.4"
 
 [lib]
 name = "qirlib"

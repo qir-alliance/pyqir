@@ -17,9 +17,9 @@ from pyqir import (
 
 
 def bell(module: Module) -> Function:
-    context = module.context
     entry = create_entry_point(module, "bell", 2, 2)
-    builder = Builder(module)
+    context = module.context
+    builder = Builder(context)
     builder.set_insert_point(entry.basic_blocks[0])
     qis = BasicQisBuilder(builder)
     qis.h(qubit(context, 0))
@@ -30,9 +30,9 @@ def bell(module: Module) -> Function:
 
 
 def bell_no_measure(module: Module) -> Function:
-    context = module.context
     entry = create_entry_point(module, "bell_no_measure", 2, 0)
-    builder = Builder(module)
+    context = module.context
+    builder = Builder(context)
     builder.set_insert_point(entry.basic_blocks[0])
     qis = BasicQisBuilder(builder)
     qis.h(qubit(context, 0))
@@ -42,10 +42,11 @@ def bell_no_measure(module: Module) -> Function:
 
 def using_external(module: Module) -> Function:
     entry = create_entry_point(module, "using_external", 1, 0)
-    builder = Builder(module)
+    context = module.context
+    builder = Builder(context)
     builder.set_insert_point(entry.basic_blocks[0])
     barrier = Function(
-        FunctionType(Type.void(module.context), []),
+        FunctionType(Type.void(context), []),
         Linkage.EXTERNAL,
         "__quantum__qis__barrier__body",
         module,

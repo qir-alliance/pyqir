@@ -14,7 +14,7 @@ use inkwell::{
     types::{AnyType, AnyTypeEnum},
     values::{
         AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, FloatValue, FunctionValue,
-        InstructionValue, IntValue, PointerValue,
+        GlobalValue, InstructionValue, IntValue, PointerValue,
     },
     LLVMReference,
 };
@@ -444,6 +444,12 @@ impl<'ctx> From<PointerValue<'ctx>> for AnyValue<'ctx> {
     }
 }
 
+impl<'ctx> From<GlobalValue<'ctx>> for AnyValue<'ctx> {
+    fn from(global: GlobalValue<'ctx>) -> Self {
+        Self::Any(global.as_pointer_value().into())
+    }
+}
+
 impl<'ctx> From<InstructionValue<'ctx>> for AnyValue<'ctx> {
     fn from(instruction: InstructionValue<'ctx>) -> Self {
         Self::Any(instruction.into())
@@ -609,6 +615,28 @@ pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObj
         unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
     };
     unsafe { Value::from_any(py, context, value) }
+}
+
+/// Creates a `getelementptr` constant expression.
+///
+/// :param Value value: The aggregate value.
+/// :param Sequence[Value] indices: The indices of the element.
+/// :returns: A pointer to the element.
+/// :rtype: Value
+#[pyfunction]
+#[pyo3(text_signature = "(value, indices)")]
+#[allow(clippy::needless_pass_by_value)]
+pub(crate) fn const_getelementptr(
+    py: Python,
+    value: &Value,
+    indices: Vec<Value>,
+) -> PyResult<PyObject> {
+    let indices = indices
+        .iter()
+        .map(|i| IntValue::try_from(i.value).map_err(Into::into))
+        .collect::<PyResult<Vec<_>>>()?;
+    let gep = unsafe { PointerValue::try_from(value.value)?.const_in_bounds_gep(&indices) };
+    unsafe { Value::from_any(py, value.context.clone(), gep) }
 }
 
 /// If the value is a static qubit ID, extracts it.
