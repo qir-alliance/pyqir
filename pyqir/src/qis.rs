@@ -298,8 +298,8 @@ impl BasicQisBuilder {
         let builder = unsafe { qirlib::Builder::from(builder.get(), module.get()) };
         builder.try_build_if_result(
             unsafe { cond.get() }.try_into()?,
-            |_| one.iter().try_for_each(|f| f.call0().map(|_| ())),
-            |_| zero.iter().try_for_each(|f| f.call0().map(|_| ())),
+            || one.iter().try_for_each(|f| f.call0().map(|_| ())),
+            || zero.iter().try_for_each(|f| f.call0().map(|_| ())),
         )
     }
 }

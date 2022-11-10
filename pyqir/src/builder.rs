@@ -252,8 +252,8 @@ impl Builder {
         let builder = qirlib::Builder::from(&self.builder, unsafe { module.get() });
         builder.try_build_if(
             unsafe { cond.get() }.try_into()?,
-            |_| r#true.iter().try_for_each(|f| f.call0().map(|_| ())),
-            |_| r#false.iter().try_for_each(|f| f.call0().map(|_| ())),
+            || r#true.iter().try_for_each(|f| f.call0().map(|_| ())),
+            || r#false.iter().try_for_each(|f| f.call0().map(|_| ())),
         )
     }
 }

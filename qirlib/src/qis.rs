@@ -1,12 +1,24 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use super::{builder::Builder, types};
-use inkwell::{
-    module::{Linkage, Module},
-    types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum},
-    values::{FloatValue, FunctionValue, IntValue, PointerValue},
+use crate::{
+    builder::{build_if_unchecked, try_build_if_unchecked, Builder},
+    types,
 };
+use inkwell::{
+    values::{FloatValue, PointerValue},
+    LLVMReference,
+};
+use llvm_sys::{
+    core::{
+        LLVMAddFunction, LLVMBuildCall, LLVMDoubleTypeInContext, LLVMFunctionType,
+        LLVMGetBasicBlockParent, LLVMGetGlobalParent, LLVMGetInsertBlock, LLVMGetModuleContext,
+        LLVMGetNamedFunction, LLVMInt1TypeInContext, LLVMSetLinkage, LLVMVoidTypeInContext,
+    },
+    prelude::*,
+    LLVMLinkage,
+};
+use std::ffi::{c_uint, CString};
 
 pub trait BuilderBasicQisExt<'ctx> {
     fn build_cx(&self, control: PointerValue, qubit: PointerValue);
@@ -42,112 +54,192 @@ pub trait BuilderBasicQisExt<'ctx> {
     fn build_if_result(
         &self,
         cond: PointerValue<'ctx>,
-        build_one: impl FnOnce(&Self),
-        build_zero: impl FnOnce(&Self),
+        build_one: impl FnOnce(),
+        build_zero: impl FnOnce(),
     );
 
     #[allow(clippy::missing_errors_doc)]
     fn try_build_if_result<E>(
         &self,
         cond: PointerValue<'ctx>,
-        build_one: impl FnOnce(&Self) -> Result<(), E>,
-        build_zero: impl FnOnce(&Self) -> Result<(), E>,
+        build_one: impl FnOnce() -> Result<(), E>,
+        build_zero: impl FnOnce() -> Result<(), E>,
     ) -> Result<(), E>;
 }
 
 impl<'ctx, 'a> BuilderBasicQisExt<'ctx> for Builder<'ctx, 'a> {
     fn build_cx(&self, control: PointerValue, qubit: PointerValue) {
-        let function = controlled_gate(self.module(), "cnot");
-        self.build_call(function, &[control.into(), qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                controlled_gate(builder_module(self.get_ref()), "cnot"),
+                &mut [control.get_ref(), qubit.get_ref()],
+            );
+        }
     }
 
     fn build_cz(&self, control: PointerValue, qubit: PointerValue) {
-        let function = controlled_gate(self.module(), "cz");
-        self.build_call(function, &[control.into(), qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                controlled_gate(builder_module(self.get_ref()), "cz"),
+                &mut [control.get_ref(), qubit.get_ref()],
+            );
+        }
     }
 
     fn build_h(&self, qubit: PointerValue) {
-        let function = simple_gate(self.module(), "h", Functor::Body);
-        self.build_call(function, &[qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                simple_gate(builder_module(self.get_ref()), "h", Functor::Body),
+                &mut [qubit.get_ref()],
+            );
+        }
     }
 
     fn build_s(&self, qubit: PointerValue) {
-        let function = simple_gate(self.module(), "s", Functor::Body);
-        self.build_call(function, &[qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                simple_gate(builder_module(self.get_ref()), "s", Functor::Body),
+                &mut [qubit.get_ref()],
+            );
+        }
     }
 
     fn build_s_adj(&self, qubit: PointerValue) {
-        let function = simple_gate(self.module(), "s", Functor::Adjoint);
-        self.build_call(function, &[qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                simple_gate(builder_module(self.get_ref()), "s", Functor::Adjoint),
+                &mut [qubit.get_ref()],
+            );
+        }
     }
 
     fn build_t(&self, qubit: PointerValue) {
-        let function = simple_gate(self.module(), "t", Functor::Body);
-        self.build_call(function, &[qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                simple_gate(builder_module(self.get_ref()), "t", Functor::Body),
+                &mut [qubit.get_ref()],
+            );
+        }
     }
 
     fn build_t_adj(&self, qubit: PointerValue) {
-        let function = simple_gate(self.module(), "t", Functor::Adjoint);
-        self.build_call(function, &[qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                simple_gate(builder_module(self.get_ref()), "t", Functor::Adjoint),
+                &mut [qubit.get_ref()],
+            );
+        }
     }
 
     fn build_x(&self, qubit: PointerValue) {
-        let function = simple_gate(self.module(), "x", Functor::Body);
-        self.build_call(function, &[qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                simple_gate(builder_module(self.get_ref()), "x", Functor::Body),
+                &mut [qubit.get_ref()],
+            );
+        }
     }
 
     fn build_y(&self, qubit: PointerValue) {
-        let function = simple_gate(self.module(), "y", Functor::Body);
-        self.build_call(function, &[qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                simple_gate(builder_module(self.get_ref()), "y", Functor::Body),
+                &mut [qubit.get_ref()],
+            );
+        }
     }
 
     fn build_z(&self, qubit: PointerValue) {
-        let function = simple_gate(self.module(), "z", Functor::Body);
-        self.build_call(function, &[qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                simple_gate(builder_module(self.get_ref()), "z", Functor::Body),
+                &mut [qubit.get_ref()],
+            );
+        }
     }
 
     fn build_rx(&self, theta: FloatValue, qubit: PointerValue) {
-        let function = rotation_gate(self.module(), "rx");
-        self.build_call(function, &[theta.into(), qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                rotation_gate(builder_module(self.get_ref()), "rx"),
+                &mut [theta.get_ref(), qubit.get_ref()],
+            );
+        }
     }
 
     fn build_ry(&self, theta: FloatValue, qubit: PointerValue) {
-        let function = rotation_gate(self.module(), "ry");
-        self.build_call(function, &[theta.into(), qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                rotation_gate(builder_module(self.get_ref()), "ry"),
+                &mut [theta.get_ref(), qubit.get_ref()],
+            );
+        }
     }
 
     fn build_rz(&self, theta: FloatValue, qubit: PointerValue) {
-        let function = rotation_gate(self.module(), "rz");
-        self.build_call(function, &[theta.into(), qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                rotation_gate(builder_module(self.get_ref()), "rz"),
+                &mut [theta.get_ref(), qubit.get_ref()],
+            );
+        }
     }
 
     fn build_reset(&self, qubit: PointerValue) {
-        let function = simple_gate(self.module(), "reset", Functor::Body);
-        self.build_call(function, &[qubit.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                simple_gate(builder_module(self.get_ref()), "reset", Functor::Body),
+                &mut [qubit.get_ref()],
+            );
+        }
     }
 
     fn build_mz(&self, qubit: PointerValue, result: PointerValue) {
-        self.build_call(mz(self.module()), &[qubit.into(), result.into()], "");
+        unsafe {
+            build_call(
+                self.get_ref(),
+                mz(builder_module(self.get_ref())),
+                &mut [qubit.get_ref(), result.get_ref()],
+            );
+        }
     }
 
     fn build_if_result(
         &self,
         cond: PointerValue<'ctx>,
-        build_one: impl FnOnce(&Self),
-        build_zero: impl FnOnce(&Self),
+        build_one: impl FnOnce(),
+        build_zero: impl FnOnce(),
     ) {
-        let bool_cond = build_read_result(self, cond);
-        self.build_if(bool_cond, build_one, build_zero);
+        unsafe {
+            let bool_cond = build_read_result(self.get_ref(), cond.get_ref());
+            build_if_unchecked(self, bool_cond, build_one, build_zero);
+        }
     }
 
     fn try_build_if_result<E>(
         &self,
         cond: PointerValue<'ctx>,
-        build_one: impl FnOnce(&Self) -> Result<(), E>,
-        build_zero: impl FnOnce(&Self) -> Result<(), E>,
+        build_one: impl FnOnce() -> Result<(), E>,
+        build_zero: impl FnOnce() -> Result<(), E>,
     ) -> Result<(), E> {
-        let bool_cond = build_read_result(self, cond);
-        self.try_build_if(bool_cond, build_one, build_zero)
+        unsafe {
+            let bool_cond = build_read_result(self.get_ref(), cond.get_ref());
+            try_build_if_unchecked(self, bool_cond, build_one, build_zero)
+        }
     }
 }
 
@@ -157,89 +249,105 @@ enum Functor {
     Adjoint,
 }
 
-fn build_read_result<'ctx>(
-    builder: &Builder<'ctx, '_>,
-    result: PointerValue<'ctx>,
-) -> IntValue<'ctx> {
-    builder
-        .build_call(read_result(builder.module()), &[result.into()], "")
-        .try_as_basic_value()
-        .left()
-        .unwrap()
-        .into_int_value()
+unsafe fn build_read_result(builder: LLVMBuilderRef, result: LLVMValueRef) -> LLVMValueRef {
+    build_call(builder, read_result(builder_module(builder)), &mut [result])
 }
 
-fn simple_gate<'ctx>(module: &Module<'ctx>, name: &str, functor: Functor) -> FunctionValue<'ctx> {
-    let qubit_type = types::qubit(&module.get_context()).into();
-    declare(module, name, functor, None, &[qubit_type])
-}
-
-fn controlled_gate<'ctx>(module: &Module<'ctx>, name: &str) -> FunctionValue<'ctx> {
-    let qubit_type = types::qubit(&module.get_context()).into();
-    declare(module, name, Functor::Body, None, &[qubit_type, qubit_type])
-}
-
-fn rotation_gate<'ctx>(module: &Module<'ctx>, name: &str) -> FunctionValue<'ctx> {
-    let double_type = module.get_context().f64_type().into();
-    let qubit_type = types::qubit(&module.get_context()).into();
-    declare(
-        module,
-        name,
-        Functor::Body,
-        None,
-        &[double_type, qubit_type],
+unsafe fn build_call(
+    builder: LLVMBuilderRef,
+    function: LLVMValueRef,
+    args: &mut [LLVMValueRef],
+) -> LLVMValueRef {
+    LLVMBuildCall(
+        builder,
+        function,
+        args.as_mut_ptr(),
+        c_uint::try_from(args.len()).unwrap(),
+        [0].as_ptr(),
     )
 }
 
-fn mz<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    let context = module.get_context();
-    let qubit_type = types::qubit(&context).into();
-    let result_type = types::result(&context).into();
-    declare(
-        module,
-        "mz",
-        Functor::Body,
-        None,
-        &[qubit_type, result_type],
-    )
+unsafe fn builder_module(builder: LLVMBuilderRef) -> LLVMModuleRef {
+    LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)))
 }
 
-fn read_result<'ctx>(module: &Module<'ctx>) -> FunctionValue<'ctx> {
-    let bool_type = module.get_context().bool_type().into();
-    let result_type = types::result(&module.get_context()).into();
-    declare(
-        module,
-        "read_result",
-        Functor::Body,
-        Some(bool_type),
-        &[result_type],
-    )
+unsafe fn simple_gate(module: LLVMModuleRef, name: &str, functor: Functor) -> LLVMValueRef {
+    let context = LLVMGetModuleContext(module);
+    let ty = function_type(
+        LLVMVoidTypeInContext(context),
+        &mut [types::qubit_unchecked(context)],
+    );
+    declare(module, name, functor, ty)
 }
 
-fn declare<'ctx>(
-    module: &Module<'ctx>,
+unsafe fn controlled_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
+    let context = LLVMGetModuleContext(module);
+    let qubit = types::qubit_unchecked(context);
+    let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit]);
+    declare(module, name, Functor::Body, ty)
+}
+
+unsafe fn rotation_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
+    let context = LLVMGetModuleContext(module);
+    let ty = function_type(
+        LLVMVoidTypeInContext(context),
+        &mut [
+            LLVMDoubleTypeInContext(context),
+            types::qubit_unchecked(context),
+        ],
+    );
+    declare(module, name, Functor::Body, ty)
+}
+
+unsafe fn mz(module: LLVMModuleRef) -> LLVMValueRef {
+    let context = LLVMGetModuleContext(module);
+    let ty = function_type(
+        LLVMVoidTypeInContext(context),
+        &mut [
+            types::qubit_unchecked(context),
+            types::result_unchecked(context),
+        ],
+    );
+    declare(module, "mz", Functor::Body, ty)
+}
+
+unsafe fn read_result(module: LLVMModuleRef) -> LLVMValueRef {
+    let context = LLVMGetModuleContext(module);
+    let ty = function_type(
+        LLVMInt1TypeInContext(context),
+        &mut [types::result_unchecked(context)],
+    );
+    declare(module, "read_result", Functor::Body, ty)
+}
+
+unsafe fn declare(
+    module: LLVMModuleRef,
     name: &str,
     functor: Functor,
-    return_type: Option<BasicTypeEnum<'ctx>>,
-    param_types: &[BasicMetadataTypeEnum<'ctx>],
-) -> FunctionValue<'ctx> {
-    let name = format!(
-        "__quantum__qis__{}__{}",
-        name,
-        match functor {
-            Functor::Body => "body",
-            Functor::Adjoint => "adj",
-        }
-    );
+    ty: LLVMTypeRef,
+) -> LLVMValueRef {
+    let suffix = match functor {
+        Functor::Body => "body",
+        Functor::Adjoint => "adj",
+    };
+    let name = CString::new(format!("__quantum__qis__{}__{}", name, suffix)).unwrap();
+    let function = LLVMGetNamedFunction(module, name.as_ptr().cast());
+    if function.is_null() {
+        let function = LLVMAddFunction(module, name.as_ptr().cast(), ty);
+        LLVMSetLinkage(function, LLVMLinkage::LLVMExternalLinkage);
+        function
+    } else {
+        function
+    }
+}
 
-    module.get_function(&name).unwrap_or_else(|| {
-        log::debug!("{} global function was not defined in the module", name);
-        let ty = match return_type {
-            Some(ty) => ty.fn_type(param_types, false),
-            None => module.get_context().void_type().fn_type(param_types, false),
-        };
-        module.add_function(&name, ty, Some(Linkage::External))
-    })
+unsafe fn function_type(ret: LLVMTypeRef, params: &mut [LLVMTypeRef]) -> LLVMTypeRef {
+    LLVMFunctionType(
+        ret,
+        params.as_mut_ptr(),
+        c_uint::try_from(params.len()).unwrap(),
+        0,
+    )
 }
 
 #[cfg(test)]
@@ -366,8 +474,11 @@ mod tests {
 
     #[test]
     fn read_result() -> Result<(), String> {
-        assert_reference_ir("qis/read_result", 1, 1, |builder| {
-            build_read_result(builder, result(&builder.module().get_context(), 0));
+        assert_reference_ir("qis/read_result", 1, 1, |builder| unsafe {
+            build_read_result(
+                builder.get_ref(),
+                result(&builder.module().get_context(), 0).get_ref(),
+            );
         })
     }
 
@@ -376,7 +487,7 @@ mod tests {
         assert_reference_ir("qis/empty_if", 1, 1, |builder| {
             let context = builder.module().get_context();
             builder.build_mz(qubit(&context, 0), result(&context, 0));
-            builder.build_if_result(result(&context, 0), |_| (), |_| ());
+            builder.build_if_result(result(&context, 0), || (), || ());
         })
     }
 
@@ -387,8 +498,8 @@ mod tests {
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_if_result(
                 result(&context, 0),
-                |builder| builder.build_x(qubit(&context, 0)),
-                |_| (),
+                || builder.build_x(qubit(&context, 0)),
+                || (),
             );
         })
     }
@@ -400,8 +511,8 @@ mod tests {
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_if_result(
                 result(&context, 0),
-                |_| (),
-                |builder| builder.build_x(qubit(&context, 0)),
+                || (),
+                || builder.build_x(qubit(&context, 0)),
             );
         })
     }
@@ -413,8 +524,8 @@ mod tests {
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_if_result(
                 result(&context, 0),
-                |builder| builder.build_x(qubit(&context, 0)),
-                |_| (),
+                || builder.build_x(qubit(&context, 0)),
+                || (),
             );
             builder.build_h(qubit(&context, 0));
         })
@@ -427,8 +538,8 @@ mod tests {
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_if_result(
                 result(&context, 0),
-                |_| (),
-                |builder| builder.build_x(qubit(&context, 0)),
+                || (),
+                || builder.build_x(qubit(&context, 0)),
             );
             builder.build_h(qubit(&context, 0));
         })
@@ -441,8 +552,8 @@ mod tests {
             builder.build_mz(qubit(&context, 0), result(&context, 0));
             builder.build_if_result(
                 result(&context, 0),
-                |builder| builder.build_x(qubit(&context, 0)),
-                |builder| builder.build_y(qubit(&context, 0)),
+                || builder.build_x(qubit(&context, 0)),
+                || builder.build_y(qubit(&context, 0)),
             );
             builder.build_h(qubit(&context, 0));
         })
@@ -456,14 +567,14 @@ mod tests {
             builder.build_mz(qubit(&context, 0), result(&context, 1));
             builder.build_if_result(
                 result(&context, 0),
-                |builder| {
+                || {
                     builder.build_if_result(
                         result(&context, 1),
-                        |builder| builder.build_x(qubit(&context, 0)),
-                        |_| (),
+                        || builder.build_x(qubit(&context, 0)),
+                        || (),
                     );
                 },
-                |_| (),
+                || (),
             );
         })
     }
@@ -476,12 +587,12 @@ mod tests {
             builder.build_mz(qubit(&context, 0), result(&context, 1));
             builder.build_if_result(
                 result(&context, 0),
-                |_| (),
-                |builder| {
+                || (),
+                || {
                     builder.build_if_result(
                         result(&context, 1),
-                        |_| (),
-                        |builder| builder.build_x(qubit(&context, 0)),
+                        || (),
+                        || builder.build_x(qubit(&context, 0)),
                     );
                 },
             );
@@ -496,14 +607,14 @@ mod tests {
             builder.build_mz(qubit(&context, 0), result(&context, 1));
             builder.build_if_result(
                 result(&context, 0),
-                |builder| {
+                || {
                     builder.build_if_result(
                         result(&context, 1),
-                        |_| (),
-                        |builder| builder.build_x(qubit(&context, 0)),
+                        || (),
+                        || builder.build_x(qubit(&context, 0)),
                     );
                 },
-                |_| (),
+                || (),
             );
         })
     }
@@ -516,12 +627,12 @@ mod tests {
             builder.build_mz(qubit(&context, 0), result(&context, 1));
             builder.build_if_result(
                 result(&context, 0),
-                |_| (),
-                |builder| {
+                || (),
+                || {
                     builder.build_if_result(
                         result(&context, 1),
-                        |builder| builder.build_x(qubit(&context, 0)),
-                        |_| (),
+                        || builder.build_x(qubit(&context, 0)),
+                        || (),
                     );
                 },
             );
@@ -534,8 +645,8 @@ mod tests {
             let context = builder.module().get_context();
             builder.build_if_result(
                 result(&context, 0),
-                |builder| builder.build_x(qubit(&context, 0)),
-                |builder| builder.build_h(qubit(&context, 0)),
+                || builder.build_x(qubit(&context, 0)),
+                || builder.build_h(qubit(&context, 0)),
             );
         })
     }
