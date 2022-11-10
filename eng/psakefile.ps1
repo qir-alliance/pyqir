@@ -14,7 +14,7 @@ Properties {
     $VscodeSettingsJson = Join-Path $Root .vscode settings.json
     $DocsRoot = Join-Path $Root docs
     $DocsBuild = Join-Path $DocsRoot _build
-    $RustVersion = "1.57.0"
+    $RustVersion = "1.59.0"
     $ManylinuxTag = "manylinux2014_x86_64_maturin"
     $ManylinuxRoot = "/io"
     $Python = Resolve-Python
