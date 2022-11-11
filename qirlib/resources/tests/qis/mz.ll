@@ -5,7 +5,6 @@ source_filename = "mz"
 %Result = type opaque
 
 define void @main() #0 {
-entry:
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
   ret void
 }

@@ -5,15 +5,14 @@ source_filename = "empty_if"
 %Result = type opaque
 
 define void @main() #0 {
-entry:
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
-  %0 = call i1 @__quantum__qis__read_result__body(%Result* null)
-  br i1 %0, label %then, label %else
+  %1 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  br i1 %1, label %then, label %else
 
-then:                                             ; preds = %entry
+then:                                             ; preds = %0
   br label %continue
 
-else:                                             ; preds = %entry
+else:                                             ; preds = %0
   br label %continue
 
 continue:                                         ; preds = %else, %then

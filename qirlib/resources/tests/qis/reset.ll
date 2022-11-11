@@ -4,7 +4,6 @@ source_filename = "reset"
 %Qubit = type opaque
 
 define void @main() #0 {
-entry:
   call void @__quantum__qis__reset__body(%Qubit* null)
   ret void
 }

@@ -4,7 +4,6 @@ source_filename = "t_adj"
 %Qubit = type opaque
 
 define void @main() #0 {
-entry:
   call void @__quantum__qis__t__adj(%Qubit* null)
   ret void
 }

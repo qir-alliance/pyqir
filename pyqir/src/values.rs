@@ -113,8 +113,43 @@ impl Value {
 #[pyclass(extends = Value, unsendable)]
 pub(crate) struct BasicBlock(inkwell::basic_block::BasicBlock<'static>);
 
+#[derive(FromPyObject)]
+enum BlockInsertion {
+    AppendTo(Py<Function>),
+    InsertAfter(Py<BasicBlock>),
+}
+
 #[pymethods]
 impl BasicBlock {
+    #[new]
+    fn new(
+        py: Python,
+        context: Py<Context>,
+        name: &str,
+        insertion: BlockInsertion,
+    ) -> PyClassInitializer<Self> {
+        let block = {
+            let context = context.borrow(py);
+            let block = match insertion {
+                BlockInsertion::AppendTo(function) => {
+                    context.append_basic_block(function.borrow(py).0, name)
+                }
+                BlockInsertion::InsertAfter(block) => {
+                    context.insert_basic_block_after(block.borrow(py).0, name)
+                }
+            };
+            unsafe {
+                transmute::<
+                    inkwell::basic_block::BasicBlock<'_>,
+                    inkwell::basic_block::BasicBlock<'static>,
+                >(block)
+            }
+        };
+
+        let value = block.into();
+        PyClassInitializer::from(Value { value, context }).add_subclass(Self(block))
+    }
+
     /// The instructions in this basic block.
     ///
     /// :type: List[Instruction]
@@ -591,6 +626,23 @@ impl Drop for Message {
     fn drop(&mut self) {
         unsafe { LLVMDisposeMessage(self.0) }
     }
+}
+
+#[pyfunction]
+pub(crate) fn create_entry_point(
+    py: Python,
+    module: &Module,
+    name: &str,
+    required_num_qubits: u64,
+    required_num_results: u64,
+) -> PyResult<PyObject> {
+    let entry_point = values::create_entry_point(
+        unsafe { module.get() },
+        name,
+        required_num_qubits,
+        required_num_results,
+    );
+    unsafe { Value::from_any(py, module.context().clone(), entry_point) }
 }
 
 /// Creates a constant value.

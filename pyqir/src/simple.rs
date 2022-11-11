@@ -21,7 +21,7 @@ use pyo3::{
 };
 use qirlib::{
     module, types,
-    values::{qubit, result},
+    values::{create_entry_point, qubit, result},
 };
 use std::{convert::Into, mem::transmute};
 
@@ -53,9 +53,12 @@ impl SimpleModule {
         let builder = Py::new(py, Builder::new(py, context.clone()))?;
 
         {
-            let builder = builder.borrow(py);
+            let context = context.borrow(py);
             let module = module.borrow(py);
-            unsafe { module::simple_init(module.get(), builder.get(), num_qubits, num_results) };
+            let builder = builder.borrow(py);
+            let entry_point =
+                create_entry_point(unsafe { module.get() }, "main", num_qubits, num_results);
+            unsafe { builder.get() }.position_at_end(context.append_basic_block(entry_point, ""));
         }
 
         Ok(SimpleModule {
@@ -288,23 +291,6 @@ impl TypeFactory {
         let ty = f(&context.void_type().get_context());
         unsafe { Type::from_any(py, self.context.clone(), ty) }
     }
-}
-
-#[pyfunction]
-pub(crate) fn create_entry_point(
-    py: Python,
-    module: &Module,
-    name: &str,
-    required_num_qubits: u64,
-    required_num_results: u64,
-) -> PyResult<PyObject> {
-    let entry_point = module::create_entry_point(
-        unsafe { module.get() },
-        name,
-        required_num_qubits,
-        required_num_results,
-    );
-    unsafe { Value::from_any(py, module.context().clone(), entry_point) }
 }
 
 fn clone_module<'ctx>(

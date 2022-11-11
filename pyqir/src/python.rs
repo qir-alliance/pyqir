@@ -10,12 +10,13 @@ use crate::{
     },
     module::{Attribute, Module},
     qis::BasicQisBuilder,
-    simple::{create_entry_point, SimpleModule, TypeFactory},
+    simple::{SimpleModule, TypeFactory},
     types::{is_qubit, is_result, ArrayType, FunctionType, IntType, PointerType, StructType, Type},
     values::{
-        const_getelementptr, constant_bytes, is_entry_point, is_interop_friendly, qubit, qubit_id,
-        r#const, required_num_qubits, required_num_results, result, result_id, BasicBlock,
-        Constant, FloatConstant, Function, IntConstant, Linkage, Value,
+        const_getelementptr, constant_bytes, create_entry_point, is_entry_point,
+        is_interop_friendly, qubit, qubit_id, r#const, required_num_qubits, required_num_results,
+        result, result_id, BasicBlock, Constant, FloatConstant, Function, IntConstant, Linkage,
+        Value,
     },
 };
 use pyo3::prelude::*;
@@ -59,12 +60,12 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(is_interop_friendly, m)?)?;
     m.add_function(wrap_pyfunction!(is_qubit, m)?)?;
     m.add_function(wrap_pyfunction!(is_result, m)?)?;
-    m.add_function(wrap_pyfunction!(qubit, m)?)?;
     m.add_function(wrap_pyfunction!(qubit_id, m)?)?;
+    m.add_function(wrap_pyfunction!(qubit, m)?)?;
     m.add_function(wrap_pyfunction!(r#const, m)?)?;
     m.add_function(wrap_pyfunction!(required_num_qubits, m)?)?;
     m.add_function(wrap_pyfunction!(required_num_results, m)?)?;
-    m.add_function(wrap_pyfunction!(result, m)?)?;
     m.add_function(wrap_pyfunction!(result_id, m)?)?;
+    m.add_function(wrap_pyfunction!(result, m)?)?;
     Ok(())
 }

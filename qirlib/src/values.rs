@@ -6,6 +6,7 @@ use core::slice;
 use inkwell::{
     attributes::AttributeLoc,
     context::ContextRef,
+    module::Module,
     types::{AnyTypeEnum, PointerType},
     values::{AnyValueEnum, FunctionValue, PointerValue},
     LLVMReference,
@@ -18,6 +19,24 @@ use llvm_sys::{
     LLVMOpcode,
 };
 use std::convert::TryFrom;
+
+pub fn create_entry_point<'ctx>(
+    module: &Module<'ctx>,
+    name: &str,
+    required_num_qubits: u64,
+    required_num_results: u64,
+) -> FunctionValue<'ctx> {
+    let context = module.get_context();
+    let ty = context.void_type().fn_type(&[], false);
+    let entry_point = module.add_function(name, ty, None);
+    entry_point.add_attribute(
+        AttributeLoc::Function,
+        context.create_string_attribute("EntryPoint", ""),
+    );
+    add_num_attribute(entry_point, "requiredQubits", required_num_qubits);
+    add_num_attribute(entry_point, "requiredResults", required_num_results);
+    entry_point
+}
 
 #[must_use]
 pub fn qubit<'ctx>(context: &ContextRef<'ctx>, id: u64) -> PointerValue<'ctx> {
@@ -105,6 +124,12 @@ pub fn constant_bytes(value: AnyValueEnum) -> Option<&[u8]> {
     let data = unsafe { LLVMGetAsString(init, &mut len) };
     let data = unsafe { slice::from_raw_parts(data.cast(), len) };
     Some(&data[offset..])
+}
+
+fn add_num_attribute(function: FunctionValue, key: &str, value: u64) {
+    let context = function.get_type().get_context();
+    let attribute = context.create_string_attribute(key, &value.to_string());
+    function.add_attribute(AttributeLoc::Function, attribute);
 }
 
 fn pointer_to_int(value: AnyValueEnum) -> Option<u64> {
