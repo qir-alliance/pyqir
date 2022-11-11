@@ -149,3 +149,28 @@ fn is_byte_string(ty: PointerType) -> bool {
         _ => false,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::assert_reference_ir;
+
+    #[test]
+    fn zero_required_qubits_results() -> Result<(), String> {
+        assert_reference_ir("module/zero_required_qubits_results", 0, 0, |_| ())
+    }
+
+    #[test]
+    fn one_required_qubit() -> Result<(), String> {
+        assert_reference_ir("module/one_required_qubit", 1, 0, |_| ())
+    }
+
+    #[test]
+    fn one_required_result() -> Result<(), String> {
+        assert_reference_ir("module/one_required_result", 0, 1, |_| ())
+    }
+
+    #[test]
+    fn many_required_qubits_results() -> Result<(), String> {
+        assert_reference_ir("module/many_required_qubits_results", 5, 7, |_| ())
+    }
+}

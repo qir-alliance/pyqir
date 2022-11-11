@@ -20,7 +20,7 @@ use pyo3::{
     types::PyBytes,
 };
 use qirlib::{
-    module, types,
+    passes, types,
     values::{create_entry_point, qubit, result},
 };
 use std::{convert::Into, mem::transmute};
@@ -169,12 +169,17 @@ impl SimpleModule {
     fn emit<T>(&self, py: Python, f: impl Fn(&inkwell::module::Module) -> T) -> PyResult<T> {
         let module = self.module.borrow(py);
         let builder = self.builder.borrow(py);
+        let context = inkwell::context::Context::create();
+
         let ret = unsafe { builder.get() }.build_return(None);
-        let new_context = inkwell::context::Context::create();
-        let new_module = clone_module(unsafe { module.get() }, &new_context)?;
+        let module = clone_module(unsafe { module.get() }, &context)?;
         ret.erase_from_basic_block();
-        module::simple_finalize(&new_module).map_err(PyOSError::new_err)?;
-        Ok(f(&new_module))
+
+        passes::run_basic(&module);
+        module
+            .verify()
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        Ok(f(&module))
     }
 }
 
