@@ -291,8 +291,8 @@ def test_variable() -> None:
     mod.builder.call(bar, [x])
 
     ir = mod.ir()
-    assert "%1 = call i64 @foo()" in ir
-    assert "call void @bar(i64 %1)" in ir
+    assert "%0 = call i64 @foo()" in ir
+    assert "call void @bar(i64 %0)" in ir
 
 
 def test_variable_wrong_external_type() -> None:
@@ -344,9 +344,9 @@ def test_two_variables() -> None:
     mod.builder.call(bar, [x, y])
 
     ir = mod.ir()
+    assert "%0 = call i64 @foo()" in ir
     assert "%1 = call i64 @foo()" in ir
-    assert "%2 = call i64 @foo()" in ir
-    assert "call void @bar(i64 %1, i64 %2)" in ir
+    assert "call void @bar(i64 %0, i64 %1)" in ir
 
 
 def test_computed_rotation() -> None:
@@ -362,10 +362,10 @@ def test_computed_rotation() -> None:
     qis.rz(theta, mod.qubits[0])
 
     ir = mod.ir()
-    assert "%1 = call double @foo()" in ir
-    assert "call void @__quantum__qis__rx__body(double %1, %Qubit* null)" in ir
-    assert "call void @__quantum__qis__ry__body(double %1, %Qubit* null)" in ir
-    assert "call void @__quantum__qis__rz__body(double %1, %Qubit* null)" in ir
+    assert "%0 = call double @foo()" in ir
+    assert "call void @__quantum__qis__rx__body(double %0, %Qubit* null)" in ir
+    assert "call void @__quantum__qis__ry__body(double %0, %Qubit* null)" in ir
+    assert "call void @__quantum__qis__rz__body(double %0, %Qubit* null)" in ir
 
 
 def test_record_output() -> None:

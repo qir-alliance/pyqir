@@ -58,7 +58,8 @@ impl SimpleModule {
             let builder = builder.borrow(py);
             let entry_point =
                 create_entry_point(unsafe { module.get() }, "main", num_qubits, num_results);
-            unsafe { builder.get() }.position_at_end(context.append_basic_block(entry_point, ""));
+            unsafe { builder.get() }
+                .position_at_end(context.append_basic_block(entry_point, "entry"));
         }
 
         Ok(SimpleModule {

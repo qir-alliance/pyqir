@@ -43,7 +43,7 @@ def test_variable_variable(
     assert y is not None
     z = build(mod.builder)(x, y)
     mod.builder.call(sink, [z])
-    assert f"%3 = {name} i64 %1, %2" in mod.ir()
+    assert f"%2 = {name} i64 %0, %1" in mod.ir()
 
 
 @pytest.mark.parametrize("name, build", _OPERATORS)
@@ -59,7 +59,7 @@ def test_constant_variable(
     assert x is not None
     y = build(mod.builder)(const(types.int(64), 1), x)
     mod.builder.call(sink, [y])
-    assert f"%2 = {name} i64 1, %1" in mod.ir()
+    assert f"%1 = {name} i64 1, %0" in mod.ir()
 
 
 def test_type_mismatch() -> None:
