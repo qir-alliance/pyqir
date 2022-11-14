@@ -4,7 +4,10 @@
 #![allow(clippy::used_underscore_binding)]
 
 use crate::context::{self, Context};
-use inkwell::types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum};
+use inkwell::{
+    types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum},
+    AddressSpace,
+};
 use pyo3::{conversion::ToPyObject, exceptions::PyValueError, prelude::*};
 use qirlib::types;
 use std::{convert::TryFrom, mem::transmute};
@@ -24,11 +27,17 @@ impl Type {
         let ty = {
             let context = context.borrow(py);
             let ty = context.void_type().into();
-            unsafe {
-                transmute::<inkwell::types::AnyTypeEnum<'_>, inkwell::types::AnyTypeEnum<'static>>(
-                    ty,
-                )
-            }
+            unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
+        };
+        Type { ty, context }
+    }
+
+    #[staticmethod]
+    fn double(py: Python, context: Py<Context>) -> Self {
+        let ty = {
+            let context = context.borrow(py);
+            let ty = context.f64_type().into();
+            unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
         };
         Type { ty, context }
     }
@@ -98,6 +107,25 @@ pub(crate) struct IntType(inkwell::types::IntType<'static>);
 
 #[pymethods]
 impl IntType {
+    #[new]
+    fn new(py: Python, context: Py<Context>, width: u32) -> (Self, Type) {
+        let ty = {
+            let context = context.borrow(py);
+            let ty = context.custom_width_int_type(width);
+            unsafe {
+                transmute::<inkwell::types::IntType<'_>, inkwell::types::IntType<'static>>(ty)
+            }
+        };
+
+        (
+            Self(ty),
+            Type {
+                ty: ty.into(),
+                context,
+            },
+        )
+    }
+
     /// The number of bits in the integer.
     ///
     /// :type: int
@@ -126,7 +154,7 @@ impl FunctionType {
             .ok_or_else(|| PyValueError::new_err("Not a valid function type."))?;
 
         Ok((
-            FunctionType(ty),
+            Self(ty),
             Type {
                 ty: ty.into(),
                 context: ret.context.clone(),
@@ -223,6 +251,28 @@ pub(crate) struct PointerType(inkwell::types::PointerType<'static>);
 
 #[pymethods]
 impl PointerType {
+    #[new]
+    fn new(pointee: &Type) -> PyResult<(Self, Type)> {
+        let ty = match pointee.ty {
+            AnyTypeEnum::ArrayType(a) => Ok(a.ptr_type(AddressSpace::Generic)),
+            AnyTypeEnum::FloatType(f) => Ok(f.ptr_type(AddressSpace::Generic)),
+            AnyTypeEnum::FunctionType(f) => Ok(f.ptr_type(AddressSpace::Generic)),
+            AnyTypeEnum::IntType(i) => Ok(i.ptr_type(AddressSpace::Generic)),
+            AnyTypeEnum::PointerType(p) => Ok(p.ptr_type(AddressSpace::Generic)),
+            AnyTypeEnum::StructType(s) => Ok(s.ptr_type(AddressSpace::Generic)),
+            AnyTypeEnum::VectorType(v) => Ok(v.ptr_type(AddressSpace::Generic)),
+            AnyTypeEnum::VoidType(_) => Err(PyValueError::new_err("Pointer to void type.")),
+        }?;
+
+        Ok((
+            Self(ty),
+            Type {
+                ty: ty.into(),
+                context: pointee.context.clone(),
+            },
+        ))
+    }
+
     /// The type being pointed to.
     ///
     /// :type: Type
