@@ -110,6 +110,11 @@ impl Value {
 }
 
 /// A basic block.
+///
+/// :param Context context: The global context.
+/// :param str name: The block name.
+/// :param Union[Function, BasicBlock] insertion:
+///     Append the block to the given function or insert the block after the given block.
 #[pyclass(extends = Value, unsendable)]
 pub(crate) struct BasicBlock(inkwell::basic_block::BasicBlock<'static>);
 
@@ -260,6 +265,11 @@ impl FloatConstant {
 }
 
 /// A function value.
+///
+/// :param FunctionType ty: The function type.
+/// :param Linkage linkage: The linkage kind.
+/// :param str name: The function name.
+/// :param Module module: The parent module.
 #[pyclass(extends = Constant, unsendable)]
 pub(crate) struct Function(FunctionValue<'static>);
 
@@ -329,6 +339,7 @@ impl Function {
     }
 }
 
+/// The linkage kind for a global value in a module.
 #[pyclass]
 #[derive(Clone)]
 pub(crate) enum Linkage {
@@ -642,16 +653,6 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject
     unsafe { Value::from_any(py, context, value) }
 }
 
-#[pyfunction]
-pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
-    let value = {
-        let context = context.borrow(py);
-        let value = values::qubit(&context.void_type().get_context(), id);
-        unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
-    };
-    unsafe { Value::from_any(py, context, value) }
-}
-
 /// Creates a `getelementptr` constant expression.
 ///
 /// :param Value value: The aggregate value.
@@ -674,17 +675,39 @@ pub(crate) fn const_getelementptr(
     unsafe { Value::from_any(py, value.context.clone(), gep) }
 }
 
+/// Creates a static qubit value.
+///
+/// :param Context context: The global context.
+/// :param int id: The static qubit ID.
+/// :returns: A static qubit value.
+/// :rtype: Value
+#[pyfunction]
+pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
+    let value = {
+        let context = context.borrow(py);
+        let value = values::qubit(&context.void_type().get_context(), id);
+        unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
+    };
+    unsafe { Value::from_any(py, context, value) }
+}
+
 /// If the value is a static qubit ID, extracts it.
 ///
 /// :param Value value: The value.
-/// :rtype: Optional[int]
 /// :returns: The static qubit ID.
+/// :rtype: Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
     values::qubit_id(unsafe { value.get() }.try_into().ok()?)
 }
 
+/// Creates a static result value.
+///
+/// :param Context context: The global context.
+/// :param int id: The static result ID.
+/// :returns: A static result value.
+/// :rtype: Value
 #[pyfunction]
 pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
     let value = {
@@ -698,14 +721,22 @@ pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyOb
 /// If the value is a static result ID, extracts it.
 ///
 /// :param Value value: The value.
-/// :rtype: Optional[int]
 /// :returns: The static result ID.
+/// :rtype: Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn result_id(value: &Value) -> Option<u64> {
     values::result_id(unsafe { value.get() }.try_into().ok()?)
 }
 
+/// Creates an entry point.
+///
+/// :param Module module: The parent module.
+/// :param str name: The entry point name.
+/// :param int required_num_qubits: The number of qubits required by the entry point.
+/// :param int required_num_results: The number of results required by the entry point.
+/// :returns: An entry point.
+/// :rtype: Function
 #[pyfunction]
 pub(crate) fn entry_point(
     py: Python,

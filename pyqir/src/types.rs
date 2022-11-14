@@ -23,6 +23,11 @@ pub(crate) struct Type {
 
 #[pymethods]
 impl Type {
+    /// The void type.
+    ///
+    /// :param Context context: The global context.
+    /// :returns: The void type.
+    /// :rtype: Type
     #[staticmethod]
     fn void(py: Python, context: Py<Context>) -> Self {
         let ty = {
@@ -33,6 +38,11 @@ impl Type {
         Type { ty, context }
     }
 
+    /// The double type.
+    ///
+    /// :param Context context: The global context.
+    /// :returns: The double type.
+    /// :rtype: Type
     #[staticmethod]
     fn double(py: Python, context: Py<Context>) -> Self {
         let ty = {
@@ -98,6 +108,9 @@ impl Type {
 }
 
 /// An integer type.
+///
+/// :param Context context: The global context.
+/// :param int width: The number of bits in the integer.
 #[pyclass(extends = Type, unsendable)]
 pub(crate) struct IntType(inkwell::types::IntType<'static>);
 
@@ -132,6 +145,9 @@ impl IntType {
 }
 
 /// A function type.
+///
+/// :param Type ret: The return type.
+/// :param Sequence[Type] params: The parameter types.
 #[pyclass(extends = Type, unsendable)]
 #[derive(Clone)]
 pub(crate) struct FunctionType(inkwell::types::FunctionType<'static>);
@@ -245,6 +261,8 @@ impl ArrayType {
 }
 
 /// A pointer type.
+///
+/// :param Type pointee: The type being pointed to.
 #[pyclass(extends = Type, unsendable)]
 pub(crate) struct PointerType(inkwell::types::PointerType<'static>);
 
@@ -291,6 +309,11 @@ impl PointerType {
     }
 }
 
+/// The QIR qubit type.
+///
+/// :param Context context: The global context.
+/// :returns: The qubit type.
+/// :rtype: Type
 #[pyfunction]
 pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
     let ty = {
@@ -312,6 +335,11 @@ pub(crate) fn is_qubit_type(ty: &Type) -> bool {
     types::is_qubit(ty.ty)
 }
 
+/// The QIR result type.
+///
+/// :param Context context: The global context.
+/// :returns: The result type.
+/// :rtype: Type
 #[pyfunction]
 pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
     let ty = {

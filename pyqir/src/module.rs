@@ -6,7 +6,10 @@ use inkwell::memory_buffer::MemoryBuffer;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use std::mem::transmute;
 
-/// A module.
+/// A module is a collection of functions.
+///
+/// :param Context context: The global context.
+/// :param str name: The module name.
 #[pyclass(unsendable)]
 pub(crate) struct Module {
     module: inkwell::module::Module<'static>,
@@ -106,6 +109,9 @@ impl Module {
         PyBytes::new(py, self.module.write_bitcode_to_memory().as_slice())
     }
 
+    /// The global context.
+    ///
+    /// :type: Context
     #[getter]
     pub(crate) fn context(&self) -> &Py<Context> {
         &self.context

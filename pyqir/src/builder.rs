@@ -19,6 +19,8 @@ use std::{
 };
 
 /// An instruction builder.
+///
+/// :param Context context: The global context.
 #[pyclass(unsendable)]
 pub(crate) struct Builder {
     builder: inkwell::builder::Builder<'static>,
@@ -42,6 +44,9 @@ impl Builder {
         Self { builder, context }
     }
 
+    /// Tells this builder to insert subsequent instructions starting from the end of the block.
+    ///
+    /// :param BasicBlock block: The block to insert into.
     fn insert_from_end(&self, block: &BasicBlock) {
         self.builder.position_at_end(unsafe { block.get() });
     }
