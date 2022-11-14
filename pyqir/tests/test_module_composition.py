@@ -21,7 +21,7 @@ def bell(module: Module) -> Function:
     entry = create_entry_point(module, "bell", 2, 2)
     context = module.context
     builder = Builder(context)
-    builder.set_insert_point(BasicBlock(context, "", entry))
+    builder.insert_from_end(BasicBlock(context, "", entry))
     qis = BasicQisBuilder(builder)
     qis.h(qubit(context, 0))
     qis.cx(qubit(context, 0), qubit(context, 1))
@@ -34,7 +34,7 @@ def bell_no_measure(module: Module) -> Function:
     entry = create_entry_point(module, "bell_no_measure", 2, 0)
     context = module.context
     builder = Builder(context)
-    builder.set_insert_point(BasicBlock(context, "", entry))
+    builder.insert_from_end(BasicBlock(context, "", entry))
     qis = BasicQisBuilder(builder)
     qis.h(qubit(context, 0))
     qis.cx(qubit(context, 0), qubit(context, 1))
@@ -45,7 +45,7 @@ def using_external(module: Module) -> Function:
     entry = create_entry_point(module, "using_external", 1, 0)
     context = module.context
     builder = Builder(context)
-    builder.set_insert_point(BasicBlock(context, "", entry))
+    builder.insert_from_end(BasicBlock(context, "", entry))
     barrier = Function(
         FunctionType(Type.void(context), []),
         Linkage.EXTERNAL,

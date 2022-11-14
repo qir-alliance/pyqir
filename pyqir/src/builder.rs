@@ -42,7 +42,7 @@ impl Builder {
         Self { builder, context }
     }
 
-    fn set_insert_point(&self, block: &BasicBlock) {
+    fn insert_from_end(&self, block: &BasicBlock) {
         self.builder.position_at_end(unsafe { block.get() });
     }
 
