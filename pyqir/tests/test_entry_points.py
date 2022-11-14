@@ -11,7 +11,7 @@ from pyqir import (
     Linkage,
     Module,
     Type,
-    create_entry_point,
+    entry_point,
     is_entry_point,
     qubit,
     result,
@@ -19,7 +19,7 @@ from pyqir import (
 
 
 def bell(module: Module) -> Function:
-    entry = create_entry_point(module, "bell", 2, 2)
+    entry = entry_point(module, "bell", 2, 2)
     context = module.context
     builder = Builder(context)
     builder.insert_from_end(BasicBlock(context, "", entry))
@@ -40,7 +40,7 @@ def external(module: Module) -> Function:
         module,
     )
 
-    entry = create_entry_point(module, "barrier", 0, 0)
+    entry = entry_point(module, "barrier", 0, 0)
     builder = Builder(context)
     builder.insert_from_end(BasicBlock(context, "", entry))
     builder.call(barrier, [])

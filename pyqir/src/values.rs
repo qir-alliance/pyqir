@@ -628,23 +628,6 @@ impl Drop for Message {
     }
 }
 
-#[pyfunction]
-pub(crate) fn create_entry_point(
-    py: Python,
-    module: &Module,
-    name: &str,
-    required_num_qubits: u64,
-    required_num_results: u64,
-) -> PyResult<PyObject> {
-    let entry_point = values::create_entry_point(
-        unsafe { module.get() },
-        name,
-        required_num_qubits,
-        required_num_results,
-    );
-    unsafe { Value::from_any(py, module.context().clone(), entry_point) }
-}
-
 /// Creates a constant value.
 ///
 /// :param Type ty: The type of the value.
@@ -721,6 +704,23 @@ pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyOb
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn result_id(value: &Value) -> Option<u64> {
     values::result_id(unsafe { value.get() }.try_into().ok()?)
+}
+
+#[pyfunction]
+pub(crate) fn entry_point(
+    py: Python,
+    module: &Module,
+    name: &str,
+    required_num_qubits: u64,
+    required_num_results: u64,
+) -> PyResult<PyObject> {
+    let entry_point = values::entry_point(
+        unsafe { module.get() },
+        name,
+        required_num_qubits,
+        required_num_results,
+    );
+    unsafe { Value::from_any(py, module.context().clone(), entry_point) }
 }
 
 /// Whether the function is an entry point.

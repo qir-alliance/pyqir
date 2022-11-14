@@ -19,10 +19,7 @@ use pyo3::{
     prelude::*,
     types::PyBytes,
 };
-use qirlib::{
-    passes, types,
-    values::{create_entry_point, qubit, result},
-};
+use qirlib::{passes, types, values};
 use std::{convert::Into, mem::transmute};
 
 /// A simple module represents an executable program with these restrictions:
@@ -57,7 +54,7 @@ impl SimpleModule {
             let module = module.borrow(py);
             let builder = builder.borrow(py);
             let entry_point =
-                create_entry_point(unsafe { module.get() }, "main", num_qubits, num_results);
+                values::entry_point(unsafe { module.get() }, "main", num_qubits, num_results);
             unsafe { builder.get() }
                 .position_at_end(context.append_basic_block(entry_point, "entry"));
         }
@@ -85,7 +82,9 @@ impl SimpleModule {
         let context = module.context();
         let context_ref = unsafe { module.get() }.get_context();
         (0..self.num_qubits)
-            .map(|id| unsafe { Value::from_any(py, context.clone(), qubit(&context_ref, id)) })
+            .map(|id| unsafe {
+                Value::from_any(py, context.clone(), values::qubit(&context_ref, id))
+            })
             .collect()
     }
 
@@ -98,7 +97,9 @@ impl SimpleModule {
         let context = module.context();
         let context_ref = unsafe { module.get() }.get_context();
         (0..self.num_results)
-            .map(|id| unsafe { Value::from_any(py, context.clone(), result(&context_ref, id)) })
+            .map(|id| unsafe {
+                Value::from_any(py, context.clone(), values::result(&context_ref, id))
+            })
             .collect()
     }
 

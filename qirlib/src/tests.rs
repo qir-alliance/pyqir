@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{passes, values::create_entry_point};
+use crate::{passes, values};
 use inkwell::{builder::Builder, context::Context, support::LLVMString};
 use normalize_line_endings::normalized;
 use std::{env, fs, path::PathBuf};
@@ -55,7 +55,7 @@ fn build_ir(
     let context = Context::create();
     let module = context.create_module(name);
     let entry_point =
-        create_entry_point(&module, "main", required_num_qubits, required_num_results);
+        values::entry_point(&module, "main", required_num_qubits, required_num_results);
 
     let builder = context.create_builder();
     builder.position_at_end(context.append_basic_block(entry_point, ""));
