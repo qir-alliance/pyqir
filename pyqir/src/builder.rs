@@ -8,7 +8,7 @@ use crate::{
 };
 use inkwell::{
     types::{AnyTypeEnum, FunctionType},
-    values::{AnyValueEnum, CallableValue, IntValue},
+    values::{AnyValueEnum, BasicValueEnum, CallableValue, IntValue},
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PySequence};
 use qirlib::builder::Ext;
@@ -274,6 +274,23 @@ impl Builder {
             || r#true.iter().try_for_each(|f| f.call0().map(|_| ())),
             || r#false.iter().try_for_each(|f| f.call0().map(|_| ())),
         )
+    }
+
+    /// Inserts a return instruction.
+    ///
+    /// :param Value value: The value to return. If `None`, returns void.
+    /// :returns: The return instruction.
+    /// :rtype: Instruction
+    fn ret(&self, py: Python, value: Option<&Value>) -> PyResult<PyObject> {
+        let inst = match value {
+            None => self.builder.build_return(None),
+            Some(value) => {
+                context::require_same(py, [&self.context, value.context()])?;
+                let value = BasicValueEnum::try_from(unsafe { value.get() })?;
+                self.builder.build_return(Some(&value))
+            }
+        };
+        unsafe { Value::from_any(py, self.context.clone(), inst) }
     }
 }
 

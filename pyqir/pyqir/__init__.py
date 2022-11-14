@@ -47,6 +47,7 @@ from pyqir._native import (
     result_id,
     result_type,
     result,
+    verify_module,
 )
 
 __all__ = [
@@ -95,4 +96,5 @@ __all__ = [
     "result_id",
     "result_type",
     "result",
+    "verify_module",
 ]

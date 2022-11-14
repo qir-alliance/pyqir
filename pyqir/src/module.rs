@@ -143,3 +143,12 @@ impl Attribute {
             .expect("Value is not valid UTF-8.")
     }
 }
+
+/// Verifies that a module is valid.
+///
+/// :returns: An error description if the module is invalid or `None` if the module is valid.
+/// :rtype: Optional[str]
+#[pyfunction]
+pub(crate) fn verify_module(module: &Module) -> Option<String> {
+    module.module.verify().map_err(|e| e.to_string()).err()
+}

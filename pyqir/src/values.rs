@@ -519,7 +519,7 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for AnyValueEnum<'ctx> {
     }
 }
 
-impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicMetadataValueEnum<'ctx> {
+impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicValueEnum<'ctx> {
     type Error = ConvertError;
 
     fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
@@ -532,15 +532,31 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicMetadataValueEnum<'ctx> {
             AnyValue::Any(AnyValueEnum::VectorValue(v)) => Some(v.into()),
             AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i
                 .try_into()
-                .map(BasicMetadataValueEnum::IntValue)
-                .or_else(|()| i.try_into().map(BasicMetadataValueEnum::FloatValue))
-                .or_else(|()| i.try_into().map(BasicMetadataValueEnum::PointerValue))
+                .map(BasicValueEnum::IntValue)
+                .or_else(|()| i.try_into().map(BasicValueEnum::FloatValue))
+                .or_else(|()| i.try_into().map(BasicValueEnum::PointerValue))
                 .ok(),
-            AnyValue::Any(AnyValueEnum::MetadataValue(m)) => Some(m.into()),
-            AnyValue::Any(AnyValueEnum::PhiValue(_) | AnyValueEnum::FunctionValue(_))
+            AnyValue::Any(
+                AnyValueEnum::PhiValue(_)
+                | AnyValueEnum::FunctionValue(_)
+                | AnyValueEnum::MetadataValue(_),
+            )
             | AnyValue::BasicBlock(_) => None,
         }
-        .ok_or(ConvertError("argument value"))
+        .ok_or(ConvertError("basic value"))
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicMetadataValueEnum<'ctx> {
+    type Error = ConvertError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(AnyValueEnum::MetadataValue(m)) => Ok(m.into()),
+            _ => BasicValueEnum::try_from(value)
+                .map(BasicMetadataValueEnum::from)
+                .map_err(|_| ConvertError("argument value")),
+        }
     }
 }
 
