@@ -47,12 +47,23 @@ def external(module: Module) -> Function:
     return entry
 
 
-def test_multiple_entry_points() -> None:
+def test_multiple() -> None:
     module = Module(Context(), "test")
     bell_function = bell(module)
     external_function = external(module)
-    entry_points = list(filter(is_entry_point, module.functions))
-    names = list(map(lambda f: f.name, entry_points))
-    assert len(entry_points) == 2
+    names = list(map(lambda f: f.name, filter(is_entry_point, module.functions)))
+    assert len(names) == 2
     assert bell_function.name in names
     assert external_function.name in names
+
+
+def test_duplicate_name() -> None:
+    module = Module(Context(), "test")
+    bell1 = bell(module)
+    bell2 = bell(module)
+    assert bell1.name != bell2.name
+
+    names = list(map(lambda f: f.name, filter(is_entry_point, module.functions)))
+    assert len(names) == 2
+    assert bell1.name in names
+    assert bell2.name in names
