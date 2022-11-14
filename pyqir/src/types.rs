@@ -6,8 +6,9 @@
 use crate::context::{self, Context};
 use inkwell::{
     types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum},
-    AddressSpace,
+    AddressSpace, LLVMReference,
 };
+use llvm_sys::{core::LLVMGetTypeKind, LLVMTypeKind};
 use pyo3::{conversion::ToPyObject, exceptions::PyValueError, prelude::*};
 use qirlib::types;
 use std::{convert::TryFrom, mem::transmute};
@@ -55,12 +56,7 @@ impl Type {
     /// :type: bool
     #[getter]
     fn is_double(&self) -> bool {
-        match self.ty {
-            AnyTypeEnum::FloatType(float) => {
-                float.size_of().get_zero_extended_constant() == Some(64)
-            }
-            _ => false,
-        }
+        (unsafe { LLVMGetTypeKind(self.ty.get_ref()) }) == LLVMTypeKind::LLVMDoubleTypeKind
     }
 }
 
@@ -167,9 +163,12 @@ impl FunctionType {
     /// :type: Type
     #[getter]
     fn ret(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
-        let ty = basic_to_any(slf.0.get_return_type().unwrap());
+        let ret = slf.0.get_return_type();
         let context = slf.into_super().context.clone();
-        unsafe { Type::from_any(py, context, ty) }
+        match ret {
+            None => Ok(Py::new(py, Type::void(py, context))?.to_object(py)),
+            Some(ret) => unsafe { Type::from_any(py, context, basic_to_any(ret)) },
+        }
     }
 
     /// The types of the function parameters.
@@ -292,6 +291,16 @@ impl PointerType {
     }
 }
 
+#[pyfunction]
+pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
+    let ty = {
+        let context = context.borrow(py);
+        let ty = types::qubit(&context.void_type().get_context()).into();
+        unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
+    };
+    unsafe { Type::from_any(py, context, ty) }
+}
+
 /// Whether the type is the QIR qubit type.
 ///
 /// :param Type ty: The type.
@@ -299,8 +308,18 @@ impl PointerType {
 /// :returns: True if the type is the QIR qubit type.
 #[pyfunction]
 #[pyo3(text_signature = "(ty)")]
-pub(crate) fn is_qubit(ty: &Type) -> bool {
+pub(crate) fn is_qubit_type(ty: &Type) -> bool {
     types::is_qubit(ty.ty)
+}
+
+#[pyfunction]
+pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
+    let ty = {
+        let context = context.borrow(py);
+        let ty = types::result(&context.void_type().get_context()).into();
+        unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
+    };
+    unsafe { Type::from_any(py, context, ty) }
 }
 
 /// Whether the type is the QIR result type.
@@ -310,7 +329,7 @@ pub(crate) fn is_qubit(ty: &Type) -> bool {
 /// :returns: True if the type is the QIR result type.
 #[pyfunction]
 #[pyo3(text_signature = "(ty)")]
-pub(crate) fn is_result(ty: &Type) -> bool {
+pub(crate) fn is_result_type(ty: &Type) -> bool {
     types::is_result(ty.ty)
 }
 
