@@ -11,7 +11,7 @@ repository = "https://github.com/qir-alliance/pyqir"
 
 [dependencies]
 either = "1.8"
-inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["target-x86"] }
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["internal-getters"] }
 libc = "0.2"
 llvm-sys-110 = { package = "llvm-sys", version = "110.0", optional = true }
 llvm-sys-120 = { package = "llvm-sys", version = "120.2", optional = true }
