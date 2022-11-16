@@ -23,7 +23,7 @@ def bell(module: Module) -> Function:
     entry = entry_point(module, "bell", 2, 2)
     context = module.context
     builder = Builder(context)
-    builder.insert_from_end(BasicBlock(context, "", entry))
+    builder.insert_at_end(BasicBlock(context, "", entry))
     qis = BasicQisBuilder(builder)
     qis.h(qubit(context, 0))
     qis.cx(qubit(context, 0), qubit(context, 1))
@@ -44,7 +44,7 @@ def external(module: Module) -> Function:
 
     entry = entry_point(module, "barrier", 0, 0)
     builder = Builder(context)
-    builder.insert_from_end(BasicBlock(context, "", entry))
+    builder.insert_at_end(BasicBlock(context, "", entry))
     builder.call(barrier, [])
     builder.ret(None)
     return entry
