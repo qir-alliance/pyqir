@@ -6,7 +6,10 @@ use inkwell::memory_buffer::MemoryBuffer;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use std::mem::transmute;
 
-/// A module.
+/// A module is a collection of functions.
+///
+/// :param Context context: The global context.
+/// :param str name: The module name.
 #[pyclass(unsendable)]
 pub(crate) struct Module {
     module: inkwell::module::Module<'static>,
@@ -15,6 +18,18 @@ pub(crate) struct Module {
 
 #[pymethods]
 impl Module {
+    #[new]
+    pub(crate) fn new(py: Python, context: Py<Context>, name: &str) -> Self {
+        let module = {
+            let context = context.borrow(py);
+            let module = context.create_module(name);
+            unsafe {
+                transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
+            }
+        };
+        Self { module, context }
+    }
+
     /// Creates a module from LLVM IR.
     ///
     /// :param str ir: The LLVM IR for a module.
@@ -94,29 +109,22 @@ impl Module {
         PyBytes::new(py, self.module.write_bitcode_to_memory().as_slice())
     }
 
+    /// The global context.
+    ///
+    /// :type: Context
+    #[getter]
+    pub(crate) fn context(&self) -> &Py<Context> {
+        &self.context
+    }
+
     fn __str__(&self) -> String {
         self.module.to_string()
     }
 }
 
 impl Module {
-    pub(crate) fn new(py: Python, context: Py<Context>, name: &str) -> Self {
-        let module = {
-            let context = context.borrow(py);
-            let module = context.create_module(name);
-            unsafe {
-                transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
-            }
-        };
-        Self { module, context }
-    }
-
     pub(crate) unsafe fn get(&self) -> &inkwell::module::Module<'static> {
         &self.module
-    }
-
-    pub(crate) fn context(&self) -> &Py<Context> {
-        &self.context
     }
 }
 
@@ -134,4 +142,13 @@ impl Attribute {
             .to_str()
             .expect("Value is not valid UTF-8.")
     }
+}
+
+/// Verifies that a module is valid.
+///
+/// :returns: An error description if the module is invalid or `None` if the module is valid.
+/// :rtype: Optional[str]
+#[pyfunction]
+pub(crate) fn verify_module(module: &Module) -> Option<String> {
+    module.module.verify().map_err(|e| e.to_string()).err()
 }

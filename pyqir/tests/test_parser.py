@@ -14,7 +14,7 @@ from pyqir import (
     constant_bytes,
     is_entry_point,
     is_interop_friendly,
-    is_qubit,
+    is_qubit_type,
     qubit_id,
     required_num_qubits,
     result_id,
@@ -219,7 +219,7 @@ def test_parser_internals() -> None:
 
     arg = args[0]
     assert isinstance(arg, Constant)
-    assert is_qubit(arg.type)
+    assert is_qubit_type(arg.type)
     assert qubit_id(arg) == 0
 
     call = entry_block.instructions[8]

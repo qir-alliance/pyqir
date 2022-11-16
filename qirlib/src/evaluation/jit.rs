@@ -7,7 +7,7 @@ use crate::{
         intrinsics::{reset_max_qubit_id, reset_static_result_cache, set_measure_stream},
         runtime::Simulator,
     },
-    module,
+    passes,
 };
 use bitvec::prelude::BitVec;
 use inkwell::{
@@ -61,7 +61,7 @@ pub fn run_module(
         return Err("Target doesn't have a target machine.".to_owned());
     }
 
-    module::run_basic_passes(module);
+    passes::run_basic(module);
     let entry_point = choose_entry_point(module_functions(module), entry_point)?;
 
     // load the symbols for the current process (empty/null string)

@@ -11,7 +11,7 @@ use crate::{
 use inkwell::{
     context::ContextRef,
     module::Linkage,
-    types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum, FunctionType},
+    types::{AnyTypeEnum, BasicType, BasicTypeEnum},
     AddressSpace,
 };
 use pyo3::{
@@ -19,14 +19,8 @@ use pyo3::{
     prelude::*,
     types::PyBytes,
 };
-use qirlib::{
-    module, types,
-    values::{qubit, result},
-};
-use std::{
-    convert::{Into, TryFrom},
-    mem::transmute,
-};
+use qirlib::{passes, types, values};
+use std::{convert::Into, mem::transmute};
 
 /// A simple module represents an executable program with these restrictions:
 ///
@@ -56,9 +50,13 @@ impl SimpleModule {
         let builder = Py::new(py, Builder::new(py, context.clone()))?;
 
         {
-            let builder = builder.borrow(py);
+            let context = context.borrow(py);
             let module = module.borrow(py);
-            unsafe { module::simple_init(module.get(), builder.get(), num_qubits, num_results) };
+            let builder = builder.borrow(py);
+            let entry_point =
+                values::entry_point(unsafe { module.get() }, "main", num_qubits, num_results);
+            unsafe { builder.get() }
+                .position_at_end(context.append_basic_block(entry_point, "entry"));
         }
 
         Ok(SimpleModule {
@@ -84,7 +82,9 @@ impl SimpleModule {
         let context = module.context();
         let context_ref = unsafe { module.get() }.get_context();
         (0..self.num_qubits)
-            .map(|id| unsafe { Value::from_any(py, context.clone(), qubit(&context_ref, id)) })
+            .map(|id| unsafe {
+                Value::from_any(py, context.clone(), values::qubit(&context_ref, id))
+            })
             .collect()
     }
 
@@ -97,7 +97,9 @@ impl SimpleModule {
         let context = module.context();
         let context_ref = unsafe { module.get() }.get_context();
         (0..self.num_results)
-            .map(|id| unsafe { Value::from_any(py, context.clone(), result(&context_ref, id)) })
+            .map(|id| unsafe {
+                Value::from_any(py, context.clone(), values::result(&context_ref, id))
+            })
             .collect()
     }
 
@@ -169,12 +171,17 @@ impl SimpleModule {
     fn emit<T>(&self, py: Python, f: impl Fn(&inkwell::module::Module) -> T) -> PyResult<T> {
         let module = self.module.borrow(py);
         let builder = self.builder.borrow(py);
+        let context = inkwell::context::Context::create();
+
         let ret = unsafe { builder.get() }.build_return(None);
-        let new_context = inkwell::context::Context::create();
-        let new_module = clone_module(unsafe { module.get() }, &new_context)?;
+        let module = clone_module(unsafe { module.get() }, &context)?;
         ret.erase_from_basic_block();
-        module::simple_finalize(&new_module).map_err(PyOSError::new_err)?;
-        Ok(f(&new_module))
+
+        passes::run_basic(&module);
+        module
+            .verify()
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        Ok(f(&module))
     }
 }
 
@@ -269,7 +276,7 @@ impl TypeFactory {
                 .chain([ret.context().clone()]),
         )?;
 
-        let ty = function_type(
+        let ty = crate::types::function(
             unsafe { &ret.get() },
             params.iter().map(|t| unsafe {
                 transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(t.borrow(py).get())
@@ -290,23 +297,6 @@ impl TypeFactory {
         let context = self.context.borrow(py);
         let ty = f(&context.void_type().get_context());
         unsafe { Type::from_any(py, self.context.clone(), ty) }
-    }
-}
-
-fn function_type<'ctx>(
-    return_type: &impl AnyType<'ctx>,
-    params: impl IntoIterator<Item = AnyTypeEnum<'ctx>>,
-) -> Option<FunctionType<'ctx>> {
-    let params = params
-        .into_iter()
-        .map(|ty| BasicTypeEnum::try_from(ty).map(Into::into).ok())
-        .collect::<Option<Vec<_>>>()?;
-
-    match return_type.as_any_type_enum() {
-        AnyTypeEnum::VoidType(void) => Some(void.fn_type(&params, false)),
-        any => BasicTypeEnum::try_from(any)
-            .map(|basic| basic.fn_type(&params, false))
-            .ok(),
     }
 }
 

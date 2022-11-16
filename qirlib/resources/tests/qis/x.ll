@@ -4,7 +4,6 @@ source_filename = "x"
 %Qubit = type opaque
 
 define void @main() #0 {
-entry:
   call void @__quantum__qis__x__body(%Qubit* null)
   ret void
 }

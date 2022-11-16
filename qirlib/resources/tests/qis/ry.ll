@@ -4,7 +4,6 @@ source_filename = "ry"
 %Qubit = type opaque
 
 define void @main() #0 {
-entry:
   call void @__quantum__qis__ry__body(double 0.000000e+00, %Qubit* null)
   ret void
 }

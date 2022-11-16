@@ -2,7 +2,6 @@
 source_filename = "one_required_result"
 
 define void @main() #0 {
-entry:
   ret void
 }
 

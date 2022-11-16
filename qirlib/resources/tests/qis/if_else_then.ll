@@ -5,18 +5,17 @@ source_filename = "if_else_then"
 %Result = type opaque
 
 define void @main() #0 {
-entry:
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 1 to %Result*))
-  %0 = call i1 @__quantum__qis__read_result__body(%Result* null)
-  br i1 %0, label %then, label %else
+  %1 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  br i1 %1, label %then, label %else
 
-then:                                             ; preds = %entry
+then:                                             ; preds = %0
   br label %continue
 
-else:                                             ; preds = %entry
-  %1 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 1 to %Result*))
-  br i1 %1, label %then1, label %else2
+else:                                             ; preds = %0
+  %2 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 1 to %Result*))
+  br i1 %2, label %then1, label %else2
 
 continue:                                         ; preds = %continue3, %then
   ret void

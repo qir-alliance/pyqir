@@ -3,7 +3,12 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::{context::Context, instructions::Instruction, module::Attribute, types::Type};
+use crate::{
+    context::{self, Context},
+    instructions::Instruction,
+    module::{Attribute, Module},
+    types::{FunctionType, Type},
+};
 use inkwell::{
     attributes::AttributeLoc,
     types::{AnyType, AnyTypeEnum},
@@ -105,11 +110,51 @@ impl Value {
 }
 
 /// A basic block.
+///
+/// :param Context context: The global context.
+/// :param str name: The block name.
+/// :param Union[Function, BasicBlock] insertion:
+///     Append the block to the given function or insert the block after the given block.
 #[pyclass(extends = Value, unsendable)]
 pub(crate) struct BasicBlock(inkwell::basic_block::BasicBlock<'static>);
 
+#[derive(FromPyObject)]
+enum BlockInsertion {
+    AppendTo(Py<Function>),
+    InsertAfter(Py<BasicBlock>),
+}
+
 #[pymethods]
 impl BasicBlock {
+    #[new]
+    fn new(
+        py: Python,
+        context: Py<Context>,
+        name: &str,
+        insertion: BlockInsertion,
+    ) -> PyClassInitializer<Self> {
+        let block = {
+            let context = context.borrow(py);
+            let block = match insertion {
+                BlockInsertion::AppendTo(function) => {
+                    context.append_basic_block(function.borrow(py).0, name)
+                }
+                BlockInsertion::InsertAfter(block) => {
+                    context.insert_basic_block_after(block.borrow(py).0, name)
+                }
+            };
+            unsafe {
+                transmute::<
+                    inkwell::basic_block::BasicBlock<'_>,
+                    inkwell::basic_block::BasicBlock<'static>,
+                >(block)
+            }
+        };
+
+        let value = block.into();
+        PyClassInitializer::from(Value { value, context }).add_subclass(Self(block))
+    }
+
     /// The instructions in this basic block.
     ///
     /// :type: List[Instruction]
@@ -140,6 +185,12 @@ impl BasicBlock {
             }
             None => Ok(None),
         }
+    }
+}
+
+impl BasicBlock {
+    pub(crate) unsafe fn get(&self) -> inkwell::basic_block::BasicBlock<'static> {
+        self.0
     }
 }
 
@@ -214,11 +265,34 @@ impl FloatConstant {
 }
 
 /// A function value.
+///
+/// :param FunctionType ty: The function type.
+/// :param Linkage linkage: The linkage kind.
+/// :param str name: The function name.
+/// :param Module module: The parent module.
 #[pyclass(extends = Constant, unsendable)]
 pub(crate) struct Function(FunctionValue<'static>);
 
 #[pymethods]
 impl Function {
+    #[new]
+    fn new(
+        py: Python,
+        ty: PyRef<FunctionType>,
+        linkage: Linkage,
+        name: &str,
+        module: &Module,
+    ) -> PyResult<PyClassInitializer<Self>> {
+        let function_ty = unsafe { ty.get() };
+        let context = module.context();
+        context::require_same(py, [ty.into_super().context(), context])?;
+        let function =
+            unsafe { module.get() }.add_function(name, function_ty, Some(linkage.into()));
+        Ok(unsafe { Value::init(context.clone(), function.into()) }
+            .add_subclass(Constant)
+            .add_subclass(Self(function)))
+    }
+
     /// The parameters to this function.
     ///
     /// :type: List[Value]
@@ -262,6 +336,52 @@ impl Function {
 impl Function {
     pub(crate) unsafe fn get(&self) -> FunctionValue<'static> {
         self.0
+    }
+}
+
+/// The linkage kind for a global value in a module.
+#[pyclass]
+#[derive(Clone)]
+pub(crate) enum Linkage {
+    #[pyo3(name = "APPENDING")]
+    Appending,
+    #[pyo3(name = "AVAILABLE_EXTERNALLY")]
+    AvailableExternally,
+    #[pyo3(name = "COMMON")]
+    Common,
+    #[pyo3(name = "EXTERNAL")]
+    External,
+    #[pyo3(name = "EXTERNAL_WEAK")]
+    ExternalWeak,
+    #[pyo3(name = "INTERNAL")]
+    Internal,
+    #[pyo3(name = "LINK_ONCE_ANY")]
+    LinkOnceAny,
+    #[pyo3(name = "LINK_ONCE_ODR")]
+    LinkOnceOdr,
+    #[pyo3(name = "PRIVATE")]
+    Private,
+    #[pyo3(name = "WEAK_ANY")]
+    WeakAny,
+    #[pyo3(name = "WEAK_ODR")]
+    WeakOdr,
+}
+
+impl From<Linkage> for inkwell::module::Linkage {
+    fn from(linkage: Linkage) -> Self {
+        match linkage {
+            Linkage::Appending => Self::Appending,
+            Linkage::AvailableExternally => Self::AvailableExternally,
+            Linkage::Common => Self::Common,
+            Linkage::External => Self::External,
+            Linkage::ExternalWeak => Self::ExternalWeak,
+            Linkage::Internal => Self::Internal,
+            Linkage::LinkOnceAny => Self::LinkOnceAny,
+            Linkage::LinkOnceOdr => Self::LinkOnceODR,
+            Linkage::Private => Self::Private,
+            Linkage::WeakAny => Self::WeakAny,
+            Linkage::WeakOdr => Self::WeakODR,
+        }
     }
 }
 
@@ -399,7 +519,7 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for AnyValueEnum<'ctx> {
     }
 }
 
-impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicMetadataValueEnum<'ctx> {
+impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicValueEnum<'ctx> {
     type Error = ConvertError;
 
     fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
@@ -412,15 +532,31 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicMetadataValueEnum<'ctx> {
             AnyValue::Any(AnyValueEnum::VectorValue(v)) => Some(v.into()),
             AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i
                 .try_into()
-                .map(BasicMetadataValueEnum::IntValue)
-                .or_else(|()| i.try_into().map(BasicMetadataValueEnum::FloatValue))
-                .or_else(|()| i.try_into().map(BasicMetadataValueEnum::PointerValue))
+                .map(BasicValueEnum::IntValue)
+                .or_else(|()| i.try_into().map(BasicValueEnum::FloatValue))
+                .or_else(|()| i.try_into().map(BasicValueEnum::PointerValue))
                 .ok(),
-            AnyValue::Any(AnyValueEnum::MetadataValue(m)) => Some(m.into()),
-            AnyValue::Any(AnyValueEnum::PhiValue(_) | AnyValueEnum::FunctionValue(_))
+            AnyValue::Any(
+                AnyValueEnum::PhiValue(_)
+                | AnyValueEnum::FunctionValue(_)
+                | AnyValueEnum::MetadataValue(_),
+            )
             | AnyValue::BasicBlock(_) => None,
         }
-        .ok_or(ConvertError("argument value"))
+        .ok_or(ConvertError("basic value"))
+    }
+}
+
+impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicMetadataValueEnum<'ctx> {
+    type Error = ConvertError;
+
+    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
+        match value {
+            AnyValue::Any(AnyValueEnum::MetadataValue(m)) => Ok(m.into()),
+            _ => BasicValueEnum::try_from(value)
+                .map(BasicMetadataValueEnum::from)
+                .map_err(|_| ConvertError("argument value")),
+        }
     }
 }
 
@@ -555,26 +691,83 @@ pub(crate) fn const_getelementptr(
     unsafe { Value::from_any(py, value.context.clone(), gep) }
 }
 
+/// Creates a static qubit value.
+///
+/// :param Context context: The global context.
+/// :param int id: The static qubit ID.
+/// :returns: A static qubit value.
+/// :rtype: Value
+#[pyfunction]
+pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
+    let value = {
+        let context = context.borrow(py);
+        let value = values::qubit(&context.void_type().get_context(), id);
+        unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
+    };
+    unsafe { Value::from_any(py, context, value) }
+}
+
 /// If the value is a static qubit ID, extracts it.
 ///
 /// :param Value value: The value.
-/// :rtype: Optional[int]
 /// :returns: The static qubit ID.
+/// :rtype: Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
     values::qubit_id(unsafe { value.get() }.try_into().ok()?)
 }
 
+/// Creates a static result value.
+///
+/// :param Context context: The global context.
+/// :param int id: The static result ID.
+/// :returns: A static result value.
+/// :rtype: Value
+#[pyfunction]
+pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
+    let value = {
+        let context = context.borrow(py);
+        let value = values::result(&context.void_type().get_context(), id);
+        unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
+    };
+    unsafe { Value::from_any(py, context, value) }
+}
+
 /// If the value is a static result ID, extracts it.
 ///
 /// :param Value value: The value.
-/// :rtype: Optional[int]
 /// :returns: The static result ID.
+/// :rtype: Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn result_id(value: &Value) -> Option<u64> {
     values::result_id(unsafe { value.get() }.try_into().ok()?)
+}
+
+/// Creates an entry point.
+///
+/// :param Module module: The parent module.
+/// :param str name: The entry point name.
+/// :param int required_num_qubits: The number of qubits required by the entry point.
+/// :param int required_num_results: The number of results required by the entry point.
+/// :returns: An entry point.
+/// :rtype: Function
+#[pyfunction]
+pub(crate) fn entry_point(
+    py: Python,
+    module: &Module,
+    name: &str,
+    required_num_qubits: u64,
+    required_num_results: u64,
+) -> PyResult<PyObject> {
+    let entry_point = values::entry_point(
+        unsafe { module.get() },
+        name,
+        required_num_qubits,
+        required_num_results,
+    );
+    unsafe { Value::from_any(py, module.context().clone(), entry_point) }
 }
 
 /// Whether the function is an entry point.

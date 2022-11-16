@@ -3,18 +3,22 @@
 
 use crate::{
     builder::Builder,
+    context::Context,
     evaluator::PyNonadaptiveJit,
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    module::{Attribute, Module},
+    module::{verify_module, Attribute, Module},
     qis::BasicQisBuilder,
     simple::{SimpleModule, TypeFactory},
-    types::{is_qubit, is_result, ArrayType, FunctionType, IntType, PointerType, StructType, Type},
+    types::{
+        is_qubit_type, is_result_type, qubit_type, result_type, ArrayType, FunctionType, IntType,
+        PointerType, StructType, Type,
+    },
     values::{
-        const_getelementptr, constant_bytes, is_entry_point, is_interop_friendly, qubit_id,
-        r#const, required_num_qubits, required_num_results, result_id, BasicBlock, Constant,
-        FloatConstant, Function, IntConstant, Value,
+        const_getelementptr, constant_bytes, entry_point, is_entry_point, is_interop_friendly,
+        qubit, qubit_id, r#const, required_num_qubits, required_num_results, result, result_id,
+        BasicBlock, Constant, FloatConstant, Function, IntConstant, Linkage, Value,
     },
 };
 use pyo3::prelude::*;
@@ -28,6 +32,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Builder>()?;
     m.add_class::<Call>()?;
     m.add_class::<Constant>()?;
+    m.add_class::<Context>()?;
     m.add_class::<FCmp>()?;
     m.add_class::<FloatConstant>()?;
     m.add_class::<FloatPredicate>()?;
@@ -38,6 +43,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<IntConstant>()?;
     m.add_class::<IntPredicate>()?;
     m.add_class::<IntType>()?;
+    m.add_class::<Linkage>()?;
     m.add_class::<Module>()?;
     m.add_class::<Opcode>()?;
     m.add_class::<Phi>()?;
@@ -51,14 +57,20 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Value>()?;
     m.add_function(wrap_pyfunction!(const_getelementptr, m)?)?;
     m.add_function(wrap_pyfunction!(constant_bytes, m)?)?;
+    m.add_function(wrap_pyfunction!(entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(is_interop_friendly, m)?)?;
-    m.add_function(wrap_pyfunction!(is_qubit, m)?)?;
-    m.add_function(wrap_pyfunction!(is_result, m)?)?;
+    m.add_function(wrap_pyfunction!(is_qubit_type, m)?)?;
+    m.add_function(wrap_pyfunction!(is_result_type, m)?)?;
     m.add_function(wrap_pyfunction!(qubit_id, m)?)?;
+    m.add_function(wrap_pyfunction!(qubit_type, m)?)?;
+    m.add_function(wrap_pyfunction!(qubit, m)?)?;
     m.add_function(wrap_pyfunction!(r#const, m)?)?;
     m.add_function(wrap_pyfunction!(required_num_qubits, m)?)?;
     m.add_function(wrap_pyfunction!(required_num_results, m)?)?;
     m.add_function(wrap_pyfunction!(result_id, m)?)?;
+    m.add_function(wrap_pyfunction!(result_type, m)?)?;
+    m.add_function(wrap_pyfunction!(result, m)?)?;
+    m.add_function(wrap_pyfunction!(verify_module, m)?)?;
     Ok(())
 }

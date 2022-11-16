@@ -4,11 +4,11 @@
 use crate::{
     context::{self, Context},
     instructions::IntPredicate,
-    values::{self, AnyValue, Value},
+    values::{self, AnyValue, BasicBlock, Value},
 };
 use inkwell::{
     types::{AnyTypeEnum, FunctionType},
-    values::{AnyValueEnum, CallableValue, IntValue},
+    values::{AnyValueEnum, BasicValueEnum, CallableValue, IntValue},
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PySequence};
 use qirlib::builder::Ext;
@@ -19,6 +19,8 @@ use std::{
 };
 
 /// An instruction builder.
+///
+/// :param Context context: The global context.
 #[pyclass(unsendable)]
 pub(crate) struct Builder {
     builder: inkwell::builder::Builder<'static>,
@@ -27,6 +29,28 @@ pub(crate) struct Builder {
 
 #[pymethods]
 impl Builder {
+    #[new]
+    pub(crate) fn new(py: Python, context: Py<Context>) -> Self {
+        let builder = {
+            let context = context.borrow(py);
+            let builder = context.create_builder();
+            unsafe {
+                transmute::<inkwell::builder::Builder<'_>, inkwell::builder::Builder<'static>>(
+                    builder,
+                )
+            }
+        };
+
+        Self { builder, context }
+    }
+
+    /// Tells this builder to insert subsequent instructions at the end of the block.
+    ///
+    /// :param BasicBlock block: The block to insert into.
+    fn insert_at_end(&self, block: &BasicBlock) {
+        self.builder.position_at_end(unsafe { block.get() });
+    }
+
     /// Inserts a bitwise logical and instruction.
     ///
     /// :param Value lhs: The left-hand side.
@@ -251,23 +275,26 @@ impl Builder {
             || r#false.iter().try_for_each(|f| f.call0().map(|_| ())),
         )
     }
+
+    /// Inserts a return instruction.
+    ///
+    /// :param Value value: The value to return. If `None`, returns void.
+    /// :returns: The return instruction.
+    /// :rtype: Instruction
+    fn ret(&self, py: Python, value: Option<&Value>) -> PyResult<PyObject> {
+        let inst = match value {
+            None => self.builder.build_return(None),
+            Some(value) => {
+                context::require_same(py, [&self.context, value.context()])?;
+                let value = BasicValueEnum::try_from(unsafe { value.get() })?;
+                self.builder.build_return(Some(&value))
+            }
+        };
+        unsafe { Value::from_any(py, self.context.clone(), inst) }
+    }
 }
 
 impl Builder {
-    pub(crate) fn new(py: Python, context: Py<Context>) -> Self {
-        let builder = {
-            let context = context.borrow(py);
-            let builder = context.create_builder();
-            unsafe {
-                transmute::<inkwell::builder::Builder<'_>, inkwell::builder::Builder<'static>>(
-                    builder,
-                )
-            }
-        };
-
-        Self { builder, context }
-    }
-
     pub(crate) unsafe fn get(&self) -> &inkwell::builder::Builder<'static> {
         &self.builder
     }

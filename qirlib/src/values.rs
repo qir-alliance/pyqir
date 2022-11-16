@@ -6,6 +6,7 @@ use core::slice;
 use inkwell::{
     attributes::AttributeLoc,
     context::ContextRef,
+    module::Module,
     types::{AnyTypeEnum, PointerType},
     values::{AnyValueEnum, FunctionValue, PointerValue},
     LLVMReference,
@@ -51,6 +52,24 @@ pub fn result_id(value: AnyValueEnum) -> Option<u64> {
     } else {
         None
     }
+}
+
+pub fn entry_point<'ctx>(
+    module: &Module<'ctx>,
+    name: &str,
+    required_num_qubits: u64,
+    required_num_results: u64,
+) -> FunctionValue<'ctx> {
+    let context = module.get_context();
+    let ty = context.void_type().fn_type(&[], false);
+    let entry_point = module.add_function(name, ty, None);
+    entry_point.add_attribute(
+        AttributeLoc::Function,
+        context.create_string_attribute("EntryPoint", ""),
+    );
+    add_num_attribute(entry_point, "requiredQubits", required_num_qubits);
+    add_num_attribute(entry_point, "requiredResults", required_num_results);
+    entry_point
 }
 
 #[must_use]
@@ -107,6 +126,12 @@ pub fn constant_bytes(value: AnyValueEnum) -> Option<&[u8]> {
     Some(&data[offset..])
 }
 
+fn add_num_attribute(function: FunctionValue, key: &str, value: u64) {
+    let context = function.get_type().get_context();
+    let attribute = context.create_string_attribute(key, &value.to_string());
+    function.add_attribute(AttributeLoc::Function, attribute);
+}
+
 fn pointer_to_int(value: AnyValueEnum) -> Option<u64> {
     match value {
         AnyValueEnum::PointerValue(p) => {
@@ -122,5 +147,30 @@ fn is_byte_string(ty: PointerType) -> bool {
     match ty.get_element_type() {
         AnyTypeEnum::IntType(i) => i.get_bit_width() == 8,
         _ => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::assert_reference_ir;
+
+    #[test]
+    fn zero_required_qubits_results() -> Result<(), String> {
+        assert_reference_ir("module/zero_required_qubits_results", 0, 0, |_| ())
+    }
+
+    #[test]
+    fn one_required_qubit() -> Result<(), String> {
+        assert_reference_ir("module/one_required_qubit", 1, 0, |_| ())
+    }
+
+    #[test]
+    fn one_required_result() -> Result<(), String> {
+        assert_reference_ir("module/one_required_result", 0, 1, |_| ())
+    }
+
+    #[test]
+    fn many_required_qubits_results() -> Result<(), String> {
+        assert_reference_ir("module/many_required_qubits_results", 5, 7, |_| ())
     }
 }
