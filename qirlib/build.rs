@@ -273,7 +273,7 @@ fn get_llvm_tag() -> String {
     } else if cfg!(feature = "llvm13-0") {
         "llvmorg-13.0.1".to_owned() // 75e33f7
     } else if cfg!(feature = "llvm14-0") {
-        "llvmorg-14.0.3".to_owned() // 1f91400
+        "llvmorg-14.0.6".to_owned() // 28c006
     } else {
         panic!("Unsupported LLVM version. The LLVM feature flags or QIRLIB_LLVM_TAG must be set.")
     }
