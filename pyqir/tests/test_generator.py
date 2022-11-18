@@ -10,7 +10,7 @@ about the generated IR.
 import pytest
 
 import pyqir
-from pyqir import BasicQisBuilder, FunctionType, IntType, SimpleModule
+from pyqir import BasicQisBuilder, Context, FunctionType, IntType, SimpleModule
 
 
 def test_bell() -> None:
@@ -175,3 +175,17 @@ def test_ir_gate_ir() -> None:
     qis.h(m.qubits[0])
     ir2 = m.ir()
     assert "call void @__quantum__qis__h__body(%Qubit* null)" in ir2
+
+
+def test_shared_context() -> None:
+    context = Context()
+
+    m1 = SimpleModule("test", 1, 1, context)
+    qis1 = BasicQisBuilder(m1.builder)
+    qis1.mz(m1.qubits[0], m1.results[0])
+
+    m2 = SimpleModule("test", 1, 1, context)
+    qis2 = BasicQisBuilder(m2.builder)
+    qis2.mz(m2.qubits[0], m2.results[0])
+
+    assert m1.ir() == m2.ir()
