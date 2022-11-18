@@ -13,9 +13,11 @@ use inkwell::{
 use libc::c_uint;
 use llvm_sys::{
     core::{
-        LLVMAddFunction, LLVMBuildCall, LLVMDoubleTypeInContext, LLVMFunctionType,
-        LLVMGetBasicBlockParent, LLVMGetGlobalParent, LLVMGetInsertBlock, LLVMGetModuleContext,
-        LLVMGetNamedFunction, LLVMInt1TypeInContext, LLVMSetLinkage, LLVMVoidTypeInContext,
+        LLVMAddAttributeAtIndex, LLVMAddFunction, LLVMBuildCall, LLVMCreateStringAttribute,
+        LLVMCreateTypeAttribute, LLVMDoubleTypeInContext, LLVMFunctionType,
+        LLVMGetBasicBlockParent, LLVMGetEnumAttributeKindForName, LLVMGetGlobalParent,
+        LLVMGetInsertBlock, LLVMGetModuleContext, LLVMGetNamedFunction, LLVMInt1TypeInContext,
+        LLVMSetLinkage, LLVMVoidTypeInContext,
     },
     prelude::*,
     LLVMLinkage,
@@ -307,14 +309,34 @@ unsafe fn rotation_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
 
 unsafe fn mz(module: LLVMModuleRef) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
+    let result_type = types::result_unchecked(context);
     let ty = function_type(
         LLVMVoidTypeInContext(context),
-        &mut [
-            types::qubit_unchecked(context),
-            types::result_unchecked(context),
-        ],
+        &mut [types::qubit_unchecked(context), result_type],
     );
-    declare(module, "mz", Functor::Body, ty)
+    let function = declare(module, "mz", Functor::Body, ty);
+    let attr_name = "writeonly";
+    let kind_id = LLVMGetEnumAttributeKindForName(
+        attr_name.as_ptr() as *const ::libc::c_char,
+        attr_name.len(),
+    );
+    let attr = LLVMCreateTypeAttribute(context, kind_id, result_type);
+    // idx:
+    // - return: 0
+    // - param: index + 1
+    // - func: u32::max_value()
+    LLVMAddAttributeAtIndex(function, 2, attr);
+
+    let irreversable = "irreversible";
+    let irreversable_attr = LLVMCreateStringAttribute(
+        context,
+        irreversable.as_ptr() as *const _,
+        irreversable.len() as u32,
+        "".as_ptr() as *const _,
+        0,
+    );
+    LLVMAddAttributeAtIndex(function, u32::max_value(), irreversable_attr);
+    function
 }
 
 unsafe fn read_result(module: LLVMModuleRef) -> LLVMValueRef {
