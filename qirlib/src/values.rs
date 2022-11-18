@@ -77,6 +77,9 @@ pub fn is_entry_point(function: FunctionValue) -> bool {
     function
         .get_string_attribute(AttributeLoc::Function, "EntryPoint")
         .is_some()
+        || function
+            .get_string_attribute(AttributeLoc::Function, "entry_point")
+            .is_some()
 }
 
 #[must_use]
@@ -88,14 +91,34 @@ pub fn is_interop_friendly(function: FunctionValue) -> bool {
 
 #[must_use]
 pub fn required_num_qubits(function: FunctionValue) -> Option<u64> {
-    let attribute = function.get_string_attribute(AttributeLoc::Function, "requiredQubits")?;
-    attribute.get_string_value().to_str().ok()?.parse().ok()
+    if let Some(attribute) = function.get_string_attribute(AttributeLoc::Function, "requiredQubits")
+    {
+        attribute.get_string_value().to_str().ok()?.parse().ok()
+    } else {
+        let attribute =
+            function.get_string_attribute(AttributeLoc::Function, "required_num_qubits")?;
+        attribute.get_string_value().to_str().ok()?.parse().ok()
+    }
 }
 
 #[must_use]
 pub fn required_num_results(function: FunctionValue) -> Option<u64> {
-    let attribute = function.get_string_attribute(AttributeLoc::Function, "requiredResults")?;
-    attribute.get_string_value().to_str().ok()?.parse().ok()
+    if let Some(attribute) =
+        function.get_string_attribute(AttributeLoc::Function, "requiredResults")
+    {
+        attribute.get_string_value().to_str().ok()?.parse().ok()
+    } else {
+        let attribute =
+            function.get_string_attribute(AttributeLoc::Function, "required_num_results")?;
+        attribute.get_string_value().to_str().ok()?.parse().ok()
+    }
+}
+
+#[must_use]
+pub fn is_irreversible(function: FunctionValue) -> bool {
+    function
+        .get_string_attribute(AttributeLoc::Function, "irreversible")
+        .is_some()
 }
 
 #[must_use]
