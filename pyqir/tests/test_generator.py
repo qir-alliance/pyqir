@@ -7,8 +7,10 @@ IR string without errors. These tests are not meant to make detailed assertions
 about the generated IR.
 """
 
-from pyqir import BasicQisBuilder, SimpleModule
 import pytest
+
+import pyqir
+from pyqir import BasicQisBuilder, FunctionType, IntType, SimpleModule
 
 
 def test_bell() -> None:
@@ -103,9 +105,8 @@ def test_all_gates() -> None:
 
 def test_if() -> None:
     module = SimpleModule("If", num_qubits=1, num_results=1)
-    types = module.types
     qis = BasicQisBuilder(module.builder)
-    f = module.add_external_function("f", types.function(types.int(1), []))
+    f = module.add_external_function("f", FunctionType(IntType(module.context, 1), []))
 
     b = module.builder.call(f, [])
     assert b is not None
@@ -140,7 +141,10 @@ def test_multiple_contexts() -> None:
     with pytest.raises(
         ValueError, match=r"^Some objects come from a different context\.$"
     ):
-        m1.add_external_function("f", m1.types.function(m2.types.result, []))
+        m1.add_external_function(
+            "f",
+            FunctionType(pyqir.result_type(m1.context), [pyqir.qubit_type(m2.context)]),
+        )
 
 
 def test_ir_idempotence() -> None:

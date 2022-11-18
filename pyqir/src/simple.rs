@@ -8,19 +8,14 @@ use crate::{
     types::Type,
     values::Value,
 };
-use inkwell::{
-    context::ContextRef,
-    module::Linkage,
-    types::{AnyTypeEnum, BasicType, BasicTypeEnum},
-    AddressSpace,
-};
+use inkwell::{module::Linkage, types::AnyTypeEnum};
 use pyo3::{
     exceptions::{PyOSError, PyUnicodeDecodeError, PyValueError},
     prelude::*,
     types::PyBytes,
 };
-use qirlib::{passes, types, values};
-use std::{convert::Into, mem::transmute};
+use qirlib::{passes, values};
+use std::mem::transmute;
 
 /// A simple module represents an executable program with these restrictions:
 ///
@@ -36,7 +31,6 @@ use std::{convert::Into, mem::transmute};
 pub(crate) struct SimpleModule {
     module: Py<Module>,
     builder: Py<Builder>,
-    types: Py<TypeFactory>,
     num_qubits: u64,
     num_results: u64,
 }
@@ -62,15 +56,14 @@ impl SimpleModule {
         Ok(SimpleModule {
             module,
             builder,
-            types: Py::new(py, TypeFactory { context })?,
             num_qubits,
             num_results,
         })
     }
 
     #[getter]
-    fn types(&self) -> Py<TypeFactory> {
-        self.types.clone()
+    fn context(&self, py: Python) -> Py<Context> {
+        self.module.borrow(py).context().clone()
     }
 
     /// The global qubit register.
@@ -182,121 +175,6 @@ impl SimpleModule {
             .verify()
             .map_err(|e| PyValueError::new_err(e.to_string()))?;
         Ok(f(&module))
-    }
-}
-
-/// Provides access to all supported types.
-#[pyclass]
-pub(crate) struct TypeFactory {
-    context: Py<Context>,
-}
-
-#[pymethods]
-impl TypeFactory {
-    /// The void type.
-    ///
-    /// :type: Type
-    #[getter]
-    fn void(&self, py: Python) -> PyResult<PyObject> {
-        self.new_type(py, |context| context.void_type().into())
-    }
-
-    /// The boolean type.
-    ///
-    /// :type: Type
-    #[getter]
-    fn bool(&self, py: Python) -> PyResult<PyObject> {
-        self.new_type(py, |context| context.bool_type().into())
-    }
-
-    /// An integer type.
-    ///
-    /// :param int width: The number of bits in the integers.
-    /// :returns: The integer type.
-    /// :rtype: Type
-    #[pyo3(text_signature = "(width)")]
-    fn int(&self, py: Python, width: u32) -> PyResult<PyObject> {
-        self.new_type(py, |context| context.custom_width_int_type(width).into())
-    }
-
-    /// The double type.
-    ///
-    /// :type: Type
-    #[getter]
-    fn double(&self, py: Python) -> PyResult<PyObject> {
-        self.new_type(py, |context| context.f64_type().into())
-    }
-
-    /// The qubit type.
-    ///
-    /// :type: Type
-    #[getter]
-    fn qubit(&self, py: Python) -> PyResult<PyObject> {
-        self.new_type(py, |context| types::qubit(context).into())
-    }
-
-    /// The measurement result type.
-    ///
-    /// :type: Type
-    #[getter]
-    fn result(&self, py: Python) -> PyResult<PyObject> {
-        self.new_type(py, |context| types::result(context).into())
-    }
-
-    /// A pointer type.
-    ///
-    /// :param ty: The type pointed to.
-    /// :returns: The pointer type.
-    /// :rtype: Type
-    #[staticmethod]
-    #[pyo3(text_signature = "(ty)")]
-    #[allow(clippy::similar_names)]
-    fn pointer_to(py: Python, ty: &Type) -> PyResult<PyObject> {
-        let pointee = BasicTypeEnum::try_from(unsafe { ty.get() })
-            .map_err(|()| PyValueError::new_err("Type can't be pointed to."))?;
-        let pointer = pointee.ptr_type(AddressSpace::Generic);
-        unsafe { Type::from_any(py, ty.context().clone(), pointer.into()) }
-    }
-
-    /// A function type.
-    ///
-    /// :param Type ret: The return type.
-    /// :param List[Type] params: The parameter types.
-    /// :returns: The function type.
-    /// :rtype: Type
-    #[staticmethod]
-    #[pyo3(text_signature = "(ret, params)")]
-    #[allow(clippy::needless_pass_by_value)]
-    fn function(py: Python, ret: &Type, params: Vec<Py<Type>>) -> PyResult<PyObject> {
-        context::require_same(
-            py,
-            params
-                .iter()
-                .map(|t| t.borrow(py).context().clone())
-                .chain([ret.context().clone()]),
-        )?;
-
-        let ty = crate::types::function(
-            unsafe { &ret.get() },
-            params.iter().map(|t| unsafe {
-                transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(t.borrow(py).get())
-            }),
-        )
-        .ok_or_else(|| PyValueError::new_err("Invalid return or parameter type."))?;
-
-        unsafe { Type::from_any(py, ret.context().clone(), ty.into()) }
-    }
-}
-
-impl TypeFactory {
-    fn new_type(
-        &self,
-        py: Python,
-        f: impl for<'ctx> Fn(&ContextRef<'ctx>) -> AnyTypeEnum<'ctx>,
-    ) -> PyResult<PyObject> {
-        let context = self.context.borrow(py);
-        let ty = f(&context.void_type().get_context());
-        unsafe { Type::from_any(py, self.context.clone(), ty) }
     }
 }
 

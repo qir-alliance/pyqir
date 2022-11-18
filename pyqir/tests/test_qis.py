@@ -1,9 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir import BasicQisBuilder, SimpleModule, TypeFactory, Value, const
-import pytest
 from typing import Callable, Union
+
+import pytest
+
+import pyqir
+from pyqir import BasicQisBuilder, Context, SimpleModule, Type, Value
 
 
 @pytest.mark.parametrize(
@@ -73,18 +76,18 @@ def test_adjoint(
 @pytest.mark.parametrize(
     "get_value",
     [
-        lambda types: const(types.double, 1.0),
+        lambda context: pyqir.const(Type.double(context), 1.0),
         lambda _: 1.0,
     ],
 )
 def test_rotated(
     name: str,
     get_gate: Callable[[BasicQisBuilder], Callable[[Union[Value, float], Value], None]],
-    get_value: Callable[[TypeFactory], Union[Value, float]],
+    get_value: Callable[[Context], Union[Value, float]],
 ) -> None:
     mod = SimpleModule("test_rotated", 1, 0)
     qis = BasicQisBuilder(mod.builder)
-    get_gate(qis)(get_value(mod.types), mod.qubits[0])
+    get_gate(qis)(get_value(mod.context), mod.qubits[0])
     call = f"call void @__quantum__qis__{name}__body(double 1.000000e+00, %Qubit* null)"
     assert call in mod.ir()
 
