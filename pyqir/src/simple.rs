@@ -5,17 +5,16 @@ use crate::{
     builder::Builder,
     context::{self, Context},
     module::Module,
-    types::Type,
+    types::FunctionType,
     values::Value,
 };
-use inkwell::{module::Linkage, types::AnyTypeEnum};
+use inkwell::module::Linkage;
 use pyo3::{
     exceptions::{PyOSError, PyUnicodeDecodeError, PyValueError},
     prelude::*,
     types::PyBytes,
 };
 use qirlib::{passes, values};
-use std::mem::transmute;
 
 /// A simple module represents an executable program with these restrictions:
 ///
@@ -26,8 +25,9 @@ use std::mem::transmute;
 /// :param str name: The name of the module.
 /// :param int num_qubits: The number of statically allocated qubits.
 /// :param int num_results: The number of statically allocated results.
+/// :param Optional[Context] context: The global context.
 #[pyclass(unsendable)]
-#[pyo3(text_signature = "(name, num_qubits, num_results)")]
+#[pyo3(text_signature = "(name, num_qubits, num_results, context=None)")]
 pub(crate) struct SimpleModule {
     module: Py<Module>,
     builder: Py<Builder>,
@@ -38,8 +38,14 @@ pub(crate) struct SimpleModule {
 #[pymethods]
 impl SimpleModule {
     #[new]
-    fn new(py: Python, name: &str, num_qubits: u64, num_results: u64) -> PyResult<SimpleModule> {
-        let context = Py::new(py, Context::new())?;
+    fn new(
+        py: Python,
+        name: &str,
+        num_qubits: u64,
+        num_results: u64,
+        context: Option<Py<Context>>,
+    ) -> PyResult<SimpleModule> {
+        let context = context.map_or_else(|| Py::new(py, Context::new()), Ok)?;
         let module = Py::new(py, Module::new(py, context.clone(), name))?;
         let builder = Py::new(py, Builder::new(py, context.clone()))?;
 
@@ -127,15 +133,18 @@ impl SimpleModule {
     /// :return: The function value.
     /// :rtype: Function
     #[pyo3(text_signature = "(self, name, ty)")]
-    fn add_external_function(&mut self, py: Python, name: &str, ty: &Type) -> PyResult<PyObject> {
+    fn add_external_function(
+        &mut self,
+        py: Python,
+        name: &str,
+        ty: PyRef<FunctionType>,
+    ) -> PyResult<PyObject> {
         let module = self.module.borrow(py);
+        let function_ty = unsafe { ty.get() };
+        let ty = ty.into_super();
         context::require_same(py, [module.context(), ty.context()])?;
-
-        let context = ty.context().clone();
-        let ty = unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty.get()) }
-            .into_function_type();
-        let function = unsafe { module.get() }.add_function(name, ty, None);
-        unsafe { Value::from_any(py, context, function) }
+        let function = unsafe { module.get() }.add_function(name, function_ty, None);
+        unsafe { Value::from_any(py, ty.context().clone(), function) }
     }
 
     /// Adds a global null-terminated string constant to the module.

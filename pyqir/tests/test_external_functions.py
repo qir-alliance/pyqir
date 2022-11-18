@@ -386,3 +386,12 @@ def test_record_output() -> None:
         "call void @__quantum__rt__result_record_output(%Result* null, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0))"
         in ir
     )
+
+
+def test_simple_module_injected_context() -> None:
+    context = Context()
+    mod = SimpleModule("test", 0, 0, context)
+    i64 = IntType(context, 64)
+    f = mod.add_external_function("f", FunctionType(Type.void(context), [i64]))
+    mod.builder.call(f, [pyqir.const(i64, 0)])
+    assert "declare void @f(i64)" in mod.ir()
