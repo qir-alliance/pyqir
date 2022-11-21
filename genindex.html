@@ -117,13 +117,11 @@
 </li>
       <li><a href="api.html#pyqir.Opcode.BIT_CAST">BIT_CAST (pyqir.Opcode attribute)</a>
 </li>
-      <li><a href="api.html#pyqir.Module.bitcode">bitcode (pyqir.Module attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#pyqir.SimpleModule.bitcode">bitcode() (pyqir.SimpleModule method)</a>
+      <li><a href="api.html#pyqir.Module.bitcode">bitcode (pyqir.Module attribute)</a>
 </li>
-      <li><a href="api.html#pyqir.TypeFactory.bool">bool (pyqir.TypeFactory attribute)</a>
+      <li><a href="api.html#pyqir.SimpleModule.bitcode">bitcode() (pyqir.SimpleModule method)</a>
 </li>
       <li><a href="api.html#pyqir.Opcode.BR">BR (pyqir.Opcode attribute)</a>
 </li>
@@ -176,7 +174,11 @@
       <li><a href="api.html#pyqir.Context">Context (class in pyqir)</a>
 </li>
       <li><a href="api.html#pyqir.Module.context">context (pyqir.Module attribute)</a>
+
+      <ul>
+        <li><a href="api.html#pyqir.SimpleModule.context">(pyqir.SimpleModule attribute)</a>
 </li>
+      </ul></li>
       <li><a href="api.html#pyqir.ArrayType.count">count (pyqir.ArrayType attribute)</a>
 </li>
       <li><a href="api.html#pyqir.BasicQisBuilder.cx">cx() (pyqir.BasicQisBuilder method)</a>
@@ -205,8 +207,6 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#pyqir.TypeFactory.double">double (pyqir.TypeFactory attribute)</a>
-</li>
       <li><a href="api.html#pyqir.Type.double">double() (pyqir.Type static method)</a>
 </li>
   </ul></td>
@@ -265,10 +265,10 @@
 </li>
       <li><a href="api.html#pyqir.Opcode.FMUL">FMUL (pyqir.Opcode attribute)</a>
 </li>
-      <li><a href="api.html#pyqir.Opcode.FNEG">FNEG (pyqir.Opcode attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#pyqir.Opcode.FNEG">FNEG (pyqir.Opcode attribute)</a>
+</li>
       <li><a href="api.html#pyqir.Opcode.FP_EXT">FP_EXT (pyqir.Opcode attribute)</a>
 </li>
       <li><a href="api.html#pyqir.Opcode.FP_TO_SI">FP_TO_SI (pyqir.Opcode attribute)</a>
@@ -288,8 +288,6 @@
       <li><a href="api.html#pyqir.Opcode.FSUB">FSUB (pyqir.Opcode attribute)</a>
 </li>
       <li><a href="api.html#pyqir.Function">Function (class in pyqir)</a>
-</li>
-      <li><a href="api.html#pyqir.TypeFactory.function">function() (pyqir.TypeFactory static method)</a>
 </li>
       <li><a href="api.html#pyqir.Module.functions">functions (pyqir.Module attribute)</a>
 </li>
@@ -357,8 +355,6 @@
         <li><a href="api.html#pyqir.evaluator.GateLogger.instructions">(pyqir.evaluator.GateLogger attribute)</a>
 </li>
       </ul></li>
-      <li><a href="api.html#pyqir.TypeFactory.int">int() (pyqir.TypeFactory method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#pyqir.Opcode.INT_TO_PTR">INT_TO_PTR (pyqir.Opcode attribute)</a>
@@ -520,8 +516,6 @@
 </li>
       <li><a href="api.html#pyqir.PointerType.pointee">pointee (pyqir.PointerType attribute)</a>
 </li>
-      <li><a href="api.html#pyqir.TypeFactory.pointer_to">pointer_to() (pyqir.TypeFactory static method)</a>
-</li>
       <li><a href="api.html#pyqir.PointerType">PointerType (class in pyqir)</a>
 </li>
       <li><a href="api.html#pyqir.FCmp.predicate">predicate (pyqir.FCmp attribute)</a>
@@ -558,14 +552,12 @@
 <h2 id="Q">Q</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#pyqir.TypeFactory.qubit">qubit (pyqir.TypeFactory attribute)</a>
-</li>
       <li><a href="api.html#pyqir.qubit">qubit() (in module pyqir)</a>
+</li>
+      <li><a href="api.html#pyqir.qubit_id">qubit_id() (in module pyqir)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#pyqir.qubit_id">qubit_id() (in module pyqir)</a>
-</li>
       <li><a href="api.html#pyqir.qubit_type">qubit_type() (in module pyqir)</a>
 </li>
       <li><a href="api.html#pyqir.SimpleModule.qubits">qubits (pyqir.SimpleModule attribute)</a>
@@ -588,8 +580,6 @@
         <li><a href="api.html#pyqir.evaluator.GateSet.reset">(pyqir.evaluator.GateSet method)</a>
 </li>
       </ul></li>
-      <li><a href="api.html#pyqir.TypeFactory.result">result (pyqir.TypeFactory attribute)</a>
-</li>
       <li><a href="api.html#pyqir.result">result() (in module pyqir)</a>
 </li>
       <li><a href="api.html#pyqir.result_id">result_id() (in module pyqir)</a>
@@ -600,10 +590,10 @@
 </li>
       <li><a href="api.html#pyqir.Opcode.RESUME">RESUME (pyqir.Opcode attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#pyqir.FunctionType.ret">ret (pyqir.FunctionType attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#pyqir.Opcode.RET">RET (pyqir.Opcode attribute)</a>
 </li>
       <li><a href="api.html#pyqir.Builder.ret">ret() (pyqir.Builder method)</a>
@@ -732,10 +722,6 @@
 </li>
       <li><a href="api.html#pyqir.Value.type">type (pyqir.Value attribute)</a>
 </li>
-      <li><a href="api.html#pyqir.TypeFactory">TypeFactory (class in pyqir)</a>
-</li>
-      <li><a href="api.html#pyqir.SimpleModule.types">types (pyqir.SimpleModule attribute)</a>
-</li>
   </ul></td>
 </tr></table>
 
@@ -807,8 +793,6 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#pyqir.verify_module">verify_module() (in module pyqir)</a>
-</li>
-      <li><a href="api.html#pyqir.TypeFactory.void">void (pyqir.TypeFactory attribute)</a>
 </li>
       <li><a href="api.html#pyqir.Type.void">void() (pyqir.Type static method)</a>
 </li>

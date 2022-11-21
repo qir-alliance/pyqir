@@ -1640,6 +1640,7 @@ allocated with a fixed size.</p></li>
 <li><p><strong>name</strong> (<em>str</em>) – The name of the module.</p></li>
 <li><p><strong>num_qubits</strong> (<em>int</em>) – The number of statically allocated qubits.</p></li>
 <li><p><strong>num_results</strong> (<em>int</em>) – The number of statically allocated results.</p></li>
+<li><p><strong>context</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#pyqir.Context" title="pyqir.Context"><em>Context</em></a><em>]</em>) – The global context.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1702,6 +1703,11 @@ allocated with a fixed size.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.SimpleModule.context">
+<span class="sig-name descname"><span class="pre">context</span></span><a class="headerlink" href="#pyqir.SimpleModule.context" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.SimpleModule.ir">
 <span class="sig-name descname"><span class="pre">ir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.SimpleModule.ir" title="Permalink to this definition">¶</a></dt>
@@ -1734,11 +1740,6 @@ allocated with a fixed size.</p></li>
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pyqir.SimpleModule.types">
-<span class="sig-name descname"><span class="pre">types</span></span><a class="headerlink" href="#pyqir.SimpleModule.types" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 
@@ -1862,122 +1863,6 @@ allocated with a fixed size.</p></li>
 <dd class="field-even"><p>The void type.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Type" title="pyqir.Type">Type</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="pyqir.TypeFactory">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">TypeFactory</span></span><a class="headerlink" href="#pyqir.TypeFactory" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Provides access to all supported types.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pyqir.TypeFactory.bool">
-<span class="sig-name descname"><span class="pre">bool</span></span><a class="headerlink" href="#pyqir.TypeFactory.bool" title="Permalink to this definition">¶</a></dt>
-<dd><p>The boolean type.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Type" title="pyqir.Type">Type</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pyqir.TypeFactory.double">
-<span class="sig-name descname"><span class="pre">double</span></span><a class="headerlink" href="#pyqir.TypeFactory.double" title="Permalink to this definition">¶</a></dt>
-<dd><p>The double type.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Type" title="pyqir.Type">Type</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pyqir.TypeFactory.function">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ret</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.TypeFactory.function" title="Permalink to this definition">¶</a></dt>
-<dd><p>A function type.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ret</strong> (<a class="reference internal" href="#pyqir.Type" title="pyqir.Type"><em>Type</em></a>) – The return type.</p></li>
-<li><p><strong>params</strong> (<em>List</em><em>[</em><a class="reference internal" href="#pyqir.Type" title="pyqir.Type"><em>Type</em></a><em>]</em>) – The parameter types.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The function type.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Type" title="pyqir.Type">Type</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pyqir.TypeFactory.int">
-<span class="sig-name descname"><span class="pre">int</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.TypeFactory.int" title="Permalink to this definition">¶</a></dt>
-<dd><p>An integer type.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>width</strong> (<em>int</em>) – The number of bits in the integers.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The integer type.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Type" title="pyqir.Type">Type</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pyqir.TypeFactory.pointer_to">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pointer_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.TypeFactory.pointer_to" title="Permalink to this definition">¶</a></dt>
-<dd><p>A pointer type.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ty</strong> – The type pointed to.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The pointer type.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Type" title="pyqir.Type">Type</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pyqir.TypeFactory.qubit">
-<span class="sig-name descname"><span class="pre">qubit</span></span><a class="headerlink" href="#pyqir.TypeFactory.qubit" title="Permalink to this definition">¶</a></dt>
-<dd><p>The qubit type.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Type" title="pyqir.Type">Type</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pyqir.TypeFactory.result">
-<span class="sig-name descname"><span class="pre">result</span></span><a class="headerlink" href="#pyqir.TypeFactory.result" title="Permalink to this definition">¶</a></dt>
-<dd><p>The measurement result type.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Type" title="pyqir.Type">Type</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pyqir.TypeFactory.void">
-<span class="sig-name descname"><span class="pre">void</span></span><a class="headerlink" href="#pyqir.TypeFactory.void" title="Permalink to this definition">¶</a></dt>
-<dd><p>The void type.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#pyqir.Type" title="pyqir.Type">Type</a></p>
 </dd>
 </dl>
