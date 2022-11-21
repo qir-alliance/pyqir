@@ -198,7 +198,29 @@ pub(crate) struct Constant;
 
 #[pymethods]
 impl Constant {
-    /// Whether this value is the null pointer.
+    /// Creates the null or zero constant for the given type.
+    ///
+    /// :param Type type: The type of the constant.
+    /// :returns: The null or zero constant.
+    /// :rtype: Constant
+    #[staticmethod]
+    #[pyo3(text_signature = "(ty)")]
+    fn null(py: Python, ty: &Type) -> PyResult<PyObject> {
+        let value: AnyValueEnum = match unsafe { ty.get() } {
+            AnyTypeEnum::ArrayType(a) => Ok(a.const_zero().into()),
+            AnyTypeEnum::FloatType(f) => Ok(f.const_zero().into()),
+            AnyTypeEnum::IntType(i) => Ok(i.const_zero().into()),
+            AnyTypeEnum::PointerType(p) => Ok(p.const_zero().into()),
+            AnyTypeEnum::StructType(s) => Ok(s.const_zero().into()),
+            AnyTypeEnum::VectorType(v) => Ok(v.const_zero().into()),
+            AnyTypeEnum::FunctionType(_) | AnyTypeEnum::VoidType(_) => {
+                Err(PyValueError::new_err("Can't create null for this type."))
+            }
+        }?;
+        unsafe { Value::from_any(py, ty.context().clone(), value) }
+    }
+
+    /// Whether this value is the null value for its type.
     ///
     /// :type: bool
     #[getter]
