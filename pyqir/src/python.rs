@@ -10,7 +10,7 @@ use crate::{
     },
     module::{verify_module, Attribute, Module},
     qis::BasicQisBuilder,
-    simple::{SimpleModule, TypeFactory},
+    simple::SimpleModule,
     types::{
         is_qubit_type, is_result_type, qubit_type, result_type, ArrayType, FunctionType, IntType,
         PointerType, StructType, Type,
@@ -53,7 +53,6 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<StructType>()?;
     m.add_class::<Switch>()?;
     m.add_class::<Type>()?;
-    m.add_class::<TypeFactory>()?;
     m.add_class::<Value>()?;
     m.add_function(wrap_pyfunction!(const_getelementptr, m)?)?;
     m.add_function(wrap_pyfunction!(constant_bytes, m)?)?;

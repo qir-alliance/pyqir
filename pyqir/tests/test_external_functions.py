@@ -1,33 +1,38 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+import re
+from typing import Any, Callable, List, Union
+
+import pytest
+
+import pyqir
 from pyqir import (
     BasicQisBuilder,
+    Context,
+    FunctionType,
+    IntType,
+    PointerType,
     SimpleModule,
     Type,
-    TypeFactory,
     Value,
-    const,
-    const_getelementptr,
 )
-import re
-import pytest
-from typing import Any, Callable, List, Union
 
 
 def test_call_no_params() -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
-    f = mod.add_external_function("test_function", types.function(types.void, []))
+    f = mod.add_external_function(
+        "test_function", FunctionType(Type.void(mod.context), [])
+    )
     mod.builder.call(f, [])
     assert "call void @test_function()" in mod.ir()
 
 
 def test_call_single_qubit() -> None:
     mod = SimpleModule("test", 1, 0)
-    types = mod.types
     f = mod.add_external_function(
-        "test_function", types.function(types.void, [types.qubit])
+        "test_function",
+        FunctionType(Type.void(mod.context), [pyqir.qubit_type(mod.context)]),
     )
     mod.builder.call(f, [mod.qubits[0]])
     assert "call void @test_function(%Qubit* null)" in mod.ir()
@@ -35,10 +40,10 @@ def test_call_single_qubit() -> None:
 
 def test_call_two_qubits() -> None:
     mod = SimpleModule("test", 2, 0)
-    types = mod.types
+    qubit = pyqir.qubit_type(mod.context)
     f = mod.add_external_function(
         "test_function",
-        types.function(types.void, [types.qubit, types.qubit]),
+        FunctionType(Type.void(mod.context), [qubit, qubit]),
     )
     mod.builder.call(f, [mod.qubits[0], mod.qubits[1]])
     assert (
@@ -48,60 +53,58 @@ def test_call_two_qubits() -> None:
 
 
 @pytest.mark.parametrize(
-    "get_value", [lambda types: const(types.double, 23.25), lambda _: 23.25]
+    "get_value",
+    [lambda context: pyqir.const(Type.double(context), 23.25), lambda _: 23.25],
 )
-def test_call_double(get_value: Callable[[TypeFactory], Union[Value, float]]) -> None:
+def test_call_double(get_value: Callable[[Context], Union[Value, float]]) -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
     f = mod.add_external_function(
         "test_function",
-        types.function(types.void, [types.double]),
+        FunctionType(Type.void(mod.context), [Type.double(mod.context)]),
     )
-    mod.builder.call(f, [get_value(types)])
+    mod.builder.call(f, [get_value(mod.context)])
     assert "call void @test_function(double 2.325000e+01)" in mod.ir()
 
 
 @pytest.mark.parametrize(
-    "get_value", [lambda types: const(types.int(64), 42), lambda _: 42]
+    "get_value",
+    [lambda context: pyqir.const(IntType(context, 64), 42), lambda _: 42],
 )
-def test_call_int(get_value: Callable[[TypeFactory], Union[Value, int]]) -> None:
+def test_call_int(get_value: Callable[[Context], Union[Value, int]]) -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
     f = mod.add_external_function(
         "test_function",
-        types.function(types.void, [types.int(64)]),
+        FunctionType(Type.void(mod.context), [IntType(mod.context, 64)]),
     )
-    mod.builder.call(f, [get_value(types)])
+    mod.builder.call(f, [get_value(mod.context)])
     assert "call void @test_function(i64 42)" in mod.ir()
 
 
 @pytest.mark.parametrize(
-    "get_value", [lambda types: const(types.bool, True), lambda _: True]
+    "get_value",
+    [lambda context: pyqir.const(IntType(context, 1), True), lambda _: True],
 )
-def test_call_bool_true(get_value: Callable[[TypeFactory], Union[Value, bool]]) -> None:
+def test_call_bool_true(get_value: Callable[[Context], Union[Value, bool]]) -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
     f = mod.add_external_function(
         "test_function",
-        types.function(types.void, [types.bool]),
+        FunctionType(Type.void(mod.context), [IntType(mod.context, 1)]),
     )
-    mod.builder.call(f, [get_value(types)])
+    mod.builder.call(f, [get_value(mod.context)])
     assert "call void @test_function(i1 true)" in mod.ir()
 
 
 @pytest.mark.parametrize(
-    "get_value", [lambda types: const(types.bool, False), lambda _: False]
+    "get_value",
+    [lambda context: pyqir.const(IntType(context, 1), False), lambda _: False],
 )
-def test_call_bool_false(
-    get_value: Callable[[TypeFactory], Union[Value, bool]]
-) -> None:
+def test_call_bool_false(get_value: Callable[[Context], Union[Value, bool]]) -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
     f = mod.add_external_function(
         "test_function",
-        types.function(types.void, [types.bool]),
+        FunctionType(Type.void(mod.context), [IntType(mod.context, 1)]),
     )
-    mod.builder.call(f, [get_value(types)])
+    mod.builder.call(f, [get_value(mod.context)])
     assert "call void @test_function(i1 false)" in mod.ir()
 
 
@@ -109,10 +112,9 @@ def test_call_single_result() -> None:
     mod = SimpleModule("test", 1, 1)
     qis = BasicQisBuilder(mod.builder)
     qis.mz(mod.qubits[0], mod.results[0])
-
-    types = mod.types
     f = mod.add_external_function(
-        "test_function", types.function(types.void, [types.result])
+        "test_function",
+        FunctionType(Type.void(mod.context), [pyqir.result_type(mod.context)]),
     )
     mod.builder.call(f, [mod.results[0]])
     assert "call void @test_function(%Result* null)" in mod.ir()
@@ -124,10 +126,9 @@ def test_call_two_results() -> None:
     qis.mz(mod.qubits[0], mod.results[0])
     qis.mz(mod.qubits[0], mod.results[1])
 
-    types = mod.types
+    result = pyqir.result_type(mod.context)
     f = mod.add_external_function(
-        "test_function",
-        types.function(types.void, [types.result, types.result]),
+        "test_function", FunctionType(Type.void(mod.context), [result, result])
     )
     mod.builder.call(f, [mod.results[1], mod.results[0]])
 
@@ -139,21 +140,20 @@ def test_call_two_results() -> None:
 
 def test_call_numbers() -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
+    void = Type.void(mod.context)
+    i1 = IntType(mod.context, 1)
+    i64 = IntType(mod.context, 64)
+    double = Type.double(mod.context)
 
-    b = const(types.bool, True)
+    b = pyqir.const(i1, True)
     bool_rep = f"i1 true"
-    i = const(types.int(64), 42)
+    i = pyqir.const(i64, 42)
     int_rep = f"i64 42"
-    d = const(types.double, 42.42)
+    d = pyqir.const(double, 42.42)
     double_rep = "double 4.242000e+01"
 
     f = mod.add_external_function(
-        "test_function",
-        types.function(
-            types.void,
-            [types.bool, types.int(64), types.double],
-        ),
+        "test_function", FunctionType(void, [i1, i64, double])
     )
     mod.builder.call(f, [b, i, d])
     assert f"call void @test_function({bool_rep}, {int_rep}, {double_rep})" in mod.ir()
@@ -162,20 +162,19 @@ def test_call_numbers() -> None:
 @pytest.mark.parametrize(
     "get_types, args",
     [
-        (lambda types: [types.bool], ["true"]),
-        (lambda types: [types.int(64)], [1.23]),
-        (lambda types: [types.int(64)], ["123"]),
-        (lambda types: [types.double], ["1.23"]),
+        (lambda context: [IntType(context, 1)], ["true"]),
+        (lambda context: [IntType(context, 64)], [1.23]),
+        (lambda context: [IntType(context, 64)], ["123"]),
+        (lambda context: [Type.double(context)], ["1.23"]),
     ],
 )
 def test_wrong_type_conversion(
-    get_types: Callable[[TypeFactory], List[Type]], args: List[Any]
+    get_types: Callable[[Context], List[Type]], args: List[Any]
 ) -> None:
     mod = SimpleModule("test", 1, 1)
-    types = mod.types
     f = mod.add_external_function(
         "test_function",
-        types.function(types.void, get_types(types)),
+        FunctionType(Type.void(mod.context), get_types(mod.context)),
     )
     with pytest.raises(TypeError):
         mod.builder.call(f, args)
@@ -183,9 +182,9 @@ def test_wrong_type_conversion(
 
 def test_overflow_bool_value() -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
-    f = mod.add_external_function("f", types.function(types.void, [types.bool]))
-    b = const(types.bool, 123)
+    i1 = IntType(mod.context, 1)
+    f = mod.add_external_function("f", FunctionType(Type.void(mod.context), [i1]))
+    b = pyqir.const(i1, 123)
     mod.builder.call(f, [b])
     assert "call void @f(i1 true)" in mod.ir()
 
@@ -193,30 +192,32 @@ def test_overflow_bool_value() -> None:
 def test_underflow_bool_value() -> None:
     mod = SimpleModule("test", 0, 0)
     with pytest.raises(OverflowError):
-        const(mod.types.bool, -123)
+        pyqir.const(IntType(mod.context, 1), -123)
 
 
 def test_overflow_bool_literal() -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
-    f = mod.add_external_function("f", types.function(types.void, [types.bool]))
+    f = mod.add_external_function(
+        "f", FunctionType(Type.void(mod.context), [IntType(mod.context, 1)])
+    )
     mod.builder.call(f, [123])
     assert "call void @f(i1 true)" in mod.ir()
 
 
 def test_underflow_bool_literal() -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
-    f = mod.add_external_function("f", types.function(types.void, [types.bool]))
+    f = mod.add_external_function(
+        "f", FunctionType(Type.void(mod.context), [IntType(mod.context, 1)])
+    )
     with pytest.raises(OverflowError):
         mod.builder.call(f, [-123])
 
 
 def test_overflow_int_value() -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
-    f = mod.add_external_function("f", types.function(types.void, [types.int(32)]))
-    i = const(types.int(32), 2**32 + 123)
+    i32 = IntType(mod.context, 32)
+    f = mod.add_external_function("f", FunctionType(Type.void(mod.context), [i32]))
+    i = pyqir.const(i32, 2**32 + 123)
     mod.builder.call(f, [i])
     assert "call void @f(i32 123)" in mod.ir()
 
@@ -224,21 +225,23 @@ def test_overflow_int_value() -> None:
 def test_underflow_int_value() -> None:
     mod = SimpleModule("test", 0, 0)
     with pytest.raises(OverflowError):
-        const(mod.types.int(32), -(2**32) - 123)
+        pyqir.const(IntType(mod.context, 32), -(2**32) - 123)
 
 
 def test_overflow_int_literal() -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
-    f = mod.add_external_function("f", types.function(types.void, [types.int(32)]))
+    f = mod.add_external_function(
+        "f", FunctionType(Type.void(mod.context), [IntType(mod.context, 32)])
+    )
     mod.builder.call(f, [2**32 + 123])
     assert "call void @f(i32 123)" in mod.ir()
 
 
 def test_underflow_int_literal() -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
-    f = mod.add_external_function("f", types.function(types.void, [types.int(32)]))
+    f = mod.add_external_function(
+        "f", FunctionType(Type.void(mod.context), [IntType(mod.context, 32)])
+    )
     with pytest.raises(OverflowError):
         mod.builder.call(f, [-(2**32) - 123])
 
@@ -246,30 +249,28 @@ def test_underflow_int_literal() -> None:
 def test_64_bit_overflow() -> None:
     mod = SimpleModule("test", 0, 0)
     with pytest.raises(OverflowError):
-        const(mod.types.int(128), 2**64)
+        pyqir.const(IntType(mod.context, 128), 2**64)
 
 
 @pytest.mark.parametrize(
     "get_args",
     [
         lambda _: [],
-        lambda types: [const(types.double, 1.23)],
-        lambda types: [
-            const(types.double, 1.23),
-            const(types.bool, True),
-            const(types.bool, False),
+        lambda context: [pyqir.const(Type.double(context), 1.23)],
+        lambda context: [
+            pyqir.const(Type.double(context), 1.23),
+            pyqir.const(IntType(context, 1), True),
+            pyqir.const(IntType(context, 1), False),
         ],
     ],
 )
-def test_wrong_number_of_args(get_args: Callable[[TypeFactory], List[Value]]) -> None:
+def test_wrong_number_of_args(get_args: Callable[[Context], List[Value]]) -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
-    args = get_args(types)
+    args = get_args(mod.context)
 
-    param_types: List[Type] = [types.double, types.bool]
+    param_types: List[Type] = [Type.double(mod.context), IntType(mod.context, 1)]
     f = mod.add_external_function(
-        "test_function",
-        types.function(types.void, param_types),
+        "test_function", FunctionType(Type.void(mod.context), param_types)
     )
 
     message = f"Expected {len(param_types)} arguments, got {len(args)}."
@@ -279,12 +280,9 @@ def test_wrong_number_of_args(get_args: Callable[[TypeFactory], List[Value]]) ->
 
 def test_variable() -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
-    foo = mod.add_external_function("foo", types.function(types.int(64), []))
-    bar = mod.add_external_function(
-        "bar",
-        types.function(types.void, [types.int(64)]),
-    )
+    i64 = IntType(mod.context, 64)
+    foo = mod.add_external_function("foo", FunctionType(i64, []))
+    bar = mod.add_external_function("bar", FunctionType(Type.void(mod.context), [i64]))
 
     x = mod.builder.call(foo, [])
     assert x is not None
@@ -297,9 +295,10 @@ def test_variable() -> None:
 
 def test_variable_wrong_external_type() -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
-    foo = mod.add_external_function("foo", types.function(types.int(64), []))
-    bar = mod.add_external_function("bar", types.function(types.void, [types.qubit]))
+    foo = mod.add_external_function("foo", FunctionType(IntType(mod.context, 64), []))
+    bar = mod.add_external_function(
+        "bar", FunctionType(Type.void(mod.context), [pyqir.qubit_type(mod.context)])
+    )
 
     x = mod.builder.call(foo, [])
     assert x is not None
@@ -313,9 +312,8 @@ def test_variable_wrong_external_type() -> None:
 
 def test_variable_wrong_angle_type() -> None:
     mod = SimpleModule("test", 1, 0)
-    types = mod.types
     qis = BasicQisBuilder(mod.builder)
-    foo = mod.add_external_function("foo", types.function(types.int(64), []))
+    foo = mod.add_external_function("foo", FunctionType(IntType(mod.context, 64), []))
 
     x = mod.builder.call(foo, [])
     assert x is not None
@@ -327,14 +325,10 @@ def test_variable_wrong_angle_type() -> None:
 
 def test_two_variables() -> None:
     mod = SimpleModule("test", 0, 0)
-    types = mod.types
-    foo = mod.add_external_function("foo", types.function(types.int(64), []))
+    i64 = IntType(mod.context, 64)
+    foo = mod.add_external_function("foo", FunctionType(i64, []))
     bar = mod.add_external_function(
-        "bar",
-        types.function(
-            types.void,
-            [types.int(64), types.int(64)],
-        ),
+        "bar", FunctionType(Type.void(mod.context), [i64, i64])
     )
 
     x = mod.builder.call(foo, [])
@@ -351,9 +345,8 @@ def test_two_variables() -> None:
 
 def test_computed_rotation() -> None:
     mod = SimpleModule("test", 1, 0)
-    types = mod.types
     qis = BasicQisBuilder(mod.builder)
-    foo = mod.add_external_function("foo", types.function(types.double, []))
+    foo = mod.add_external_function("foo", FunctionType(Type.double(mod.context), []))
 
     theta = mod.builder.call(foo, [])
     assert theta is not None
@@ -369,23 +362,36 @@ def test_computed_rotation() -> None:
 
 
 def test_record_output() -> None:
-    m = SimpleModule("test", 0, 1)
-    result_record_output = m.add_external_function(
+    mod = SimpleModule("test", 0, 1)
+    result_record_output = mod.add_external_function(
         "__quantum__rt__result_record_output",
-        m.types.function(
-            m.types.void, [m.types.result, m.types.pointer_to(m.types.int(8))]
+        FunctionType(
+            Type.void(mod.context),
+            [pyqir.result_type(mod.context), PointerType(IntType(mod.context, 8))],
         ),
     )
-    tag = m.add_global_string(b"foo")
-    i32 = m.types.int(32)
-    m.builder.call(
+    tag = mod.add_global_string(b"foo")
+    i32 = IntType(mod.context, 32)
+    mod.builder.call(
         result_record_output,
-        [m.results[0], const_getelementptr(tag, [const(i32, 0), const(i32, 0)])],
+        [
+            mod.results[0],
+            pyqir.const_getelementptr(tag, [pyqir.const(i32, 0), pyqir.const(i32, 0)]),
+        ],
     )
 
-    ir = m.ir()
+    ir = mod.ir()
     assert r'@0 = internal constant [4 x i8] c"foo\00"' in ir
     assert (
         "call void @__quantum__rt__result_record_output(%Result* null, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0))"
         in ir
     )
+
+
+def test_simple_module_injected_context() -> None:
+    context = Context()
+    mod = SimpleModule("test", 0, 0, context)
+    i64 = IntType(context, 64)
+    f = mod.add_external_function("f", FunctionType(Type.void(context), [i64]))
+    mod.builder.call(f, [pyqir.const(i64, 0)])
+    assert "declare void @f(i64)" in mod.ir()

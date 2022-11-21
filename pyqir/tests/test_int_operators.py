@@ -2,9 +2,20 @@
 # Licensed under the MIT License.
 
 from functools import partial
-from pyqir import Builder, IntPredicate, SimpleModule, Value, const
-import pytest
 from typing import Callable, List, Tuple
+
+import pytest
+
+import pyqir
+from pyqir import (
+    Builder,
+    FunctionType,
+    IntPredicate,
+    IntType,
+    SimpleModule,
+    Type,
+    Value,
+)
 
 _OPERATORS: List[Tuple[str, Callable[[Builder], Callable[[Value, Value], Value]]]] = [
     ("and", lambda b: b.and_),
@@ -33,10 +44,10 @@ def test_variable_variable(
     name: str, build: Callable[[Builder], Callable[[Value, Value], Value]]
 ) -> None:
     mod = SimpleModule("test " + name, 0, 0)
-    types = mod.types
-    source = mod.add_external_function("source", types.function(types.int(64), []))
-    ty = types.bool if name.startswith("icmp") else types.int(64)
-    sink = mod.add_external_function("sink", types.function(types.void, [ty]))
+    i64 = IntType(mod.context, 64)
+    source = mod.add_external_function("source", FunctionType(i64, []))
+    ty = IntType(mod.context, 1) if name.startswith("icmp") else i64
+    sink = mod.add_external_function("sink", FunctionType(Type.void(mod.context), [ty]))
     x = mod.builder.call(source, [])
     assert x is not None
     y = mod.builder.call(source, [])
@@ -51,28 +62,27 @@ def test_constant_variable(
     name: str, build: Callable[[Builder], Callable[[Value, Value], Value]]
 ) -> None:
     mod = SimpleModule("test " + name, 0, 0)
-    types = mod.types
-    source = mod.add_external_function("source", types.function(types.int(64), []))
-    ty = types.bool if name.startswith("icmp") else types.int(64)
-    sink = mod.add_external_function("sink", types.function(types.void, [ty]))
+    i64 = IntType(mod.context, 64)
+    source = mod.add_external_function("source", FunctionType(i64, []))
+    ty = IntType(mod.context, 1) if name.startswith("icmp") else i64
+    sink = mod.add_external_function("sink", FunctionType(Type.void(mod.context), [ty]))
     x = mod.builder.call(source, [])
     assert x is not None
-    y = build(mod.builder)(const(types.int(64), 1), x)
+    y = build(mod.builder)(pyqir.const(i64, 1), x)
     mod.builder.call(sink, [y])
     assert f"%1 = {name} i64 1, %0" in mod.ir()
 
 
 def test_type_mismatch() -> None:
     mod = SimpleModule("test_type_mismatch", 0, 0)
-    types = mod.types
-    source = mod.add_external_function("source", types.function(types.int(16), []))
+    i16 = IntType(mod.context, 16)
+    source = mod.add_external_function("source", FunctionType(i16, []))
     sink = mod.add_external_function(
-        "sink",
-        types.function(types.void, [types.int(16)]),
+        "sink", FunctionType(Type.void(mod.context), [i16])
     )
     x = mod.builder.call(source, [])
     assert x is not None
-    y = mod.builder.add(x, const(types.int(18), 2))
+    y = mod.builder.add(x, pyqir.const(IntType(mod.context, 18), 2))
     mod.builder.call(sink, [y])
     with pytest.raises(OSError):
         mod.ir()
