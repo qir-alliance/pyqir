@@ -1,12 +1,22 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from abc import ABCMeta, abstractmethod
-from pyqir import BasicQisBuilder, IntPredicate, SimpleModule, const
-from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
-import pytest
 import tempfile
+from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, List, Optional
+
+import pytest
+
+import pyqir
+from pyqir import (
+    BasicQisBuilder,
+    FunctionType,
+    IntPredicate,
+    IntType,
+    SimpleModule,
+    Type,
+)
+from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
 
 
 class _Brancher(metaclass=ABCMeta):
@@ -72,10 +82,10 @@ class _ResultBrancher(_Brancher):
 class _BoolBrancher(_Brancher):
     def __init__(self, num_queries: int) -> None:
         self._brancher = _ResultBrancher(num_queries)
-        types = self.module.types
+        context = self.module.context
         self._read_result = self._brancher.module.add_external_function(
             "__quantum__qis__read_result__body",
-            types.function(types.bool, [types.result]),
+            FunctionType(IntType(context, 1), [pyqir.result_type(context)]),
         )
 
     @property
@@ -341,7 +351,9 @@ def test_icmp_if_true() -> None:
     brancher = _BoolBrancher(1)
     x = brancher.oracle()
     module = brancher.module
-    cond = module.builder.icmp(IntPredicate.EQ, x, const(module.types.bool, 0))
+    cond = module.builder.icmp(
+        IntPredicate.EQ, x, pyqir.const(IntType(module.context, 1), 0)
+    )
 
     qis = BasicQisBuilder(module.builder)
     brancher.if_(
@@ -359,7 +371,9 @@ def test_icmp_if_false() -> None:
     brancher = _BoolBrancher(1)
     x = brancher.oracle()
     module = brancher.module
-    cond = module.builder.icmp(IntPredicate.EQ, x, const(module.types.bool, 0))
+    cond = module.builder.icmp(
+        IntPredicate.EQ, x, pyqir.const(IntType(module.context, 1), 0)
+    )
 
     qis = BasicQisBuilder(brancher.module.builder)
     brancher.if_(
@@ -379,11 +393,11 @@ def test_arithmetic_in_branch(result: bool) -> None:
     cond = brancher.oracle()
     module = brancher.module
     qis = BasicQisBuilder(module.builder)
-    i32 = module.types.int(32)
+    i32 = IntType(module.context, 32)
 
     def true() -> None:
-        four = module.builder.add(const(i32, 2), const(i32, 2))
-        cond = module.builder.icmp(IntPredicate.EQ, four, const(i32, 4))
+        four = module.builder.add(pyqir.const(i32, 2), pyqir.const(i32, 2))
+        cond = module.builder.icmp(IntPredicate.EQ, four, pyqir.const(i32, 4))
         module.builder.if_(cond, lambda: qis.x(module.qubits[0]))
 
     brancher.if_(cond, true)
@@ -398,10 +412,10 @@ def test_arithmetic_in_branch(result: bool) -> None:
 def test_call_in_branch(result: bool) -> None:
     brancher = _BoolBrancher(1)
     module = brancher.module
-    types = module.types
+    context = module.context
     x = module.add_external_function(
         "__quantum__qis__x__body",
-        types.function(types.void, [types.qubit]),
+        FunctionType(Type.void(context), [pyqir.qubit_type(context)]),
     )
 
     cond = brancher.oracle()
