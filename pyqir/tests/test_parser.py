@@ -2,6 +2,9 @@
 # Licensed under the MIT License.
 
 from pathlib import Path
+
+import pytest
+
 from pyqir import (
     BasicBlock,
     Call,
@@ -11,7 +14,7 @@ from pyqir import (
     IntType,
     Module,
     Opcode,
-    constant_bytes,
+    extract_bytes,
     is_entry_point,
     is_interop_friendly,
     is_qubit_type,
@@ -19,7 +22,6 @@ from pyqir import (
     required_num_qubits,
     result_id,
 )
-import pytest
 
 
 def test_parser() -> None:
@@ -130,7 +132,7 @@ def test_global_string() -> None:
     assert isinstance(call, Call)
     assert call.callee.name == "__quantum__rt__string_create"
 
-    value = constant_bytes(call.args[0])
+    value = extract_bytes(call.args[0])
     assert value is not None
     assert value.decode("utf-8") == "Hello World!\0"
 

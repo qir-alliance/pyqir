@@ -835,8 +835,8 @@ pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
 /// :returns: The constant byte array.
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
-pub(crate) fn constant_bytes<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
-    let bytes = values::constant_bytes(unsafe { value.get() }.try_into().ok()?)?;
+pub(crate) fn extract_bytes<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
+    let bytes = values::extract_bytes(unsafe { value.get() }.try_into().ok()?)?;
     Some(PyBytes::new(py, bytes))
 }
 
