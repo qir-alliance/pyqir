@@ -84,3 +84,19 @@ def test_invalid_module() -> None:
         verify_module(module)
         == "Basic Block in function 'main' does not have terminator!\nlabel %0\n"
     )
+
+
+def test_multiple_blocks() -> None:
+    context = Context()
+    module = Module(context, "test")
+    main = entry_point(module, "main", 0, 0)
+
+    builder = Builder(context)
+    builder.insert_at_end(BasicBlock(context, "entry", main))
+    exit = BasicBlock(context, "exit", main)
+    builder.br(exit)
+    builder.insert_at_end(exit)
+    builder.ret(None)
+
+    assert verify_module(module) is None
+    assert "br label %exit" in str(module)
