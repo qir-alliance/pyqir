@@ -113,16 +113,11 @@ impl Value {
 ///
 /// :param Context context: The global context.
 /// :param str name: The block name.
-/// :param Union[Function, BasicBlock] insertion:
-///     Append the block to the given function or insert the block after the given block.
+/// :param Optional[Function] parent: The parent function.
+/// :param Optional[BasicBlock] before: The block to insert this block before.
 #[pyclass(extends = Value, unsendable)]
+#[pyo3(text_signature = "(context, name, parent=None, before=None)")]
 pub(crate) struct BasicBlock(inkwell::basic_block::BasicBlock<'static>);
-
-#[derive(FromPyObject)]
-enum BlockInsertion {
-    AppendTo(Py<Function>),
-    InsertAfter(Py<BasicBlock>),
-}
 
 #[pymethods]
 impl BasicBlock {
@@ -131,18 +126,20 @@ impl BasicBlock {
         py: Python,
         context: Py<Context>,
         name: &str,
-        insertion: BlockInsertion,
-    ) -> PyClassInitializer<Self> {
+        parent: Option<&Function>,
+        before: Option<&BasicBlock>,
+    ) -> PyResult<PyClassInitializer<Self>> {
         let block = {
             let context = context.borrow(py);
-            let block = match insertion {
-                BlockInsertion::AppendTo(function) => {
-                    context.append_basic_block(function.borrow(py).0, name)
-                }
-                BlockInsertion::InsertAfter(block) => {
-                    context.insert_basic_block_after(block.borrow(py).0, name)
-                }
-            };
+            let block = match (parent, before) {
+                (None, None) => Err(PyValueError::new_err("Can't create block without parent.")),
+                (Some(parent), None) => Ok(context.append_basic_block(parent.0, name)),
+                (Some(parent), Some(before)) if before.0.get_parent() != Some(parent.0) => Err(
+                    PyValueError::new_err("Insert before block isn't in parent function."),
+                ),
+                (_, Some(before)) => Ok(context.prepend_basic_block(before.0, name)),
+            }?;
+
             unsafe {
                 transmute::<
                     inkwell::basic_block::BasicBlock<'_>,
@@ -152,7 +149,7 @@ impl BasicBlock {
         };
 
         let value = block.into();
-        PyClassInitializer::from(Value { value, context }).add_subclass(Self(block))
+        Ok(PyClassInitializer::from(Value { value, context }).add_subclass(Self(block)))
     }
 
     /// The instructions in this basic block.

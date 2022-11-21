@@ -143,7 +143,11 @@ class Value:
 
 class BasicBlock(Value):
     def __init__(
-        self, context: Context, name: str, insertion: Union[Function, BasicBlock]
+        self,
+        context: Context,
+        name: str,
+        parent: Optional[Function] = None,
+        before: Optional[BasicBlock] = None,
     ) -> None: ...
     @property
     def instructions(self) -> List[Instruction]: ...
