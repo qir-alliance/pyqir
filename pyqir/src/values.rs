@@ -232,10 +232,9 @@ impl Constant {
 impl Constant {
     unsafe fn from_any(py: Python, context: Py<Context>, value: AnyValue) -> PyResult<PyObject> {
         let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
-        let kind = unsafe { LLVMGetValueKind(value.get_ref()) };
         let base = PyClassInitializer::from(Value { value, context }).add_subclass(Constant);
 
-        if kind == LLVMValueKind::LLVMConstantExprValueKind {
+        if LLVMGetValueKind(value.get_ref()) == LLVMValueKind::LLVMConstantExprValueKind {
             Ok(Py::new(py, base.add_subclass(ConstantExpr))?.to_object(py))
         } else if value.is_const() {
             match value.try_into() {
