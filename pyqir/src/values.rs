@@ -21,11 +21,10 @@ use inkwell::{
 use libc::c_char;
 use llvm_sys::{
     core::{
-        LLVMBasicBlockAsValue, LLVMDisposeMessage, LLVMGetValueKind, LLVMGetValueName2,
-        LLVMIsConstant, LLVMPrintValueToString,
+        LLVMBasicBlockAsValue, LLVMDisposeMessage, LLVMGetValueName2, LLVMIsConstant,
+        LLVMPrintValueToString,
     },
     prelude::*,
-    LLVMValueKind,
 };
 use pyo3::{
     conversion::ToPyObject,
@@ -235,12 +234,9 @@ impl Constant {
 
 impl Constant {
     unsafe fn from_any(py: Python, context: Py<Context>, value: AnyValue) -> PyResult<PyObject> {
-        let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
-        let base = PyClassInitializer::from(Value { value, context }).add_subclass(Constant);
-
-        if LLVMGetValueKind(value.get_ref()) == LLVMValueKind::LLVMConstantExprValueKind {
-            Ok(Py::new(py, base.add_subclass(ConstantExpr))?.to_object(py))
-        } else if value.is_const() {
+        if value.is_const() {
+            let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
+            let base = PyClassInitializer::from(Value { value, context }).add_subclass(Constant);
             match value.try_into() {
                 Ok(AnyValueEnum::IntValue(_)) => {
                     Ok(Py::new(py, base.add_subclass(IntConstant))?.to_object(py))
@@ -409,41 +405,6 @@ impl From<Linkage> for inkwell::module::Linkage {
             Linkage::WeakAny => Self::WeakAny,
             Linkage::WeakOdr => Self::WeakODR,
         }
-    }
-}
-
-#[pyclass(extends = Constant)]
-pub(crate) struct ConstantExpr;
-
-#[pymethods]
-impl ConstantExpr {
-    /// Creates a `getelementptr` (GEP) constant expression.
-    ///
-    /// :param Value value: The aggregate value.
-    /// :param Sequence[Value] indices: The indices of the element.
-    /// :param bool inbounds: Whether to create an in-bounds GEP.
-    /// :returns: The GEP constant expression.
-    /// :rtype: ConstantExpr
-    #[staticmethod]
-    #[allow(clippy::needless_pass_by_value)]
-    fn getelementptr(
-        py: Python,
-        constant: PyRef<Constant>,
-        indices: Vec<Value>,
-        inbounds: bool,
-    ) -> PyResult<PyObject> {
-        let value = constant.into_super();
-        let indices = indices
-            .iter()
-            .map(|i| IntValue::try_from(i.value).map_err(Into::into))
-            .collect::<PyResult<Vec<_>>>()?;
-        let pointer = PointerValue::try_from(value.value)?;
-        let gep = if inbounds {
-            unsafe { pointer.const_in_bounds_gep(&indices) }
-        } else {
-            unsafe { pointer.const_gep(&indices) }
-        };
-        unsafe { Value::from_any(py, value.context.clone(), gep) }
     }
 }
 
@@ -729,6 +690,36 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject
     let context = ty.context().clone();
     let value = extract_constant(unsafe { &ty.get() }, value)?;
     unsafe { Value::from_any(py, context, value) }
+}
+
+/// Creates a `getelementptr` (GEP) constant expression.
+///
+/// :param Value value: The aggregate value.
+/// :param Sequence[Value] indices: The indices of the element.
+/// :param bool inbounds: Whether to create an in-bounds GEP.
+/// :returns: The GEP constant expression.
+/// :rtype: ConstantExpr
+#[pyfunction]
+#[pyo3(text_signature = "(constant, indices, inbounds)")]
+#[allow(clippy::needless_pass_by_value)]
+pub(crate) fn const_getelementptr(
+    py: Python,
+    constant: PyRef<Constant>,
+    indices: Vec<Value>,
+    inbounds: bool,
+) -> PyResult<PyObject> {
+    let value = constant.into_super();
+    let indices = indices
+        .iter()
+        .map(|i| IntValue::try_from(i.value).map_err(Into::into))
+        .collect::<PyResult<Vec<_>>>()?;
+    let pointer = PointerValue::try_from(value.value)?;
+    let gep = if inbounds {
+        unsafe { pointer.const_in_bounds_gep(&indices) }
+    } else {
+        unsafe { pointer.const_gep(&indices) }
+    };
+    unsafe { Value::from_any(py, value.context.clone(), gep) }
 }
 
 /// Creates a static qubit value.

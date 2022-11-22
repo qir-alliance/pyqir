@@ -16,9 +16,9 @@ use crate::{
         PointerType, StructType, Type,
     },
     values::{
-        entry_point, extract_bytes, is_entry_point, is_interop_friendly, qubit, qubit_id, r#const,
-        required_num_qubits, required_num_results, result, result_id, BasicBlock, Constant,
-        ConstantExpr, FloatConstant, Function, IntConstant, Linkage, Value,
+        const_getelementptr, entry_point, extract_bytes, is_entry_point, is_interop_friendly,
+        qubit, qubit_id, r#const, required_num_qubits, required_num_results, result, result_id,
+        BasicBlock, Constant, FloatConstant, Function, IntConstant, Linkage, Value,
     },
 };
 use pyo3::prelude::*;
@@ -32,7 +32,6 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Builder>()?;
     m.add_class::<Call>()?;
     m.add_class::<Constant>()?;
-    m.add_class::<ConstantExpr>()?;
     m.add_class::<Context>()?;
     m.add_class::<FCmp>()?;
     m.add_class::<FloatConstant>()?;
@@ -55,6 +54,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Switch>()?;
     m.add_class::<Type>()?;
     m.add_class::<Value>()?;
+    m.add_function(wrap_pyfunction!(const_getelementptr, m)?)?;
     m.add_function(wrap_pyfunction!(entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(extract_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;

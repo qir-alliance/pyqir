@@ -10,7 +10,6 @@ import pyqir
 from pyqir import (
     BasicQisBuilder,
     Constant,
-    ConstantExpr,
     Context,
     FunctionType,
     IntType,
@@ -378,7 +377,7 @@ def test_record_output() -> None:
         result_record_output,
         [
             mod.results[0],
-            ConstantExpr.getelementptr(
+            pyqir.const_getelementptr(
                 tag, [pyqir.const(i32, 0), pyqir.const(i32, 0)], inbounds=True
             ),
         ],
