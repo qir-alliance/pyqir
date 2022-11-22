@@ -696,17 +696,15 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject
 ///
 /// :param Value value: The aggregate value.
 /// :param Sequence[Value] indices: The indices of the element.
-/// :param bool inbounds: Whether to create an in-bounds GEP.
 /// :returns: The GEP constant expression.
 /// :rtype: ConstantExpr
 #[pyfunction]
-#[pyo3(text_signature = "(constant, indices, inbounds)")]
+#[pyo3(text_signature = "(constant, indices)")]
 #[allow(clippy::needless_pass_by_value)]
 pub(crate) fn const_getelementptr(
     py: Python,
     constant: PyRef<Constant>,
     indices: Vec<Value>,
-    inbounds: bool,
 ) -> PyResult<PyObject> {
     let value = constant.into_super();
     let indices = indices
@@ -714,11 +712,7 @@ pub(crate) fn const_getelementptr(
         .map(|i| IntValue::try_from(i.value).map_err(Into::into))
         .collect::<PyResult<Vec<_>>>()?;
     let pointer = PointerValue::try_from(value.value)?;
-    let gep = if inbounds {
-        unsafe { pointer.const_in_bounds_gep(&indices) }
-    } else {
-        unsafe { pointer.const_gep(&indices) }
-    };
+    let gep = unsafe { pointer.const_gep(&indices) };
     unsafe { Value::from_any(py, value.context.clone(), gep) }
 }
 
