@@ -87,12 +87,16 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">BasicBlock</span></span><a class="headerlink" href="#pyqir.BasicBlock" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pyqir.Value" title="pyqir.Value"><code class="xref py py-class docutils literal notranslate"><span class="pre">Value</span></code></a></p>
 <p>A basic block.</p>
+<p>If the <cite>before</cite> block is given, this basic block is inserted directly before it. If no <cite>before</cite>
+block is given, a <cite>parent</cite> function must be given, and this basic block is appended to the end
+of that function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>context</strong> (<a class="reference internal" href="#pyqir.Context" title="pyqir.Context"><em>Context</em></a>) – The global context.</p></li>
 <li><p><strong>name</strong> (<em>str</em>) – The block name.</p></li>
-<li><p><strong>insertion</strong> (<em>Union</em><em>[</em><a class="reference internal" href="#pyqir.Function" title="pyqir.Function"><em>Function</em></a><em>, </em><a class="reference internal" href="#pyqir.BasicBlock" title="pyqir.BasicBlock"><em>BasicBlock</em></a><em>]</em>) – Append the block to the given function or insert the block after the given block.</p></li>
+<li><p><strong>parent</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#pyqir.Function" title="pyqir.Function"><em>Function</em></a><em>]</em>) – The parent function.</p></li>
+<li><p><strong>before</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#pyqir.BasicBlock" title="pyqir.BasicBlock"><em>BasicBlock</em></a><em>]</em>) – The block to insert this block before.</p></li>
 </ul>
 </dd>
 </dl>
@@ -432,6 +436,23 @@ and zero callables should use this module’s builder to build instructions.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pyqir.Builder.br">
+<span class="sig-name descname"><span class="pre">br</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.br" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts an unconditional branch instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dest</strong> (<a class="reference internal" href="#pyqir.BasicBlock" title="pyqir.BasicBlock"><em>BasicBlock</em></a>) – The destination block.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The branch instruction.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Instruction" title="pyqir.Instruction">Instruction</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pyqir.Builder.call">
 <span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callee</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.call" title="Permalink to this definition">¶</a></dt>
 <dd><p>Inserts a call instruction.</p>
@@ -677,10 +698,27 @@ true and false callables should use this module’s builder to build instruction
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyqir.Constant.is_null">
 <span class="sig-name descname"><span class="pre">is_null</span></span><a class="headerlink" href="#pyqir.Constant.is_null" title="Permalink to this definition">¶</a></dt>
-<dd><p>Whether this value is the null pointer.</p>
+<dd><p>Whether this value is the null value for its type.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.Constant.null">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">null</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Constant.null" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the null or zero constant for the given type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>type</strong> (<a class="reference internal" href="#pyqir.Type" title="pyqir.Type"><em>Type</em></a>) – The type of the constant.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The null or zero constant.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Constant" title="pyqir.Constant">Constant</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1916,8 +1954,8 @@ allocated with a fixed size.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pyqir.const_getelementptr">
-<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">const_getelementptr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.const_getelementptr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a <cite>getelementptr</cite> constant expression.</p>
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">const_getelementptr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.const_getelementptr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a <cite>getelementptr</cite> (GEP) constant expression.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1926,27 +1964,10 @@ allocated with a fixed size.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A pointer to the element.</p>
+<dd class="field-even"><p>The GEP constant expression.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Value" title="pyqir.Value">Value</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pyqir.constant_bytes">
-<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">constant_bytes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.constant_bytes" title="Permalink to this definition">¶</a></dt>
-<dd><p>If the value is a pointer to a constant byte array, extracts it.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> (<a class="reference internal" href="#pyqir.Value" title="pyqir.Value"><em>Value</em></a>) – The value.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Optional[bytes]</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The constant byte array.</p>
+<dd class="field-odd"><p>ConstantExpr</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1969,6 +1990,23 @@ allocated with a fixed size.</p></li>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#pyqir.Function" title="pyqir.Function">Function</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyqir.extract_bytes">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">extract_bytes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.extract_bytes" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the value is a pointer to a constant byte array, extracts it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<a class="reference internal" href="#pyqir.Value" title="pyqir.Value"><em>Value</em></a>) – The value.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[bytes]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The constant byte array.</p>
 </dd>
 </dl>
 </dd></dl>
