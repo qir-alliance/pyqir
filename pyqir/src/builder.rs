@@ -276,11 +276,27 @@ impl Builder {
         )
     }
 
+    /// Inserts an unconditional branch instruction.
+    ///
+    /// :param BasicBlock dest: The destination block.
+    /// :returns: The branch instruction.
+    /// :rtype: Instruction
+    #[pyo3(text_signature = "(dest)")]
+    #[allow(clippy::needless_pass_by_value)]
+    fn br(&self, py: Python, dest: PyRef<BasicBlock>) -> PyResult<PyObject> {
+        context::require_same(py, [&self.context, dest.as_ref().context()])?;
+        let inst = self
+            .builder
+            .build_unconditional_branch(unsafe { dest.get() });
+        unsafe { Value::from_any(py, self.context.clone(), inst) }
+    }
+
     /// Inserts a return instruction.
     ///
     /// :param Value value: The value to return. If `None`, returns void.
     /// :returns: The return instruction.
     /// :rtype: Instruction
+    #[pyo3(text_signature = "(value)")]
     fn ret(&self, py: Python, value: Option<&Value>) -> PyResult<PyObject> {
         let inst = match value {
             None => self.builder.build_return(None),

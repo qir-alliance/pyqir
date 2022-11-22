@@ -9,6 +9,7 @@ import pytest
 import pyqir
 from pyqir import (
     BasicQisBuilder,
+    Constant,
     Context,
     FunctionType,
     IntType,
@@ -395,3 +396,11 @@ def test_simple_module_injected_context() -> None:
     f = mod.add_external_function("f", FunctionType(Type.void(context), [i64]))
     mod.builder.call(f, [pyqir.const(i64, 0)])
     assert "declare void @f(i64)" in mod.ir()
+
+
+def test_null_pointer() -> None:
+    mod = SimpleModule("test", 0, 0)
+    i8p = PointerType(IntType(mod.context, 8))
+    f = mod.add_external_function("f", FunctionType(Type.void(mod.context), [i8p]))
+    mod.builder.call(f, [Constant.null(i8p)])
+    assert "call void @f(i8* null)" in mod.ir()

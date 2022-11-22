@@ -111,18 +111,17 @@ impl Value {
 
 /// A basic block.
 ///
+/// If the `before` block is given, this basic block is inserted directly before it. If no `before`
+/// block is given, a `parent` function must be given, and this basic block is appended to the end
+/// of that function.
+///
 /// :param Context context: The global context.
 /// :param str name: The block name.
-/// :param Union[Function, BasicBlock] insertion:
-///     Append the block to the given function or insert the block after the given block.
+/// :param Optional[Function] parent: The parent function.
+/// :param Optional[BasicBlock] before: The block to insert this block before.
 #[pyclass(extends = Value, unsendable)]
+#[pyo3(text_signature = "(context, name, parent=None, before=None)")]
 pub(crate) struct BasicBlock(inkwell::basic_block::BasicBlock<'static>);
-
-#[derive(FromPyObject)]
-enum BlockInsertion {
-    AppendTo(Py<Function>),
-    InsertAfter(Py<BasicBlock>),
-}
 
 #[pymethods]
 impl BasicBlock {
@@ -131,18 +130,20 @@ impl BasicBlock {
         py: Python,
         context: Py<Context>,
         name: &str,
-        insertion: BlockInsertion,
-    ) -> PyClassInitializer<Self> {
+        parent: Option<&Function>,
+        before: Option<&BasicBlock>,
+    ) -> PyResult<PyClassInitializer<Self>> {
         let block = {
             let context = context.borrow(py);
-            let block = match insertion {
-                BlockInsertion::AppendTo(function) => {
-                    context.append_basic_block(function.borrow(py).0, name)
-                }
-                BlockInsertion::InsertAfter(block) => {
-                    context.insert_basic_block_after(block.borrow(py).0, name)
-                }
-            };
+            let block = match (parent, before) {
+                (None, None) => Err(PyValueError::new_err("Can't create block without parent.")),
+                (Some(parent), None) => Ok(context.append_basic_block(parent.0, name)),
+                (Some(parent), Some(before)) if before.0.get_parent() != Some(parent.0) => Err(
+                    PyValueError::new_err("Insert before block isn't in parent function."),
+                ),
+                (_, Some(before)) => Ok(context.prepend_basic_block(before.0, name)),
+            }?;
+
             unsafe {
                 transmute::<
                     inkwell::basic_block::BasicBlock<'_>,
@@ -152,7 +153,7 @@ impl BasicBlock {
         };
 
         let value = block.into();
-        PyClassInitializer::from(Value { value, context }).add_subclass(Self(block))
+        Ok(PyClassInitializer::from(Value { value, context }).add_subclass(Self(block)))
     }
 
     /// The instructions in this basic block.
@@ -200,7 +201,29 @@ pub(crate) struct Constant;
 
 #[pymethods]
 impl Constant {
-    /// Whether this value is the null pointer.
+    /// Creates the null or zero constant for the given type.
+    ///
+    /// :param Type type: The type of the constant.
+    /// :returns: The null or zero constant.
+    /// :rtype: Constant
+    #[staticmethod]
+    #[pyo3(text_signature = "(ty)")]
+    fn null(py: Python, ty: &Type) -> PyResult<PyObject> {
+        let value: AnyValueEnum = match unsafe { ty.get() } {
+            AnyTypeEnum::ArrayType(a) => Ok(a.const_zero().into()),
+            AnyTypeEnum::FloatType(f) => Ok(f.const_zero().into()),
+            AnyTypeEnum::IntType(i) => Ok(i.const_zero().into()),
+            AnyTypeEnum::PointerType(p) => Ok(p.const_zero().into()),
+            AnyTypeEnum::StructType(s) => Ok(s.const_zero().into()),
+            AnyTypeEnum::VectorType(v) => Ok(v.const_zero().into()),
+            AnyTypeEnum::FunctionType(_) | AnyTypeEnum::VoidType(_) => {
+                Err(PyValueError::new_err("Can't create null for this type."))
+            }
+        }?;
+        unsafe { Value::from_any(py, ty.context().clone(), value) }
+    }
+
+    /// Whether this value is the null value for its type.
     ///
     /// :type: bool
     #[getter]
@@ -669,25 +692,27 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject
     unsafe { Value::from_any(py, context, value) }
 }
 
-/// Creates a `getelementptr` constant expression.
+/// Creates a `getelementptr` (GEP) constant expression.
 ///
 /// :param Value value: The aggregate value.
 /// :param Sequence[Value] indices: The indices of the element.
-/// :returns: A pointer to the element.
-/// :rtype: Value
+/// :returns: The GEP constant expression.
+/// :rtype: ConstantExpr
 #[pyfunction]
-#[pyo3(text_signature = "(value, indices)")]
+#[pyo3(text_signature = "(constant, indices)")]
 #[allow(clippy::needless_pass_by_value)]
 pub(crate) fn const_getelementptr(
     py: Python,
-    value: &Value,
+    constant: PyRef<Constant>,
     indices: Vec<Value>,
 ) -> PyResult<PyObject> {
+    let value = constant.into_super();
     let indices = indices
         .iter()
         .map(|i| IntValue::try_from(i.value).map_err(Into::into))
         .collect::<PyResult<Vec<_>>>()?;
-    let gep = unsafe { PointerValue::try_from(value.value)?.const_in_bounds_gep(&indices) };
+    let pointer = PointerValue::try_from(value.value)?;
+    let gep = unsafe { pointer.const_gep(&indices) };
     unsafe { Value::from_any(py, value.context.clone(), gep) }
 }
 
@@ -821,8 +846,8 @@ pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
 /// :returns: The constant byte array.
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
-pub(crate) fn constant_bytes<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
-    let bytes = values::constant_bytes(unsafe { value.get() }.try_into().ok()?)?;
+pub(crate) fn extract_bytes<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
+    let bytes = values::extract_bytes(unsafe { value.get() }.try_into().ok()?)?;
     Some(PyBytes::new(py, bytes))
 }
 

@@ -100,7 +100,7 @@ pub fn required_num_results(function: FunctionValue) -> Option<u64> {
 
 #[must_use]
 #[allow(clippy::missing_panics_doc)]
-pub fn constant_bytes(value: AnyValueEnum) -> Option<&[u8]> {
+pub fn extract_bytes(value: AnyValueEnum) -> Option<&[u8]> {
     let pointer = match value {
         AnyValueEnum::PointerValue(p) if is_byte_string(p.get_type()) => Some(p),
         _ => None,
