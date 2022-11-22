@@ -20,9 +20,25 @@ use llvm_sys::{
         LLVMSetLinkage, LLVMVoidTypeInContext,
     },
     prelude::*,
-    LLVMLinkage,
+    LLVMAttributeFunctionIndex, LLVMAttributeReturnIndex, LLVMLinkage,
 };
 use std::{ffi::CString, ptr::NonNull};
+
+pub enum AttributeIndex {
+    Return,
+    Param(u32),
+    Function,
+}
+
+impl From<AttributeIndex> for u32 {
+    fn from(index: AttributeIndex) -> u32 {
+        match index {
+            AttributeIndex::Return => LLVMAttributeReturnIndex,
+            AttributeIndex::Function => LLVMAttributeFunctionIndex,
+            AttributeIndex::Param(param) => param + 1,
+        }
+    }
+}
 
 pub trait BuilderExt<'ctx> {
     fn build_cx(&self, control: PointerValue, qubit: PointerValue);
@@ -316,27 +332,25 @@ unsafe fn mz(module: LLVMModuleRef) -> LLVMValueRef {
     );
     let function = declare(module, "mz", Functor::Body, ty);
     let attr_name = "writeonly";
-    let kind_id = LLVMGetEnumAttributeKindForName(
-        attr_name.as_ptr() as *const ::libc::c_char,
-        attr_name.len(),
-    );
+    let kind_id = LLVMGetEnumAttributeKindForName(attr_name.as_ptr().cast::<i8>(), attr_name.len());
     let attr = LLVMCreateTypeAttribute(context, kind_id, result_type);
-    // idx:
-    // - return: 0
-    // - param: index + 1
-    // - func: u32::max_value()
-    LLVMAddAttributeAtIndex(function, 2, attr);
+    LLVMAddAttributeAtIndex(function, AttributeIndex::Param(1).into(), attr);
 
+    add_irreversible_attr(context, function);
+    function
+}
+
+#[allow(clippy::cast_possible_truncation)]
+unsafe fn add_irreversible_attr(context: LLVMContextRef, function: LLVMValueRef) {
     let irreversable = "irreversible";
     let irreversable_attr = LLVMCreateStringAttribute(
         context,
-        irreversable.as_ptr() as *const _,
+        irreversable.as_ptr().cast::<i8>(),
         irreversable.len() as u32,
-        "".as_ptr() as *const _,
+        "".as_ptr().cast::<i8>(),
         0,
     );
-    LLVMAddAttributeAtIndex(function, u32::max_value(), irreversable_attr);
-    function
+    LLVMAddAttributeAtIndex(function, AttributeIndex::Function.into(), irreversable_attr);
 }
 
 unsafe fn read_result(module: LLVMModuleRef) -> LLVMValueRef {
