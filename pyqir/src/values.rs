@@ -112,6 +112,10 @@ impl Value {
 
 /// A basic block.
 ///
+/// If the `before` block is given, this basic block is inserted directly before it. If no `before`
+/// block is given, a `parent` function must be given, and this basic block is appended to the end
+/// of that function.
+///
 /// :param Context context: The global context.
 /// :param str name: The block name.
 /// :param Optional[Function] parent: The parent function.
