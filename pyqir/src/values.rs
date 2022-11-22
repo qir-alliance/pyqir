@@ -428,10 +428,11 @@ impl ConstantExpr {
     #[allow(clippy::needless_pass_by_value)]
     fn getelementptr(
         py: Python,
-        value: &Value,
+        constant: PyRef<Constant>,
         indices: Vec<Value>,
         inbounds: bool,
     ) -> PyResult<PyObject> {
+        let value = constant.into_super();
         let indices = indices
             .iter()
             .map(|i| IntValue::try_from(i.value).map_err(Into::into))
