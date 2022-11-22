@@ -34,6 +34,22 @@ def test_single(
 @pytest.mark.parametrize(
     "name, get_gate",
     [
+        ("swap", lambda qis: qis.swap),
+    ],
+)
+def test_two_qubit_gates(
+    name: str, get_gate: Callable[[BasicQisBuilder], Callable[[Value, Value], None]]
+) -> None:
+    mod = SimpleModule("test_two_qubit_gates", 2, 0)
+    qis = BasicQisBuilder(mod.builder)
+    get_gate(qis)(mod.qubits[0], mod.qubits[1])
+    call = f"call void @__quantum__qis__{name}__body(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*))"
+    assert call in mod.ir()
+
+
+@pytest.mark.parametrize(
+    "name, get_gate",
+    [
         ("cnot", lambda qis: qis.cx),
         ("cz", lambda qis: qis.cz),
     ],

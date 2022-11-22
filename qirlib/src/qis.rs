@@ -51,6 +51,8 @@ pub trait BuilderExt<'ctx> {
 
     fn build_s_adj(&self, qubit: PointerValue);
 
+    fn build_swap(&self, qubit1: PointerValue, qubit2: PointerValue);
+
     fn build_t(&self, qubit: PointerValue);
 
     fn build_t_adj(&self, qubit: PointerValue);
@@ -134,6 +136,16 @@ impl<'ctx> BuilderExt<'ctx> for Builder<'ctx> {
                 self.get_ref(),
                 simple_gate(builder_module(self.get_ref()), "s", Functor::Adjoint),
                 &mut [qubit.get_ref()],
+            );
+        }
+    }
+
+    fn build_swap(&self, qubit1: PointerValue, qubit2: PointerValue) {
+        unsafe {
+            build_call(
+                self.get_ref(),
+                two_qubit_gate(builder_module(self.get_ref()), "swap", Functor::Body),
+                &mut [qubit1.get_ref(), qubit2.get_ref()],
             );
         }
     }
@@ -300,6 +312,18 @@ unsafe fn simple_gate(module: LLVMModuleRef, name: &str, functor: Functor) -> LL
     let ty = function_type(
         LLVMVoidTypeInContext(context),
         &mut [types::qubit_unchecked(context)],
+    );
+    declare(module, name, functor, ty)
+}
+
+unsafe fn two_qubit_gate(module: LLVMModuleRef, name: &str, functor: Functor) -> LLVMValueRef {
+    let context = LLVMGetModuleContext(module);
+    let ty = function_type(
+        LLVMVoidTypeInContext(context),
+        &mut [
+            types::qubit_unchecked(context),
+            types::qubit_unchecked(context),
+        ],
     );
     declare(module, name, functor, ty)
 }
@@ -538,6 +562,14 @@ mod tests {
         assert_reference_ir("qis/read_result", 1, 1, |builder| unsafe {
             let context = builder.get_insert_block().unwrap().get_context();
             build_read_result(builder.get_ref(), result(&context, 0).get_ref());
+        })
+    }
+
+    #[test]
+    fn swap() -> Result<(), String> {
+        assert_reference_ir("qis/swap", 2, 0, |builder| {
+            let context = builder.get_insert_block().unwrap().get_context();
+            builder.build_swap(qubit(&context, 0), qubit(&context, 1));
         })
     }
 

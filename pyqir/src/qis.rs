@@ -182,6 +182,22 @@ impl BasicQisBuilder {
         Ok(())
     }
 
+    /// Inserts a swap gate
+    ///
+    /// :param Value qubit1: The first qubit to apply the gate to.
+    /// :param Value qubit2: The second qubit to apply the gate to.
+    /// :rtype: None
+    #[pyo3(text_signature = "(self, qubit1, qubit2)")]
+    fn swap(&self, py: Python, qubit1: &Value, qubit2: &Value) -> PyResult<()> {
+        let builder = self.builder.borrow(py);
+        context::require_same(py, [builder.context(), qubit1.context(), qubit2.context()])?;
+        unsafe { builder.get() }.build_swap(
+            unsafe { qubit1.get() }.try_into()?,
+            unsafe { qubit2.get() }.try_into()?,
+        );
+        Ok(())
+    }
+
     /// Inserts a :math:`T` gate.
     ///
     /// :param Value qubit: The target qubit.
