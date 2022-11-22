@@ -285,7 +285,7 @@ unsafe fn build_read_result(builder: LLVMBuilderRef, result: LLVMValueRef) -> LL
     build_call(builder, read_result(builder_module(builder)), &mut [result])
 }
 
-unsafe fn build_call(
+pub(crate) unsafe fn build_call(
     builder: LLVMBuilderRef,
     function: LLVMValueRef,
     args: &mut [LLVMValueRef],
@@ -299,7 +299,7 @@ unsafe fn build_call(
     )
 }
 
-unsafe fn builder_module(builder: LLVMBuilderRef) -> LLVMModuleRef {
+pub(crate) unsafe fn builder_module(builder: LLVMBuilderRef) -> LLVMModuleRef {
     NonNull::new(LLVMGetInsertBlock(builder))
         .and_then(|b| NonNull::new(LLVMGetBasicBlockParent(b.as_ptr())))
         .and_then(|v| NonNull::new(LLVMGetGlobalParent(v.as_ptr())))
@@ -407,7 +407,7 @@ unsafe fn declare(
     }
 }
 
-unsafe fn function_type(ret: LLVMTypeRef, params: &mut [LLVMTypeRef]) -> LLVMTypeRef {
+pub(crate) unsafe fn function_type(ret: LLVMTypeRef, params: &mut [LLVMTypeRef]) -> LLVMTypeRef {
     LLVMFunctionType(
         ret,
         params.as_mut_ptr(),

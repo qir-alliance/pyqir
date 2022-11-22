@@ -7,7 +7,8 @@ use crate::{
     values::{self, Value},
 };
 use pyo3::prelude::*;
-use qirlib::qis::BuilderExt;
+use qirlib::qis::BuilderExt as qis;
+use qirlib::rt::BuilderExt as rt;
 use std::convert::TryInto;
 
 /// An instruction builder that generates instructions from the basic quantum instruction set.
@@ -219,6 +220,53 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         context::require_same(py, [builder.context(), qubit.context()])?;
         unsafe { builder.get() }.build_t_adj(unsafe { qubit.get() }.try_into()?);
+        Ok(())
+    }
+
+    #[pyo3(text_signature = "(self, num_elements, label)")]
+    fn tuple_record_output(&self, py: Python, num_elements: &Value, label: &Value) -> PyResult<()> {
+        let builder = self.builder.borrow(py);
+        context::require_same(
+            py,
+            [builder.context(), num_elements.context(), label.context()],
+        )?;
+        unsafe { builder.get() }.build_tuple_record_output(
+            unsafe { num_elements.get() }.try_into()?,
+            unsafe { label.get() }.try_into()?,
+        );
+        Ok(())
+    }
+
+    #[pyo3(text_signature = "(self, num_elements, label)")]
+    fn array_record_output(&self, py: Python, num_elements: &Value, label: &Value) -> PyResult<()> {
+        let builder = self.builder.borrow(py);
+        context::require_same(
+            py,
+            [builder.context(), num_elements.context(), label.context()],
+        )?;
+        unsafe { builder.get() }.build_array_record_output(
+            unsafe { num_elements.get() }.try_into()?,
+            unsafe { label.get() }.try_into()?,
+        );
+        Ok(())
+    }
+
+    #[pyo3(text_signature = "(self, result, label)")]
+    fn result_record_output(
+        &self,
+        py: Python,
+        num_elements: &Value,
+        label: &Value,
+    ) -> PyResult<()> {
+        let builder = self.builder.borrow(py);
+        context::require_same(
+            py,
+            [builder.context(), num_elements.context(), label.context()],
+        )?;
+        unsafe { builder.get() }.build_result_record_output(
+            unsafe { num_elements.get() }.try_into()?,
+            unsafe { label.get() }.try_into()?,
+        );
         Ok(())
     }
 

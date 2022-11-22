@@ -20,6 +20,8 @@ pub mod evaluation;
 pub mod passes;
 #[cfg(not(feature = "no-llvm-linking"))]
 pub mod qis;
+#[cfg(not(feature = "no-llvm-linking"))]
+pub mod rt;
 #[cfg(all(test, not(feature = "no-llvm-linking")))]
 mod tests;
 #[cfg(not(feature = "no-llvm-linking"))]
