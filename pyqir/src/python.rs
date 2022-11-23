@@ -10,7 +10,7 @@ use crate::{
     },
     module::{verify_module, Attribute, Module},
     qis::BasicQisBuilder,
-    rt::{array_record_output, result_record_output, tuple_record_output},
+    rt::{array_record_output, initialize, result_record_output, tuple_record_output},
     simple::SimpleModule,
     types::{
         is_qubit_type, is_result_type, qubit_type, result_type, ArrayType, FunctionType, IntType,
@@ -84,6 +84,7 @@ fn _native(py: Python, m: &PyModule) -> PyResult<()> {
 #[pymodule]
 fn _rt(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(array_record_output, m)?)?;
+    m.add_function(wrap_pyfunction!(initialize, m)?)?;
     m.add_function(wrap_pyfunction!(result_record_output, m)?)?;
     m.add_function(wrap_pyfunction!(tuple_record_output, m)?)?;
 
