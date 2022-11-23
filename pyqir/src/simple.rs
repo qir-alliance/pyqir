@@ -8,7 +8,6 @@ use crate::{
     types::FunctionType,
     values::Value,
 };
-use inkwell::module::Linkage;
 use pyo3::{
     exceptions::{PyOSError, PyUnicodeDecodeError, PyValueError},
     prelude::*,
@@ -147,25 +146,16 @@ impl SimpleModule {
         unsafe { Value::from_any(py, ty.context().clone(), function) }
     }
 
-    /// Adds a global null-terminated string constant to the module.
+    /// Adds a global null-terminated byte string constant to the module.
     ///
-    /// :param bytes Value: The string value without the null terminator.
-    /// :returns: The global value.
-    /// :rtype: Value
+    /// :param bytes Value: The byte string value without a null terminator.
+    /// :returns: A pointer to the start of the null-terminated byte string.
+    /// :rtype: Constant
     #[pyo3(text_signature = "(value)")]
-    fn add_global_string(&self, py: Python, value: &[u8]) -> PyResult<PyObject> {
+    fn add_byte_string(&self, py: Python, value: &[u8]) -> PyResult<PyObject> {
         let module = self.module.borrow(py);
-        let context = unsafe { module.get().get_context() };
-        let value = context.const_string(value, true);
-        let global = unsafe { module.get() }.add_global(
-            context.i8_type().array_type(value.get_type().get_size()),
-            None,
-            "",
-        );
-        global.set_linkage(Linkage::Internal);
-        global.set_constant(true);
-        global.set_initializer(&value);
-        unsafe { Value::from_any(py, module.context().clone(), global) }
+        let string = values::global_string(unsafe { module.get() }, value);
+        unsafe { Value::from_any(py, module.context().clone(), string) }
     }
 }
 

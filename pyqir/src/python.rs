@@ -16,7 +16,7 @@ use crate::{
         PointerType, StructType, Type,
     },
     values::{
-        const_getelementptr, entry_point, extract_bytes, is_entry_point, is_interop_friendly,
+        entry_point, extract_byte_string, global_byte_string, is_entry_point, is_interop_friendly,
         qubit, qubit_id, r#const, required_num_qubits, required_num_results, result, result_id,
         BasicBlock, Constant, FloatConstant, Function, IntConstant, Linkage, Value,
     },
@@ -54,9 +54,9 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Switch>()?;
     m.add_class::<Type>()?;
     m.add_class::<Value>()?;
-    m.add_function(wrap_pyfunction!(const_getelementptr, m)?)?;
     m.add_function(wrap_pyfunction!(entry_point, m)?)?;
-    m.add_function(wrap_pyfunction!(extract_bytes, m)?)?;
+    m.add_function(wrap_pyfunction!(extract_byte_string, m)?)?;
+    m.add_function(wrap_pyfunction!(global_byte_string, m)?)?;
     m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(is_interop_friendly, m)?)?;
     m.add_function(wrap_pyfunction!(is_qubit_type, m)?)?;
