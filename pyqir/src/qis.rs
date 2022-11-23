@@ -8,7 +8,6 @@ use crate::{
 };
 use pyo3::prelude::*;
 use qirlib::qis::BuilderExt as qis;
-use qirlib::rt::BuilderExt as rt;
 use std::convert::TryInto;
 
 /// An instruction builder that generates instructions from the basic quantum instruction set.
