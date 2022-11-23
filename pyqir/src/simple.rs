@@ -8,7 +8,6 @@ use crate::{
     types::FunctionType,
     values::Value,
 };
-use inkwell::module::Linkage;
 use pyo3::{
     exceptions::{PyOSError, PyUnicodeDecodeError, PyValueError},
     prelude::*,
@@ -155,21 +154,8 @@ impl SimpleModule {
     #[pyo3(text_signature = "(value)")]
     fn add_global_string(&self, py: Python, value: &[u8]) -> PyResult<PyObject> {
         let module = self.module.borrow(py);
-        let context = unsafe { module.get().get_context() };
-
-        let value = context.const_string(value, true);
-        let global = unsafe { module.get() }.add_global(
-            context.i8_type().array_type(value.get_type().get_size()),
-            None,
-            "",
-        );
-        global.set_linkage(Linkage::Internal);
-        global.set_constant(true);
-        global.set_initializer(&value);
-
-        let zero = context.i32_type().const_zero();
-        let pointer = unsafe { global.as_pointer_value().const_gep(&[zero, zero]) };
-        unsafe { Value::from_any(py, module.context().clone(), pointer) }
+        let string = values::global_string(unsafe { module.get() }, value);
+        unsafe { Value::from_any(py, module.context().clone(), string) }
     }
 }
 
