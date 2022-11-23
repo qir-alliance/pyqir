@@ -27,6 +27,7 @@ mod instructions;
 mod module;
 mod python;
 mod qis;
+mod rt;
 mod simple;
 mod types;
 mod values;

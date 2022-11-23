@@ -223,53 +223,6 @@ impl BasicQisBuilder {
         Ok(())
     }
 
-    #[pyo3(text_signature = "(self, num_elements, label)")]
-    fn tuple_record_output(&self, py: Python, num_elements: &Value, label: &Value) -> PyResult<()> {
-        let builder = self.builder.borrow(py);
-        context::require_same(
-            py,
-            [builder.context(), num_elements.context(), label.context()],
-        )?;
-        unsafe { builder.get() }.build_tuple_record_output(
-            unsafe { num_elements.get() }.try_into()?,
-            unsafe { label.get() }.try_into()?,
-        );
-        Ok(())
-    }
-
-    #[pyo3(text_signature = "(self, num_elements, label)")]
-    fn array_record_output(&self, py: Python, num_elements: &Value, label: &Value) -> PyResult<()> {
-        let builder = self.builder.borrow(py);
-        context::require_same(
-            py,
-            [builder.context(), num_elements.context(), label.context()],
-        )?;
-        unsafe { builder.get() }.build_array_record_output(
-            unsafe { num_elements.get() }.try_into()?,
-            unsafe { label.get() }.try_into()?,
-        );
-        Ok(())
-    }
-
-    #[pyo3(text_signature = "(self, result, label)")]
-    fn result_record_output(
-        &self,
-        py: Python,
-        num_elements: &Value,
-        label: &Value,
-    ) -> PyResult<()> {
-        let builder = self.builder.borrow(py);
-        context::require_same(
-            py,
-            [builder.context(), num_elements.context(), label.context()],
-        )?;
-        unsafe { builder.get() }.build_result_record_output(
-            unsafe { num_elements.get() }.try_into()?,
-            unsafe { label.get() }.try_into()?,
-        );
-        Ok(())
-    }
-
     /// Inserts a Pauli :math:`X` gate.
     ///
     /// :param Value qubit: The target qubit.

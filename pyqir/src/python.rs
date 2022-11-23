@@ -10,6 +10,7 @@ use crate::{
     },
     module::{verify_module, Attribute, Module},
     qis::BasicQisBuilder,
+    rt::{array_record_output, result_record_output, tuple_record_output},
     simple::SimpleModule,
     types::{
         is_qubit_type, is_result_type, qubit_type, result_type, ArrayType, FunctionType, IntType,
@@ -21,10 +22,10 @@ use crate::{
         BasicBlock, Constant, FloatConstant, Function, IntConstant, Linkage, Value,
     },
 };
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyDict, wrap_pymodule};
 
 #[pymodule]
-fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
+fn _native(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<ArrayType>()?;
     m.add_class::<Attribute>()?;
     m.add_class::<BasicBlock>()?;
@@ -71,5 +72,20 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(result_type, m)?)?;
     m.add_function(wrap_pyfunction!(result, m)?)?;
     m.add_function(wrap_pyfunction!(verify_module, m)?)?;
+
+    m.add_wrapped(wrap_pymodule!(_rt))?;
+    let sys = PyModule::import(py, "sys")?;
+    let sys_modules: &PyDict = sys.getattr("modules")?.downcast()?;
+    sys_modules.set_item("pyqir.rt._native", m.getattr("_rt")?)?;
+
+    Ok(())
+}
+
+#[pymodule]
+fn _rt(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(array_record_output, m)?)?;
+    m.add_function(wrap_pyfunction!(result_record_output, m)?)?;
+    m.add_function(wrap_pyfunction!(tuple_record_output, m)?)?;
+
     Ok(())
 }

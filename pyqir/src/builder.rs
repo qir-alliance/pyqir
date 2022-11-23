@@ -22,7 +22,7 @@ use std::{
 ///
 /// :param Context context: The global context.
 #[pyclass(unsendable)]
-pub(crate) struct Builder {
+pub struct Builder {
     builder: inkwell::builder::Builder<'static>,
     context: Py<Context>,
 }
