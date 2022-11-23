@@ -14,7 +14,7 @@ from pyqir import (
     IntType,
     Module,
     Opcode,
-    extract_bytes,
+    extract_string,
     is_entry_point,
     is_interop_friendly,
     is_qubit_type,
@@ -132,7 +132,7 @@ def test_global_string() -> None:
     assert isinstance(call, Call)
     assert call.callee.name == "__quantum__rt__string_create"
 
-    value = extract_bytes(call.args[0])
+    value = extract_string(call.args[0])
     assert value is not None
     assert value.decode("utf-8") == "Hello World!\0"
 

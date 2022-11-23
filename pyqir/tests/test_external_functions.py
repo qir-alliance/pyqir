@@ -8,11 +8,16 @@ import pytest
 
 import pyqir
 from pyqir import (
+    BasicBlock,
     BasicQisBuilder,
+    Builder,
     Constant,
     Context,
+    Function,
     FunctionType,
     IntType,
+    Linkage,
+    Module,
     PointerType,
     SimpleModule,
     Type,
@@ -363,6 +368,35 @@ def test_computed_rotation() -> None:
 
 
 def test_record_output() -> None:
+    context = Context()
+    mod = Module(context, "test")
+    result_record_output = Function(
+        FunctionType(
+            Type.void(mod.context),
+            [pyqir.result_type(mod.context), PointerType(IntType(mod.context, 8))],
+        ),
+        Linkage.EXTERNAL,
+        "__quantum__rt__result_record_output",
+        mod,
+    )
+
+    main = pyqir.entry_point(mod, "main", 0, 1)
+    builder = Builder(context)
+    builder.insert_at_end(BasicBlock(context, "", main))
+    builder.call(
+        result_record_output,
+        [pyqir.result(context, 0), pyqir.global_string(mod, b"foo")],
+    )
+
+    ir = str(mod)
+    assert r'@0 = internal constant [4 x i8] c"foo\00"' in ir
+    assert (
+        "call void @__quantum__rt__result_record_output(%Result* null, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0))"
+        in ir
+    )
+
+
+def test_record_output_simple() -> None:
     mod = SimpleModule("test", 0, 1)
     result_record_output = mod.add_external_function(
         "__quantum__rt__result_record_output",
@@ -371,14 +405,9 @@ def test_record_output() -> None:
             [pyqir.result_type(mod.context), PointerType(IntType(mod.context, 8))],
         ),
     )
-    tag = mod.add_global_string(b"foo")
-    i32 = IntType(mod.context, 32)
     mod.builder.call(
         result_record_output,
-        [
-            mod.results[0],
-            pyqir.const_getelementptr(tag, [pyqir.const(i32, 0), pyqir.const(i32, 0)]),
-        ],
+        [mod.results[0], mod.add_global_string(b"foo")],
     )
 
     ir = mod.ir()
