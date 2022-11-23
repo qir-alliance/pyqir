@@ -146,13 +146,13 @@ impl SimpleModule {
         unsafe { Value::from_any(py, ty.context().clone(), function) }
     }
 
-    /// Adds a global null-terminated string constant to the module.
+    /// Adds a global null-terminated byte string constant to the module.
     ///
-    /// :param bytes Value: The string value without the null terminator.
-    /// :returns: A pointer to the start of the null-terminated string.
+    /// :param bytes Value: The byte string value without a null terminator.
+    /// :returns: A pointer to the start of the null-terminated byte string.
     /// :rtype: Constant
     #[pyo3(text_signature = "(value)")]
-    fn add_global_string(&self, py: Python, value: &[u8]) -> PyResult<PyObject> {
+    fn add_byte_string(&self, py: Python, value: &[u8]) -> PyResult<PyObject> {
         let module = self.module.borrow(py);
         let string = values::global_string(unsafe { module.get() }, value);
         unsafe { Value::from_any(py, module.context().clone(), string) }

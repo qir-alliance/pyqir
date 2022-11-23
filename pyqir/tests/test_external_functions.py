@@ -407,7 +407,7 @@ def test_record_output_simple() -> None:
     )
     mod.builder.call(
         result_record_output,
-        [mod.results[0], mod.add_global_string(b"foo")],
+        [mod.results[0], mod.add_byte_string(b"foo")],
     )
 
     ir = mod.ir()
