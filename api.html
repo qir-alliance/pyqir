@@ -1683,6 +1683,23 @@ allocated with a fixed size.</p></li>
 </dd>
 </dl>
 <dl class="py method">
+<dt class="sig sig-object py" id="pyqir.SimpleModule.add_byte_string">
+<span class="sig-name descname"><span class="pre">add_byte_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.SimpleModule.add_byte_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a global null-terminated byte string constant to the module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Value</strong> (<em>bytes</em>) – The byte string value without a null terminator.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer to the start of the null-terminated byte string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Constant" title="pyqir.Constant">Constant</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pyqir.SimpleModule.add_external_function">
 <span class="sig-name descname"><span class="pre">add_external_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ty</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.SimpleModule.add_external_function" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a declaration for an externally linked function to the module.</p>
@@ -1698,23 +1715,6 @@ allocated with a fixed size.</p></li>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#pyqir.Function" title="pyqir.Function">Function</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pyqir.SimpleModule.add_global_string">
-<span class="sig-name descname"><span class="pre">add_global_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.SimpleModule.add_global_string" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds a global null-terminated string constant to the module.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>Value</strong> (<em>bytes</em>) – The string value without the null terminator.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The global value.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Value" title="pyqir.Value">Value</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1953,26 +1953,6 @@ allocated with a fixed size.</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pyqir.const_getelementptr">
-<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">const_getelementptr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.const_getelementptr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a <cite>getelementptr</cite> (GEP) constant expression.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>value</strong> (<a class="reference internal" href="#pyqir.Value" title="pyqir.Value"><em>Value</em></a>) – The aggregate value.</p></li>
-<li><p><strong>indices</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="#pyqir.Value" title="pyqir.Value"><em>Value</em></a><em>]</em>) – The indices of the element.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The GEP constant expression.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>ConstantExpr</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="pyqir.entry_point">
 <span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">entry_point</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.entry_point" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an entry point.</p>
@@ -1995,9 +1975,9 @@ allocated with a fixed size.</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pyqir.extract_bytes">
-<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">extract_bytes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.extract_bytes" title="Permalink to this definition">¶</a></dt>
-<dd><p>If the value is a pointer to a constant byte array, extracts it.</p>
+<dt class="sig sig-object py" id="pyqir.extract_byte_string">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">extract_byte_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.extract_byte_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the value is a pointer to a constant byte string, extracts it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>value</strong> (<a class="reference internal" href="#pyqir.Value" title="pyqir.Value"><em>Value</em></a>) – The value.</p>
@@ -2006,7 +1986,24 @@ allocated with a fixed size.</p></li>
 <dd class="field-even"><p>Optional[bytes]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The constant byte array.</p>
+<dd class="field-odd"><p>The constant byte string.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyqir.global_byte_string">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">global_byte_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.global_byte_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a global null-terminated byte string constant in the module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Value</strong> (<em>bytes</em>) – The byte string value without a null terminator.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pointer to the start of the null-terminated byte string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Constant" title="pyqir.Constant">Constant</a></p>
 </dd>
 </dl>
 </dd></dl>
