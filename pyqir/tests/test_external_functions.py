@@ -385,7 +385,7 @@ def test_record_output() -> None:
     builder.insert_at_end(BasicBlock(context, "", main))
     builder.call(
         result_record_output,
-        [pyqir.result(context, 0), pyqir.global_string(mod, b"foo")],
+        [pyqir.result(context, 0), pyqir.global_byte_string(mod, b"foo")],
     )
 
     ir = str(mod)

@@ -815,14 +815,14 @@ pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
     values::required_num_results(unsafe { function.get() })
 }
 
-/// Creates a global null-terminated string constant in the module.
+/// Creates a global null-terminated byte string constant in the module.
 ///
-/// :param bytes Value: The string value without the null terminator.
-/// :returns: A pointer to the start of the null-terminated string.
+/// :param bytes Value: The byte string value without a null terminator.
+/// :returns: A pointer to the start of the null-terminated byte string.
 /// :rtype: Constant
 #[pyfunction]
 #[pyo3(text_signature = "(module, value)")]
-pub(crate) fn global_string(py: Python, module: &Module, value: &[u8]) -> PyResult<PyObject> {
+pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> PyResult<PyObject> {
     let string = values::global_string(unsafe { module.get() }, value);
     unsafe { Value::from_any(py, module.context().clone(), string) }
 }
@@ -831,10 +831,10 @@ pub(crate) fn global_string(py: Python, module: &Module, value: &[u8]) -> PyResu
 ///
 /// :param Value value: The value.
 /// :rtype: Optional[bytes]
-/// :returns: The constant byte array.
+/// :returns: The constant byte string.
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
-pub(crate) fn extract_string<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
+pub(crate) fn extract_byte_string<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
     let string = values::extract_string(unsafe { value.get() }.try_into().ok()?)?;
     Some(PyBytes::new(py, string))
 }
