@@ -227,7 +227,7 @@ def test_instruction_lifetime() -> None:
 
 def test_parsed_function_lifetime() -> None:
     def get_entry() -> Function:
-        m = Module.from_bitcode(Path("tests/hello.bc").read_bytes())
+        m = Module.from_bitcode(Context(), Path("tests/hello.bc").read_bytes())
         return next(filter(pyqir.is_entry_point, m.functions))
 
     assert get_entry().name == "program__main"

@@ -50,20 +50,20 @@ impl Module {
     /// :rtype: Module
     /// :returns: The module.
     #[staticmethod]
-    #[pyo3(text_signature = "(ir, name=\"\")")]
-    fn from_ir(py: Python, ir: &str, name: Option<&str>) -> PyResult<Self> {
-        let context = Context::new();
+    #[pyo3(text_signature = "(context, ir, name=\"\")")]
+    fn from_ir(py: Python, context: Py<Context>, ir: &str, name: Option<&str>) -> PyResult<Self> {
         let buffer =
             MemoryBuffer::create_from_memory_range(ir.as_bytes(), name.unwrap_or_default());
-        let module = context
-            .create_module_from_ir(buffer)
-            .map_err(|e| PyValueError::new_err(e.to_string()))?;
-        Ok(Self {
-            module: unsafe {
+        let module = {
+            let context = context.borrow(py);
+            let module = context
+                .create_module_from_ir(buffer)
+                .map_err(|e| PyValueError::new_err(e.to_string()))?;
+            unsafe {
                 transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
-            },
-            context: Py::new(py, context)?,
-        })
+            }
+        };
+        Ok(Self { module, context })
     }
 
     /// Creates a module from LLVM bitcode.
@@ -73,18 +73,23 @@ impl Module {
     /// :rtype: Module
     /// :returns: The module.
     #[staticmethod]
-    #[pyo3(text_signature = "(bitcode, name=\"\")")]
-    fn from_bitcode(py: Python, bitcode: &[u8], name: Option<&str>) -> PyResult<Self> {
-        let context = Context::new();
+    #[pyo3(text_signature = "(context, bitcode, name=\"\")")]
+    fn from_bitcode(
+        py: Python,
+        context: Py<Context>,
+        bitcode: &[u8],
+        name: Option<&str>,
+    ) -> PyResult<Self> {
         let buffer = MemoryBuffer::create_from_memory_range(bitcode, name.unwrap_or_default());
-        let module = inkwell::module::Module::parse_bitcode_from_buffer(&buffer, &*context)
-            .map_err(|e| PyValueError::new_err(e.to_string()))?;
-        Ok(Self {
-            module: unsafe {
+        let module = {
+            let context = context.borrow(py);
+            let module = inkwell::module::Module::parse_bitcode_from_buffer(&buffer, &**context)
+                .map_err(|e| PyValueError::new_err(e.to_string()))?;
+            unsafe {
                 transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
-            },
-            context: Py::new(py, context)?,
-        })
+            }
+        };
+        Ok(Self { module, context })
     }
 
     /// The name of the original source file that this module was compiled from.
