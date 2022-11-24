@@ -6,7 +6,7 @@ use core::slice;
 use inkwell::{
     attributes::AttributeLoc,
     context::ContextRef,
-    module::Module,
+    module::{Linkage, Module},
     types::{AnyTypeEnum, PointerType},
     values::{AnyValueEnum, FunctionValue, PointerValue},
     LLVMReference,
@@ -98,9 +98,21 @@ pub fn required_num_results(function: FunctionValue) -> Option<u64> {
     attribute.get_string_value().to_str().ok()?.parse().ok()
 }
 
+pub fn global_string<'ctx>(module: &Module<'ctx>, value: &[u8]) -> PointerValue<'ctx> {
+    let context = module.get_context();
+    let string = context.const_string(value, true);
+    let size = string.get_type().get_size();
+    let global = module.add_global(context.i8_type().array_type(size), None, "");
+    global.set_linkage(Linkage::Internal);
+    global.set_constant(true);
+    global.set_initializer(&string);
+    let zero = context.i32_type().const_zero();
+    unsafe { global.as_pointer_value().const_gep(&[zero, zero]) }
+}
+
 #[must_use]
 #[allow(clippy::missing_panics_doc)]
-pub fn extract_bytes(value: AnyValueEnum) -> Option<&[u8]> {
+pub fn extract_string(value: AnyValueEnum) -> Option<&[u8]> {
     let pointer = match value {
         AnyValueEnum::PointerValue(p) if is_byte_string(p.get_type()) => Some(p),
         _ => None,

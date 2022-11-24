@@ -777,30 +777,6 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject
     unsafe { Value::from_any(py, Owner::Context(context), value) }
 }
 
-/// Creates a `getelementptr` (GEP) constant expression.
-///
-/// :param Value value: The aggregate value.
-/// :param Sequence[Value] indices: The indices of the element.
-/// :returns: The GEP constant expression.
-/// :rtype: ConstantExpr
-#[pyfunction]
-#[pyo3(text_signature = "(constant, indices)")]
-#[allow(clippy::needless_pass_by_value)]
-pub(crate) fn const_getelementptr(
-    py: Python,
-    constant: PyRef<Constant>,
-    indices: Vec<Value>,
-) -> PyResult<PyObject> {
-    let value = constant.into_super();
-    let indices = indices
-        .iter()
-        .map(|i| IntValue::try_from(i.value).map_err(Into::into))
-        .collect::<PyResult<Vec<_>>>()?;
-    let pointer = PointerValue::try_from(value.value)?;
-    let gep = unsafe { pointer.const_gep(&indices) };
-    unsafe { Value::from_any(py, value.owner.clone(), gep) }
-}
-
 /// Creates a static qubit value.
 ///
 /// :param Context context: The global context.
@@ -924,16 +900,28 @@ pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
     values::required_num_results(unsafe { function.get() })
 }
 
-/// If the value is a pointer to a constant byte array, extracts it.
+/// Creates a global null-terminated byte string constant in the module.
+///
+/// :param bytes Value: The byte string value without a null terminator.
+/// :returns: A pointer to the start of the null-terminated byte string.
+/// :rtype: Constant
+#[pyfunction]
+#[pyo3(text_signature = "(module, value)")]
+pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> PyResult<PyObject> {
+    let string = values::global_string(unsafe { module.get() }, value);
+    unsafe { Value::from_any(py, module.context().clone().into(), string) }
+}
+
+/// If the value is a pointer to a constant byte string, extracts it.
 ///
 /// :param Value value: The value.
 /// :rtype: Optional[bytes]
-/// :returns: The constant byte array.
+/// :returns: The constant byte string.
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
-pub(crate) fn extract_bytes<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
-    let bytes = values::extract_bytes(unsafe { value.get() }.try_into().ok()?)?;
-    Some(PyBytes::new(py, bytes))
+pub(crate) fn extract_byte_string<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
+    let string = values::extract_string(unsafe { value.get() }.try_into().ok()?)?;
+    Some(PyBytes::new(py, string))
 }
 
 pub(crate) unsafe fn extract_any<'ctx>(
