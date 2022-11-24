@@ -7,10 +7,23 @@ IR string without errors. These tests are not meant to make detailed assertions
 about the generated IR.
 """
 
+from pathlib import Path
+
 import pytest
 
 import pyqir
-from pyqir import BasicQisBuilder, Context, FunctionType, IntType, SimpleModule
+from pyqir import (
+    BasicQisBuilder,
+    Context,
+    Function,
+    FunctionType,
+    Instruction,
+    IntType,
+    Linkage,
+    Module,
+    SimpleModule,
+    Type,
+)
 
 
 def test_bell() -> None:
@@ -138,9 +151,7 @@ def test_if_result() -> None:
 def test_multiple_contexts() -> None:
     m1 = SimpleModule("m1", 0, 0)
     m2 = SimpleModule("m2", 0, 0)
-    with pytest.raises(
-        ValueError, match=r"^Some objects come from a different context\.$"
-    ):
+    with pytest.raises(ValueError, match=r"^Owners are incompatible\.$"):
         m1.add_external_function(
             "f",
             FunctionType(pyqir.result_type(m1.context), [pyqir.qubit_type(m2.context)]),
@@ -189,3 +200,34 @@ def test_shared_context() -> None:
     qis2.mz(m2.qubits[0], m2.results[0])
 
     assert m1.ir() == m2.ir()
+
+
+def test_function_lifetime() -> None:
+    def make_func() -> Function:
+        c = Context()
+        m = Module(c, "test")
+        return Function(FunctionType(Type.void(c), []), Linkage.EXTERNAL, "f", m)
+
+    assert str(make_func()) == "declare void @f()\n"
+
+
+def test_instruction_lifetime() -> None:
+    def make_inst() -> Instruction:
+        m = SimpleModule("test", 1, 1)
+        i8 = IntType(m.context, 8)
+        f = m.add_external_function("f", FunctionType(i8, []))
+        x = m.builder.call(f, [])
+        assert x is not None
+        v = m.builder.add(x, pyqir.const(i8, 2))
+        assert isinstance(v, Instruction)
+        return v
+
+    assert str(make_inst()) == "  %1 = add i8 %0, 2"
+
+
+def test_parsed_function_lifetime() -> None:
+    def get_entry() -> Function:
+        m = Module.from_bitcode(Path("tests/hello.bc").read_bytes())
+        return next(filter(pyqir.is_entry_point, m.functions))
+
+    assert get_entry().name == "program__main"

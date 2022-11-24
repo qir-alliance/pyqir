@@ -3,7 +3,7 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::context::{self, Context};
+use crate::{context::Context, values::Owner};
 use inkwell::{
     types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum},
     AddressSpace, LLVMReference,
@@ -157,9 +157,12 @@ impl FunctionType {
     #[new]
     #[allow(clippy::needless_pass_by_value)]
     fn new(py: Python, ret: &Type, params: Vec<Type>) -> PyResult<(Self, Type)> {
-        context::require_same(
+        Owner::merge(
             py,
-            params.iter().map(|ty| &ty.context).chain([&ret.context]),
+            params
+                .iter()
+                .map(|ty| Owner::Context(ty.context.clone()))
+                .chain([ret.context.clone().into()]),
         )?;
 
         let ty = function(&ret.ty, params.iter().map(|ty| ty.ty))

@@ -4,7 +4,7 @@
 #![allow(clippy::used_underscore_binding)]
 
 use crate::{
-    context::{self, Context},
+    context::Context,
     instructions::Instruction,
     module::{Attribute, Module},
     types::{FunctionType, Type},
@@ -34,6 +34,7 @@ use pyo3::{
 };
 use qirlib::values;
 use std::{
+    borrow::Borrow,
     convert::{Into, TryFrom, TryInto},
     ffi::CStr,
     fmt::{self, Display, Formatter},
@@ -42,12 +43,76 @@ use std::{
     slice,
 };
 
+#[derive(Clone)]
+pub(crate) enum Owner {
+    Context(Py<Context>),
+    Module(Py<Module>),
+}
+
+impl Owner {
+    fn context(&self, py: Python) -> Py<Context> {
+        match self {
+            Self::Context(context) => context.clone(),
+            Self::Module(module) => module.borrow(py).context().clone(),
+        }
+    }
+
+    pub(crate) fn merge(
+        py: Python,
+        owners: impl IntoIterator<Item = impl Borrow<Self>>,
+    ) -> PyResult<Self> {
+        owners
+            .into_iter()
+            .try_fold(None, |o1, o2| match (o1, o2.borrow()) {
+                (None, owner) => Ok(Some(owner.clone())),
+                (Some(Self::Context(c1)), Self::Context(c2))
+                    if *c1.borrow(py) == *c2.borrow(py) =>
+                {
+                    Ok(Some(Self::Context(c1)))
+                }
+                (Some(Self::Context(c)), Self::Module(m))
+                    if *c.borrow(py) == *m.borrow(py).context().borrow(py) =>
+                {
+                    Ok(Some(Self::Module(m.clone())))
+                }
+                (Some(Self::Module(m)), Self::Context(c))
+                    if *m.borrow(py).context().borrow(py) == *c.borrow(py) =>
+                {
+                    Ok(Some(Self::Module(m)))
+                }
+                (Some(Self::Module(m1)), Self::Module(m2)) if *m1.borrow(py) == *m2.borrow(py) => {
+                    Ok(Some(Self::Module(m1)))
+                }
+                _ => Err(PyValueError::new_err("Owners are incompatible.")),
+            })?
+            .ok_or_else(|| PyValueError::new_err("No owners."))
+    }
+}
+
+impl From<Py<Context>> for Owner {
+    fn from(context: Py<Context>) -> Self {
+        Self::Context(context)
+    }
+}
+
+impl From<&Py<Context>> for Owner {
+    fn from(context: &Py<Context>) -> Self {
+        Self::Context(context.clone())
+    }
+}
+
+impl From<Py<Module>> for Owner {
+    fn from(module: Py<Module>) -> Self {
+        Self::Module(module)
+    }
+}
+
 /// A value.
 #[pyclass(subclass, unsendable)]
 #[derive(Clone)]
 pub(crate) struct Value {
     value: AnyValue<'static>,
-    context: Py<Context>,
+    owner: Owner,
 }
 
 #[pymethods]
@@ -57,7 +122,7 @@ impl Value {
     /// :type: Type
     #[getter]
     fn r#type(&self, py: Python) -> PyResult<PyObject> {
-        unsafe { Type::from_any(py, self.context.clone(), self.value.ty()) }
+        unsafe { Type::from_any(py, self.owner.context(py), self.value.ty()) }
     }
 
     /// The name of this value or the empty string if this value is anonymous.
@@ -77,35 +142,35 @@ impl Value {
 impl Value {
     pub(crate) unsafe fn from_any<'ctx>(
         py: Python,
-        context: Py<Context>,
+        owner: Owner,
         value: impl Into<AnyValue<'ctx>>,
     ) -> PyResult<PyObject> {
         let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value.into());
         #[allow(clippy::same_functions_in_if_condition)]
         if let Ok(inst) = value.try_into() {
-            Instruction::from_inst(py, context, inst)
+            Instruction::from_inst(py, owner, inst)
         } else if let Ok(block) = value.try_into() {
-            let base = PyClassInitializer::from(Self { value, context });
+            let base = PyClassInitializer::from(Self { value, owner });
             let block = base.add_subclass(BasicBlock(block));
             Ok(Py::new(py, block)?.to_object(py))
         } else if value.is_const() {
-            Constant::from_any(py, context, value)
+            Constant::from_any(py, owner, value)
         } else {
-            Ok(Py::new(py, Self { value, context })?.to_object(py))
+            Ok(Py::new(py, Self { value, owner })?.to_object(py))
         }
     }
 
-    pub(crate) unsafe fn init(context: Py<Context>, value: AnyValue) -> PyClassInitializer<Self> {
+    pub(crate) unsafe fn init(owner: Owner, value: AnyValue) -> PyClassInitializer<Self> {
         let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
-        PyClassInitializer::from(Self { value, context })
+        PyClassInitializer::from(Self { value, owner })
     }
 
     pub(crate) unsafe fn get(&self) -> AnyValue<'static> {
         self.value
     }
 
-    pub(crate) fn context(&self) -> &Py<Context> {
-        &self.context
+    pub(crate) fn owner(&self) -> &Owner {
+        &self.owner
     }
 }
 
@@ -126,19 +191,32 @@ pub(crate) struct BasicBlock(inkwell::basic_block::BasicBlock<'static>);
 #[pymethods]
 impl BasicBlock {
     #[new]
+    #[allow(clippy::needless_pass_by_value)]
     fn new(
         py: Python,
         context: Py<Context>,
         name: &str,
-        parent: Option<&Function>,
-        before: Option<&BasicBlock>,
+        parent: Option<PyRef<Function>>,
+        before: Option<PyRef<BasicBlock>>,
     ) -> PyResult<PyClassInitializer<Self>> {
+        let parent_fn = parent.as_ref().map(|f| f.0);
+        let owner = Owner::merge(
+            py,
+            [
+                Some(Owner::Context(context.clone())),
+                parent.map(|f| f.into_super().as_ref().owner.clone()),
+                before.as_ref().map(|b| b.as_ref().owner.clone()),
+            ]
+            .into_iter()
+            .flatten(),
+        )?;
+
         let block = {
             let context = context.borrow(py);
-            let block = match (parent, before) {
+            let block = match (parent_fn, before) {
                 (None, None) => Err(PyValueError::new_err("Can't create block without parent.")),
-                (Some(parent), None) => Ok(context.append_basic_block(parent.0, name)),
-                (Some(parent), Some(before)) if before.0.get_parent() != Some(parent.0) => Err(
+                (Some(parent), None) => Ok(context.append_basic_block(parent, name)),
+                (Some(parent), Some(before)) if before.0.get_parent() != Some(parent) => Err(
                     PyValueError::new_err("Insert before block isn't in parent function."),
                 ),
                 (_, Some(before)) => Ok(context.prepend_basic_block(before.0, name)),
@@ -153,24 +231,21 @@ impl BasicBlock {
         };
 
         let value = block.into();
-        Ok(PyClassInitializer::from(Value { value, context }).add_subclass(Self(block)))
+        Ok(PyClassInitializer::from(Value { value, owner }).add_subclass(Self(block)))
     }
 
     /// The instructions in this basic block.
     ///
     /// :type: List[Instruction]
     #[getter]
+    #[allow(clippy::needless_pass_by_value)]
     fn instructions(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        let block = slf.0;
-        let context = &slf.into_super().context;
         let mut insts = Vec::new();
-        let mut inst = block.get_first_instruction();
-
+        let mut inst = slf.0.get_first_instruction();
         while let Some(i) = inst {
-            insts.push(unsafe { Instruction::from_inst(py, context.clone(), i) }?);
+            insts.push(unsafe { Instruction::from_inst(py, slf.as_ref().owner.clone(), i) }?);
             inst = i.get_next_instruction();
         }
-
         Ok(insts)
     }
 
@@ -181,8 +256,8 @@ impl BasicBlock {
     fn terminator(slf: PyRef<Self>, py: Python) -> PyResult<Option<PyObject>> {
         match slf.0.get_terminator() {
             Some(terminator) => {
-                let context = slf.into_super().context.clone();
-                unsafe { Instruction::from_inst(py, context, terminator) }.map(Some)
+                let owner = slf.into_super().owner.clone();
+                unsafe { Instruction::from_inst(py, owner, terminator) }.map(Some)
             }
             None => Ok(None),
         }
@@ -220,7 +295,7 @@ impl Constant {
                 Err(PyValueError::new_err("Can't create null for this type."))
             }
         }?;
-        unsafe { Value::from_any(py, ty.context().clone(), value) }
+        unsafe { Value::from_any(py, Owner::Context(ty.context().clone()), value) }
     }
 
     /// Whether this value is the null value for its type.
@@ -233,10 +308,10 @@ impl Constant {
 }
 
 impl Constant {
-    unsafe fn from_any(py: Python, context: Py<Context>, value: AnyValue) -> PyResult<PyObject> {
+    unsafe fn from_any(py: Python, owner: Owner, value: AnyValue) -> PyResult<PyObject> {
         if value.is_const() {
             let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
-            let base = PyClassInitializer::from(Value { value, context }).add_subclass(Constant);
+            let base = PyClassInitializer::from(Value { value, owner }).add_subclass(Constant);
             match value.try_into() {
                 Ok(AnyValueEnum::IntValue(_)) => {
                     Ok(Py::new(py, base.add_subclass(IntConstant))?.to_object(py))
@@ -299,21 +374,31 @@ pub(crate) struct Function(FunctionValue<'static>);
 #[pymethods]
 impl Function {
     #[new]
+    #[allow(clippy::needless_pass_by_value)]
     fn new(
         py: Python,
         ty: PyRef<FunctionType>,
         linkage: Linkage,
         name: &str,
-        module: &Module,
+        module: Py<Module>,
     ) -> PyResult<PyClassInitializer<Self>> {
-        let function_ty = unsafe { ty.get() };
-        let context = module.context();
-        context::require_same(py, [ty.into_super().context(), context])?;
-        let function =
-            unsafe { module.get() }.add_function(name, function_ty, Some(linkage.into()));
-        Ok(unsafe { Value::init(context.clone(), function.into()) }
+        let owner = Owner::merge(
+            py,
+            [
+                Owner::Context(ty.as_ref().context().clone()),
+                Owner::Module(module.clone()),
+            ],
+        )?;
+
+        let value = unsafe { module.borrow(py).get() }.add_function(
+            name,
+            unsafe { ty.get() },
+            Some(linkage.into()),
+        );
+
+        Ok(unsafe { Value::init(owner, value.into()) }
             .add_subclass(Constant)
-            .add_subclass(Self(function)))
+            .add_subclass(Self(value)))
     }
 
     /// The parameters to this function.
@@ -322,10 +407,10 @@ impl Function {
     #[getter]
     fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let params = slf.0.get_params();
-        let context = &slf.into_super().into_super().context;
+        let owner = &slf.into_super().into_super().owner;
         params
             .into_iter()
-            .map(|p| unsafe { Value::from_any(py, context.clone(), p) })
+            .map(|p| unsafe { Value::from_any(py, owner.clone(), p) })
             .collect()
     }
 
@@ -335,11 +420,11 @@ impl Function {
     #[getter]
     fn basic_blocks(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let function = slf.0;
-        let context = &slf.into_super().into_super().context;
+        let owner = &slf.into_super().into_super().owner;
         function
             .get_basic_blocks()
             .into_iter()
-            .map(|b| unsafe { Value::from_any(py, context.clone(), b) })
+            .map(|b| unsafe { Value::from_any(py, owner.clone(), b) })
             .collect()
     }
 
@@ -689,7 +774,7 @@ impl Drop for Message {
 pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject> {
     let context = ty.context().clone();
     let value = extract_constant(unsafe { &ty.get() }, value)?;
-    unsafe { Value::from_any(py, context, value) }
+    unsafe { Value::from_any(py, Owner::Context(context), value) }
 }
 
 /// Creates a `getelementptr` (GEP) constant expression.
@@ -713,7 +798,7 @@ pub(crate) fn const_getelementptr(
         .collect::<PyResult<Vec<_>>>()?;
     let pointer = PointerValue::try_from(value.value)?;
     let gep = unsafe { pointer.const_gep(&indices) };
-    unsafe { Value::from_any(py, value.context.clone(), gep) }
+    unsafe { Value::from_any(py, value.owner.clone(), gep) }
 }
 
 /// Creates a static qubit value.
@@ -729,7 +814,7 @@ pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObj
         let value = values::qubit(&context.void_type().get_context(), id);
         unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
     };
-    unsafe { Value::from_any(py, context, value) }
+    unsafe { Value::from_any(py, Owner::Context(context), value) }
 }
 
 /// If the value is a static qubit ID, extracts it.
@@ -756,7 +841,7 @@ pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyOb
         let value = values::result(&context.void_type().get_context(), id);
         unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
     };
-    unsafe { Value::from_any(py, context, value) }
+    unsafe { Value::from_any(py, Owner::Context(context), value) }
 }
 
 /// If the value is a static result ID, extracts it.
@@ -781,18 +866,18 @@ pub(crate) fn result_id(value: &Value) -> Option<u64> {
 #[pyfunction]
 pub(crate) fn entry_point(
     py: Python,
-    module: &Module,
+    module: Py<Module>,
     name: &str,
     required_num_qubits: u64,
     required_num_results: u64,
 ) -> PyResult<PyObject> {
     let entry_point = values::entry_point(
-        unsafe { module.get() },
+        unsafe { module.borrow(py).get() },
         name,
         required_num_qubits,
         required_num_results,
     );
-    unsafe { Value::from_any(py, module.context().clone(), entry_point) }
+    unsafe { Value::from_any(py, Owner::Module(module), entry_point) }
 }
 
 /// Whether the function is an entry point.
@@ -868,12 +953,4 @@ fn extract_constant<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyVa
             "Can't convert Python value into this type.",
         )),
     }
-}
-
-pub(crate) fn extract_contexts<'a>(
-    values: impl IntoIterator<Item = &'a PyAny> + 'a,
-) -> impl Iterator<Item = Py<Context>> + 'a {
-    values
-        .into_iter()
-        .filter_map(|v| Some(v.extract::<Value>().ok()?.context))
 }

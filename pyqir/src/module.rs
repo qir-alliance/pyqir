@@ -1,7 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{context::Context, values::Value};
+#![allow(clippy::used_underscore_binding)]
+
+use crate::{
+    context::Context,
+    values::{Owner, Value},
+};
 use inkwell::memory_buffer::MemoryBuffer;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use std::mem::transmute;
@@ -15,6 +20,14 @@ pub(crate) struct Module {
     module: inkwell::module::Module<'static>,
     context: Py<Context>,
 }
+
+impl PartialEq for Module {
+    fn eq(&self, other: &Self) -> bool {
+        self.module == other.module
+    }
+}
+
+impl Eq for Module {}
 
 #[pymethods]
 impl Module {
@@ -94,10 +107,12 @@ impl Module {
     ///
     /// :type: List[Function]
     #[getter]
-    fn functions(&self, py: Python) -> PyResult<Vec<PyObject>> {
-        self.module
+    #[allow(clippy::needless_pass_by_value)]
+    fn functions(slf: Py<Module>, py: Python) -> PyResult<Vec<PyObject>> {
+        slf.borrow(py)
+            .module
             .get_functions()
-            .map(|f| unsafe { Value::from_any(py, self.context.clone(), f) })
+            .map(|f| unsafe { Value::from_any(py, Owner::Module(slf.clone()), f) })
             .collect()
     }
 

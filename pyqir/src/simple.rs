@@ -3,10 +3,10 @@
 
 use crate::{
     builder::Builder,
-    context::{self, Context},
+    context::Context,
     module::Module,
     types::FunctionType,
-    values::Value,
+    values::{Owner, Value},
 };
 use inkwell::module::Linkage;
 use pyo3::{
@@ -78,11 +78,14 @@ impl SimpleModule {
     #[getter]
     fn qubits(&self, py: Python) -> PyResult<Vec<PyObject>> {
         let module = self.module.borrow(py);
-        let context = module.context();
-        let context_ref = unsafe { module.get() }.get_context();
+        let context = unsafe { module.get() }.get_context();
         (0..self.num_qubits)
             .map(|id| unsafe {
-                Value::from_any(py, context.clone(), values::qubit(&context_ref, id))
+                Value::from_any(
+                    py,
+                    module.context().clone().into(),
+                    values::qubit(&context, id),
+                )
             })
             .collect()
     }
@@ -93,11 +96,14 @@ impl SimpleModule {
     #[getter]
     fn results(&self, py: Python) -> PyResult<Vec<PyObject>> {
         let module = self.module.borrow(py);
-        let context = module.context();
-        let context_ref = unsafe { module.get() }.get_context();
+        let context = unsafe { module.get() }.get_context();
         (0..self.num_results)
             .map(|id| unsafe {
-                Value::from_any(py, context.clone(), values::result(&context_ref, id))
+                Value::from_any(
+                    py,
+                    module.context().clone().into(),
+                    values::result(&context, id),
+                )
             })
             .collect()
     }
@@ -142,9 +148,9 @@ impl SimpleModule {
         let module = self.module.borrow(py);
         let function_ty = unsafe { ty.get() };
         let ty = ty.into_super();
-        context::require_same(py, [module.context(), ty.context()])?;
+        let owner = Owner::merge(py, [&self.module.clone().into(), &ty.context().into()])?;
         let function = unsafe { module.get() }.add_function(name, function_ty, None);
-        unsafe { Value::from_any(py, ty.context().clone(), function) }
+        unsafe { Value::from_any(py, owner, function) }
     }
 
     /// Adds a global null-terminated string constant to the module.
@@ -165,7 +171,7 @@ impl SimpleModule {
         global.set_linkage(Linkage::Internal);
         global.set_constant(true);
         global.set_initializer(&value);
-        unsafe { Value::from_any(py, module.context().clone(), global) }
+        unsafe { Value::from_any(py, self.module.clone().into(), global) }
     }
 }
 
