@@ -137,6 +137,14 @@ impl Module {
         &self.context
     }
 
+    /// Verifies that this module is valid.
+    ///
+    /// :returns: An error description if this module is invalid or `None` if this module is valid.
+    /// :rtype: Optional[str]
+    fn verify(&self) -> Option<String> {
+        self.module.verify().map_err(|e| e.to_string()).err()
+    }
+
     fn __str__(&self) -> String {
         self.module.to_string()
     }
@@ -162,13 +170,4 @@ impl Attribute {
             .to_str()
             .expect("Value is not valid UTF-8.")
     }
-}
-
-/// Verifies that a module is valid.
-///
-/// :returns: An error description if the module is invalid or `None` if the module is valid.
-/// :rtype: Optional[str]
-#[pyfunction]
-pub(crate) fn verify_module(module: &Module) -> Option<String> {
-    module.module.verify().map_err(|e| e.to_string()).err()
 }

@@ -8,7 +8,7 @@ use crate::{
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    module::{verify_module, Attribute, Module},
+    module::{Attribute, Module},
     qis::BasicQisBuilder,
     simple::SimpleModule,
     types::{
@@ -70,6 +70,5 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(result_id, m)?)?;
     m.add_function(wrap_pyfunction!(result_type, m)?)?;
     m.add_function(wrap_pyfunction!(result, m)?)?;
-    m.add_function(wrap_pyfunction!(verify_module, m)?)?;
     Ok(())
 }
