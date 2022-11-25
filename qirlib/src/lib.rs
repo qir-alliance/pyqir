@@ -17,8 +17,6 @@ pub mod builder;
 #[cfg(not(feature = "no-llvm-linking"))]
 pub mod evaluation;
 #[cfg(not(feature = "no-llvm-linking"))]
-pub mod passes;
-#[cfg(not(feature = "no-llvm-linking"))]
 pub mod qis;
 #[cfg(all(test, not(feature = "no-llvm-linking")))]
 mod tests;
