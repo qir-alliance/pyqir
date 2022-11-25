@@ -10,6 +10,7 @@
 //    all contexts being used are the same.
 
 #![warn(clippy::all, clippy::pedantic)]
+#![allow(clippy::needless_pass_by_value)]
 
 #[cfg(feature = "llvm11-0")]
 extern crate llvm_sys_110 as llvm_sys;

@@ -50,7 +50,7 @@ pub(crate) enum Owner {
 }
 
 impl Owner {
-    fn context(&self, py: Python) -> Py<Context> {
+    pub(crate) fn context(&self, py: Python) -> Py<Context> {
         match self {
             Self::Context(context) => context.clone(),
             Self::Module(module) => module.borrow(py).context().clone(),
@@ -191,7 +191,6 @@ pub(crate) struct BasicBlock(inkwell::basic_block::BasicBlock<'static>);
 #[pymethods]
 impl BasicBlock {
     #[new]
-    #[allow(clippy::needless_pass_by_value)]
     fn new(
         py: Python,
         context: Py<Context>,
@@ -238,7 +237,6 @@ impl BasicBlock {
     ///
     /// :type: List[Instruction]
     #[getter]
-    #[allow(clippy::needless_pass_by_value)]
     fn instructions(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let mut insts = Vec::new();
         let mut inst = slf.0.get_first_instruction();
@@ -374,7 +372,6 @@ pub(crate) struct Function(FunctionValue<'static>);
 #[pymethods]
 impl Function {
     #[new]
-    #[allow(clippy::needless_pass_by_value)]
     fn new(
         py: Python,
         ty: PyRef<FunctionType>,

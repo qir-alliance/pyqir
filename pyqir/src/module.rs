@@ -112,7 +112,6 @@ impl Module {
     ///
     /// :type: List[Function]
     #[getter]
-    #[allow(clippy::needless_pass_by_value)]
     fn functions(slf: Py<Module>, py: Python) -> PyResult<Vec<PyObject>> {
         slf.borrow(py)
             .module

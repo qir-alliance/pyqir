@@ -155,7 +155,6 @@ pub(crate) struct FunctionType(inkwell::types::FunctionType<'static>);
 #[pymethods]
 impl FunctionType {
     #[new]
-    #[allow(clippy::needless_pass_by_value)]
     fn new(py: Python, ret: &Type, params: Vec<Type>) -> PyResult<(Self, Type)> {
         Owner::merge(
             py,

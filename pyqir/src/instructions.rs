@@ -35,7 +35,6 @@ impl Instruction {
     ///
     /// :type: List[Value]
     #[getter]
-    #[allow(clippy::needless_pass_by_value)]
     fn operands(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let owner = slf.as_ref().owner();
         (0..slf.0.get_num_operands())

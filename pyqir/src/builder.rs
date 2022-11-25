@@ -24,7 +24,7 @@ use std::{
 #[pyclass(unsendable)]
 pub(crate) struct Builder {
     builder: inkwell::builder::Builder<'static>,
-    context: Py<Context>,
+    owner: Owner,
 }
 
 #[pymethods]
@@ -41,14 +41,24 @@ impl Builder {
             }
         };
 
-        Self { builder, context }
+        Self {
+            builder,
+            owner: context.into(),
+        }
     }
 
     /// Tells this builder to insert subsequent instructions at the end of the block.
     ///
     /// :param BasicBlock block: The block to insert into.
-    fn insert_at_end(&self, block: &BasicBlock) {
+    fn insert_at_end(&mut self, py: Python, block: PyRef<BasicBlock>) -> PyResult<()> {
+        let owner = block.as_ref().owner();
+        if *owner.context(py).borrow(py) != *self.owner.context(py).borrow(py) {
+            return Err(PyValueError::new_err("Wrong context."));
+        }
+
+        self.owner = owner.clone();
         self.builder.position_at_end(unsafe { block.get() });
+        Ok(())
     }
 
     /// Inserts a bitwise logical and instruction.
@@ -59,7 +69,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn and_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        let owner = Owner::merge(py, [&self.context.clone().into(), lhs.owner(), rhs.owner()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_and::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
@@ -76,7 +86,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn or_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        let owner = Owner::merge(py, [&self.context.clone().into(), lhs.owner(), rhs.owner()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_or::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
@@ -93,7 +103,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn xor(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        let owner = Owner::merge(py, [&self.context.clone().into(), lhs.owner(), rhs.owner()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_xor::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
@@ -110,7 +120,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn add(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        let owner = Owner::merge(py, [&self.context.clone().into(), lhs.owner(), rhs.owner()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_int_add::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
@@ -127,7 +137,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn sub(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        let owner = Owner::merge(py, [&self.context.clone().into(), lhs.owner(), rhs.owner()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_int_sub::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
@@ -144,7 +154,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn mul(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        let owner = Owner::merge(py, [&self.context.clone().into(), lhs.owner(), rhs.owner()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_int_mul::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
@@ -161,7 +171,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn shl(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        let owner = Owner::merge(py, [&self.context.clone().into(), lhs.owner(), rhs.owner()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_left_shift::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
@@ -178,7 +188,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn lshr(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        let owner = Owner::merge(py, [&self.context.clone().into(), lhs.owner(), rhs.owner()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_right_shift::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
@@ -196,9 +206,8 @@ impl Builder {
     /// :return: The boolean result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, pred, lhs, rhs)")]
-    #[allow(clippy::needless_pass_by_value)]
     fn icmp(&self, py: Python, pred: IntPredicate, lhs: Value, rhs: Value) -> PyResult<PyObject> {
-        let owner = Owner::merge(py, [&self.context.clone().into(), lhs.owner(), rhs.owner()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_int_compare::<IntValue>(
             pred.into(),
             unsafe { lhs.get() }.try_into()?,
@@ -218,7 +227,7 @@ impl Builder {
     fn call(&self, py: Python, callee: &Value, args: &PySequence) -> PyResult<Option<PyObject>> {
         let owner = Owner::merge(
             py,
-            [self.context.clone().into(), callee.owner().clone()]
+            [self.owner.clone(), callee.owner().clone()]
                 .into_iter()
                 .chain(args.iter()?.filter_map(|v| {
                     v.ok()
@@ -273,7 +282,7 @@ impl Builder {
         r#true: Option<&PyAny>,
         r#false: Option<&PyAny>,
     ) -> PyResult<()> {
-        Owner::merge(py, [&self.context.clone().into(), cond.owner()])?;
+        Owner::merge(py, [&self.owner, cond.owner()])?;
         self.builder.try_build_if(
             unsafe { cond.get() }.try_into()?,
             || r#true.iter().try_for_each(|f| f.call0().map(|_| ())),
@@ -287,9 +296,8 @@ impl Builder {
     /// :returns: The branch instruction.
     /// :rtype: Instruction
     #[pyo3(text_signature = "(dest)")]
-    #[allow(clippy::needless_pass_by_value)]
     fn br(&self, py: Python, dest: PyRef<BasicBlock>) -> PyResult<PyObject> {
-        let owner = Owner::merge(py, [&self.context.clone().into(), dest.as_ref().owner()])?;
+        let owner = Owner::merge(py, [&self.owner, dest.as_ref().owner()])?;
         let inst = self
             .builder
             .build_unconditional_branch(unsafe { dest.get() });
@@ -304,9 +312,9 @@ impl Builder {
     #[pyo3(text_signature = "(value)")]
     fn ret(&self, py: Python, value: Option<&Value>) -> PyResult<PyObject> {
         let (inst, owner) = match value {
-            None => (self.builder.build_return(None), self.context.clone().into()),
+            None => (self.builder.build_return(None), self.owner.clone()),
             Some(value) => {
-                let owner = Owner::merge(py, [&self.context.clone().into(), value.owner()])?;
+                let owner = Owner::merge(py, [&self.owner, value.owner()])?;
                 let value = BasicValueEnum::try_from(unsafe { value.get() })?;
                 (self.builder.build_return(Some(&value)), owner)
             }
@@ -320,8 +328,8 @@ impl Builder {
         &self.builder
     }
 
-    pub(crate) fn context(&self) -> &Py<Context> {
-        &self.context
+    pub(crate) fn owner(&self) -> &Owner {
+        &self.owner
     }
 }
 

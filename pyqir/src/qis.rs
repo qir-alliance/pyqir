@@ -33,10 +33,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, control, target)")]
     fn cx(&self, py: Python, control: &Value, target: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        Owner::merge(
-            py,
-            [&builder.context().into(), control.owner(), target.owner()],
-        )?;
+        Owner::merge(py, [builder.owner(), control.owner(), target.owner()])?;
         unsafe { builder.get() }.build_cx(
             unsafe { control.get() }.try_into()?,
             unsafe { target.get() }.try_into()?,
@@ -52,10 +49,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, control, target)")]
     fn cz(&self, py: Python, control: &Value, target: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        Owner::merge(
-            py,
-            [&builder.context().into(), control.owner(), target.owner()],
-        )?;
+        Owner::merge(py, [builder.owner(), control.owner(), target.owner()])?;
         unsafe { builder.get() }.build_cz(
             unsafe { control.get() }.try_into()?,
             unsafe { target.get() }.try_into()?,
@@ -70,7 +64,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn h(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        Owner::merge(py, [&builder.context().into(), qubit.owner()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_h(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -83,10 +77,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit, result)")]
     fn mz(&self, py: Python, qubit: &Value, result: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        Owner::merge(
-            py,
-            [&builder.context().into(), qubit.owner(), result.owner()],
-        )?;
+        Owner::merge(py, [builder.owner(), qubit.owner(), result.owner()])?;
         unsafe { builder.get() }.build_mz(
             unsafe { qubit.get() }.try_into()?,
             unsafe { result.get() }.try_into()?,
@@ -101,7 +92,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn reset(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        Owner::merge(py, [&builder.context().into(), qubit.owner()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_reset(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -117,7 +108,7 @@ impl BasicQisBuilder {
         Owner::merge(
             py,
             [
-                Some(builder.context().into()),
+                Some(builder.owner().clone()),
                 theta.extract::<Value>().ok().map(|v| v.owner().clone()),
                 Some(qubit.owner().clone()),
             ]
@@ -125,7 +116,8 @@ impl BasicQisBuilder {
             .flatten(),
         )?;
 
-        let context = builder.context().borrow(py);
+        let context = builder.owner().context(py);
+        let context = context.borrow(py);
         let theta = unsafe { values::extract_any(&context.f64_type(), theta)? };
         unsafe { builder.get() }.build_rx(theta.try_into()?, unsafe { qubit.get() }.try_into()?);
         Ok(())
@@ -142,7 +134,7 @@ impl BasicQisBuilder {
         Owner::merge(
             py,
             [
-                Some(builder.context().into()),
+                Some(builder.owner().clone()),
                 theta.extract::<Value>().ok().map(|v| v.owner().clone()),
                 Some(qubit.owner().clone()),
             ]
@@ -150,7 +142,8 @@ impl BasicQisBuilder {
             .flatten(),
         )?;
 
-        let context = builder.context().borrow(py);
+        let context = builder.owner().context(py);
+        let context = context.borrow(py);
         let theta = unsafe { values::extract_any(&context.f64_type(), theta)? };
         unsafe { builder.get() }.build_ry(theta.try_into()?, unsafe { qubit.get() }.try_into()?);
         Ok(())
@@ -167,7 +160,7 @@ impl BasicQisBuilder {
         Owner::merge(
             py,
             [
-                Some(builder.context().into()),
+                Some(builder.owner().clone()),
                 theta.extract::<Value>().ok().map(|v| v.owner().clone()),
                 Some(qubit.owner().clone()),
             ]
@@ -175,7 +168,8 @@ impl BasicQisBuilder {
             .flatten(),
         )?;
 
-        let context = builder.context().borrow(py);
+        let context = builder.owner().context(py);
+        let context = context.borrow(py);
         let theta = unsafe { values::extract_any(&context.f64_type(), theta)? };
         unsafe { builder.get() }.build_rz(theta.try_into()?, unsafe { qubit.get() }.try_into()?);
         Ok(())
@@ -188,7 +182,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn s(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        Owner::merge(py, [&builder.context().into(), qubit.owner()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_s(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -200,7 +194,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn s_adj(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        Owner::merge(py, [&builder.context().into(), qubit.owner()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_s_adj(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -212,7 +206,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn t(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        Owner::merge(py, [&builder.context().into(), qubit.owner()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_t(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -224,7 +218,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn t_adj(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        Owner::merge(py, [&builder.context().into(), qubit.owner()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_t_adj(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -236,7 +230,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn x(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        Owner::merge(py, [&builder.context().into(), qubit.owner()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_x(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -248,7 +242,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn y(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        Owner::merge(py, [&builder.context().into(), qubit.owner()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_y(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -260,7 +254,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn z(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        Owner::merge(py, [&builder.context().into(), qubit.owner()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_z(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -286,7 +280,7 @@ impl BasicQisBuilder {
         zero: Option<&PyAny>,
     ) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        Owner::merge(py, [&builder.context().into(), cond.owner()])?;
+        Owner::merge(py, [builder.owner(), cond.owner()])?;
         unsafe { builder.get() }.try_build_if_result(
             unsafe { cond.get() }.try_into()?,
             || one.iter().try_for_each(|f| f.call0().map(|_| ())),

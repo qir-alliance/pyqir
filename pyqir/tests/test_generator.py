@@ -13,7 +13,9 @@ import pytest
 
 import pyqir
 from pyqir import (
+    BasicBlock,
     BasicQisBuilder,
+    Builder,
     Context,
     Function,
     FunctionType,
@@ -231,3 +233,14 @@ def test_parsed_function_lifetime() -> None:
         return next(filter(pyqir.is_entry_point, m.functions))
 
     assert get_entry().name == "program__main"
+
+
+def test_builder_lifetime() -> None:
+    def make_builder() -> Builder:
+        c = Context()
+        m = Module(c, "test")
+        b = Builder(c)
+        b.insert_at_end(BasicBlock(c, "", pyqir.entry_point(m, "main", 0, 0)))
+        return b
+
+    assert str(make_builder().ret(None)) == "  ret void"
