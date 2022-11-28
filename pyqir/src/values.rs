@@ -303,7 +303,7 @@ impl Constant {
                 Err(PyValueError::new_err("Can't create null for this type."))
             }
         }?;
-        unsafe { Value::from_any(py, Owner::Context(ty.context().clone()), value) }
+        unsafe { Value::from_any(py, ty.context().clone_ref(py).into(), value) }
     }
 
     /// Whether this value is the null value for its type.
@@ -891,7 +891,7 @@ pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
 #[pyo3(text_signature = "(module, value)")]
 pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> PyResult<PyObject> {
     let string = values::global_string(unsafe { module.get() }, value);
-    unsafe { Value::from_any(py, module.context().clone().into(), string) }
+    unsafe { Value::from_any(py, module.context().clone_ref(py).into(), string) }
 }
 
 /// If the value is a pointer to a constant byte string, extracts it.

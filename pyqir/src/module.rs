@@ -105,7 +105,7 @@ impl Module {
         slf.borrow(py)
             .module
             .get_functions()
-            .map(|f| unsafe { Value::from_any(py, slf.clone().into(), f) })
+            .map(|f| unsafe { Value::from_any(py, slf.clone_ref(py).into(), f) })
             .collect()
     }
 
@@ -154,7 +154,7 @@ impl PartialEq for Module {
 
 /// The linkage kind for a global value in a module.
 #[pyclass]
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub(crate) enum Linkage {
     #[pyo3(name = "APPENDING")]
     Appending,
