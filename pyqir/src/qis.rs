@@ -292,15 +292,15 @@ impl BasicQisBuilder {
 
 #[derive(FromPyObject)]
 enum Angle<'p> {
-    Constant(f64),
     Value(PyRef<'p, Value>),
+    Constant(f64),
 }
 
 impl Angle<'_> {
     fn owner(&self) -> Option<&Owner> {
         match self {
-            Angle::Constant(_) => None,
             Angle::Value(v) => Some(v.owner()),
+            Angle::Constant(_) => None,
         }
     }
 
@@ -309,8 +309,8 @@ impl Angle<'_> {
         context: &'ctx inkwell::context::Context,
     ) -> Result<FloatValue<'ctx>, ConvertError> {
         match self {
-            &Angle::Constant(c) => Ok(context.f64_type().const_float(c)),
             Angle::Value(v) => v.get().try_into(),
+            &Angle::Constant(c) => Ok(context.f64_type().const_float(c)),
         }
     }
 }

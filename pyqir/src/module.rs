@@ -18,14 +18,6 @@ pub(crate) struct Module {
     context: Py<Context>,
 }
 
-impl PartialEq for Module {
-    fn eq(&self, other: &Self) -> bool {
-        self.module == other.module
-    }
-}
-
-impl Eq for Module {}
-
 #[pymethods]
 impl Module {
     #[new]
@@ -149,6 +141,14 @@ impl Module {
 impl Module {
     pub(crate) unsafe fn get(&self) -> &inkwell::module::Module<'static> {
         &self.module
+    }
+}
+
+impl Eq for Module {}
+
+impl PartialEq for Module {
+    fn eq(&self, other: &Self) -> bool {
+        self.module == other.module
     }
 }
 

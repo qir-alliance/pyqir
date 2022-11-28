@@ -31,6 +31,7 @@ use pyo3::{
     exceptions::{PyTypeError, PyValueError},
     prelude::*,
     types::PyBytes,
+    PyRef,
 };
 use qirlib::values;
 use std::{
@@ -42,24 +43,6 @@ use std::{
     ops::Deref,
     slice,
 };
-
-impl From<Py<Context>> for Owner {
-    fn from(context: Py<Context>) -> Self {
-        Self::Context(context)
-    }
-}
-
-impl From<&Py<Context>> for Owner {
-    fn from(context: &Py<Context>) -> Self {
-        Self::Context(context.clone())
-    }
-}
-
-impl From<Py<Module>> for Owner {
-    fn from(module: Py<Module>) -> Self {
-        Self::Module(module)
-    }
-}
 
 /// A value.
 #[pyclass(subclass, unsendable)]
@@ -188,6 +171,18 @@ impl Owner {
     }
 }
 
+impl From<Py<Context>> for Owner {
+    fn from(context: Py<Context>) -> Self {
+        Self::Context(context)
+    }
+}
+
+impl From<Py<Module>> for Owner {
+    fn from(module: Py<Module>) -> Self {
+        Self::Module(module)
+    }
+}
+
 /// A basic block.
 ///
 /// If the `before` block is given, this basic block is inserted directly before it. If no `before`
@@ -212,13 +207,14 @@ impl BasicBlock {
         parent: Option<PyRef<Function>>,
         before: Option<PyRef<BasicBlock>>,
     ) -> PyResult<PyClassInitializer<Self>> {
-        let parent_function = parent.as_ref().map(|f| f.0);
+        let parent_value = parent.as_ref().map(|f| f.0);
+        let parent = parent.map(PyRef::into_super);
         let owner = Owner::merge(
             py,
             [
-                Some(context.clone_ref(py).into()),
-                parent.map(|f| f.into_super().as_ref().owner.clone_ref(py)),
-                before.as_ref().map(|b| b.as_ref().owner.clone_ref(py)),
+                Some(&context.clone_ref(py).into()),
+                parent.as_ref().map(|f| &f.as_ref().owner),
+                before.as_ref().map(|b| &b.as_ref().owner),
             ]
             .into_iter()
             .flatten(),
@@ -226,7 +222,7 @@ impl BasicBlock {
 
         let block = {
             let context = context.borrow(py);
-            let block = match (parent_function, before) {
+            let block = match (parent_value, before) {
                 (None, None) => Err(PyValueError::new_err("Can't create block without parent.")),
                 (Some(parent), None) => Ok(context.append_basic_block(parent, name)),
                 (Some(parent), Some(before)) if before.0.get_parent() != Some(parent) => Err(
@@ -396,8 +392,8 @@ impl Function {
         let owner = Owner::merge(
             py,
             [
-                Owner::Context(ty.as_ref().context().clone()),
-                Owner::Module(module.clone()),
+                Owner::Context(ty.as_ref().context().clone_ref(py)),
+                Owner::Module(module.clone_ref(py)),
             ],
         )?;
 

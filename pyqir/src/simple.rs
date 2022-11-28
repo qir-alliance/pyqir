@@ -141,7 +141,13 @@ impl SimpleModule {
         let module = self.module.borrow(py);
         let function_ty = unsafe { ty.get() };
         let ty = ty.into_super();
-        let owner = Owner::merge(py, [&self.module.clone().into(), &ty.context().into()])?;
+        let owner = Owner::merge(
+            py,
+            [
+                Owner::Module(self.module.clone_ref(py)),
+                Owner::Context(ty.context().clone_ref(py)),
+            ],
+        )?;
         let function = unsafe { module.get() }.add_function(name, function_ty, None);
         unsafe { Value::from_any(py, owner, function) }
     }
