@@ -76,6 +76,11 @@ impl Value {
 }
 
 impl Value {
+    pub(crate) unsafe fn new(owner: Owner, value: AnyValue) -> PyClassInitializer<Self> {
+        let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
+        PyClassInitializer::from(Self { value, owner })
+    }
+
     pub(crate) unsafe fn from_any<'ctx>(
         py: Python,
         owner: Owner,
@@ -94,11 +99,6 @@ impl Value {
         } else {
             Ok(Py::new(py, Self { value, owner })?.to_object(py))
         }
-    }
-
-    pub(crate) unsafe fn init(owner: Owner, value: AnyValue) -> PyClassInitializer<Self> {
-        let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
-        PyClassInitializer::from(Self { value, owner })
     }
 
     pub(crate) unsafe fn get(&self) -> AnyValue<'static> {
@@ -403,7 +403,7 @@ impl Function {
             Some(linkage.into()),
         );
 
-        Ok(unsafe { Value::init(owner, value.into()) }
+        Ok(unsafe { Value::new(owner, value.into()) }
             .add_subclass(Constant)
             .add_subclass(Self(value)))
     }

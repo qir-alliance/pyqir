@@ -76,7 +76,7 @@ impl Instruction {
         inst: InstructionValue,
     ) -> PyResult<PyObject> {
         let inst = transmute::<InstructionValue<'_>, InstructionValue<'static>>(inst);
-        let base = Value::init(owner, inst.into()).add_subclass(Self(inst));
+        let base = Value::new(owner, inst.into()).add_subclass(Self(inst));
         match inst.get_opcode() {
             InstructionOpcode::Switch => Ok(Py::new(py, base.add_subclass(Switch))?.to_object(py)),
             InstructionOpcode::ICmp => Ok(Py::new(py, base.add_subclass(ICmp))?.to_object(py)),
