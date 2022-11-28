@@ -4,10 +4,10 @@
 use pyo3::{
     exceptions::PyOSError,
     prelude::*,
-    types::{PyDict, PyList},
+    types::{PyDict, PyList, PyTuple},
     PyAny,
 };
-use qirlib::evaluation::{interop::Instruction, jit::run_module_file};
+use qirlib::evaluation::jit::run_module_file;
 
 #[pyclass]
 pub(crate) struct PyNonadaptiveJit;
@@ -27,56 +27,6 @@ impl PyNonadaptiveJit {
         entry_point: Option<&str>,
         result_stream: Option<&PyList>,
     ) -> PyResult<()> {
-        fn controlled(pyobj: &PyAny, gate: &str, control: String, target: String) -> PyResult<()> {
-            let has_gate = pyobj.hasattr(gate)?;
-            if has_gate {
-                let func = pyobj.getattr(gate)?;
-                let args = (control, target);
-                func.call1(args)?;
-            }
-            Ok(())
-        }
-
-        fn measured(pyobj: &PyAny, gate: &str, qubit: String, target: String) -> PyResult<()> {
-            let has_gate = pyobj.hasattr(gate)?;
-            if has_gate {
-                let func = pyobj.getattr(gate)?;
-                let args = (qubit, target);
-                func.call1(args)?;
-            }
-            Ok(())
-        }
-
-        fn single(pyobj: &PyAny, gate: &str, qubit: String) -> PyResult<()> {
-            let has_gate = pyobj.hasattr(gate)?;
-            if has_gate {
-                let func = pyobj.getattr(gate)?;
-                let args = (qubit,);
-                func.call1(args)?;
-            }
-            Ok(())
-        }
-
-        fn reset(pyobj: &PyAny, qubit: String) -> PyResult<()> {
-            let has_gate = pyobj.hasattr("reset")?;
-            if has_gate {
-                let func = pyobj.getattr("reset")?;
-                let args = (qubit,);
-                func.call1(args)?;
-            }
-            Ok(())
-        }
-
-        fn rotated(pyobj: &PyAny, gate: &str, theta: f64, qubit: String) -> PyResult<()> {
-            let has_gate = pyobj.hasattr(gate)?;
-            if has_gate {
-                let func = pyobj.getattr(gate)?;
-                let args = (theta, qubit);
-                func.call1(args)?;
-            }
-            Ok(())
-        }
-
         fn finish(pyobj: &PyAny, dict: &PyDict) -> PyResult<()> {
             let has_gate = pyobj.hasattr("finish")?;
             if has_gate {
@@ -97,29 +47,26 @@ impl PyNonadaptiveJit {
         Python::with_gil(|py| -> PyResult<()> {
             let mut current_register = 0;
             for instruction in gen_model.instructions {
-                match instruction {
-                    Instruction::Cx(ins) => controlled(pyobj, "cx", ins.control, ins.target)?,
-                    Instruction::Cz(ins) => controlled(pyobj, "cz", ins.control, ins.target)?,
-                    Instruction::H(ins) => single(pyobj, "h", ins.qubit)?,
-                    Instruction::M(ins) => {
-                        if ins.target.is_empty() {
-                            measured(pyobj, "m", ins.qubit, current_register.to_string())?;
+                let (name, args) = match instruction.name.to_lowercase().as_str() {
+                    "m" => {
+                        if instruction.args.len() == 1 {
+                            let v = current_register.to_string();
                             current_register += 1;
+                            ("m".to_string(), vec![instruction.args[0].clone(), v])
                         } else {
-                            measured(pyobj, "mz", ins.qubit, ins.target)?;
+                            (
+                                "mz".to_string(),
+                                vec![instruction.args[0].clone(), instruction.args[1].clone()],
+                            )
                         }
                     }
-                    Instruction::Reset(ins) => reset(pyobj, ins.qubit)?,
-                    Instruction::Rx(ins) => rotated(pyobj, "rx", ins.theta, ins.qubit)?,
-                    Instruction::Ry(ins) => rotated(pyobj, "ry", ins.theta, ins.qubit)?,
-                    Instruction::Rz(ins) => rotated(pyobj, "rz", ins.theta, ins.qubit)?,
-                    Instruction::S(ins) => single(pyobj, "s", ins.qubit)?,
-                    Instruction::SAdj(ins) => single(pyobj, "s_adj", ins.qubit)?,
-                    Instruction::T(ins) => single(pyobj, "t", ins.qubit)?,
-                    Instruction::TAdj(ins) => single(pyobj, "t_adj", ins.qubit)?,
-                    Instruction::X(ins) => single(pyobj, "x", ins.qubit)?,
-                    Instruction::Y(ins) => single(pyobj, "y", ins.qubit)?,
-                    Instruction::Z(ins) => single(pyobj, "z", ins.qubit)?,
+                    _ => (instruction.name, instruction.args),
+                };
+                let has_inst = pyobj.hasattr(name.as_str())?;
+                if has_inst {
+                    let func = pyobj.getattr(name.as_str())?;
+                    let call_args = PyTuple::new(py, args);
+                    func.call1(call_args)?;
                 }
             }
             let dict = PyDict::new(py);

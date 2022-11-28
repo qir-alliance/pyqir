@@ -183,10 +183,7 @@ mod tests {
     #[test]
     fn runs_single_entry_point_with_custom_name() -> Result<(), String> {
         let model = run_test_module(CUSTOM_ENTRY_POINT_NAME, None)?;
-        assert_eq!(
-            model.instructions,
-            vec![Instruction::X(Single::new("0".to_owned()))]
-        );
+        assert_eq!(model.instructions, vec![Instruction::new("x", vec!["0"])]);
         Ok(())
     }
 
@@ -194,10 +191,7 @@ mod tests {
     #[test]
     fn runs_entry_point_by_name() -> Result<(), String> {
         let model = run_test_module(CUSTOM_ENTRY_POINT_NAME, Some("App__Foo"))?;
-        assert_eq!(
-            model.instructions,
-            vec![Instruction::X(Single::new("0".to_owned()))]
-        );
+        assert_eq!(model.instructions, vec![Instruction::new("x", vec!["0"])]);
         Ok(())
     }
 
@@ -227,10 +221,7 @@ mod tests {
     #[test]
     fn runs_first_entry_point_by_name() -> Result<(), String> {
         let model = run_test_module(MULTIPLE_ENTRY_POINTS, Some("App__Foo"))?;
-        assert_eq!(
-            model.instructions,
-            vec![Instruction::X(Single::new("0".to_owned()))]
-        );
+        assert_eq!(model.instructions, vec![Instruction::new("x", vec!["0"])]);
         Ok(())
     }
 
@@ -238,10 +229,7 @@ mod tests {
     #[test]
     fn runs_second_entry_point_by_name() -> Result<(), String> {
         let model = run_test_module(MULTIPLE_ENTRY_POINTS, Some("App__Bar"))?;
-        assert_eq!(
-            model.instructions,
-            vec![Instruction::H(Single::new("0".to_owned()))]
-        );
+        assert_eq!(model.instructions, vec![Instruction::new("h", vec!["0"])]);
         Ok(())
     }
 

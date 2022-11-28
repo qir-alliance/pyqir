@@ -66,8 +66,10 @@ impl BaseProfile {
         self.record_max_qubit_id(qubit);
 
         log::debug!("reset {}", qubit);
-        self.model
-            .add_inst(Instruction::Reset(Single::new(qubit.to_string())));
+        self.model.add_inst(Instruction::new(
+            "reset",
+            [BaseProfile::get_qubit_string(qubit).as_str()].to_vec(),
+        ));
     }
 
     pub fn clear_gateset(&mut self) {
@@ -100,13 +102,20 @@ impl BaseProfile {
         self.model.add_reg(&cr.as_register());
     }
 
+    pub fn barrier(&mut self) {
+        log::debug!("barrier");
+        self.model.add_inst(Instruction::new("barrier", vec![]));
+    }
+
     pub fn cx(&mut self, control: QUBIT, target: QUBIT) {
         self.record_max_qubit_id(control);
         self.record_max_qubit_id(target);
 
         log::debug!("cx {}:{}", control, target);
-        self.model
-            .add_inst(Instruction::Cx(BaseProfile::controlled(control, target)));
+        self.model.add_inst(Instruction::new(
+            "cx",
+            [control.to_string().as_str(), target.to_string().as_str()].to_vec(),
+        ));
     }
 
     pub fn cz(&mut self, control: QUBIT, target: QUBIT) {
@@ -114,134 +123,172 @@ impl BaseProfile {
         self.record_max_qubit_id(target);
 
         log::debug!("cz {}:{}", control, target);
-        self.model
-            .add_inst(Instruction::Cz(BaseProfile::controlled(control, target)));
+        self.model.add_inst(Instruction::new(
+            "cz",
+            [control.to_string().as_str(), target.to_string().as_str()].to_vec(),
+        ));
     }
 
     pub fn h(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
         log::debug!("h {}", qubit);
-        self.model
-            .add_inst(Instruction::H(BaseProfile::single(qubit)));
+        self.model.add_inst(Instruction::new(
+            "h",
+            [BaseProfile::get_qubit_string(qubit).as_str()].to_vec(),
+        ));
     }
 
     pub fn m(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
         log::debug!("m {}", qubit);
-        self.model
-            .add_inst(Instruction::M(BaseProfile::measured(qubit, None)));
+        self.model.add_inst(Instruction::new(
+            "m",
+            vec![BaseProfile::get_qubit_string(qubit).as_str()],
+        ));
     }
 
     pub fn mz(&mut self, qubit: QUBIT, result: RESULT) {
         self.record_max_qubit_id(qubit);
 
         log::debug!("m {} into {}", qubit, result);
-        self.model
-            .add_inst(Instruction::M(BaseProfile::measured(qubit, Some(result))));
+        self.model.add_inst(Instruction::new(
+            "m",
+            [
+                BaseProfile::get_qubit_string(qubit).as_str(),
+                BaseProfile::get_result_string(Some(result)).as_str(),
+            ]
+            .to_vec(),
+        ));
     }
 
     pub fn rx(&mut self, theta: f64, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
         log::debug!("rx {}({})", qubit, theta);
-        self.model
-            .add_inst(Instruction::Rx(BaseProfile::rotated(theta, qubit)));
+
+        self.model.add_inst(Instruction::new(
+            "rx",
+            [
+                theta.to_string().as_str(),
+                BaseProfile::get_qubit_string(qubit).as_str(),
+            ]
+            .to_vec(),
+        ));
     }
 
     pub fn ry(&mut self, theta: f64, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
         log::debug!("ry {}({})", qubit, theta);
-        self.model
-            .add_inst(Instruction::Ry(BaseProfile::rotated(theta, qubit)));
+
+        self.model.add_inst(Instruction::new(
+            "ry",
+            [
+                theta.to_string().as_str(),
+                BaseProfile::get_qubit_string(qubit).as_str(),
+            ]
+            .to_vec(),
+        ));
     }
 
     pub fn rz(&mut self, theta: f64, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
         log::debug!("rz {}({})", qubit, theta);
-        self.model
-            .add_inst(Instruction::Rz(BaseProfile::rotated(theta, qubit)));
+
+        self.model.add_inst(Instruction::new(
+            "rz",
+            [
+                theta.to_string().as_str(),
+                BaseProfile::get_qubit_string(qubit).as_str(),
+            ]
+            .to_vec(),
+        ));
     }
 
     pub fn s(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
         log::debug!("s {}", qubit);
-        self.model
-            .add_inst(Instruction::S(BaseProfile::single(qubit)));
+
+        self.model.add_inst(Instruction::new(
+            "s",
+            [BaseProfile::get_qubit_string(qubit).as_str()].to_vec(),
+        ));
     }
 
     pub fn s_adj(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
         log::debug!("s_adj {}", qubit);
-        self.model
-            .add_inst(Instruction::SAdj(BaseProfile::single(qubit)));
+        self.model.add_inst(Instruction::new(
+            "s_adj",
+            [BaseProfile::get_qubit_string(qubit).as_str()].to_vec(),
+        ));
+    }
+
+    pub fn swap(&mut self, qubit1: QUBIT, qubit2: QUBIT) {
+        self.record_max_qubit_id(qubit1);
+        self.record_max_qubit_id(qubit2);
+
+        log::debug!("swap ({}, {})", qubit1, qubit2);
+
+        self.model.add_inst(Instruction::new(
+            "swap",
+            [qubit1.to_string().as_str(), qubit2.to_string().as_str()].to_vec(),
+        ));
     }
 
     pub fn t(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
         log::debug!("t {}", qubit);
-        self.model
-            .add_inst(Instruction::T(BaseProfile::single(qubit)));
+        self.model.add_inst(Instruction::new(
+            "t",
+            [BaseProfile::get_qubit_string(qubit).as_str()].to_vec(),
+        ));
     }
 
     pub fn t_adj(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
         log::debug!("t_adj {}", qubit);
-        self.model
-            .add_inst(Instruction::TAdj(BaseProfile::single(qubit)));
+        self.model.add_inst(Instruction::new(
+            "t_adj",
+            [BaseProfile::get_qubit_string(qubit).as_str()].to_vec(),
+        ));
     }
 
     pub fn x(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
         log::debug!("x {}", qubit);
-        self.model
-            .add_inst(Instruction::X(BaseProfile::single(qubit)));
+        self.model.add_inst(Instruction::new(
+            "x",
+            [BaseProfile::get_qubit_string(qubit).as_str()].to_vec(),
+        ));
     }
 
     pub fn y(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
         log::debug!("y {}", qubit);
-        self.model
-            .add_inst(Instruction::Y(BaseProfile::single(qubit)));
+        self.model.add_inst(Instruction::new(
+            "y",
+            [BaseProfile::get_qubit_string(qubit).as_str()].to_vec(),
+        ));
     }
 
     pub fn z(&mut self, qubit: QUBIT) {
         self.record_max_qubit_id(qubit);
 
         log::debug!("z {}", qubit);
-        self.model
-            .add_inst(Instruction::Z(BaseProfile::single(qubit)));
-    }
-
-    fn controlled(control: QUBIT, target: QUBIT) -> Controlled {
-        Controlled::new(
-            BaseProfile::get_qubit_string(control),
-            BaseProfile::get_qubit_string(target),
-        )
-    }
-
-    fn measured(qubit: QUBIT, result: Option<RESULT>) -> Measured {
-        Measured::new(
-            BaseProfile::get_qubit_string(qubit),
-            BaseProfile::get_result_string(result),
-        )
-    }
-
-    fn rotated(theta: f64, qubit: QUBIT) -> Rotated {
-        Rotated::new(theta, BaseProfile::get_qubit_string(qubit))
-    }
-
-    fn single(qubit: QUBIT) -> Single {
-        Single::new(BaseProfile::get_qubit_string(qubit))
+        self.model.add_inst(Instruction::new(
+            "z",
+            [BaseProfile::get_qubit_string(qubit).as_str()].to_vec(),
+        ));
     }
 
     fn get_qubit_string(qubit: QUBIT) -> String {

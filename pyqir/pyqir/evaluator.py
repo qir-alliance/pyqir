@@ -80,6 +80,9 @@ class GateLogger(GateSet):
         self.number_of_registers = 0
         self.instructions = []
 
+    def barrier(self) -> None:
+        self.instructions.append(f"barrier")
+
     def cx(self, control: str, target: str) -> None:
         self.instructions.append(f"cx qubit[{control}], qubit[{target}]")
 
@@ -112,6 +115,9 @@ class GateLogger(GateSet):
 
     def s_adj(self, qubit: str) -> None:
         self.instructions.append(f"s_adj qubit[{qubit}]")
+
+    def swap(self, qubit1: str, qubit2: str) -> None:
+        self.instructions.append(f"swap qubit[{qubit1}], qubit[{qubit2}]")
 
     def t(self, qubit: str) -> None:
         self.instructions.append(f"t qubit[{qubit}]")

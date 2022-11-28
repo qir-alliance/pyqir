@@ -62,6 +62,12 @@ impl<'ctx> Simulator {
 
     fn bind(module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) {
         let intrinsics = Intrinsics::new(module);
+        if let Some(ins) = intrinsics.barrier {
+            ee.add_global_mapping(
+                &ins,
+                super::intrinsics::__quantum__qis__barrier__body as usize,
+            );
+        }
         if let Some(ins) = intrinsics.cnot {
             ee.add_global_mapping(&ins, super::intrinsics::__quantum__qis__cnot__body as usize);
         }
@@ -76,6 +82,9 @@ impl<'ctx> Simulator {
         }
         if let Some(ins) = intrinsics.s_adj {
             ee.add_global_mapping(&ins, super::intrinsics::__quantum__qis__s__adj as usize);
+        }
+        if let Some(ins) = intrinsics.swap {
+            ee.add_global_mapping(&ins, super::intrinsics::__quantum__qis__swap__body as usize);
         }
         if let Some(ins) = intrinsics.t {
             ee.add_global_mapping(&ins, super::intrinsics::__quantum__qis__t__body as usize);
@@ -154,10 +163,32 @@ impl<'ctx> Simulator {
                 super::intrinsics::__quantum__rt__qubit_release as usize,
             );
         }
+        if let Some(ins) = runtime.initialize {
+            ee.add_global_mapping(&ins, super::intrinsics::__quantum__rt__initialize as usize);
+        }
+        if let Some(ins) = runtime.array_record_output {
+            ee.add_global_mapping(
+                &ins,
+                super::intrinsics::__quantum__rt__array_record_output as usize,
+            );
+        }
+        if let Some(ins) = runtime.result_record_output {
+            ee.add_global_mapping(
+                &ins,
+                super::intrinsics::__quantum__rt__result_record_output as usize,
+            );
+        }
+        if let Some(ins) = runtime.tuple_record_output {
+            ee.add_global_mapping(
+                &ins,
+                super::intrinsics::__quantum__rt__tuple_record_output as usize,
+            );
+        }
     }
 }
 
 pub struct Intrinsics<'ctx> {
+    pub barrier: Option<FunctionValue<'ctx>>,
     pub cnot: Option<FunctionValue<'ctx>>,
     pub cz: Option<FunctionValue<'ctx>>,
     pub m: Option<FunctionValue<'ctx>>,
@@ -172,6 +203,7 @@ pub struct Intrinsics<'ctx> {
     pub z: Option<FunctionValue<'ctx>>,
     pub s: Option<FunctionValue<'ctx>>,
     pub s_adj: Option<FunctionValue<'ctx>>,
+    pub swap: Option<FunctionValue<'ctx>>,
     pub t: Option<FunctionValue<'ctx>>,
     pub t_adj: Option<FunctionValue<'ctx>>,
     pub read_result: Option<FunctionValue<'ctx>>,
@@ -180,6 +212,7 @@ pub struct Intrinsics<'ctx> {
 impl<'ctx> Intrinsics<'ctx> {
     pub fn new(module: &Module<'ctx>) -> Self {
         let intrinsics = Intrinsics {
+            barrier: Intrinsics::get_qis_intrinsic_function_body(module, "Barrier"),
             cnot: Intrinsics::get_qis_intrinsic_function_body(module, "cnot"),
             cz: Intrinsics::get_qis_intrinsic_function_body(module, "Cz"),
             m: Intrinsics::get_qis_intrinsic_function_body(module, "M"),
@@ -194,6 +227,7 @@ impl<'ctx> Intrinsics<'ctx> {
             z: Intrinsics::get_qis_intrinsic_function_body(module, "Z"),
             s: Intrinsics::get_qis_intrinsic_function_body(module, "S"),
             s_adj: Intrinsics::get_qis_intrinsic_function_adj(module, "S"),
+            swap: Intrinsics::get_qis_intrinsic_function_body(module, "Swap"),
             t: Intrinsics::get_qis_intrinsic_function_body(module, "T"),
             t_adj: Intrinsics::get_qis_intrinsic_function_adj(module, "T"),
             read_result: Intrinsics::get_qis_intrinsic_function_body(module, "read_result"),
@@ -221,7 +255,8 @@ impl<'ctx> Intrinsics<'ctx> {
     fn is_qis_supported(name: &str) -> bool {
         matches!(
             name,
-            "__quantum__qis__cnot__body"
+            "__quantum__qis__barrier__body"
+                | "__quantum__qis__cnot__body"
                 | "__quantum__qis__cz__body"
                 | "__quantum__qis__m__body"
                 | "__quantum__qis__mz__body"
@@ -235,6 +270,7 @@ impl<'ctx> Intrinsics<'ctx> {
                 | "__quantum__qis__z__body"
                 | "__quantum__qis__s__body"
                 | "__quantum__qis__s__adj"
+                | "__quantum__qis__swap__body"
                 | "__quantum__qis__t__body"
                 | "__quantum__qis__t__adj"
                 | "__quantum__qis__read_result__body"
@@ -248,6 +284,10 @@ pub struct Runtime<'ctx> {
     pub result_equal: Option<FunctionValue<'ctx>>,
     pub qubit_allocate: Option<FunctionValue<'ctx>>,
     pub qubit_release: Option<FunctionValue<'ctx>>,
+    pub initialize: Option<FunctionValue<'ctx>>,
+    pub array_record_output: Option<FunctionValue<'ctx>>,
+    pub result_record_output: Option<FunctionValue<'ctx>>,
+    pub tuple_record_output: Option<FunctionValue<'ctx>>,
 }
 
 impl<'ctx> Runtime<'ctx> {
@@ -258,6 +298,19 @@ impl<'ctx> Runtime<'ctx> {
             result_equal: Runtime::get_rt_intrinsic_function_body(module, "result_equal"),
             qubit_allocate: Runtime::get_rt_intrinsic_function_body(module, "qubit_allocate"),
             qubit_release: Runtime::get_rt_intrinsic_function_body(module, "qubit_release"),
+            initialize: Runtime::get_rt_intrinsic_function_body(module, "initialize"),
+            array_record_output: Runtime::get_rt_intrinsic_function_body(
+                module,
+                "array_record_output",
+            ),
+            result_record_output: Runtime::get_rt_intrinsic_function_body(
+                module,
+                "result_record_output",
+            ),
+            tuple_record_output: Runtime::get_rt_intrinsic_function_body(
+                module,
+                "tuple_record_output",
+            ),
         };
 
         intrinsics
@@ -279,6 +332,10 @@ impl<'ctx> Runtime<'ctx> {
                 | "__quantum__rt__result_equal"
                 | "__quantum__rt__qubit_allocate"
                 | "__quantum__rt__qubit_release"
+                | "__quantum__rt__initialize"
+                | "__quantum__rt__array_record_output"
+                | "__quantum__rt__result_record_output"
+                | "__quantum__rt__tuple_record_output"
         )
     }
 }

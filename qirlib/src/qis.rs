@@ -41,6 +41,8 @@ impl From<AttributeIndex> for u32 {
 }
 
 pub trait BuilderExt<'ctx> {
+    fn build_barrier(&self);
+
     fn build_cx(&self, control: PointerValue, qubit: PointerValue);
 
     fn build_cz(&self, control: PointerValue, qubit: PointerValue);
@@ -90,6 +92,16 @@ pub trait BuilderExt<'ctx> {
 }
 
 impl<'ctx> BuilderExt<'ctx> for Builder<'ctx> {
+    fn build_barrier(&self) {
+        unsafe {
+            build_call(
+                self.get_ref(),
+                no_param(builder_module(self.get_ref()), "barrier", Functor::Body),
+                &mut [],
+            );
+        }
+    }
+
     fn build_cx(&self, control: PointerValue, qubit: PointerValue) {
         unsafe {
             build_call(
@@ -305,6 +317,12 @@ pub(crate) unsafe fn builder_module(builder: LLVMBuilderRef) -> LLVMModuleRef {
         .and_then(|v| NonNull::new(LLVMGetGlobalParent(v.as_ptr())))
         .expect("The builder's position has not been set.")
         .as_ptr()
+}
+
+unsafe fn no_param(module: LLVMModuleRef, name: &str, functor: Functor) -> LLVMValueRef {
+    let context = LLVMGetModuleContext(module);
+    let ty = function_type(LLVMVoidTypeInContext(context), &mut []);
+    declare(module, name, functor, ty)
 }
 
 unsafe fn simple_gate(module: LLVMModuleRef, name: &str, functor: Functor) -> LLVMValueRef {

@@ -54,6 +54,17 @@ fn get_current_gate_processor() -> ForceSomeRwLockWriteGuard<'static, BaseProfil
 /// This function should not be called directly. It is intended to be
 /// called by QIR applications during JIT execution.
 #[no_mangle]
+pub unsafe extern "C" fn __quantum__qis__barrier__body() {
+    log::debug!("/__quantum__qis__barrier__body/");
+    let mut gs = get_current_gate_processor();
+    gs.barrier();
+}
+
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+#[no_mangle]
 pub unsafe extern "C" fn __quantum__qis__cnot__body(control: QUBIT, qubit: QUBIT) {
     log::debug!("/__quantum__qis__cnot__body/");
     let mut gs = get_current_gate_processor();
@@ -102,6 +113,17 @@ pub unsafe extern "C" fn __quantum__qis__s__adj(qubit: QUBIT) {
     log::debug!("/__quantum__qis__s__adj/");
     let mut gs = get_current_gate_processor();
     gs.s_adj(qubit);
+}
+
+/// # Safety
+///
+/// This function should not be called directly. It is intended to be
+/// called by QIR applications during JIT execution.
+#[no_mangle]
+pub unsafe extern "C" fn __quantum__qis__swap__body(qubit1: QUBIT, qubit2: QUBIT) {
+    log::debug!("/__quantum__qis__swap__body/");
+    let mut gs = get_current_gate_processor();
+    gs.swap(qubit1, qubit2);
 }
 
 /// # Safety
@@ -287,4 +309,25 @@ pub extern "C" fn __quantum__rt__qubit_allocate() -> QUBIT {
 pub extern "C" fn __quantum__rt__qubit_release(qubit: QUBIT) {
     log::debug!("/__quantum__rt__qubit_release/");
     (*MAX_QUBIT_ID).fetch_sub(1, Relaxed);
+}
+
+#[no_mangle]
+pub extern "C" fn __quantum__rt__initialize(reserved: *mut c_void) {
+    log::debug!("/__quantum__rt__initialize/");
+    // There are no qubits to reset since we don't effect qubit state
+}
+
+#[no_mangle]
+pub extern "C" fn __quantum__rt__array_record_output(num_elements: u64, label: *mut c_void) {
+    log::debug!("/__quantum__rt__array_record_output/");
+}
+
+#[no_mangle]
+pub extern "C" fn __quantum__rt__result_record_output(result: RESULT, label: *mut c_void) {
+    log::debug!("/__quantum__rt__result_record_output/");
+}
+
+#[no_mangle]
+pub extern "C" fn __quantum__rt__tuple_record_output(num_elements: u64, label: *mut c_void) {
+    log::debug!("/__quantum__rt__tuple_record_output/");
 }

@@ -34,6 +34,15 @@ def test_array_record_output_tagged() -> None:
     assert call in mod.ir()
 
 
+def test_initialize() -> None:
+    mod = SimpleModule("initialize", 0, 0)
+    i8p = PointerType(IntType(mod.context, 8))
+    rt.initialize(mod.builder, Constant.null(i8p))
+    name = "initialize"
+    call = f"call void @__quantum__rt__{name}(i8* null)"
+    assert call in mod.ir()
+
+
 def test_tuple_record_output_untagged() -> None:
     mod = SimpleModule("tuple_record_output", 0, 0)
     i8p = PointerType(IntType(mod.context, 8))

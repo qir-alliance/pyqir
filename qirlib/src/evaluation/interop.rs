@@ -94,24 +94,20 @@ impl Single {
     }
 }
 
-// https://github.com/microsoft/qsharp-language/blob/ageller/profile/Specifications/QIR/Base-Profile.md
-#[derive(Clone, Debug, PartialEq)]
-pub enum Instruction {
-    Cx(Controlled),
-    Cz(Controlled),
-    H(Single),
-    M(Measured),
-    Reset(Single),
-    Rx(Rotated),
-    Ry(Rotated),
-    Rz(Rotated),
-    S(Single),
-    SAdj(Single),
-    T(Single),
-    TAdj(Single),
-    X(Single),
-    Y(Single),
-    Z(Single),
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Instruction {
+    pub name: String,
+    pub args: Vec<String>,
+}
+
+impl Instruction {
+    #[must_use]
+    pub fn new(name: &str, args: Vec<&str>) -> Self {
+        Instruction {
+            name: name.to_string(),
+            args: args.into_iter().map(|x| x.to_string()).collect(),
+        }
+    }
 }
 
 #[derive(Clone, Default)]
