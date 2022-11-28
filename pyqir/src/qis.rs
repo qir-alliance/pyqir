@@ -118,7 +118,7 @@ impl BasicQisBuilder {
         unsafe {
             builder
                 .get()
-                .build_rx(theta.value(&context)?, qubit.get().try_into()?);
+                .build_rx(theta.to_float(&context)?, qubit.get().try_into()?);
         }
 
         Ok(())
@@ -144,7 +144,7 @@ impl BasicQisBuilder {
         unsafe {
             builder
                 .get()
-                .build_ry(theta.value(&context)?, qubit.get().try_into()?);
+                .build_ry(theta.to_float(&context)?, qubit.get().try_into()?);
         }
 
         Ok(())
@@ -170,7 +170,7 @@ impl BasicQisBuilder {
         unsafe {
             builder
                 .get()
-                .build_rz(theta.value(&context)?, qubit.get().try_into()?);
+                .build_rz(theta.to_float(&context)?, qubit.get().try_into()?);
         }
 
         Ok(())
@@ -304,7 +304,7 @@ impl Angle<'_> {
         }
     }
 
-    unsafe fn value<'ctx>(
+    unsafe fn to_float<'ctx>(
         &self,
         context: &'ctx inkwell::context::Context,
     ) -> Result<FloatValue<'ctx>, ConvertError> {

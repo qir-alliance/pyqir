@@ -244,7 +244,7 @@ impl Builder {
         let args = args
             .iter()
             .zip(param_types)
-            .map(|(arg, ty)| unsafe { arg.value(ty) }.map_err(Into::into))
+            .map(|(arg, ty)| unsafe { arg.to_value(ty) }.map_err(Into::into))
             .collect::<PyResult<Vec<_>>>()?;
 
         let call = self.builder.build_call(callable.value, &args, "");
@@ -365,11 +365,11 @@ impl Argument<'_> {
         }
     }
 
-    unsafe fn value(&self, ty: BasicTypeEnum<'static>) -> PyResult<BasicMetadataValueEnum> {
+    unsafe fn to_value(&self, ty: BasicTypeEnum<'static>) -> PyResult<BasicMetadataValueEnum> {
         match self {
             Argument::Value(v) => v.get().try_into().map_err(Into::into),
             Argument::Literal(l) => l
-                .value(types::basic_to_any(ty))?
+                .to_value(types::basic_to_any(ty))?
                 .try_into()
                 .map_err(Into::into),
         }

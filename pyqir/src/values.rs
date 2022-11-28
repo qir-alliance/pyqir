@@ -732,7 +732,7 @@ pub(crate) enum Literal<'py> {
 }
 
 impl Literal<'_> {
-    pub(crate) fn value(&self, ty: AnyTypeEnum<'static>) -> PyResult<AnyValue> {
+    pub(crate) fn to_value(&self, ty: AnyTypeEnum<'static>) -> PyResult<AnyValue> {
         match (ty, self) {
             (AnyTypeEnum::IntType(ty), &Self::Bool(b)) => Ok(ty.const_int(b.into(), false).into()),
             (AnyTypeEnum::IntType(ty), &Self::Int(i)) => {
@@ -756,7 +756,7 @@ impl Literal<'_> {
 #[pyo3(text_signature = "(ty, value)")]
 pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObject> {
     let owner = ty.context().clone_ref(py).into();
-    unsafe { Value::from_any(py, owner, value.value(ty.get())?) }
+    unsafe { Value::from_any(py, owner, value.to_value(ty.get())?) }
 }
 
 /// Creates a static qubit value.
