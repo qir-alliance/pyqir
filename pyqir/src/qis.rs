@@ -26,6 +26,16 @@ impl BasicQisBuilder {
         BasicQisBuilder { builder }
     }
 
+    /// Inserts a barrier instruction
+    ///
+    /// :rtype: None
+    #[pyo3(text_signature = "(self)")]
+    fn barrier(&self, py: Python) -> PyResult<()> {
+        let builder = self.builder.borrow(py);
+        unsafe { builder.get() }.build_barrier();
+        Ok(())
+    }
+
     /// Inserts a controlled Pauli :math:`X` gate.
     ///
     /// :param Value control: The control qubit.
