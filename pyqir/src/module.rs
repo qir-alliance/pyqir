@@ -3,10 +3,7 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::{
-    context::Context,
-    values::{Owner, Value},
-};
+use crate::{context::Context, values::Value};
 use inkwell::memory_buffer::MemoryBuffer;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use std::mem::transmute;
@@ -116,7 +113,7 @@ impl Module {
         slf.borrow(py)
             .module
             .get_functions()
-            .map(|f| unsafe { Value::from_any(py, Owner::Module(slf.clone()), f) })
+            .map(|f| unsafe { Value::from_any(py, slf.clone().into(), f) })
             .collect()
     }
 

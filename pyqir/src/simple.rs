@@ -78,13 +78,10 @@ impl SimpleModule {
     fn qubits(&self, py: Python) -> PyResult<Vec<PyObject>> {
         let module = self.module.borrow(py);
         let context = unsafe { module.get() }.get_context();
+        let owner = Owner::Context(module.context().clone_ref(py));
         (0..self.num_qubits)
             .map(|id| unsafe {
-                Value::from_any(
-                    py,
-                    module.context().clone().into(),
-                    values::qubit(&context, id),
-                )
+                Value::from_any(py, owner.clone_ref(py), values::qubit(&context, id))
             })
             .collect()
     }
@@ -96,13 +93,10 @@ impl SimpleModule {
     fn results(&self, py: Python) -> PyResult<Vec<PyObject>> {
         let module = self.module.borrow(py);
         let context = unsafe { module.get() }.get_context();
+        let owner = Owner::Context(module.context().clone_ref(py));
         (0..self.num_results)
             .map(|id| unsafe {
-                Value::from_any(
-                    py,
-                    module.context().clone().into(),
-                    values::result(&context, id),
-                )
+                Value::from_any(py, owner.clone_ref(py), values::result(&context, id))
             })
             .collect()
     }

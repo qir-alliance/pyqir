@@ -3,8 +3,9 @@
 
 use crate::{
     builder::Builder,
-    values::{self, Owner, Value},
+    values::{ConvertError, Owner, Value},
 };
+use inkwell::values::FloatValue;
 use pyo3::prelude::*;
 use qirlib::qis::BuilderExt;
 use std::convert::TryInto;
@@ -103,26 +104,23 @@ impl BasicQisBuilder {
     /// :param Value qubit: The qubit to rotate.
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
-    fn rx(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
+    fn rx(&self, py: Python, theta: Angle, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(
             py,
-            [
-                Some(builder.owner().clone_ref(py)),
-                theta
-                    .extract()
-                    .ok()
-                    .map(|v: PyRef<Value>| v.owner().clone_ref(py)),
-                Some(qubit.owner().clone_ref(py)),
-            ]
-            .into_iter()
-            .flatten(),
+            [Some(builder.owner()), theta.owner(), Some(qubit.owner())]
+                .into_iter()
+                .flatten(),
         )?;
 
         let context = builder.owner().context(py);
         let context = context.borrow(py);
-        let theta = unsafe { values::extract_any(&context.f64_type(), theta)? };
-        unsafe { builder.get() }.build_rx(theta.try_into()?, unsafe { qubit.get() }.try_into()?);
+        unsafe {
+            builder
+                .get()
+                .build_rx(theta.value(&context)?, qubit.get().try_into()?);
+        }
+
         Ok(())
     }
 
@@ -132,26 +130,23 @@ impl BasicQisBuilder {
     /// :param Value qubit: The qubit to rotate.
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
-    fn ry(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
+    fn ry(&self, py: Python, theta: Angle, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(
             py,
-            [
-                Some(builder.owner().clone_ref(py)),
-                theta
-                    .extract()
-                    .ok()
-                    .map(|v: PyRef<Value>| v.owner().clone_ref(py)),
-                Some(qubit.owner().clone_ref(py)),
-            ]
-            .into_iter()
-            .flatten(),
+            [Some(builder.owner()), theta.owner(), Some(qubit.owner())]
+                .into_iter()
+                .flatten(),
         )?;
 
         let context = builder.owner().context(py);
         let context = context.borrow(py);
-        let theta = unsafe { values::extract_any(&context.f64_type(), theta)? };
-        unsafe { builder.get() }.build_ry(theta.try_into()?, unsafe { qubit.get() }.try_into()?);
+        unsafe {
+            builder
+                .get()
+                .build_ry(theta.value(&context)?, qubit.get().try_into()?);
+        }
+
         Ok(())
     }
 
@@ -161,26 +156,23 @@ impl BasicQisBuilder {
     /// :param Value qubit: The qubit to rotate.
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
-    fn rz(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
+    fn rz(&self, py: Python, theta: Angle, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(
             py,
-            [
-                Some(builder.owner().clone_ref(py)),
-                theta
-                    .extract()
-                    .ok()
-                    .map(|v: PyRef<Value>| v.owner().clone_ref(py)),
-                Some(qubit.owner().clone_ref(py)),
-            ]
-            .into_iter()
-            .flatten(),
+            [Some(builder.owner()), theta.owner(), Some(qubit.owner())]
+                .into_iter()
+                .flatten(),
         )?;
 
         let context = builder.owner().context(py);
         let context = context.borrow(py);
-        let theta = unsafe { values::extract_any(&context.f64_type(), theta)? };
-        unsafe { builder.get() }.build_rz(theta.try_into()?, unsafe { qubit.get() }.try_into()?);
+        unsafe {
+            builder
+                .get()
+                .build_rz(theta.value(&context)?, qubit.get().try_into()?);
+        }
+
         Ok(())
     }
 
@@ -295,5 +287,30 @@ impl BasicQisBuilder {
             || one.iter().try_for_each(|f| f.call0().map(|_| ())),
             || zero.iter().try_for_each(|f| f.call0().map(|_| ())),
         )
+    }
+}
+
+#[derive(FromPyObject)]
+enum Angle<'p> {
+    Constant(f64),
+    Value(PyRef<'p, Value>),
+}
+
+impl Angle<'_> {
+    fn owner(&self) -> Option<&Owner> {
+        match self {
+            Angle::Constant(_) => None,
+            Angle::Value(v) => Some(v.owner()),
+        }
+    }
+
+    unsafe fn value<'ctx>(
+        &self,
+        context: &'ctx inkwell::context::Context,
+    ) -> Result<FloatValue<'ctx>, ConvertError> {
+        match self {
+            &Angle::Constant(c) => Ok(context.f64_type().const_float(c)),
+            Angle::Value(v) => v.get().try_into(),
+        }
     }
 }

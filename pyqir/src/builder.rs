@@ -53,7 +53,9 @@ impl Builder {
     fn insert_at_end(&mut self, py: Python, block: PyRef<BasicBlock>) -> PyResult<()> {
         let owner = block.as_ref().owner();
         if *owner.context(py).borrow(py) != *self.owner.context(py).borrow(py) {
-            return Err(PyValueError::new_err("Wrong context."));
+            Err(PyValueError::new_err(
+                "Block is not from the same context as builder.",
+            ))?;
         }
 
         self.owner = owner.clone_ref(py);
@@ -225,15 +227,13 @@ impl Builder {
     /// :rtype: Optional[Value]
     #[pyo3(text_signature = "(self, callee, args)")]
     fn call(&self, py: Python, callee: &Value, args: &PySequence) -> PyResult<Option<PyObject>> {
+        let arg_owners = args.iter()?.filter_map(|arg| {
+            let value = arg.ok()?.extract::<PyRef<Value>>().ok()?;
+            Some(value.owner().clone_ref(py))
+        });
         let owner = Owner::merge(
             py,
-            [self.owner.clone_ref(py), callee.owner().clone_ref(py)]
-                .into_iter()
-                .chain(args.iter()?.filter_map(|v| {
-                    v.ok()
-                        .and_then(|v| v.extract::<PyRef<Value>>().ok())
-                        .map(|v| v.owner().clone_ref(py))
-                })),
+            arg_owners.chain([self.owner.clone_ref(py), callee.owner().clone_ref(py)]),
         )?;
 
         let callable: Callable = unsafe { callee.get() }.try_into()?;
