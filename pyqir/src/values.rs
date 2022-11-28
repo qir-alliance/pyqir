@@ -11,7 +11,7 @@ use crate::{
 };
 use inkwell::{
     attributes::AttributeLoc,
-    types::{AnyType, AnyTypeEnum},
+    types::AnyTypeEnum,
     values::{
         AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, FloatValue, FunctionValue,
         GlobalValue, InstructionValue, IntValue, PointerValue,
@@ -30,7 +30,7 @@ use pyo3::{
     conversion::ToPyObject,
     exceptions::{PyTypeError, PyValueError},
     prelude::*,
-    types::PyBytes,
+    types::{PyBytes, PyLong},
     PyRef,
 };
 use qirlib::values;
@@ -724,18 +724,39 @@ impl Drop for Message {
     }
 }
 
+#[derive(FromPyObject)]
+pub(crate) enum Literal<'py> {
+    Bool(bool),
+    Int(&'py PyLong),
+    Float(f64),
+}
+
+impl Literal<'_> {
+    pub(crate) fn value(&self, ty: AnyTypeEnum<'static>) -> PyResult<AnyValue> {
+        match (ty, self) {
+            (AnyTypeEnum::IntType(ty), &Self::Bool(b)) => Ok(ty.const_int(b.into(), false).into()),
+            (AnyTypeEnum::IntType(ty), &Self::Int(i)) => {
+                Ok(ty.const_int(i.extract()?, false).into())
+            }
+            (AnyTypeEnum::FloatType(ty), &Self::Float(f)) => Ok(ty.const_float(f).into()),
+            _ => Err(PyTypeError::new_err(
+                "Can't convert Python value into this type.",
+            )),
+        }
+    }
+}
+
 /// Creates a constant value.
 ///
 /// :param Type ty: The type of the value.
-/// :param Union[int, float] value: The value of the constant.
+/// :param Union[bool, int, float] value: The value of the constant.
 /// :returns: The constant value.
 /// :rtype: Value
 #[pyfunction]
 #[pyo3(text_signature = "(ty, value)")]
-pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject> {
-    let context = ty.context().clone();
-    let value = extract_constant(unsafe { &ty.get() }, value)?;
-    unsafe { Value::from_any(py, Owner::Context(context), value) }
+pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObject> {
+    let owner = ty.context().clone_ref(py).into();
+    unsafe { Value::from_any(py, owner, value.value(ty.get())?) }
 }
 
 /// Creates a static qubit value.
@@ -883,23 +904,4 @@ pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> P
 pub(crate) fn extract_byte_string<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
     let string = values::extract_string(unsafe { value.get() }.try_into().ok()?)?;
     Some(PyBytes::new(py, string))
-}
-
-pub(crate) unsafe fn extract_any<'ctx>(
-    ty: &impl AnyType<'ctx>,
-    ob: &PyAny,
-) -> PyResult<AnyValue<'ctx>> {
-    ob.extract()
-        .map(|v: PyRef<Value>| v.value)
-        .or_else(|_| extract_constant(ty, ob))
-}
-
-fn extract_constant<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyValue<'ctx>> {
-    match ty.as_any_type_enum() {
-        AnyTypeEnum::IntType(int) => Ok(int.const_int(ob.extract()?, true).into()),
-        AnyTypeEnum::FloatType(float) => Ok(float.const_float(ob.extract()?).into()),
-        _ => Err(PyTypeError::new_err(
-            "Can't convert Python value into this type.",
-        )),
-    }
 }

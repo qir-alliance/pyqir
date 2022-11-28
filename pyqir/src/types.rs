@@ -363,7 +363,7 @@ pub(crate) fn is_result_type(ty: &Type) -> bool {
     types::is_result(ty.ty)
 }
 
-fn basic_to_any(ty: BasicTypeEnum) -> AnyTypeEnum {
+pub(crate) fn basic_to_any(ty: BasicTypeEnum) -> AnyTypeEnum {
     match ty {
         BasicTypeEnum::ArrayType(a) => a.into(),
         BasicTypeEnum::FloatType(f) => f.into(),

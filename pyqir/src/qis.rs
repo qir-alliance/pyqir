@@ -291,8 +291,8 @@ impl BasicQisBuilder {
 }
 
 #[derive(FromPyObject)]
-enum Angle<'p> {
-    Value(PyRef<'p, Value>),
+enum Angle<'py> {
+    Value(PyRef<'py, Value>),
     Constant(f64),
 }
 

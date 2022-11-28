@@ -4,13 +4,14 @@
 use crate::{
     context::Context,
     instructions::IntPredicate,
-    values::{self, AnyValue, BasicBlock, Owner, Value},
+    types,
+    values::{AnyValue, BasicBlock, Literal, Owner, Value},
 };
 use inkwell::{
-    types::{AnyTypeEnum, FunctionType},
-    values::{AnyValueEnum, BasicValueEnum, CallableValue, IntValue},
+    types::{AnyTypeEnum, BasicTypeEnum, FunctionType},
+    values::{AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, CallableValue, IntValue},
 };
-use pyo3::{exceptions::PyValueError, prelude::*, types::PySequence};
+use pyo3::{exceptions::PyValueError, prelude::*};
 use qirlib::builder::Ext;
 use std::{
     convert::{Into, TryFrom, TryInto},
@@ -226,34 +227,24 @@ impl Builder {
     /// :returns: The return value, or None if the function has a void return type.
     /// :rtype: Optional[Value]
     #[pyo3(text_signature = "(self, callee, args)")]
-    fn call(&self, py: Python, callee: &Value, args: &PySequence) -> PyResult<Option<PyObject>> {
-        let arg_owners = args.iter()?.filter_map(|arg| {
-            let value = arg.ok()?.extract::<PyRef<Value>>().ok()?;
-            Some(value.owner().clone_ref(py))
-        });
-        let owner = Owner::merge(
-            py,
-            arg_owners.chain([self.owner.clone_ref(py), callee.owner().clone_ref(py)]),
-        )?;
+    fn call(&self, py: Python, callee: &Value, args: Vec<Argument>) -> PyResult<Option<PyObject>> {
+        let arg_owners = args.iter().filter_map(Argument::owner);
+        let owner = Owner::merge(py, arg_owners.chain([&self.owner, callee.owner()]))?;
 
         let callable: Callable = unsafe { callee.get() }.try_into()?;
         let param_types = callable.ty.get_param_types();
-        if param_types.len() != args.len()? {
-            return Err(PyValueError::new_err(format!(
+        if param_types.len() != args.len() {
+            Err(PyValueError::new_err(format!(
                 "Expected {} arguments, got {}.",
                 param_types.len(),
-                args.len()?
-            )));
+                args.len()
+            )))?;
         }
 
         let args = args
-            .iter()?
+            .iter()
             .zip(param_types)
-            .map(|(v, t)| {
-                unsafe { values::extract_any(&t, v?) }?
-                    .try_into()
-                    .map_err(Into::into)
-            })
+            .map(|(arg, ty)| unsafe { arg.value(ty) }.map_err(Into::into))
             .collect::<PyResult<Vec<_>>>()?;
 
         let call = self.builder.build_call(callable.value, &args, "");
@@ -357,5 +348,30 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for Callable<'ctx> {
             _ => None,
         }
         .ok_or_else(|| PyValueError::new_err("Value is not callable."))
+    }
+}
+
+#[derive(FromPyObject)]
+enum Argument<'py> {
+    Value(PyRef<'py, Value>),
+    Literal(Literal<'py>),
+}
+
+impl Argument<'_> {
+    fn owner(&self) -> Option<&Owner> {
+        match self {
+            Argument::Value(v) => Some(v.owner()),
+            Argument::Literal(_) => None,
+        }
+    }
+
+    unsafe fn value(&self, ty: BasicTypeEnum<'static>) -> PyResult<BasicMetadataValueEnum> {
+        match self {
+            Argument::Value(v) => v.get().try_into().map_err(Into::into),
+            Argument::Literal(l) => l
+                .value(types::basic_to_any(ty))?
+                .try_into()
+                .map_err(Into::into),
+        }
     }
 }
