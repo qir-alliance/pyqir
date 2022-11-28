@@ -155,6 +155,52 @@ impl Module {
     }
 }
 
+/// The linkage kind for a global value in a module.
+#[pyclass]
+#[derive(Clone)]
+pub(crate) enum Linkage {
+    #[pyo3(name = "APPENDING")]
+    Appending,
+    #[pyo3(name = "AVAILABLE_EXTERNALLY")]
+    AvailableExternally,
+    #[pyo3(name = "COMMON")]
+    Common,
+    #[pyo3(name = "EXTERNAL")]
+    External,
+    #[pyo3(name = "EXTERNAL_WEAK")]
+    ExternalWeak,
+    #[pyo3(name = "INTERNAL")]
+    Internal,
+    #[pyo3(name = "LINK_ONCE_ANY")]
+    LinkOnceAny,
+    #[pyo3(name = "LINK_ONCE_ODR")]
+    LinkOnceOdr,
+    #[pyo3(name = "PRIVATE")]
+    Private,
+    #[pyo3(name = "WEAK_ANY")]
+    WeakAny,
+    #[pyo3(name = "WEAK_ODR")]
+    WeakOdr,
+}
+
+impl From<Linkage> for inkwell::module::Linkage {
+    fn from(linkage: Linkage) -> Self {
+        match linkage {
+            Linkage::Appending => Self::Appending,
+            Linkage::AvailableExternally => Self::AvailableExternally,
+            Linkage::Common => Self::Common,
+            Linkage::External => Self::External,
+            Linkage::ExternalWeak => Self::ExternalWeak,
+            Linkage::Internal => Self::Internal,
+            Linkage::LinkOnceAny => Self::LinkOnceAny,
+            Linkage::LinkOnceOdr => Self::LinkOnceODR,
+            Linkage::Private => Self::Private,
+            Linkage::WeakAny => Self::WeakAny,
+            Linkage::WeakOdr => Self::WeakODR,
+        }
+    }
+}
+
 /// An attribute.
 #[pyclass(unsendable)]
 pub(crate) struct Attribute(pub(crate) inkwell::attributes::Attribute);

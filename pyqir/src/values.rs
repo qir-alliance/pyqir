@@ -6,7 +6,7 @@
 use crate::{
     context::Context,
     instructions::Instruction,
-    module::{Attribute, Module},
+    module::{Attribute, Linkage, Module},
     types::{FunctionType, Type},
 };
 use inkwell::{
@@ -43,52 +43,6 @@ use std::{
     slice,
 };
 
-#[derive(Clone)]
-pub(crate) enum Owner {
-    Context(Py<Context>),
-    Module(Py<Module>),
-}
-
-impl Owner {
-    pub(crate) fn context(&self, py: Python) -> Py<Context> {
-        match self {
-            Self::Context(context) => context.clone(),
-            Self::Module(module) => module.borrow(py).context().clone(),
-        }
-    }
-
-    pub(crate) fn merge(
-        py: Python,
-        owners: impl IntoIterator<Item = impl Borrow<Self>>,
-    ) -> PyResult<Self> {
-        owners
-            .into_iter()
-            .try_fold(None, |o1, o2| match (o1, o2.borrow()) {
-                (None, owner) => Ok(Some(owner.clone())),
-                (Some(Self::Context(c1)), Self::Context(c2))
-                    if *c1.borrow(py) == *c2.borrow(py) =>
-                {
-                    Ok(Some(Self::Context(c1)))
-                }
-                (Some(Self::Context(c)), Self::Module(m))
-                    if *c.borrow(py) == *m.borrow(py).context().borrow(py) =>
-                {
-                    Ok(Some(Self::Module(m.clone())))
-                }
-                (Some(Self::Module(m)), Self::Context(c))
-                    if *m.borrow(py).context().borrow(py) == *c.borrow(py) =>
-                {
-                    Ok(Some(Self::Module(m)))
-                }
-                (Some(Self::Module(m1)), Self::Module(m2)) if *m1.borrow(py) == *m2.borrow(py) => {
-                    Ok(Some(Self::Module(m1)))
-                }
-                _ => Err(PyValueError::new_err("Owners are incompatible.")),
-            })?
-            .ok_or_else(|| PyValueError::new_err("No owners."))
-    }
-}
-
 impl From<Py<Context>> for Owner {
     fn from(context: Py<Context>) -> Self {
         Self::Context(context)
@@ -109,7 +63,6 @@ impl From<Py<Module>> for Owner {
 
 /// A value.
 #[pyclass(subclass, unsendable)]
-#[derive(Clone)]
 pub(crate) struct Value {
     value: AnyValue<'static>,
     owner: Owner,
@@ -174,6 +127,67 @@ impl Value {
     }
 }
 
+/// To store Inkwell values in Python classes, we transmute the lifetime to `'static`. You need to
+/// be careful when using Inkwell types with unsafely extended lifetimes. Follow these rules:
+///
+/// 1. When storing in a data type, always include an `Owner` field containing the owning module, if
+///    there is one, or the context otherwise.
+/// 2. Before passing an LLVM object to an Inkwell function, call `Owner::merge` to ensure that the
+///    owners of all of the objects are compatible.
+pub(crate) enum Owner {
+    Context(Py<Context>),
+    Module(Py<Module>),
+}
+
+impl Owner {
+    pub(crate) fn context(&self, py: Python) -> Py<Context> {
+        match self {
+            Self::Context(context) => context.clone_ref(py),
+            Self::Module(module) => module.borrow(py).context().clone_ref(py),
+        }
+    }
+
+    pub(crate) fn merge(
+        py: Python,
+        owners: impl IntoIterator<Item = impl Borrow<Self>>,
+    ) -> PyResult<Self> {
+        owners
+            .into_iter()
+            .try_fold(None, |o1, o2| match (o1, o2.borrow()) {
+                (None, owner) => Ok(Some(owner.clone_ref(py))),
+                (Some(Self::Context(c1)), Self::Context(c2))
+                    if *c1.borrow(py) == *c2.borrow(py) =>
+                {
+                    Ok(Some(Self::Context(c1)))
+                }
+                (Some(Self::Context(c)), Self::Module(m))
+                    if *c.borrow(py) == *m.borrow(py).context().borrow(py) =>
+                {
+                    Ok(Some(Self::Module(m.clone_ref(py))))
+                }
+                (Some(Self::Module(m)), Self::Context(c))
+                    if *m.borrow(py).context().borrow(py) == *c.borrow(py) =>
+                {
+                    Ok(Some(Self::Module(m)))
+                }
+                (Some(Self::Module(m1)), Self::Module(m2)) if *m1.borrow(py) == *m2.borrow(py) => {
+                    Ok(Some(Self::Module(m1)))
+                }
+                _ => Err(PyValueError::new_err(
+                    "Some values are from different contexts or modules.",
+                )),
+            })
+            .map(|o| o.expect("No owners were given."))
+    }
+
+    pub(crate) fn clone_ref(&self, py: Python) -> Owner {
+        match self {
+            Self::Context(context) => Self::Context(context.clone_ref(py)),
+            Self::Module(module) => Self::Module(module.clone_ref(py)),
+        }
+    }
+}
+
 /// A basic block.
 ///
 /// If the `before` block is given, this basic block is inserted directly before it. If no `before`
@@ -198,13 +212,13 @@ impl BasicBlock {
         parent: Option<PyRef<Function>>,
         before: Option<PyRef<BasicBlock>>,
     ) -> PyResult<PyClassInitializer<Self>> {
-        let parent_fn = parent.as_ref().map(|f| f.0);
+        let parent_function = parent.as_ref().map(|f| f.0);
         let owner = Owner::merge(
             py,
             [
-                Some(Owner::Context(context.clone())),
-                parent.map(|f| f.into_super().as_ref().owner.clone()),
-                before.as_ref().map(|b| b.as_ref().owner.clone()),
+                Some(context.clone_ref(py).into()),
+                parent.map(|f| f.into_super().as_ref().owner.clone_ref(py)),
+                before.as_ref().map(|b| b.as_ref().owner.clone_ref(py)),
             ]
             .into_iter()
             .flatten(),
@@ -212,7 +226,7 @@ impl BasicBlock {
 
         let block = {
             let context = context.borrow(py);
-            let block = match (parent_fn, before) {
+            let block = match (parent_function, before) {
                 (None, None) => Err(PyValueError::new_err("Can't create block without parent.")),
                 (Some(parent), None) => Ok(context.append_basic_block(parent, name)),
                 (Some(parent), Some(before)) if before.0.get_parent() != Some(parent) => Err(
@@ -241,7 +255,7 @@ impl BasicBlock {
         let mut insts = Vec::new();
         let mut inst = slf.0.get_first_instruction();
         while let Some(i) = inst {
-            insts.push(unsafe { Instruction::from_inst(py, slf.as_ref().owner.clone(), i) }?);
+            insts.push(unsafe { Instruction::from_inst(py, slf.as_ref().owner.clone_ref(py), i) }?);
             inst = i.get_next_instruction();
         }
         Ok(insts)
@@ -254,7 +268,7 @@ impl BasicBlock {
     fn terminator(slf: PyRef<Self>, py: Python) -> PyResult<Option<PyObject>> {
         match slf.0.get_terminator() {
             Some(terminator) => {
-                let owner = slf.into_super().owner.clone();
+                let owner = slf.into_super().owner.clone_ref(py);
                 unsafe { Instruction::from_inst(py, owner, terminator) }.map(Some)
             }
             None => Ok(None),
@@ -407,7 +421,7 @@ impl Function {
         let owner = &slf.into_super().into_super().owner;
         params
             .into_iter()
-            .map(|p| unsafe { Value::from_any(py, owner.clone(), p) })
+            .map(|p| unsafe { Value::from_any(py, owner.clone_ref(py), p) })
             .collect()
     }
 
@@ -421,7 +435,7 @@ impl Function {
         function
             .get_basic_blocks()
             .into_iter()
-            .map(|b| unsafe { Value::from_any(py, owner.clone(), b) })
+            .map(|b| unsafe { Value::from_any(py, owner.clone_ref(py), b) })
             .collect()
     }
 
@@ -441,52 +455,6 @@ impl Function {
 impl Function {
     pub(crate) unsafe fn get(&self) -> FunctionValue<'static> {
         self.0
-    }
-}
-
-/// The linkage kind for a global value in a module.
-#[pyclass]
-#[derive(Clone)]
-pub(crate) enum Linkage {
-    #[pyo3(name = "APPENDING")]
-    Appending,
-    #[pyo3(name = "AVAILABLE_EXTERNALLY")]
-    AvailableExternally,
-    #[pyo3(name = "COMMON")]
-    Common,
-    #[pyo3(name = "EXTERNAL")]
-    External,
-    #[pyo3(name = "EXTERNAL_WEAK")]
-    ExternalWeak,
-    #[pyo3(name = "INTERNAL")]
-    Internal,
-    #[pyo3(name = "LINK_ONCE_ANY")]
-    LinkOnceAny,
-    #[pyo3(name = "LINK_ONCE_ODR")]
-    LinkOnceOdr,
-    #[pyo3(name = "PRIVATE")]
-    Private,
-    #[pyo3(name = "WEAK_ANY")]
-    WeakAny,
-    #[pyo3(name = "WEAK_ODR")]
-    WeakOdr,
-}
-
-impl From<Linkage> for inkwell::module::Linkage {
-    fn from(linkage: Linkage) -> Self {
-        match linkage {
-            Linkage::Appending => Self::Appending,
-            Linkage::AvailableExternally => Self::AvailableExternally,
-            Linkage::Common => Self::Common,
-            Linkage::External => Self::External,
-            Linkage::ExternalWeak => Self::ExternalWeak,
-            Linkage::Internal => Self::Internal,
-            Linkage::LinkOnceAny => Self::LinkOnceAny,
-            Linkage::LinkOnceOdr => Self::LinkOnceODR,
-            Linkage::Private => Self::Private,
-            Linkage::WeakAny => Self::WeakAny,
-            Linkage::WeakOdr => Self::WeakODR,
-        }
     }
 }
 
@@ -926,7 +894,7 @@ pub(crate) unsafe fn extract_any<'ctx>(
     ob: &PyAny,
 ) -> PyResult<AnyValue<'ctx>> {
     ob.extract()
-        .map(|v: Value| v.value)
+        .map(|v: PyRef<Value>| v.value)
         .or_else(|_| extract_constant(ty, ob))
 }
 

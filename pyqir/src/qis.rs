@@ -108,9 +108,12 @@ impl BasicQisBuilder {
         Owner::merge(
             py,
             [
-                Some(builder.owner().clone()),
-                theta.extract::<Value>().ok().map(|v| v.owner().clone()),
-                Some(qubit.owner().clone()),
+                Some(builder.owner().clone_ref(py)),
+                theta
+                    .extract()
+                    .ok()
+                    .map(|v: PyRef<Value>| v.owner().clone_ref(py)),
+                Some(qubit.owner().clone_ref(py)),
             ]
             .into_iter()
             .flatten(),
@@ -134,9 +137,12 @@ impl BasicQisBuilder {
         Owner::merge(
             py,
             [
-                Some(builder.owner().clone()),
-                theta.extract::<Value>().ok().map(|v| v.owner().clone()),
-                Some(qubit.owner().clone()),
+                Some(builder.owner().clone_ref(py)),
+                theta
+                    .extract()
+                    .ok()
+                    .map(|v: PyRef<Value>| v.owner().clone_ref(py)),
+                Some(qubit.owner().clone_ref(py)),
             ]
             .into_iter()
             .flatten(),
@@ -160,9 +166,12 @@ impl BasicQisBuilder {
         Owner::merge(
             py,
             [
-                Some(builder.owner().clone()),
-                theta.extract::<Value>().ok().map(|v| v.owner().clone()),
-                Some(qubit.owner().clone()),
+                Some(builder.owner().clone_ref(py)),
+                theta
+                    .extract()
+                    .ok()
+                    .map(|v: PyRef<Value>| v.owner().clone_ref(py)),
+                Some(qubit.owner().clone_ref(py)),
             ]
             .into_iter()
             .flatten(),

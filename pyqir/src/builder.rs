@@ -56,7 +56,7 @@ impl Builder {
             return Err(PyValueError::new_err("Wrong context."));
         }
 
-        self.owner = owner.clone();
+        self.owner = owner.clone_ref(py);
         self.builder.position_at_end(unsafe { block.get() });
         Ok(())
     }
@@ -206,7 +206,7 @@ impl Builder {
     /// :return: The boolean result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, pred, lhs, rhs)")]
-    fn icmp(&self, py: Python, pred: IntPredicate, lhs: Value, rhs: Value) -> PyResult<PyObject> {
+    fn icmp(&self, py: Python, pred: IntPredicate, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_int_compare::<IntValue>(
             pred.into(),
@@ -227,12 +227,12 @@ impl Builder {
     fn call(&self, py: Python, callee: &Value, args: &PySequence) -> PyResult<Option<PyObject>> {
         let owner = Owner::merge(
             py,
-            [self.owner.clone(), callee.owner().clone()]
+            [self.owner.clone_ref(py), callee.owner().clone_ref(py)]
                 .into_iter()
                 .chain(args.iter()?.filter_map(|v| {
                     v.ok()
-                        .and_then(|v| v.extract::<Value>().ok())
-                        .map(|v| v.owner().clone())
+                        .and_then(|v| v.extract::<PyRef<Value>>().ok())
+                        .map(|v| v.owner().clone_ref(py))
                 })),
         )?;
 
@@ -312,7 +312,7 @@ impl Builder {
     #[pyo3(text_signature = "(value)")]
     fn ret(&self, py: Python, value: Option<&Value>) -> PyResult<PyObject> {
         let (inst, owner) = match value {
-            None => (self.builder.build_return(None), self.owner.clone()),
+            None => (self.builder.build_return(None), self.owner.clone_ref(py)),
             Some(value) => {
                 let owner = Owner::merge(py, [&self.owner, value.owner()])?;
                 let value = BasicValueEnum::try_from(unsafe { value.get() })?;

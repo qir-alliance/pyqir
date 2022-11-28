@@ -39,8 +39,8 @@ impl Instruction {
         let owner = slf.as_ref().owner();
         (0..slf.0.get_num_operands())
             .map(|i| match slf.0.get_operand(i).unwrap() {
-                Left(value) => unsafe { Value::from_any(py, owner.clone(), value) },
-                Right(block) => unsafe { Value::from_any(py, owner.clone(), block) },
+                Left(value) => unsafe { Value::from_any(py, owner.clone_ref(py), value) },
+                Right(block) => unsafe { Value::from_any(py, owner.clone_ref(py), block) },
             })
             .collect()
     }
@@ -317,7 +317,7 @@ impl Switch {
     fn cond(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let inst = slf.into_super();
         let cond = inst.0.get_operand(0).unwrap().left().unwrap();
-        let owner = inst.as_ref().owner().clone();
+        let owner = inst.as_ref().owner().clone_ref(py);
         unsafe { Value::from_any(py, owner, cond) }
     }
 
@@ -328,7 +328,7 @@ impl Switch {
     fn default(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let inst = slf.into_super();
         let block = inst.0.get_operand(1).unwrap().right().unwrap();
-        let owner = inst.as_ref().owner().clone();
+        let owner = inst.as_ref().owner().clone_ref(py);
         unsafe { Value::from_any(py, owner, block) }
     }
 
@@ -346,9 +346,9 @@ impl Switch {
             .step_by(2)
             .map(|i| {
                 let cond = inst.get_operand(i).unwrap().left().unwrap();
-                let cond = unsafe { Value::from_any(py, owner.clone(), cond)? };
+                let cond = unsafe { Value::from_any(py, owner.clone_ref(py), cond)? };
                 let succ = inst.get_operand(i + 1).unwrap().right().unwrap();
-                let succ = unsafe { Value::from_any(py, owner.clone(), succ)? };
+                let succ = unsafe { Value::from_any(py, owner.clone_ref(py), succ)? };
                 Ok((cond, succ))
             })
             .collect()
@@ -520,7 +520,7 @@ impl Call {
         let inst = slf.into_super();
         let last = inst.0.get_operand(inst.0.get_num_operands() - 1);
         let callee = last.unwrap().left().unwrap();
-        let owner = inst.into_super().owner().clone();
+        let owner = inst.into_super().owner().clone_ref(py);
         unsafe { Value::from_any(py, owner, callee) }
     }
 
@@ -554,8 +554,8 @@ impl Phi {
         (0..phi.count_incoming())
             .map(|i| {
                 let (value, block) = phi.get_incoming(i).unwrap();
-                let value = unsafe { Value::from_any(py, owner.clone(), value)? };
-                let block = unsafe { Value::from_any(py, owner.clone(), block)? };
+                let value = unsafe { Value::from_any(py, owner.clone_ref(py), value)? };
+                let block = unsafe { Value::from_any(py, owner.clone_ref(py), block)? };
                 Ok((value, block))
             })
             .collect()

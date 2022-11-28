@@ -153,7 +153,9 @@ def test_if_result() -> None:
 def test_multiple_contexts() -> None:
     m1 = SimpleModule("m1", 0, 0)
     m2 = SimpleModule("m2", 0, 0)
-    with pytest.raises(ValueError, match=r"^Owners are incompatible\.$"):
+    with pytest.raises(
+        ValueError, match=r"^Some values are from different contexts or modules\.$"
+    ):
         m1.add_external_function(
             "f",
             FunctionType(pyqir.result_type(m1.context), [pyqir.qubit_type(m2.context)]),
