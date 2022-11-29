@@ -1,3 +1,2 @@
-enum-tools[sphinx]
 myst-parser
 sphinx
