@@ -8,6 +8,7 @@ maxdepth: 2
 getting-started/index
 api
 development-guide/index
+upgrade/index
 ```
 
 ## Indices
