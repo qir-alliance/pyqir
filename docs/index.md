@@ -7,9 +7,9 @@ You can use it to parse and evaluate existing QIR modules or generate new ones.
 :maxdepth: 1
 :hidden:
 
+upgrade
 api
 building
-upgrade/index
 ```
 
 ## Installation
