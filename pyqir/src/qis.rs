@@ -60,7 +60,7 @@ impl BasicQisBuilder {
 
     /// Inserts a Hadamard gate.
     ///
-    /// :param qubit: The target qubit.
+    /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
     fn h(&self, py: Python, qubit: &Value) -> PyResult<()> {
@@ -100,7 +100,7 @@ impl BasicQisBuilder {
 
     /// Inserts a rotation gate about the :math:`x` axis.
     ///
-    /// :param Union[Value, float] theta: The angle to rotate by.
+    /// :param typing.Union[Value, float] theta: The angle to rotate by.
     /// :param Value qubit: The qubit to rotate.
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
@@ -120,7 +120,7 @@ impl BasicQisBuilder {
 
     /// Inserts a rotation gate about the :math:`y` axis.
     ///
-    /// :param Union[Value, float] theta: The angle to rotate by.
+    /// :param typing.Union[Value, float] theta: The angle to rotate by.
     /// :param Value qubit: The qubit to rotate.
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
@@ -140,7 +140,7 @@ impl BasicQisBuilder {
 
     /// Inserts a rotation gate about the :math:`z` axis.
     ///
-    /// :param Union[Value, float] theta: The angle to rotate by.
+    /// :param typing.Union[Value, float] theta: The angle to rotate by.
     /// :param Value qubit: The qubit to rotate.
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
@@ -196,7 +196,7 @@ impl BasicQisBuilder {
 
     /// Inserts an adjoint :math:`T` gate.
     ///
-    /// :param qubit: The target qubit.
+    /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
     fn t_adj(&self, py: Python, qubit: &Value) -> PyResult<()> {
@@ -249,9 +249,9 @@ impl BasicQisBuilder {
     /// and zero callables should use this module's builder to build instructions.
     ///
     /// :param Value cond: The result condition to branch on.
-    /// :param Callable[[], None] one:
+    /// :param typing.Callable[[], None] one:
     ///     A callable that inserts instructions for the branch where the result is one.
-    /// :param Callable[[], None] zero:
+    /// :param typing.Callable[[], None] zero:
     ///     A callable that inserts instructions for the branch where the result is zero.
     /// :rtype: None
     #[pyo3(text_signature = "(self, cond, one, zero)")]

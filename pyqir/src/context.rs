@@ -4,11 +4,11 @@
 use pyo3::{exceptions::PyValueError, prelude::*, PyClass};
 use std::{borrow::Borrow, ops::Deref};
 
+/// The context owns global state needed by most LLVM objects.
 #[pyclass]
 #[derive(Eq, PartialEq)]
 pub(crate) struct Context(inkwell::context::Context);
 
-/// The context owns global state needed by most LLVM objects.
 #[pymethods]
 impl Context {
     #[new]
