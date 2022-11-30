@@ -8,11 +8,7 @@ use crate::{
     types::FunctionType,
     values::{Owner, Value},
 };
-use pyo3::{
-    exceptions::{PyOSError, PyUnicodeDecodeError, PyValueError},
-    prelude::*,
-    types::PyBytes,
-};
+use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use qirlib::values;
 
 /// A simple module represents an executable program with these restrictions:
@@ -169,35 +165,13 @@ impl SimpleModule {
     fn emit<T>(&self, py: Python, f: impl Fn(&inkwell::module::Module) -> T) -> PyResult<T> {
         let module = self.module.borrow(py);
         let builder = self.builder.borrow(py);
-        let context = inkwell::context::Context::create();
 
         let ret = unsafe { builder.get() }.build_return(None);
-        let module = clone_module(unsafe { module.get() }, &context)?;
-        ret.erase_from_basic_block();
-
-        module
+        unsafe { module.get() }
             .verify()
             .map_err(|e| PyValueError::new_err(e.to_string()))?;
-        Ok(f(&module))
+        let value = f(unsafe { module.get() });
+        ret.erase_from_basic_block();
+        Ok(value)
     }
-}
-
-fn clone_module<'ctx>(
-    module: &inkwell::module::Module,
-    context: &'ctx inkwell::context::Context,
-) -> PyResult<inkwell::module::Module<'ctx>> {
-    let name = module
-        .get_name()
-        .to_str()
-        .map_err(PyUnicodeDecodeError::new_err)?;
-    let bitcode = module.write_bitcode_to_memory();
-    let new_module = inkwell::module::Module::parse_bitcode_from_buffer(&bitcode, context)
-        .map_err(|e| {
-            module.verify().err().map_or_else(
-                || PyOSError::new_err(e.to_string()),
-                |e| PyOSError::new_err(e.to_string()),
-            )
-        })?;
-    new_module.set_name(name);
-    Ok(new_module)
 }
