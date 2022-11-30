@@ -1,7 +1,7 @@
 project = "PyQIR"
 copyright = "2021-2022 QIR Alliance"
 author = "QIR Alliance"
-html_theme = "alabaster"
+html_theme = "furo"
 exclude_patterns = ["_build"]
 
 extensions = ["myst_parser", "sphinx.ext.autodoc", "sphinx.ext.intersphinx"]
