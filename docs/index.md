@@ -16,7 +16,7 @@ building
 
 PyQIR can be installed using pip:
 
-```
+```sh
 pip install pyqir
 ```
 
