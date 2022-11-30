@@ -1206,7 +1206,7 @@ list is empty.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.Module.from_bitcode">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_bitcode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bitcode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Module.from_bitcode" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_bitcode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bitcode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Module.from_bitcode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a module from LLVM bitcode.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1226,7 +1226,7 @@ list is empty.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.Module.from_ir">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_ir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Module.from_ir" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_ir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Module.from_ir" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a module from LLVM IR.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1262,6 +1262,20 @@ list is empty.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.Module.verify">
+<span class="sig-name descname"><span class="pre">verify</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Module.verify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verifies that this module is valid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>An error description if this module is invalid or <cite>None</cite> if this module is valid.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[str]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1763,7 +1777,7 @@ allocated with a fixed size.</p></li>
 <dd><p>The global qubit register.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[<a class="reference internal" href="#pyqir.Value" title="pyqir.Value">Value</a>, …]</p>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#pyqir.Value" title="pyqir.Value">Value</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1774,7 +1788,7 @@ allocated with a fixed size.</p></li>
 <dd><p>The global result register.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[<a class="reference internal" href="#pyqir.Value" title="pyqir.Value">Value</a>, …]</p>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#pyqir.Value" title="pyqir.Value">Value</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1940,7 +1954,7 @@ allocated with a fixed size.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ty</strong> (<a class="reference internal" href="#pyqir.Type" title="pyqir.Type"><em>Type</em></a>) – The type of the value.</p></li>
-<li><p><strong>value</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – The value of the constant.</p></li>
+<li><p><strong>value</strong> (<em>Union</em><em>[</em><em>bool</em><em>, </em><em>int</em><em>, </em><em>float</em><em>]</em>) – The value of the constant.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2214,20 +2228,6 @@ allocated with a fixed size.</p></li>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#pyqir.Type" title="pyqir.Type">Type</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pyqir.verify_module">
-<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">verify_module</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.verify_module" title="Permalink to this definition">¶</a></dt>
-<dd><p>Verifies that a module is valid.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>An error description if the module is invalid or <cite>None</cite> if the module is valid.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Optional[str]</p>
 </dd>
 </dl>
 </dd></dl>
