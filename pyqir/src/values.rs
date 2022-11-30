@@ -130,6 +130,14 @@ impl Owner {
         }
     }
 
+    /// Merges a sequence of owners into a single owner that lives at least as long as every owner
+    /// in the sequence.
+    ///
+    /// # Errors
+    /// Fails if the the given owners use more than one distinct context or module.
+    ///
+    /// # Panics
+    /// Panics if the sequence is empty.
     pub(crate) fn merge(
         py: Python,
         owners: impl IntoIterator<Item = impl Borrow<Self>>,
