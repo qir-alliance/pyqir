@@ -13,7 +13,7 @@ use pyo3::{
     prelude::*,
     types::PyBytes,
 };
-use qirlib::{passes, values};
+use qirlib::values;
 
 /// A simple module represents an executable program with these restrictions:
 ///
@@ -175,7 +175,6 @@ impl SimpleModule {
         let module = clone_module(unsafe { module.get() }, &context)?;
         ret.erase_from_basic_block();
 
-        passes::run_basic(&module);
         module
             .verify()
             .map_err(|e| PyValueError::new_err(e.to_string()))?;
