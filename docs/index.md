@@ -8,7 +8,7 @@ You can use it to parse and evaluate existing QIR modules or generate new ones.
 :hidden:
 
 upgrade
-api
+api/index
 building
 ```
 
