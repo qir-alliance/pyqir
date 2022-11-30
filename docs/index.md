@@ -9,6 +9,7 @@ You can use it to parse and evaluate existing QIR modules or generate new ones.
 
 api
 building
+upgrade/index
 ```
 
 ## Installation

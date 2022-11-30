@@ -3,17 +3,17 @@
 
 use crate::{
     builder::Builder,
-    context::{self, Context},
+    context::Context,
     module::Module,
     types::FunctionType,
-    values::Value,
+    values::{Owner, Value},
 };
 use pyo3::{
     exceptions::{PyOSError, PyUnicodeDecodeError, PyValueError},
     prelude::*,
     types::PyBytes,
 };
-use qirlib::{passes, values};
+use qirlib::values;
 
 /// A simple module represents an executable program with these restrictions:
 ///
@@ -45,8 +45,8 @@ impl SimpleModule {
         context: Option<Py<Context>>,
     ) -> PyResult<SimpleModule> {
         let context = context.map_or_else(|| Py::new(py, Context::new()), Ok)?;
-        let module = Py::new(py, Module::new(py, context.clone(), name))?;
-        let builder = Py::new(py, Builder::new(py, context.clone()))?;
+        let module = Py::new(py, Module::new(py, context.clone_ref(py), name))?;
+        let builder = Py::new(py, Builder::new(py, context.clone_ref(py)))?;
 
         {
             let context = context.borrow(py);
@@ -71,7 +71,7 @@ impl SimpleModule {
     /// :rtype: Context
     #[getter]
     fn context(&self, py: Python) -> Py<Context> {
-        self.module.borrow(py).context().clone()
+        self.module.borrow(py).context().clone_ref(py)
     }
 
     /// The global qubit register.
@@ -80,11 +80,11 @@ impl SimpleModule {
     #[getter]
     fn qubits(&self, py: Python) -> PyResult<Vec<PyObject>> {
         let module = self.module.borrow(py);
-        let context = module.context();
-        let context_ref = unsafe { module.get() }.get_context();
+        let context = unsafe { module.get() }.get_context();
         (0..self.num_qubits)
             .map(|id| unsafe {
-                Value::from_any(py, context.clone(), values::qubit(&context_ref, id))
+                let owner = Owner::Context(module.context().clone_ref(py));
+                Value::from_any(py, owner, values::qubit(&context, id))
             })
             .collect()
     }
@@ -95,11 +95,11 @@ impl SimpleModule {
     #[getter]
     fn results(&self, py: Python) -> PyResult<Vec<PyObject>> {
         let module = self.module.borrow(py);
-        let context = module.context();
-        let context_ref = unsafe { module.get() }.get_context();
+        let context = unsafe { module.get() }.get_context();
         (0..self.num_results)
             .map(|id| unsafe {
-                Value::from_any(py, context.clone(), values::result(&context_ref, id))
+                let owner = Owner::Context(module.context().clone_ref(py));
+                Value::from_any(py, owner, values::result(&context, id))
             })
             .collect()
     }
@@ -108,8 +108,8 @@ impl SimpleModule {
     ///
     /// :type: Builder
     #[getter]
-    fn builder(&self) -> Py<Builder> {
-        self.builder.clone()
+    fn builder(&self) -> &Py<Builder> {
+        &self.builder
     }
 
     /// Emits the LLVM IR for the module as plain text.
@@ -144,9 +144,15 @@ impl SimpleModule {
         let module = self.module.borrow(py);
         let function_ty = unsafe { ty.get() };
         let ty = ty.into_super();
-        context::require_same(py, [module.context(), ty.context()])?;
+        let owner = Owner::merge(
+            py,
+            [
+                Owner::Module(self.module.clone_ref(py)),
+                Owner::Context(ty.context().clone_ref(py)),
+            ],
+        )?;
         let function = unsafe { module.get() }.add_function(name, function_ty, None);
-        unsafe { Value::from_any(py, ty.context().clone(), function) }
+        unsafe { Value::from_any(py, owner, function) }
     }
 
     /// Adds a global null-terminated byte string constant to the module.
@@ -158,7 +164,7 @@ impl SimpleModule {
     fn add_byte_string(&self, py: Python, value: &[u8]) -> PyResult<PyObject> {
         let module = self.module.borrow(py);
         let string = values::global_string(unsafe { module.get() }, value);
-        unsafe { Value::from_any(py, module.context().clone(), string) }
+        unsafe { Value::from_any(py, module.context().clone_ref(py).into(), string) }
     }
 }
 
@@ -172,7 +178,6 @@ impl SimpleModule {
         let module = clone_module(unsafe { module.get() }, &context)?;
         ret.erase_from_basic_block();
 
-        passes::run_basic(&module);
         module
             .verify()
             .map_err(|e| PyValueError::new_err(e.to_string()))?;

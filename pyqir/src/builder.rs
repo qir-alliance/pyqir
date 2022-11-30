@@ -2,15 +2,16 @@
 // Licensed under the MIT License.
 
 use crate::{
-    context::{self, Context},
+    context::Context,
     instructions::IntPredicate,
-    values::{self, AnyValue, BasicBlock, Value},
+    types,
+    values::{AnyValue, BasicBlock, Literal, Owner, Value},
 };
 use inkwell::{
-    types::{AnyTypeEnum, FunctionType},
-    values::{AnyValueEnum, BasicValueEnum, CallableValue, IntValue},
+    types::{AnyTypeEnum, BasicTypeEnum, FunctionType},
+    values::{AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, CallableValue, IntValue},
 };
-use pyo3::{exceptions::PyValueError, prelude::*, types::PySequence};
+use pyo3::{exceptions::PyValueError, prelude::*};
 use qirlib::builder::Ext;
 use std::{
     convert::{Into, TryFrom, TryInto},
@@ -24,7 +25,7 @@ use std::{
 #[pyclass(unsendable)]
 pub(crate) struct Builder {
     builder: inkwell::builder::Builder<'static>,
-    context: Py<Context>,
+    owner: Owner,
 }
 
 #[pymethods]
@@ -41,7 +42,10 @@ impl Builder {
             }
         };
 
-        Self { builder, context }
+        Self {
+            builder,
+            owner: context.into(),
+        }
     }
 
     /// Tells this builder to insert subsequent instructions at the end of the block.
@@ -49,8 +53,17 @@ impl Builder {
     /// :param BasicBlock block: The block to insert into.
     /// :rtype: None
     #[pyo3(text_signature = "(block)")]
-    fn insert_at_end(&self, block: &BasicBlock) {
+    fn insert_at_end(&mut self, py: Python, block: PyRef<BasicBlock>) -> PyResult<()> {
+        let owner = block.as_ref().owner();
+        if *owner.context(py).borrow(py) != *self.owner.context(py).borrow(py) {
+            Err(PyValueError::new_err(
+                "Block is not from the same context as builder.",
+            ))?;
+        }
+
+        self.owner = owner.clone_ref(py);
         self.builder.position_at_end(unsafe { block.get() });
+        Ok(())
     }
 
     /// Inserts a bitwise logical and instruction.
@@ -61,13 +74,13 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn and_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_and::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
             "",
         );
-        unsafe { Value::from_any(py, self.context.clone(), value) }
+        unsafe { Value::from_any(py, owner, value) }
     }
 
     /// Inserts a bitwise logical or instruction.
@@ -78,13 +91,13 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn or_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_or::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
             "",
         );
-        unsafe { Value::from_any(py, self.context.clone(), value) }
+        unsafe { Value::from_any(py, owner, value) }
     }
 
     /// Inserts a bitwise logical exclusive or instruction.
@@ -95,13 +108,13 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn xor(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_xor::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
             "",
         );
-        unsafe { Value::from_any(py, self.context.clone(), value) }
+        unsafe { Value::from_any(py, owner, value) }
     }
 
     /// Inserts an addition instruction.
@@ -112,13 +125,13 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn add(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_int_add::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
             "",
         );
-        unsafe { Value::from_any(py, self.context.clone(), value) }
+        unsafe { Value::from_any(py, owner, value) }
     }
 
     /// Inserts a subtraction instruction.
@@ -129,13 +142,13 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn sub(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_int_sub::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
             "",
         );
-        unsafe { Value::from_any(py, self.context.clone(), value) }
+        unsafe { Value::from_any(py, owner, value) }
     }
 
     /// Inserts a multiplication instruction.
@@ -146,13 +159,13 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn mul(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_int_mul::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
             "",
         );
-        unsafe { Value::from_any(py, self.context.clone(), value) }
+        unsafe { Value::from_any(py, owner, value) }
     }
 
     /// Inserts a shift left instruction.
@@ -163,13 +176,13 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn shl(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_left_shift::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
             "",
         );
-        unsafe { Value::from_any(py, self.context.clone(), value) }
+        unsafe { Value::from_any(py, owner, value) }
     }
 
     /// Inserts a logical (zero fill) shift right instruction.
@@ -180,14 +193,14 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn lshr(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
-        context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_right_shift::<IntValue>(
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
             false,
             "",
         );
-        unsafe { Value::from_any(py, self.context.clone(), value) }
+        unsafe { Value::from_any(py, owner, value) }
     }
 
     /// Inserts an integer comparison instruction.
@@ -198,16 +211,15 @@ impl Builder {
     /// :return: The boolean result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, pred, lhs, rhs)")]
-    #[allow(clippy::needless_pass_by_value)]
-    fn icmp(&self, py: Python, pred: IntPredicate, lhs: Value, rhs: Value) -> PyResult<PyObject> {
-        context::require_same(py, [&self.context, lhs.context(), rhs.context()])?;
+    fn icmp(&self, py: Python, pred: IntPredicate, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
+        let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         let value = self.builder.build_int_compare::<IntValue>(
             pred.into(),
             unsafe { lhs.get() }.try_into()?,
             unsafe { rhs.get() }.try_into()?,
             "",
         );
-        unsafe { Value::from_any(py, self.context.clone(), value) }
+        unsafe { Value::from_any(py, owner, value) }
     }
 
     /// Inserts a call instruction.
@@ -218,37 +230,30 @@ impl Builder {
     /// :returns: The return value, or None if the function has a void return type.
     /// :rtype: Optional[Value]
     #[pyo3(text_signature = "(self, callee, args)")]
-    fn call(&self, py: Python, callee: &Value, args: &PySequence) -> PyResult<Option<PyObject>> {
-        context::require_same(
-            py,
-            values::extract_contexts(args.iter()?.filter_map(Result::ok))
-                .chain([self.context.clone(), callee.context().clone()]),
-        )?;
+    fn call(&self, py: Python, callee: &Value, args: Vec<Argument>) -> PyResult<Option<PyObject>> {
+        let arg_owners = args.iter().filter_map(Argument::owner);
+        let owner = Owner::merge(py, arg_owners.chain([&self.owner, callee.owner()]))?;
 
         let callable: Callable = unsafe { callee.get() }.try_into()?;
         let param_types = callable.ty.get_param_types();
-        if param_types.len() != args.len()? {
-            return Err(PyValueError::new_err(format!(
+        if param_types.len() != args.len() {
+            Err(PyValueError::new_err(format!(
                 "Expected {} arguments, got {}.",
                 param_types.len(),
-                args.len()?
-            )));
+                args.len()
+            )))?;
         }
 
         let args = args
-            .iter()?
+            .iter()
             .zip(param_types)
-            .map(|(v, t)| {
-                unsafe { values::extract_any(&t, v?) }?
-                    .try_into()
-                    .map_err(Into::into)
-            })
+            .map(|(arg, ty)| unsafe { arg.to_value(ty) }.map_err(Into::into))
             .collect::<PyResult<Vec<_>>>()?;
 
         let call = self.builder.build_call(callable.value, &args, "");
         let value = call.try_as_basic_value().left();
         value
-            .map(|v| unsafe { Value::from_any(py, callee.context().clone(), v) })
+            .map(|v| unsafe { Value::from_any(py, owner, v) })
             .transpose()
     }
 
@@ -271,7 +276,7 @@ impl Builder {
         r#true: Option<&PyAny>,
         r#false: Option<&PyAny>,
     ) -> PyResult<()> {
-        context::require_same(py, [&self.context, cond.context()])?;
+        Owner::merge(py, [&self.owner, cond.owner()])?;
         self.builder.try_build_if(
             unsafe { cond.get() }.try_into()?,
             || r#true.iter().try_for_each(|f| f.call0().map(|_| ())),
@@ -285,13 +290,12 @@ impl Builder {
     /// :returns: The branch instruction.
     /// :rtype: Instruction
     #[pyo3(text_signature = "(dest)")]
-    #[allow(clippy::needless_pass_by_value)]
     fn br(&self, py: Python, dest: PyRef<BasicBlock>) -> PyResult<PyObject> {
-        context::require_same(py, [&self.context, dest.as_ref().context()])?;
+        let owner = Owner::merge(py, [&self.owner, dest.as_ref().owner()])?;
         let inst = self
             .builder
             .build_unconditional_branch(unsafe { dest.get() });
-        unsafe { Value::from_any(py, self.context.clone(), inst) }
+        unsafe { Value::from_any(py, owner, inst) }
     }
 
     /// Inserts a return instruction.
@@ -301,15 +305,15 @@ impl Builder {
     /// :rtype: Instruction
     #[pyo3(text_signature = "(value)")]
     fn ret(&self, py: Python, value: Option<&Value>) -> PyResult<PyObject> {
-        let inst = match value {
-            None => self.builder.build_return(None),
+        let (inst, owner) = match value {
+            None => (self.builder.build_return(None), self.owner.clone_ref(py)),
             Some(value) => {
-                context::require_same(py, [&self.context, value.context()])?;
+                let owner = Owner::merge(py, [&self.owner, value.owner()])?;
                 let value = BasicValueEnum::try_from(unsafe { value.get() })?;
-                self.builder.build_return(Some(&value))
+                (self.builder.build_return(Some(&value)), owner)
             }
         };
-        unsafe { Value::from_any(py, self.context.clone(), inst) }
+        unsafe { Value::from_any(py, owner, inst) }
     }
 }
 
@@ -318,8 +322,8 @@ impl Builder {
         &self.builder
     }
 
-    pub(crate) fn context(&self) -> &Py<Context> {
-        &self.context
+    pub(crate) fn owner(&self) -> &Owner {
+        &self.owner
     }
 }
 
@@ -347,5 +351,30 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for Callable<'ctx> {
             _ => None,
         }
         .ok_or_else(|| PyValueError::new_err("Value is not callable."))
+    }
+}
+
+#[derive(FromPyObject)]
+enum Argument<'py> {
+    Value(PyRef<'py, Value>),
+    Literal(Literal<'py>),
+}
+
+impl Argument<'_> {
+    fn owner(&self) -> Option<&Owner> {
+        match self {
+            Argument::Value(v) => Some(v.owner()),
+            Argument::Literal(_) => None,
+        }
+    }
+
+    unsafe fn to_value(&self, ty: BasicTypeEnum<'static>) -> PyResult<BasicMetadataValueEnum> {
+        match self {
+            Argument::Value(v) => v.get().try_into().map_err(Into::into),
+            Argument::Literal(l) => l
+                .to_value(types::basic_to_any(ty))?
+                .try_into()
+                .map_err(Into::into),
+        }
     }
 }

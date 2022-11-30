@@ -8,7 +8,7 @@ use crate::{
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    module::{verify_module, Attribute, Module},
+    module::{Attribute, Linkage, Module},
     qis::BasicQisBuilder,
     simple::SimpleModule,
     types::{
@@ -18,7 +18,7 @@ use crate::{
     values::{
         entry_point, extract_byte_string, global_byte_string, is_entry_point, is_interop_friendly,
         qubit, qubit_id, r#const, required_num_qubits, required_num_results, result, result_id,
-        BasicBlock, Constant, FloatConstant, Function, IntConstant, Linkage, Value,
+        BasicBlock, Constant, FloatConstant, Function, IntConstant, Value,
     },
 };
 use pyo3::prelude::*;
@@ -70,6 +70,5 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(result_id, m)?)?;
     m.add_function(wrap_pyfunction!(result_type, m)?)?;
     m.add_function(wrap_pyfunction!(result, m)?)?;
-    m.add_function(wrap_pyfunction!(verify_module, m)?)?;
     Ok(())
 }

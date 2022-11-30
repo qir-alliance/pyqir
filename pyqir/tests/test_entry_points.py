@@ -52,7 +52,7 @@ def test_multiple() -> None:
     module = Module(Context(), "test")
     bell_function = _bell(module)
     external_function = _external(module)
-    assert pyqir.verify_module(module) is None
+    assert module.verify() is None
 
     names = list(map(lambda f: f.name, filter(pyqir.is_entry_point, module.functions)))
     assert len(names) == 2
@@ -64,7 +64,7 @@ def test_duplicate_name() -> None:
     module = Module(Context(), "test")
     bell1 = _bell(module)
     bell2 = _bell(module)
-    assert pyqir.verify_module(module) is None
+    assert module.verify() is None
     assert bell1.name != bell2.name
 
     names = list(map(lambda f: f.name, filter(pyqir.is_entry_point, module.functions)))
@@ -79,7 +79,7 @@ def test_invalid_module() -> None:
     main = pyqir.entry_point(module, "main", 0, 0)
     BasicBlock(context, "", main)
     assert (
-        pyqir.verify_module(module)
+        module.verify()
         == "Basic Block in function 'main' does not have terminator!\nlabel %0\n"
     )
 
@@ -96,7 +96,7 @@ def test_append_blocks() -> None:
     builder.insert_at_end(exit)
     builder.ret(None)
 
-    assert pyqir.verify_module(module) is None
+    assert module.verify() is None
     assert list(map(lambda b: b.name, main.basic_blocks)) == ["entry", "exit"]
 
 
@@ -115,7 +115,7 @@ def test_prepend_block(with_parent: bool) -> None:
     )
     builder.br(exit)
 
-    assert pyqir.verify_module(module) is None
+    assert module.verify() is None
     assert list(map(lambda b: b.name, main.basic_blocks)) == ["entry", "exit"]
 
 

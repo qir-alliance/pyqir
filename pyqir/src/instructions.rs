@@ -3,10 +3,7 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::{
-    context::Context,
-    values::{BasicBlock, Value},
-};
+use crate::values::{BasicBlock, Owner, Value};
 use either::Either::{Left, Right};
 use inkwell::{
     values::InstructionOpcode,
@@ -39,13 +36,11 @@ impl Instruction {
     /// :type: typing.List[Value]
     #[getter]
     fn operands(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        let inst = slf.0;
-        let value = slf.into_super();
-        let context = value.context();
-        (0..inst.get_num_operands())
-            .map(|i| match inst.get_operand(i).unwrap() {
-                Left(value) => unsafe { Value::from_any(py, context.clone(), value) },
-                Right(block) => unsafe { Value::from_any(py, context.clone(), block) },
+        let owner = slf.as_ref().owner();
+        (0..slf.0.get_num_operands())
+            .map(|i| match slf.0.get_operand(i).unwrap() {
+                Left(value) => unsafe { Value::from_any(py, owner.clone_ref(py), value) },
+                Right(block) => unsafe { Value::from_any(py, owner.clone_ref(py), block) },
             })
             .collect()
     }
@@ -77,11 +72,11 @@ impl Instruction {
 impl Instruction {
     pub(crate) unsafe fn from_inst(
         py: Python,
-        context: Py<Context>,
+        owner: Owner,
         inst: InstructionValue,
     ) -> PyResult<PyObject> {
         let inst = transmute::<InstructionValue<'_>, InstructionValue<'static>>(inst);
-        let base = Value::init(context, inst.into()).add_subclass(Self(inst));
+        let base = Value::new(owner, inst.into()).add_subclass(Self(inst));
         match inst.get_opcode() {
             InstructionOpcode::Switch => Ok(Py::new(py, base.add_subclass(Switch))?.to_object(py)),
             InstructionOpcode::ICmp => Ok(Py::new(py, base.add_subclass(ICmp))?.to_object(py)),
@@ -322,8 +317,8 @@ impl Switch {
     fn cond(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let inst = slf.into_super();
         let cond = inst.0.get_operand(0).unwrap().left().unwrap();
-        let context = inst.into_super().context().clone();
-        unsafe { Value::from_any(py, context, cond) }
+        let owner = inst.as_ref().owner().clone_ref(py);
+        unsafe { Value::from_any(py, owner, cond) }
     }
 
     /// The default successor block if none of the cases match.
@@ -333,8 +328,8 @@ impl Switch {
     fn default(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let inst = slf.into_super();
         let block = inst.0.get_operand(1).unwrap().right().unwrap();
-        let context = inst.into_super().context().clone();
-        unsafe { Value::from_any(py, context, block) }
+        let owner = inst.as_ref().owner().clone_ref(py);
+        unsafe { Value::from_any(py, owner, block) }
     }
 
     /// The switch cases.
@@ -345,15 +340,15 @@ impl Switch {
         let inst_ref = slf.into_super();
         let inst = inst_ref.0;
         let value = inst_ref.into_super();
-        let context = value.context();
+        let owner = value.owner();
 
         (2..inst.get_num_operands())
             .step_by(2)
             .map(|i| {
                 let cond = inst.get_operand(i).unwrap().left().unwrap();
-                let cond = unsafe { Value::from_any(py, context.clone(), cond)? };
+                let cond = unsafe { Value::from_any(py, owner.clone_ref(py), cond)? };
                 let succ = inst.get_operand(i + 1).unwrap().right().unwrap();
-                let succ = unsafe { Value::from_any(py, context.clone(), succ)? };
+                let succ = unsafe { Value::from_any(py, owner.clone_ref(py), succ)? };
                 Ok((cond, succ))
             })
             .collect()
@@ -377,7 +372,7 @@ impl ICmp {
 
 /// An integer comparison predicate.
 #[pyclass]
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub(crate) enum IntPredicate {
     #[pyo3(name = "EQ")]
     Eq,
@@ -452,7 +447,7 @@ impl FCmp {
 
 /// A floating-point comparison predicate.
 #[pyclass]
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub(crate) enum FloatPredicate {
     #[pyo3(name = "FALSE")]
     False,
@@ -525,8 +520,8 @@ impl Call {
         let inst = slf.into_super();
         let last = inst.0.get_operand(inst.0.get_num_operands() - 1);
         let callee = last.unwrap().left().unwrap();
-        let context = inst.into_super().context().clone();
-        unsafe { Value::from_any(py, context, callee) }
+        let owner = inst.into_super().owner().clone_ref(py);
+        unsafe { Value::from_any(py, owner, callee) }
     }
 
     /// The arguments to the call.
@@ -554,13 +549,13 @@ impl Phi {
     fn incoming(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(PyObject, PyObject)>> {
         let phi = slf.0;
         let value = slf.into_super().into_super();
-        let context = value.context();
+        let owner = value.owner();
 
         (0..phi.count_incoming())
             .map(|i| {
                 let (value, block) = phi.get_incoming(i).unwrap();
-                let value = unsafe { Value::from_any(py, context.clone(), value)? };
-                let block = unsafe { Value::from_any(py, context.clone(), block)? };
+                let value = unsafe { Value::from_any(py, owner.clone_ref(py), value)? };
+                let block = unsafe { Value::from_any(py, owner.clone_ref(py), block)? };
                 Ok((value, block))
             })
             .collect()
