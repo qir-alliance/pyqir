@@ -3,7 +3,7 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::context::{self, Context};
+use crate::{context::Context, values::Owner};
 use inkwell::{
     types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum},
     AddressSpace, LLVMReference,
@@ -15,7 +15,6 @@ use std::{convert::TryFrom, mem::transmute};
 
 /// A type.
 #[pyclass(subclass, unsendable)]
-#[derive(Clone)]
 pub(crate) struct Type {
     ty: AnyTypeEnum<'static>,
     context: Py<Context>,
@@ -149,17 +148,18 @@ impl IntType {
 /// :param Type ret: The return type.
 /// :param Sequence[Type] params: The parameter types.
 #[pyclass(extends = Type, unsendable)]
-#[derive(Clone)]
 pub(crate) struct FunctionType(inkwell::types::FunctionType<'static>);
 
 #[pymethods]
 impl FunctionType {
     #[new]
-    #[allow(clippy::needless_pass_by_value)]
-    fn new(py: Python, ret: &Type, params: Vec<Type>) -> PyResult<(Self, Type)> {
-        context::require_same(
+    fn new(py: Python, ret: &Type, params: Vec<PyRef<Type>>) -> PyResult<(Self, Type)> {
+        Owner::merge(
             py,
-            params.iter().map(|ty| &ty.context).chain([&ret.context]),
+            params
+                .iter()
+                .map(|ty| Owner::Context(ty.context.clone_ref(py)))
+                .chain([ret.context.clone_ref(py).into()]),
         )?;
 
         let ty = function(&ret.ty, params.iter().map(|ty| ty.ty))
@@ -169,7 +169,7 @@ impl FunctionType {
             Self(ty),
             Type {
                 ty: ty.into(),
-                context: ret.context.clone(),
+                context: ret.context.clone_ref(py),
             },
         ))
     }
@@ -180,7 +180,7 @@ impl FunctionType {
     #[getter]
     fn ret(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let ret = slf.0.get_return_type();
-        let context = slf.into_super().context.clone();
+        let context = slf.into_super().context.clone_ref(py);
         match ret {
             None => Ok(Py::new(py, Type::void(py, context))?.to_object(py)),
             Some(ret) => unsafe { Type::from_any(py, context, basic_to_any(ret)) },
@@ -196,7 +196,7 @@ impl FunctionType {
         let context = &slf.into_super().context;
         params
             .into_iter()
-            .map(|ty| unsafe { Type::from_any(py, context.clone(), basic_to_any(ty)) })
+            .map(|ty| unsafe { Type::from_any(py, context.clone_ref(py), basic_to_any(ty)) })
             .collect()
     }
 }
@@ -230,7 +230,7 @@ impl StructType {
         let context = &slf.into_super().context;
         fields
             .into_iter()
-            .map(|ty| unsafe { Type::from_any(py, context.clone(), basic_to_any(ty)) })
+            .map(|ty| unsafe { Type::from_any(py, context.clone_ref(py), basic_to_any(ty)) })
             .collect()
     }
 }
@@ -247,7 +247,7 @@ impl ArrayType {
     #[getter]
     fn element(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let ty = basic_to_any(slf.0.get_element_type());
-        let context = slf.into_super().context.clone();
+        let context = slf.into_super().context.clone_ref(py);
         unsafe { Type::from_any(py, context, ty) }
     }
 
@@ -269,7 +269,7 @@ pub(crate) struct PointerType(inkwell::types::PointerType<'static>);
 #[pymethods]
 impl PointerType {
     #[new]
-    fn new(pointee: &Type) -> PyResult<(Self, Type)> {
+    fn new(py: Python, pointee: &Type) -> PyResult<(Self, Type)> {
         let ty = match pointee.ty {
             AnyTypeEnum::ArrayType(a) => Ok(a.ptr_type(AddressSpace::Generic)),
             AnyTypeEnum::FloatType(f) => Ok(f.ptr_type(AddressSpace::Generic)),
@@ -285,7 +285,7 @@ impl PointerType {
             Self(ty),
             Type {
                 ty: ty.into(),
-                context: pointee.context.clone(),
+                context: pointee.context.clone_ref(py),
             },
         ))
     }
@@ -296,7 +296,7 @@ impl PointerType {
     #[getter]
     fn pointee(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let ty = slf.0.get_element_type();
-        let context = slf.into_super().context.clone();
+        let context = slf.into_super().context.clone_ref(py);
         unsafe { Type::from_any(py, context, ty) }
     }
 
@@ -361,7 +361,7 @@ pub(crate) fn is_result_type(ty: &Type) -> bool {
     types::is_result(ty.ty)
 }
 
-fn basic_to_any(ty: BasicTypeEnum) -> AnyTypeEnum {
+pub(crate) fn basic_to_any(ty: BasicTypeEnum) -> AnyTypeEnum {
     match ty {
         BasicTypeEnum::ArrayType(a) => a.into(),
         BasicTypeEnum::FloatType(f) => f.into(),

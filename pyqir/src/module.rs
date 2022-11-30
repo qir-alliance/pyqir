@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#![allow(clippy::used_underscore_binding)]
+
 use crate::{context::Context, values::Value};
 use inkwell::memory_buffer::MemoryBuffer;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
@@ -37,20 +39,20 @@ impl Module {
     /// :rtype: Module
     /// :returns: The module.
     #[staticmethod]
-    #[pyo3(text_signature = "(ir, name=\"\")")]
-    fn from_ir(py: Python, ir: &str, name: Option<&str>) -> PyResult<Self> {
-        let context = Context::new();
+    #[pyo3(text_signature = "(context, ir, name=\"\")")]
+    fn from_ir(py: Python, context: Py<Context>, ir: &str, name: Option<&str>) -> PyResult<Self> {
         let buffer =
             MemoryBuffer::create_from_memory_range(ir.as_bytes(), name.unwrap_or_default());
-        let module = context
-            .create_module_from_ir(buffer)
-            .map_err(|e| PyValueError::new_err(e.to_string()))?;
-        Ok(Self {
-            module: unsafe {
+        let module = {
+            let context = context.borrow(py);
+            let module = context
+                .create_module_from_ir(buffer)
+                .map_err(|e| PyValueError::new_err(e.to_string()))?;
+            unsafe {
                 transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
-            },
-            context: Py::new(py, context)?,
-        })
+            }
+        };
+        Ok(Self { module, context })
     }
 
     /// Creates a module from LLVM bitcode.
@@ -60,18 +62,23 @@ impl Module {
     /// :rtype: Module
     /// :returns: The module.
     #[staticmethod]
-    #[pyo3(text_signature = "(bitcode, name=\"\")")]
-    fn from_bitcode(py: Python, bitcode: &[u8], name: Option<&str>) -> PyResult<Self> {
-        let context = Context::new();
+    #[pyo3(text_signature = "(context, bitcode, name=\"\")")]
+    fn from_bitcode(
+        py: Python,
+        context: Py<Context>,
+        bitcode: &[u8],
+        name: Option<&str>,
+    ) -> PyResult<Self> {
         let buffer = MemoryBuffer::create_from_memory_range(bitcode, name.unwrap_or_default());
-        let module = inkwell::module::Module::parse_bitcode_from_buffer(&buffer, &*context)
-            .map_err(|e| PyValueError::new_err(e.to_string()))?;
-        Ok(Self {
-            module: unsafe {
+        let module = {
+            let context = context.borrow(py);
+            let module = inkwell::module::Module::parse_bitcode_from_buffer(&buffer, &**context)
+                .map_err(|e| PyValueError::new_err(e.to_string()))?;
+            unsafe {
                 transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
-            },
-            context: Py::new(py, context)?,
-        })
+            }
+        };
+        Ok(Self { module, context })
     }
 
     /// The name of the original source file that this module was compiled from.
@@ -94,10 +101,11 @@ impl Module {
     ///
     /// :type: List[Function]
     #[getter]
-    fn functions(&self, py: Python) -> PyResult<Vec<PyObject>> {
-        self.module
+    fn functions(slf: Py<Module>, py: Python) -> PyResult<Vec<PyObject>> {
+        slf.borrow(py)
+            .module
             .get_functions()
-            .map(|f| unsafe { Value::from_any(py, self.context.clone(), f) })
+            .map(|f| unsafe { Value::from_any(py, slf.clone_ref(py).into(), f) })
             .collect()
     }
 
@@ -117,6 +125,14 @@ impl Module {
         &self.context
     }
 
+    /// Verifies that this module is valid.
+    ///
+    /// :returns: An error description if this module is invalid or `None` if this module is valid.
+    /// :rtype: Optional[str]
+    fn verify(&self) -> Option<String> {
+        self.module.verify().map_err(|e| e.to_string()).err()
+    }
+
     fn __str__(&self) -> String {
         self.module.to_string()
     }
@@ -125,6 +141,60 @@ impl Module {
 impl Module {
     pub(crate) unsafe fn get(&self) -> &inkwell::module::Module<'static> {
         &self.module
+    }
+}
+
+impl Eq for Module {}
+
+impl PartialEq for Module {
+    fn eq(&self, other: &Self) -> bool {
+        self.module == other.module
+    }
+}
+
+/// The linkage kind for a global value in a module.
+#[pyclass]
+#[derive(Clone, Copy)]
+pub(crate) enum Linkage {
+    #[pyo3(name = "APPENDING")]
+    Appending,
+    #[pyo3(name = "AVAILABLE_EXTERNALLY")]
+    AvailableExternally,
+    #[pyo3(name = "COMMON")]
+    Common,
+    #[pyo3(name = "EXTERNAL")]
+    External,
+    #[pyo3(name = "EXTERNAL_WEAK")]
+    ExternalWeak,
+    #[pyo3(name = "INTERNAL")]
+    Internal,
+    #[pyo3(name = "LINK_ONCE_ANY")]
+    LinkOnceAny,
+    #[pyo3(name = "LINK_ONCE_ODR")]
+    LinkOnceOdr,
+    #[pyo3(name = "PRIVATE")]
+    Private,
+    #[pyo3(name = "WEAK_ANY")]
+    WeakAny,
+    #[pyo3(name = "WEAK_ODR")]
+    WeakOdr,
+}
+
+impl From<Linkage> for inkwell::module::Linkage {
+    fn from(linkage: Linkage) -> Self {
+        match linkage {
+            Linkage::Appending => Self::Appending,
+            Linkage::AvailableExternally => Self::AvailableExternally,
+            Linkage::Common => Self::Common,
+            Linkage::External => Self::External,
+            Linkage::ExternalWeak => Self::ExternalWeak,
+            Linkage::Internal => Self::Internal,
+            Linkage::LinkOnceAny => Self::LinkOnceAny,
+            Linkage::LinkOnceOdr => Self::LinkOnceODR,
+            Linkage::Private => Self::Private,
+            Linkage::WeakAny => Self::WeakAny,
+            Linkage::WeakOdr => Self::WeakODR,
+        }
     }
 }
 
@@ -142,13 +212,4 @@ impl Attribute {
             .to_str()
             .expect("Value is not valid UTF-8.")
     }
-}
-
-/// Verifies that a module is valid.
-///
-/// :returns: An error description if the module is invalid or `None` if the module is valid.
-/// :rtype: Optional[str]
-#[pyfunction]
-pub(crate) fn verify_module(module: &Module) -> Option<String> {
-    module.module.verify().map_err(|e| e.to_string()).err()
 }
