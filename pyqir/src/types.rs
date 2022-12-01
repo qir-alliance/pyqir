@@ -28,6 +28,7 @@ impl Type {
     /// :returns: The void type.
     /// :rtype: Type
     #[staticmethod]
+    #[pyo3(text_signature = "(context)")]
     fn void(py: Python, context: Py<Context>) -> Self {
         let ty = {
             let context = context.borrow(py);
@@ -43,6 +44,7 @@ impl Type {
     /// :returns: The double type.
     /// :rtype: Type
     #[staticmethod]
+    #[pyo3(text_signature = "(context)")]
     fn double(py: Python, context: Py<Context>) -> Self {
         let ty = {
             let context = context.borrow(py);
@@ -111,6 +113,7 @@ impl Type {
 /// :param Context context: The global context.
 /// :param int width: The number of bits in the integer.
 #[pyclass(extends = Type, unsendable)]
+#[pyo3(text_signature = "(context, width)")]
 pub(crate) struct IntType(inkwell::types::IntType<'static>);
 
 #[pymethods]
@@ -146,8 +149,9 @@ impl IntType {
 /// A function type.
 ///
 /// :param Type ret: The return type.
-/// :param Sequence[Type] params: The parameter types.
+/// :param typing.Sequence[Type] params: The parameter types.
 #[pyclass(extends = Type, unsendable)]
+#[pyo3(text_signature = "(ret, params)")]
 pub(crate) struct FunctionType(inkwell::types::FunctionType<'static>);
 
 #[pymethods]
@@ -189,7 +193,7 @@ impl FunctionType {
 
     /// The types of the function parameters.
     ///
-    /// :type: List[Type]
+    /// :type: typing.List[Type]
     #[getter]
     fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let params = slf.0.get_param_types();
@@ -223,7 +227,7 @@ impl StructType {
 
     /// The types of the structure fields.
     ///
-    /// :type: List[Type]
+    /// :type: typing.List[Type]
     #[getter]
     fn fields(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let fields = slf.0.get_field_types();
@@ -251,7 +255,7 @@ impl ArrayType {
         unsafe { Type::from_any(py, context, ty) }
     }
 
-    /// The number of elements in the a rray.
+    /// The number of elements in the array.
     ///
     /// :type: int
     #[getter]
@@ -264,6 +268,7 @@ impl ArrayType {
 ///
 /// :param Type pointee: The type being pointed to.
 #[pyclass(extends = Type, unsendable)]
+#[pyo3(text_signature = "(pointee)")]
 pub(crate) struct PointerType(inkwell::types::PointerType<'static>);
 
 #[pymethods]
@@ -315,6 +320,7 @@ impl PointerType {
 /// :returns: The qubit type.
 /// :rtype: Type
 #[pyfunction]
+#[pyo3(text_signature = "(context)")]
 pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
     let ty = {
         let context = context.borrow(py);
@@ -341,6 +347,7 @@ pub(crate) fn is_qubit_type(ty: &Type) -> bool {
 /// :returns: The result type.
 /// :rtype: Type
 #[pyfunction]
+#[pyo3(text_signature = "(context)")]
 pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
     let ty = {
         let context = context.borrow(py);

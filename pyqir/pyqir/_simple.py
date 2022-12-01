@@ -38,7 +38,7 @@ class SimpleModule:
         :param name: The name of the module.
         :param num_qubits: The number of statically allocated qubits.
         :param num_results: The number of statically allocated results.
-        :param context: The global context.
+        :param context: The LLVM context.
         """
 
         if context is None:
