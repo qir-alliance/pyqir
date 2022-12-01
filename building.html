@@ -1,0 +1,448 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="pyqir.evaluator" href="api/evaluator.html" />
+
+    <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
+        <title>Building from Source - PyQIR documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">PyQIR  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  
+  <span class="sidebar-brand-text">PyQIR  documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="upgrade.html">Upgrading to PyQIR 0.7</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/index.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/pyqir.html"><code class="docutils literal notranslate"><span class="pre">pyqir</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/evaluator.html"><code class="docutils literal notranslate"><span class="pre">pyqir.evaluator</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Building from Source</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="building-from-source">
+<h1>Building from Source<a class="headerlink" href="#building-from-source" title="Permalink to this heading">#</a></h1>
+<section id="local-environment">
+<h2>Local Environment<a class="headerlink" href="#local-environment" title="Permalink to this heading">#</a></h2>
+<section id="requirements">
+<h3>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading">#</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://rustup.rs/">Rust 1.59+</a></p></li>
+<li><p><a class="reference external" href="https://www.python.org">Python 3.7+</a></p></li>
+<li><p><a class="reference external" href="https://github.com/powershell/powershell#get-powershell">PowerShell 7+
+(Core)</a></p></li>
+<li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 13.0.1</a> - See <a class="reference internal" href="#installing-llvm"><span class="std std-doc">Installing LLVM</span></a></p></li>
+<li><p>If compiling LLVM from source:</p>
+<ul>
+<li><p><a class="reference external" href="https://github.com/Kitware/CMake/releases/tag/v3.10.3">CMake 3.10+</a></p></li>
+<li><p><a class="reference external" href="https://ninja-build.org/">Ninja 1.10.0+</a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="optional">
+<h3>Optional<a class="headerlink" href="#optional" title="Permalink to this heading">#</a></h3>
+<ul class="simple">
+<li><p>If building LLVM from source, either of these is highly recommended:</p>
+<ul>
+<li><p><a class="reference external" href="https://github.com/mozilla/sccache">sccache</a></p></li>
+<li><p><a class="reference external" href="https://github.com/ccache/ccache">ccache</a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="linux-ubuntu">
+<h3>Linux (Ubuntu)<a class="headerlink" href="#linux-ubuntu" title="Permalink to this heading">#</a></h3>
+<p>Install python and libs:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt-get install -y --no-install-recommends python3-dev python3-pip
+python3 -m pip install --user -U pip
+python3 -m pip install --user maturin
+</pre></div>
+</div>
+<p>Install Rust from <a class="reference external" href="https://rustup.rs/">rustup</a>.</p>
+</section>
+<section id="windows">
+<h3>Windows<a class="headerlink" href="#windows" title="Permalink to this heading">#</a></h3>
+<p>Install Python 3.7+ from one of the following and make sure it is added to the
+path.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links">Miniconda</a></p></li>
+<li><p><a class="reference external" href="https://www.python.org/downloads/">Python.org</a></p></li>
+</ul>
+<p>In a command prompt:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python -m pip install --user maturin
+</pre></div>
+</div>
+<p>Install Rust from <a class="reference external" href="https://rustup.rs/">rustup</a>.</p>
+</section>
+<section id="macos">
+<h3>MacOS<a class="headerlink" href="#macos" title="Permalink to this heading">#</a></h3>
+<p>Install Python 3.7+ from <a class="reference external" href="https://www.python.org/downloads/macos/">Python.org</a>.</p>
+<p>or brew:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>brew install <span class="s1">&#39;python@3.9&#39;</span>
+python -m pip install --user maturin
+</pre></div>
+</div>
+<p>Install Rust from <a class="reference external" href="https://rustup.rs/">rustup</a>.</p>
+</section>
+<section id="installing-clang-and-ninja">
+<h3>Installing Clang and Ninja<a class="headerlink" href="#installing-clang-and-ninja" title="Permalink to this heading">#</a></h3>
+<p>You can install Clang manually:</p>
+<ul>
+<li><p>Linux (Ubuntu 22.04)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>apt-get update
+apt-get install -y clang-13 lldb-13 lld-11 clangd-13
+apt-get install -y --no-install-recommends ninja-build clang-tidy-13 build-essential
+</pre></div>
+</div>
+</li>
+<li><p>Windows</p>
+<ul class="simple">
+<li><p>Download and install the <code class="docutils literal notranslate"><span class="pre">LLVM-13.0.1-win64.exe</span></code> from the <a class="reference external" href="https://github.com/llvm/llvm-project/releases/tag/llvmorg-13.0.1">13.0.1
+Release</a>
+page.</p></li>
+<li><p>This package only contains the Clang components. There is no package that
+contains Clang and LLVM.</p></li>
+</ul>
+</li>
+<li><p>MacOS</p>
+<ul class="simple">
+<li><p>Should be preinstalled.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="installing-llvm">
+<h3>Installing LLVM<a class="headerlink" href="#installing-llvm" title="Permalink to this heading">#</a></h3>
+<p>The build scripts will automatically download an LLVM toolchain which is
+detailed in the <a class="reference internal" href="#development"><span class="std std-doc">Development</span></a> section. The build installs the toolchain to
+<code class="docutils literal notranslate"><span class="pre">target/llvm-&lt;version&gt;</span></code>.</p>
+</section>
+</section>
+<section id="development">
+<h2>Development<a class="headerlink" href="#development" title="Permalink to this heading">#</a></h2>
+<p>To initialize your local environment and build
+the solution, run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./build.ps1
+</pre></div>
+</div>
+<p>This will compile <code class="docutils literal notranslate"><span class="pre">qirlib</span></code> and its dependencies with the appropriate environment
+variables set for their build scripts. After this is run, the build commands
+below can be used instead of <code class="docutils literal notranslate"><span class="pre">build.ps1</span></code>.</p>
+<p>The <a class="reference internal" href="#environment-variables"><span class="std std-doc">Environment Variables</span></a> section details ways to change this behavior.</p>
+<p>Within each project folder, the build can be run specifically for that project.</p>
+<p>For any of these commands, the LLVM version must be added via features. For <code class="docutils literal notranslate"><span class="pre">maturin</span></code>,
+they must be added to the <code class="docutils literal notranslate"><span class="pre">cargo-extra-args</span></code> option.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;features&gt;</span></code> is a placeholder for <code class="docutils literal notranslate"><span class="pre">--features</span> <span class="pre">(llvm11-0</span> <span class="pre">|</span> <span class="pre">llvm12-0</span> <span class="pre">|</span> <span class="pre">llvm13-0)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">qirlib</span></code> can be compiled with <code class="docutils literal notranslate"><span class="pre">llvm14-0</span></code></p></li>
+</ul>
+<p>Build commands:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">build</span> <span class="pre">--cargo-extra-args=&quot;&lt;features&gt;&quot;</span></code>: Build the crate into python packages</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">build</span> <span class="pre">--release</span> <span class="pre">--cargo-extra-args=&quot;&lt;features&gt;&quot;</span></code>: Build and pass –release to cargo</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">build</span> <span class="pre">--help</span></code>: to view more options</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">develop</span> <span class="pre">--cargo-extra-args=&quot;&lt;features&gt;&quot;</span></code>: Installs the crate as module in the current virtualenv</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">develop</span> <span class="pre">--cargo-extra-args=&quot;&lt;features&gt;&quot;</span> <span class="pre">&amp;&amp;</span> <span class="pre">pytest</span></code>: Installs the crate as module in the current
+virtualenv and runs the Python tests</p></li>
+</ul>
+<p>If you do not wish to package and test the Python wheels, <code class="docutils literal notranslate"><span class="pre">cargo</span></code> can be used to
+build the project and run Rust tests.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">build</span> <span class="pre">&lt;features&gt;</span></code>: Build the Rust cdylib</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">build</span> <span class="pre">--release</span> <span class="pre">&lt;features&gt;</span></code>: Build the Rust cdylib in release mode</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">test</span> <span class="pre">&lt;features&gt;</span></code>: Build and run the Rust cdylib tests</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">test</span> <span class="pre">--release</span> <span class="pre">&lt;features&gt;</span></code>: Build and run the Rust cdylib tests in release mode</p></li>
+</ul>
+<section id="environment-variables">
+<h3>Environment Variables<a class="headerlink" href="#environment-variables" title="Permalink to this heading">#</a></h3>
+<p>For those directly consuming <code class="docutils literal notranslate"><span class="pre">qirlib</span></code>, refer to the
+<a class="reference external" href="https://github.com/qir-alliance/pyqir/blob/main/qirlib/README.md#environment-variables">Environment variables</a>
+section of it’s README as the following constraints do not apply.</p>
+<p>The Python PyQIR projects require LLVM to already be installed prior to build.
+The PowerShell scripts will look at the the <code class="docutils literal notranslate"><span class="pre">qirlib</span></code>
+<a class="reference external" href="https://github.com/qir-alliance/pyqir/blob/main/qirlib/README.md#environment-variables">Environment variables</a>
+and locate, build, or install LLVM as specified by the environment. The
+default order is:</p>
+<ul class="simple">
+<li><p>Use specific LLVM installation if specified</p></li>
+<li><p>Locate existing LLVM installation on <code class="docutils literal notranslate"><span class="pre">PATH</span></code></p></li>
+<li><p>Build LLVM from source</p></li>
+<li><p>Download LLVM if allowed from specified source</p></li>
+</ul>
+<p>Afterward, the build configures the <code class="docutils literal notranslate"><span class="pre">LLVM_SYS_*_PREFIX</span></code> environment variable
+according to what the environment has configured. This will allow LLVM to
+be linked into the rest of the build.</p>
+</section>
+<section id="packaging">
+<h3>Packaging<a class="headerlink" href="#packaging" title="Permalink to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">build.ps1</span></code>, <code class="docutils literal notranslate"><span class="pre">maturin</span></code> builds all generate Python wheels to the
+<code class="docutils literal notranslate"><span class="pre">target/wheels</span></code> folder. The default Python3 installation will be used targeting
+Python ABI 3.7.</p>
+<p>The manylinux support uses a Docker image in the build scripts to run the builds
+in the CI environment.</p>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          <a class="prev-page" href="api/evaluator.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title"><code class="docutils literal notranslate"><span class="pre">pyqir.evaluator</span></code></div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2021-2022 QIR Alliance
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Building from Source</a><ul>
+<li><a class="reference internal" href="#local-environment">Local Environment</a><ul>
+<li><a class="reference internal" href="#requirements">Requirements</a></li>
+<li><a class="reference internal" href="#optional">Optional</a></li>
+<li><a class="reference internal" href="#linux-ubuntu">Linux (Ubuntu)</a></li>
+<li><a class="reference internal" href="#windows">Windows</a></li>
+<li><a class="reference internal" href="#macos">MacOS</a></li>
+<li><a class="reference internal" href="#installing-clang-and-ninja">Installing Clang and Ninja</a></li>
+<li><a class="reference internal" href="#installing-llvm">Installing LLVM</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#development">Development</a><ul>
+<li><a class="reference internal" href="#environment-variables">Environment Variables</a></li>
+<li><a class="reference internal" href="#packaging">Packaging</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/scripts/furo.js"></script>
+    </body>
+</html>
