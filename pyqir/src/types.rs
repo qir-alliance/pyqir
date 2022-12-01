@@ -24,7 +24,7 @@ pub(crate) struct Type {
 impl Type {
     /// The void type.
     ///
-    /// :param Context context: The global context.
+    /// :param Context context: The LLVM context.
     /// :returns: The void type.
     /// :rtype: Type
     #[staticmethod]
@@ -40,7 +40,7 @@ impl Type {
 
     /// The double type.
     ///
-    /// :param Context context: The global context.
+    /// :param Context context: The LLVM context.
     /// :returns: The double type.
     /// :rtype: Type
     #[staticmethod]
@@ -110,7 +110,7 @@ impl Type {
 
 /// An integer type.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 /// :param int width: The number of bits in the integer.
 #[pyclass(extends = Type, unsendable)]
 #[pyo3(text_signature = "(context, width)")]
@@ -316,7 +316,7 @@ impl PointerType {
 
 /// The QIR qubit type.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 /// :returns: The qubit type.
 /// :rtype: Type
 #[pyfunction]
@@ -343,7 +343,7 @@ pub(crate) fn is_qubit_type(ty: &Type) -> bool {
 
 /// The QIR result type.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 /// :returns: The result type.
 /// :rtype: Type
 #[pyfunction]

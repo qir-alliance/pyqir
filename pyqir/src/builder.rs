@@ -21,7 +21,7 @@ use std::{
 
 /// An instruction builder.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 #[pyclass(unsendable)]
 pub(crate) struct Builder {
     builder: inkwell::builder::Builder<'static>,

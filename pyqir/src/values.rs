@@ -769,7 +769,7 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObjec
 
 /// Creates a static qubit value.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 /// :param int id: The static qubit ID.
 /// :returns: A static qubit value.
 /// :rtype: Value
@@ -797,7 +797,7 @@ pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
 
 /// Creates a static result value.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 /// :param int id: The static result ID.
 /// :returns: A static result value.
 /// :rtype: Value
@@ -896,7 +896,7 @@ pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
 /// Creates a global null-terminated byte string constant in a module.
 ///
 /// :param Module module: The parent module.
-/// :param bytes Value: The byte string value without a null terminator.
+/// :param bytes value: The byte string value without a null terminator.
 /// :returns: A pointer to the start of the null-terminated byte string.
 /// :rtype: Constant
 #[pyfunction]

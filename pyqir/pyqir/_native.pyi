@@ -6,102 +6,401 @@ from pyqir.evaluator import GateSet
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 class ArrayType(Type):
+    """An array type."""
+
     @property
-    def element(self) -> Type: ...
+    def element(self) -> Type:
+        """The type of the array elements."""
+        ...
     @property
-    def count(self) -> int: ...
+    def count(self) -> int:
+        """The number of elements in the array."""
+        ...
 
 class Attribute:
+    """An attribute."""
+
     @property
-    def value(self) -> str: ...
+    def value(self) -> str:
+        """The value of the attribute as a string."""
+        ...
 
 class BasicBlock(Value):
+    """A basic block."""
+
     def __init__(
         self,
         context: Context,
         name: str,
         parent: Optional[Function] = None,
         before: Optional[BasicBlock] = None,
-    ) -> None: ...
+    ) -> None:
+        """
+        Initializes a basic block.
+
+        If the `before` block is given, this basic block is inserted directly before it. If no
+        `before` block is given, a `parent` function must be given, and this basic block is appended
+        to the end of that function.
+
+        :param context: The global context.
+        :param name: The block name.
+        :param parent: The parent function.
+        :param before: The block to insert this block before.
+        """
+        ...
     @property
-    def instructions(self) -> List[Instruction]: ...
+    def instructions(self) -> List[Instruction]:
+        """The instructions in this basic block."""
+        ...
     @property
-    def terminator(self) -> Optional[Instruction]: ...
+    def terminator(self) -> Optional[Instruction]:
+        """The terminating instruction of this basic block if there is one."""
+        ...
 
 class BasicQisBuilder:
-    def __init__(self, builder: Builder) -> None: ...
-    def cx(self, control: Value, target: Value) -> None: ...
-    def cz(self, control: Value, target: Value) -> None: ...
-    def h(self, qubit: Value) -> None: ...
-    def mz(self, qubit: Value, result: Value) -> None: ...
-    def reset(self, qubit: Value) -> None: ...
-    def rx(self, theta: Union[Value, float], qubit: Value) -> None: ...
-    def ry(self, theta: Union[Value, float], qubit: Value) -> None: ...
-    def rz(self, theta: Union[Value, float], qubit: Value) -> None: ...
-    def s(self, qubit: Value) -> None: ...
-    def s_adj(self, qubit: Value) -> None: ...
-    def t(self, qubit: Value) -> None: ...
-    def t_adj(self, qubit: Value) -> None: ...
-    def x(self, qubit: Value) -> None: ...
-    def y(self, qubit: Value) -> None: ...
-    def z(self, qubit: Value) -> None: ...
+    """An instruction builder that generates instructions from the basic quantum instruction set."""
+
+    def __init__(self, builder: Builder) -> None:
+        """
+        Initializes a basic QIS builder.
+
+        :param builder: The underlying builder used to build QIS instructions.
+        """
+        ...
+    def cx(self, control: Value, target: Value) -> None:
+        """
+        Inserts a controlled Pauli :math:`X` gate.
+
+        :param control: The control qubit.
+        :param target: The target qubit.
+        """
+        ...
+    def cz(self, control: Value, target: Value) -> None:
+        """
+        Inserts a controlled Pauli :math:`Z` gate.
+
+        :param control: The control qubit.
+        :param target: The target qubit.
+        """
+        ...
+    def h(self, qubit: Value) -> None:
+        """
+        Inserts a Hadamard gate.
+
+        :param qubit: The target qubit.
+        """
+        ...
+    def mz(self, qubit: Value, result: Value) -> None:
+        """
+        Inserts a Z-basis measurement operation.
+
+        :param qubit: The qubit to measure.
+        :param result: A result where the measurement result will be written to.
+        """
+        ...
+    def reset(self, qubit: Value) -> None:
+        """
+        Inserts a reset operation.
+
+        :param qubit: The qubit to reset.
+        """
+        ...
+    def rx(self, theta: Union[Value, float], qubit: Value) -> None:
+        """
+        Inserts a rotation gate about the :math:`x` axis.
+
+        :param theta: The angle to rotate by.
+        :param qubit: The qubit to rotate.
+        """
+        ...
+    def ry(self, theta: Union[Value, float], qubit: Value) -> None:
+        """
+        Inserts a rotation gate about the :math:`y` axis.
+
+        :param theta: The angle to rotate by.
+        :param qubit: The qubit to rotate.
+        """
+        ...
+    def rz(self, theta: Union[Value, float], qubit: Value) -> None:
+        """
+        Inserts a rotation gate about the :math:`z` axis.
+
+        :param theta: The angle to rotate by.
+        :param qubit: The qubit to rotate.
+        """
+        ...
+    def s(self, qubit: Value) -> None:
+        """
+        Inserts an :math:`S` gate.
+
+        :param qubit: The target qubit.
+        """
+        ...
+    def s_adj(self, qubit: Value) -> None:
+        """
+        Inserts an adjoint :math:`S` gate.
+
+        :param qubit: The target qubit.
+        """
+        ...
+    def t(self, qubit: Value) -> None:
+        """
+        Inserts a :math:`T` gate.
+
+        :param qubit: The target qubit.
+        """
+        ...
+    def t_adj(self, qubit: Value) -> None:
+        """
+        Inserts an adjoint :math:`T` gate.
+
+        :param qubit: The target qubit.
+        """
+        ...
+    def x(self, qubit: Value) -> None:
+        """
+        Inserts a Pauli :math:`X` gate.
+
+        :param qubit: The target qubit.
+        """
+        ...
+    def y(self, qubit: Value) -> None:
+        """
+        Inserts a Pauli :math:`Y` gate.
+
+        :param qubit: The target qubit.
+        """
+        ...
+    def z(self, qubit: Value) -> None:
+        """
+        Inserts a Pauli :math:`Z` gate.
+
+        :param qubit: The target qubit.
+        """
+        ...
     def if_result(
         self,
         cond: Value,
         one: Callable[[], None] = ...,
         zero: Callable[[], None] = ...,
-    ) -> None: ...
+    ) -> None:
+        """
+        Inserts a branch conditioned on a measurement result.
+
+        Instructions inserted when ``one`` is called will be inserted into the one branch.
+        Instructions inserted when ``zero`` is called will be inserted into the zero branch. The one
+        and zero callables should use this module's builder to build instructions.
+
+        :param cond: The result condition to branch on.
+        :param one: A callable that inserts instructions for the branch where the result is one.
+        :param zero: A callable that inserts instructions for the branch where the result is zero.
+        """
+        ...
 
 class Builder:
-    def __init__(self, context: Context) -> None: ...
-    def insert_at_end(self, block: BasicBlock) -> None: ...
-    def and_(self, lhs: Value, rhs: Value) -> Value: ...
-    def or_(self, lhs: Value, rhs: Value) -> Value: ...
-    def xor(self, lhs: Value, rhs: Value) -> Value: ...
-    def add(self, lhs: Value, rhs: Value) -> Value: ...
-    def sub(self, lhs: Value, rhs: Value) -> Value: ...
-    def mul(self, lhs: Value, rhs: Value) -> Value: ...
-    def shl(self, lhs: Value, rhs: Value) -> Value: ...
-    def lshr(self, lhs: Value, rhs: Value) -> Value: ...
-    def icmp(self, pred: IntPredicate, lhs: Value, rhs: Value) -> Value: ...
+    """An instruction builder."""
+
+    def __init__(self, context: Context) -> None:
+        """
+        Initializes a builder.
+
+        :param context: The LLVM context.
+        """
+        ...
+    def insert_at_end(self, block: BasicBlock) -> None:
+        """
+        Tells this builder to insert subsequent instructions at the end of the block.
+
+        :param block: The block to insert into.
+        """
+        ...
+    def and_(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a bitwise logical and instruction.
+
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :return: The result.
+        """
+        ...
+    def or_(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a bitwise logical or instruction.
+
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :return: The result.
+        """
+        ...
+    def xor(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a bitwise logical exclusive or instruction.
+
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :return: The result.
+        """
+        ...
+    def add(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts an addition instruction.
+
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :return: The sum.
+        """
+        ...
+    def sub(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a subtraction instruction.
+
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :return: The difference.
+        """
+        ...
+    def mul(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a multiplication instruction.
+
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :return: The product.
+        """
+        ...
+    def shl(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a shift left instruction.
+
+        :param lhs: The value to shift.
+        :param rhs: The number of bits to shift by.
+        :return: The result.
+        """
+        ...
+    def lshr(self, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts a logical (zero fill) shift right instruction.
+
+        :param lhs: The value to shift.
+        :param rhs: The number of bits to shift by.
+        :return: The result.
+        """
+        ...
+    def icmp(self, pred: IntPredicate, lhs: Value, rhs: Value) -> Value:
+        """
+        Inserts an integer comparison instruction.
+
+        :param pred: The predicate to compare by.
+        :param lhs: The left-hand side.
+        :param rhs: The right-hand side.
+        :return: The boolean result.
+        """
+        ...
     def call(
         self,
         callee: Value,
         args: Sequence[Union[Value, bool, int, float]],
-    ) -> Optional[Value]: ...
+    ) -> Optional[Value]:
+        """
+        Inserts a call instruction.
+
+        :param value: The value to call.
+        :param args: The arguments to the function.
+        :return: The return value, or None if the function has a void return type.
+        """
+        ...
     def if_(
         self,
         cond: Value,
         true: Callable[[], None] = ...,
         false: Callable[[], None] = ...,
-    ) -> None: ...
-    def br(self, dest: BasicBlock) -> Instruction: ...
-    def ret(self, value: Optional[Value]) -> Instruction: ...
+    ) -> None:
+        """
+        Inserts a branch conditioned on a boolean.
+
+        Instructions inserted when ``true`` is called will be inserted into the true branch.
+        Instructions inserted when ``false`` is called will be inserted into the false branch. The
+        true and false callables should use this module's builder to build instructions.
+
+        :param cond: The boolean condition to branch on.
+        :param true:
+            A callable that inserts instructions for the branch where the condition is true.
+        :param false:
+            A callable that inserts instructions for the branch where the condition is false.
+        """
+        ...
+    def br(self, dest: BasicBlock) -> Instruction:
+        """
+        Inserts an unconditional branch instruction.
+
+        :param dest: The destination block.
+        :return: The branch instruction.
+        """
+        ...
+    def ret(self, value: Optional[Value]) -> Instruction:
+        """
+        Inserts a return instruction.
+
+        :param value: The value to return. If `None`, returns void.
+        :return: The return instruction.
+        """
+        ...
 
 class Call(Instruction):
+    """A call instruction."""
+
     @property
-    def callee(self) -> Value: ...
+    def callee(self) -> Value:
+        """The value being called."""
+        ...
     @property
-    def args(self) -> List[Value]: ...
+    def args(self) -> List[Value]:
+        """The arguments to the call."""
+        ...
 
 class Constant(Value):
+    """A constant value."""
+
     @staticmethod
-    def null(ty: Type) -> Constant: ...
+    def null(ty: Type) -> Constant:
+        """
+        Creates the null or zero constant for the given type.
+
+        :param type: The type of the constant.
+        :return: The null or zero constant.
+        """
+        ...
     @property
-    def is_null(self) -> bool: ...
+    def is_null(self) -> bool:
+        """Whether this value is the null value for its type."""
+        ...
 
 class Context:
-    def __init__(self) -> None: ...
+    """The context owns global state needed by most LLVM objects."""
+
+    def __init__(self) -> None:
+        """Initializes a context."""
+        ...
 
 class FCmp(Instruction):
+    """A floating-point comparison instruction."""
+
     @property
-    def predicate(self) -> FloatPredicate: ...
+    def predicate(self) -> FloatPredicate:
+        """The comparison predicate."""
+        ...
 
 class FloatConstant(Constant):
+    """A constant floating-point value."""
+
     @property
-    def value(self) -> float: ...
+    def value(self) -> float:
+        """The value."""
+        ...
 
 class FloatPredicate(Enum):
+    """A floating-point comparison predicate."""
+
     FALSE: FloatPredicate
     OEQ: FloatPredicate
     OGT: FloatPredicate
@@ -120,44 +419,106 @@ class FloatPredicate(Enum):
     TRUE: FloatPredicate
 
 class Function(Constant):
+    """A function value."""
+
     def __init__(
         self, ty: FunctionType, linkage: Linkage, name: str, module: Module
-    ) -> None: ...
+    ) -> None:
+        """
+        Creates a new function.
+
+        :param ty: The function type.
+        :param linkage: The linkage kind.
+        :param name: The function name.
+        :param module: The parent module.
+        """
+        ...
     @property
     def type(self) -> FunctionType: ...
     @property
-    def params(self) -> List[Value]: ...
+    def params(self) -> List[Value]:
+        """The parameters to this function."""
+        ...
     @property
-    def basic_blocks(self) -> List[BasicBlock]: ...
-    def attribute(self, name: str) -> Optional[Attribute]: ...
+    def basic_blocks(self) -> List[BasicBlock]:
+        """The basic blocks in this function."""
+        ...
+    def attribute(self, name: str) -> Optional[Attribute]:
+        """
+        Gets an attribute of this function with the given name if it has one.
+
+        :param name: The name of the attribute.
+        :return: The attribute.
+        """
+        ...
 
 class FunctionType(Type):
-    def __init__(self, ret: Type, params: Sequence[Type]) -> None: ...
+    """A function type."""
+
+    def __init__(self, ret: Type, params: Sequence[Type]) -> None:
+        """
+        Initializes a function type.
+
+        :param ret: The return type.
+        :param params: The parameter types.
+        """
+        ...
     @property
-    def ret(self) -> Type: ...
+    def ret(self) -> Type:
+        """The return type of the function."""
+        ...
     @property
-    def params(self) -> List[Type]: ...
+    def params(self) -> List[Type]:
+        """The types of the function parameters."""
+        ...
 
 class ICmp(Instruction):
+    """An integer comparison instruction."""
+
     @property
-    def predicate(self) -> IntPredicate: ...
+    def predicate(self) -> IntPredicate:
+        """The comparison predicate."""
+        ...
 
 class Instruction(Value):
+    """An instruction."""
+
     @property
-    def opcode(self) -> Opcode: ...
+    def opcode(self) -> Opcode:
+        """The instruction opcode."""
+        ...
     @property
-    def operands(self) -> List[Value]: ...
+    def operands(self) -> List[Value]:
+        """The operands to the instruction."""
+        ...
     @property
-    def successors(self) -> List[BasicBlock]: ...
-    def erase(self) -> None: ...
+    def successors(self) -> List[BasicBlock]:
+        """
+        The basic blocks that are successors to this instruction. If this is not a terminator, the
+        list is empty.
+        """
+        ...
+    def erase(self) -> None:
+        """
+        Removes this instruction from its parent basic block, then deletes it from memory.
+
+        .. warning:: Using this instruction after erasing it is undefined behavior.
+        """
+        ...
 
 class IntConstant(Constant):
+    """A constant integer value."""
+
     @property
     def type(self) -> IntType: ...
     @property
-    def value(self) -> int: ...
+    def value(self) -> int:
+        """The value."""
+        ...
 
 class IntPredicate(Enum):
+    """An integer comparison predicate."""
+
     EQ: IntPredicate
     NE: IntPredicate
     UGT: IntPredicate
@@ -170,11 +531,24 @@ class IntPredicate(Enum):
     SLE: IntPredicate
 
 class IntType(Type):
-    def __init__(self, context: Context, width: int) -> None: ...
+    """An integer type."""
+
+    def __init__(self, context: Context, width: int) -> None:
+        """
+        Initializes an integer type.
+
+        :param context: The LLVM context.
+        :param width: The number of bits in the integer.
+        """
+        ...
     @property
-    def width(self) -> int: ...
+    def width(self) -> int:
+        """The number of bits in the integer."""
+        ...
 
 class Linkage(Enum):
+    """The linkage kind for a global value in a module."""
+
     APPENDING: Linkage
     AVAILABLE_EXTERNALLY: Linkage
     COMMON: Linkage
@@ -188,25 +562,68 @@ class Linkage(Enum):
     WEAK_ODR: Linkage
 
 class Module:
-    def __init__(self, context: Context, name: str) -> None: ...
+    """A module is a collection of global values."""
+
+    def __init__(self, context: Context, name: str) -> None:
+        """
+        Initializes a module.
+
+        :param context: The LLVM context.
+        :param name: The module name.
+        """
+        ...
     @staticmethod
-    def from_ir(context: Context, ir: str, name: str = "") -> Module: ...
+    def from_ir(context: Context, ir: str, name: str = "") -> Module:
+        """
+        Creates a module from LLVM IR.
+
+        :param ir: The LLVM IR for a module.
+        :param name: The name of the module.
+        :return: The module.
+        """
+        ...
     @staticmethod
-    def from_bitcode(context: Context, bitcode: bytes, name: str = "") -> Module: ...
+    def from_bitcode(context: Context, bitcode: bytes, name: str = "") -> Module:
+        """
+        Creates a module from LLVM bitcode.
+
+        :param bitcode: The LLVM bitcode for a module.
+        :param name: The name of the module.
+        :return: The module.
+        """
+        ...
     @property
-    def source_filename(self) -> str: ...
+    def source_filename(self) -> str:
+        """The name of the original source file that this module was compiled from."""
+        ...
     @source_filename.setter
     def source_filename(self, value: str) -> None: ...
     @property
-    def functions(self) -> List[Function]: ...
+    def functions(self) -> List[Function]:
+        """The functions declared in this module."""
+        ...
     @property
-    def bitcode(self) -> bytes: ...
+    def bitcode(self) -> bytes:
+        """The LLVM bitcode for this module."""
+        ...
     @property
-    def context(self) -> Context: ...
-    def verify(self) -> Optional[str]: ...
-    def __str__(self) -> str: ...
+    def context(self) -> Context:
+        """The LLVM context."""
+        ...
+    def verify(self) -> Optional[str]:
+        """
+        Verifies that this module is valid.
+
+        :return: An error description if this module is invalid or `None` if this module is valid.
+        """
+        ...
+    def __str__(self) -> str:
+        """Converts this module into an LLVM IR string."""
+        ...
 
 class Opcode(Enum):
+    """An instruction opcode."""
+
     ADD: Opcode
     ADDR_SPACE_CAST: Opcode
     ALLOCA: Opcode
@@ -276,15 +693,31 @@ class Opcode(Enum):
     ZEXT: Opcode
 
 class Phi(Instruction):
+    """A phi node instruction."""
+
     @property
-    def incoming(self) -> List[Tuple[Value, BasicBlock]]: ...
+    def incoming(self) -> List[Tuple[Value, BasicBlock]]:
+        """The incoming values and their preceding basic blocks."""
+        ...
 
 class PointerType(Type):
-    def __init__(self, pointee: Type) -> None: ...
+    """A pointer type."""
+
+    def __init__(self, pointee: Type) -> None:
+        """
+        Initializes a pointer type.
+
+        :param pointee: The type being pointed to.
+        """
+        ...
     @property
-    def pointee(self) -> Type: ...
+    def pointee(self) -> Type:
+        """The type being pointed to."""
+        ...
     @property
-    def address_space(self) -> int: ...
+    def address_space(self) -> int:
+        """The pointer address space."""
+        ...
 
 class PyNonadaptiveJit:
     def eval(
@@ -296,50 +729,224 @@ class PyNonadaptiveJit:
     ) -> None: ...
 
 class StructType(Type):
+    """A structure type."""
+
     @property
-    def name(self) -> Optional[str]: ...
+    def name(self) -> Optional[str]:
+        """The name of the structure or the empty string if the structure is anonymous."""
+        ...
     @property
-    def fields(self) -> List[Type]: ...
+    def fields(self) -> List[Type]:
+        """The types of the structure fields."""
+        ...
 
 class Switch(Instruction):
+    """A switch instruction."""
+
     @property
-    def cond(self) -> Value: ...
+    def cond(self) -> Value:
+        """The condition of the switch."""
+        ...
     @property
-    def default(self) -> BasicBlock: ...
+    def default(self) -> BasicBlock:
+        """The default successor block if none of the cases match."""
+        ...
     @property
-    def cases(self) -> List[Tuple[IntConstant, BasicBlock]]: ...
+    def cases(self) -> List[Tuple[IntConstant, BasicBlock]]:
+        """The switch cases."""
+        ...
 
 class Type:
+    """A type."""
+
     @staticmethod
-    def void(context: Context) -> Type: ...
+    def void(context: Context) -> Type:
+        """
+        The void type.
+
+        :param context: The LLVM context.
+        :return: The void type.
+        """
+        ...
     @staticmethod
-    def double(context: Context) -> Type: ...
+    def double(context: Context) -> Type:
+        """
+        The double type.
+
+        :param context: The LLVM context.
+        :return: The double type.
+        """
+        ...
     @property
-    def is_void(self) -> bool: ...
+    def is_void(self) -> bool:
+        """Whether this type is the void type."""
+        ...
     @property
-    def is_double(self) -> bool: ...
+    def is_double(self) -> bool:
+        """Whether this type is the bool type."""
+        ...
 
 class Value:
-    @property
-    def type(self) -> Type: ...
-    @property
-    def name(self) -> str: ...
+    """A value."""
 
-def const(ty: Type, value: Union[bool, int, float]) -> Constant: ...
+    @property
+    def type(self) -> Type:
+        """The type of this value."""
+        ...
+    @property
+    def name(self) -> str:
+        """The name of this value or the empty string if this value is anonymous."""
+        ...
+
+def const(ty: Type, value: Union[bool, int, float]) -> Constant:
+    """
+    Creates a constant value.
+
+    :param ty: The type of the value.
+    :param value: The value of the constant.
+    :return: The constant value.
+    """
+    ...
+
 def entry_point(
     module: Module, name: str, required_num_qubits: int, required_num_results: int
-) -> Function: ...
-def extract_byte_string(value: Value) -> Optional[bytes]: ...
-def global_byte_string(module: Module, value: bytes) -> Constant: ...
-def is_entry_point(function: Function) -> bool: ...
-def is_interop_friendly(function: Function) -> bool: ...
-def is_qubit_type(ty: Type) -> bool: ...
-def is_result_type(ty: Type) -> bool: ...
-def qubit(context: Context, id: int) -> Constant: ...
-def qubit_id(value: Value) -> Optional[int]: ...
-def qubit_type(context: Context) -> Type: ...
-def required_num_qubits(function: Function) -> Optional[int]: ...
-def required_num_results(function: Function) -> Optional[int]: ...
-def result(context: Context, id: int) -> Constant: ...
-def result_id(value: Value) -> Optional[int]: ...
-def result_type(context: Context) -> Type: ...
+) -> Function:
+    """
+    Creates an entry point.
+
+    :param module: The parent module.
+    :param name: The entry point name.
+    :param required_num_qubits: The number of qubits required by the entry point.
+    :param required_num_results: The number of results required by the entry point.
+    :return: An entry point.
+    """
+    ...
+
+def extract_byte_string(value: Value) -> Optional[bytes]:
+    """
+    If the value is a pointer to a constant byte string, extracts it.
+
+    :param value: The value.
+    :return: The constant byte string.
+    """
+    ...
+
+def global_byte_string(module: Module, value: bytes) -> Constant:
+    """
+    Creates a global null-terminated byte string constant in a module.
+
+    :param module: The parent module.
+    :param value: The byte string value without a null terminator.
+    :return: A pointer to the start of the null-terminated byte string.
+    """
+    ...
+
+def is_entry_point(function: Function) -> bool:
+    """
+    Whether the function is an entry point.
+
+    :param function: The function.
+    :return: True if the function is an entry point.
+    """
+    ...
+
+def is_interop_friendly(function: Function) -> bool:
+    """
+    Whether the function is interop-friendly.
+
+    :param function: The function.
+    :return: True if the function is interop-friendly.
+    """
+    ...
+
+def is_qubit_type(ty: Type) -> bool:
+    """
+    Whether the type is the QIR qubit type.
+
+    :param Type ty: The type.
+    :return: True if the type is the QIR qubit type.
+    """
+    ...
+
+def is_result_type(ty: Type) -> bool:
+    """
+    Whether the type is the QIR result type.
+
+    :param ty: The type.
+    :return: True if the type is the QIR result type.
+    """
+    ...
+
+def qubit(context: Context, id: int) -> Constant:
+    """
+    Creates a static qubit value.
+
+    :param context: The LLVM context.
+    :param id: The static qubit ID.
+    :return: A static qubit value.
+    """
+    ...
+
+def qubit_id(value: Value) -> Optional[int]:
+    """
+    If the value is a static qubit ID, extracts it.
+
+    :param value: The value.
+    :return: The static qubit ID.
+    """
+    ...
+
+def qubit_type(context: Context) -> Type:
+    """
+    The QIR qubit type.
+
+    :param context: The LLVM context.
+    :return: The qubit type.
+    """
+    ...
+
+def required_num_qubits(function: Function) -> Optional[int]:
+    """
+    If the function declares a required number of qubits, extracts it.
+
+    :param function: The function.
+    :return: The required number of qubits.
+    """
+    ...
+
+def required_num_results(function: Function) -> Optional[int]:
+    """
+    If the function declares a required number of results, extracts it.
+
+    :param function: The function.
+    :return: The required number of results.
+    """
+    ...
+
+def result(context: Context, id: int) -> Constant:
+    """
+    Creates a static result value.
+
+    :param context: The LLVM context.
+    :param id: The static result ID.
+    :return: A static result value.
+    """
+    ...
+
+def result_id(value: Value) -> Optional[int]:
+    """
+    If the value is a static result ID, extracts it.
+
+    :param value: The value.
+    :return: The static result ID.
+    """
+    ...
+
+def result_type(context: Context) -> Type:
+    """
+    The QIR result type.
+
+    :param Context context: The LLVM context.
+    :return: The result type.
+    """
+    ...
