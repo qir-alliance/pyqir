@@ -197,7 +197,7 @@ impl From<Py<Module>> for Owner {
 /// block is given, a `parent` function must be given, and this basic block is appended to the end
 /// of that function.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 /// :param str name: The block name.
 /// :param typing.Optional[Function] parent: The parent function.
 /// :param typing.Optional[BasicBlock] before: The block to insert this block before.

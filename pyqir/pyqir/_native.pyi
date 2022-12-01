@@ -42,7 +42,7 @@ class BasicBlock(Value):
         `before` block is given, a `parent` function must be given, and this basic block is appended
         to the end of that function.
 
-        :param context: The global context.
+        :param context: The LLVM context.
         :param name: The block name.
         :param parent: The parent function.
         :param before: The block to insert this block before.
