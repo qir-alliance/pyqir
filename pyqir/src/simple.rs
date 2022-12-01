@@ -24,7 +24,7 @@ use qirlib::values;
 /// :param str name: The name of the module.
 /// :param int num_qubits: The number of statically allocated qubits.
 /// :param int num_results: The number of statically allocated results.
-/// :param Optional[Context] context: The global context.
+/// :param typing.Optional[Context] context: The global context.
 #[pyclass(unsendable)]
 #[pyo3(text_signature = "(name, num_qubits, num_results, context=None)")]
 pub(crate) struct SimpleModule {
@@ -66,6 +66,9 @@ impl SimpleModule {
         })
     }
 
+    /// The LLVM context used by the module.
+    ///
+    /// :rtype: Context
     #[getter]
     fn context(&self, py: Python) -> Py<Context> {
         self.module.borrow(py).context().clone_ref(py)
@@ -73,7 +76,7 @@ impl SimpleModule {
 
     /// The global qubit register.
     ///
-    /// :type: List[Value]
+    /// :type: typing.List[Value]
     #[getter]
     fn qubits(&self, py: Python) -> PyResult<Vec<PyObject>> {
         let module = self.module.borrow(py);
@@ -88,7 +91,7 @@ impl SimpleModule {
 
     /// The global result register.
     ///
-    /// :type: List[Value]
+    /// :type: typing.List[Value]
     #[getter]
     fn results(&self, py: Python) -> PyResult<Vec<PyObject>> {
         let module = self.module.borrow(py);

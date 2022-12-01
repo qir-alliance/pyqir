@@ -13,6 +13,7 @@ use std::mem::transmute;
 /// :param Context context: The global context.
 /// :param str name: The module name.
 #[pyclass(unsendable)]
+#[pyo3(text_signature = "(context, str)")]
 pub(crate) struct Module {
     module: inkwell::module::Module<'static>,
     context: Py<Context>,
@@ -35,7 +36,7 @@ impl Module {
     /// Creates a module from LLVM IR.
     ///
     /// :param str ir: The LLVM IR for a module.
-    /// :param Optional[str] name: The name of the module.
+    /// :param typing.Optional[str] name: The name of the module.
     /// :rtype: Module
     /// :returns: The module.
     #[staticmethod]
@@ -58,7 +59,7 @@ impl Module {
     /// Creates a module from LLVM bitcode.
     ///
     /// :param bytes bitcode: The LLVM bitcode for a module.
-    /// :param Optional[str] name: The name of the module.
+    /// :param typing.Optional[str] name: The name of the module.
     /// :rtype: Module
     /// :returns: The module.
     #[staticmethod]
@@ -99,7 +100,7 @@ impl Module {
 
     /// The functions declared in this module.
     ///
-    /// :type: List[Function]
+    /// :type: typing.List[Function]
     #[getter]
     fn functions(slf: Py<Module>, py: Python) -> PyResult<Vec<PyObject>> {
         slf.borrow(py)
@@ -128,7 +129,7 @@ impl Module {
     /// Verifies that this module is valid.
     ///
     /// :returns: An error description if this module is invalid or `None` if this module is valid.
-    /// :rtype: Optional[str]
+    /// :rtype: typing.Optional[str]
     fn verify(&self) -> Option<String> {
         self.module.verify().map_err(|e| e.to_string()).err()
     }
@@ -205,6 +206,8 @@ pub(crate) struct Attribute(pub(crate) inkwell::attributes::Attribute);
 #[pymethods]
 impl Attribute {
     /// The value of the attribute as a string.
+    ///
+    /// :type: str
     #[getter]
     fn value(&self) -> &str {
         self.0

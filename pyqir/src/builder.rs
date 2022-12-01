@@ -51,6 +51,8 @@ impl Builder {
     /// Tells this builder to insert subsequent instructions at the end of the block.
     ///
     /// :param BasicBlock block: The block to insert into.
+    /// :rtype: None
+    #[pyo3(text_signature = "(block)")]
     fn insert_at_end(&mut self, py: Python, block: PyRef<BasicBlock>) -> PyResult<()> {
         let owner = block.as_ref().owner();
         if *owner.context(py).borrow(py) != *self.owner.context(py).borrow(py) {
@@ -223,7 +225,8 @@ impl Builder {
     /// Inserts a call instruction.
     ///
     /// :param Value value: The value to call.
-    /// :param Sequence[Union[Value, bool, int, float]] args: The arguments to the function.
+    /// :param typing.Sequence[typing.Union[Value, bool, int, float]] args:
+    ///     The arguments to the function.
     /// :returns: The return value, or None if the function has a void return type.
     /// :rtype: Optional[Value]
     #[pyo3(text_signature = "(self, callee, args)")]
@@ -261,9 +264,9 @@ impl Builder {
     /// true and false callables should use this module's builder to build instructions.
     ///
     /// :param Value cond: The boolean condition to branch on.
-    /// :param Callable[[], None] true:
+    /// :param typing.Callable[[], None] true:
     ///     A callable that inserts instructions for the branch where the condition is true.
-    /// :param Callable[[], None] false:
+    /// :param typing.Callable[[], None] false:
     ///     A callable that inserts instructions for the branch where the condition is false.
     #[pyo3(text_signature = "(self, cond, true, false)")]
     fn if_(

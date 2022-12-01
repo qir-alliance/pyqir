@@ -199,8 +199,8 @@ impl From<Py<Module>> for Owner {
 ///
 /// :param Context context: The global context.
 /// :param str name: The block name.
-/// :param Optional[Function] parent: The parent function.
-/// :param Optional[BasicBlock] before: The block to insert this block before.
+/// :param typing.Optional[Function] parent: The parent function.
+/// :param typing.Optional[BasicBlock] before: The block to insert this block before.
 #[pyclass(extends = Value, unsendable)]
 #[pyo3(text_signature = "(context, name, parent=None, before=None)")]
 pub(crate) struct BasicBlock(inkwell::basic_block::BasicBlock<'static>);
@@ -253,7 +253,7 @@ impl BasicBlock {
 
     /// The instructions in this basic block.
     ///
-    /// :type: List[Instruction]
+    /// :type: typing.List[Instruction]
     #[getter]
     fn instructions(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let mut insts = Vec::new();
@@ -267,7 +267,7 @@ impl BasicBlock {
 
     /// The terminating instruction of this basic block if there is one.
     ///
-    /// :type: Optional[Instruction]
+    /// :type: typing.Optional[Instruction]
     #[getter]
     fn terminator(slf: PyRef<Self>, py: Python) -> PyResult<Option<PyObject>> {
         match slf.0.get_terminator() {
@@ -418,7 +418,7 @@ impl Function {
 
     /// The parameters to this function.
     ///
-    /// :type: List[Value]
+    /// :type: typing.List[Value]
     #[getter]
     fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let params = slf.0.get_params();
@@ -431,7 +431,7 @@ impl Function {
 
     /// The basic blocks in this function.
     ///
-    /// :type: List[BasicBlock]
+    /// :type: typing.List[BasicBlock]
     #[getter]
     fn basic_blocks(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let function = slf.0;
@@ -446,7 +446,7 @@ impl Function {
     /// Gets an attribute of this function with the given name if it has one.
     ///
     /// :param str name: The name of the attribute.
-    /// :rtype: Optional[Attribute]
+    /// :rtype: typing.Optional[Attribute]
     /// :returns: The attribute.
     #[pyo3(text_signature = "(name)")]
     fn attribute(&self, name: &str) -> Option<Attribute> {
@@ -757,7 +757,7 @@ impl Literal<'_> {
 /// Creates a constant value.
 ///
 /// :param Type ty: The type of the value.
-/// :param Union[bool, int, float] value: The value of the constant.
+/// :param typing.Union[bool, int, float] value: The value of the constant.
 /// :returns: The constant value.
 /// :rtype: Value
 #[pyfunction]
@@ -774,6 +774,7 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObjec
 /// :returns: A static qubit value.
 /// :rtype: Value
 #[pyfunction]
+#[pyo3(text_signature = "(context, id)")]
 pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
     let value = {
         let context = context.borrow(py);
@@ -787,7 +788,7 @@ pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObj
 ///
 /// :param Value value: The value.
 /// :returns: The static qubit ID.
-/// :rtype: Optional[int]
+/// :rtype: typing.Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
@@ -801,6 +802,7 @@ pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
 /// :returns: A static result value.
 /// :rtype: Value
 #[pyfunction]
+#[pyo3(text_signature = "(context, id)")]
 pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
     let value = {
         let context = context.borrow(py);
@@ -814,7 +816,7 @@ pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyOb
 ///
 /// :param Value value: The value.
 /// :returns: The static result ID.
-/// :rtype: Optional[int]
+/// :rtype: typing.Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn result_id(value: &Value) -> Option<u64> {
@@ -830,6 +832,7 @@ pub(crate) fn result_id(value: &Value) -> Option<u64> {
 /// :returns: An entry point.
 /// :rtype: Function
 #[pyfunction]
+#[pyo3(text_signature = "(module, name, required_num_qubits, required_num_results)")]
 pub(crate) fn entry_point(
     py: Python,
     module: Py<Module>,
@@ -871,7 +874,7 @@ pub(crate) fn is_interop_friendly(function: &Function) -> bool {
 /// If the function declares a required number of qubits, extracts it.
 ///
 /// :param Function function: The function.
-/// :rtype: Optional[int]
+/// :rtype: typing.Optional[int]
 /// :returns: The required number of qubits.
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
@@ -890,8 +893,9 @@ pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
     values::required_num_results(unsafe { function.get() })
 }
 
-/// Creates a global null-terminated byte string constant in the module.
+/// Creates a global null-terminated byte string constant in a module.
 ///
+/// :param Module module: The parent module.
 /// :param bytes Value: The byte string value without a null terminator.
 /// :returns: A pointer to the start of the null-terminated byte string.
 /// :rtype: Constant
@@ -905,7 +909,7 @@ pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> P
 /// If the value is a pointer to a constant byte string, extracts it.
 ///
 /// :param Value value: The value.
-/// :rtype: Optional[bytes]
+/// :rtype: typing.Optional[bytes]
 /// :returns: The constant byte string.
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]

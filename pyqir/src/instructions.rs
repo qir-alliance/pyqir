@@ -33,7 +33,7 @@ impl Instruction {
 
     /// The operands to the instruction.
     ///
-    /// :type: List[Value]
+    /// :type: typing.List[Value]
     #[getter]
     fn operands(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let owner = slf.as_ref().owner();
@@ -48,7 +48,7 @@ impl Instruction {
     /// The basic blocks that are successors to this instruction. If this is not a terminator, the
     /// list is empty.
     ///
-    /// :type: List[BasicBlock]
+    /// :type: typing.List[BasicBlock]
     #[getter]
     fn successors(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         if unsafe { LLVMIsATerminatorInst(slf.0.get_ref()) }.is_null() {
@@ -334,7 +334,7 @@ impl Switch {
 
     /// The switch cases.
     ///
-    /// :type: List[Tuple[Value, BasicBlock]]
+    /// :type: typing.List[typing.Tuple[Value, BasicBlock]]
     #[getter]
     fn cases(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(PyObject, PyObject)>> {
         let inst_ref = slf.into_super();
@@ -526,7 +526,7 @@ impl Call {
 
     /// The arguments to the call.
     ///
-    /// :type: List[Value]
+    /// :type: typing.List[Value]
     #[getter]
     fn args(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let inst = slf.into_super();
@@ -544,7 +544,7 @@ pub(crate) struct Phi(PhiValue<'static>);
 impl Phi {
     /// The incoming values and their preceding basic blocks.
     ///
-    /// :type: List[Tuple[Value, BasicBlock]]
+    /// :type: typing.List[typing.Tuple[Value, BasicBlock]]
     #[getter]
     fn incoming(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(PyObject, PyObject)>> {
         let phi = slf.0;
