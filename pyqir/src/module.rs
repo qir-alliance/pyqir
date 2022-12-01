@@ -2,7 +2,11 @@
 // Licensed under the MIT License.
 
 use crate::{context::Context, values::Value};
-use inkwell::{memory_buffer::MemoryBuffer, module::FlagBehavior, values::{BasicValueEnum, BasicMetadataValueEnum, MetadataValue, AnyValue}};
+use inkwell::{
+    memory_buffer::MemoryBuffer,
+    module::FlagBehavior,
+    values::{AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum},
+};
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use std::mem::transmute;
 
@@ -205,10 +209,10 @@ impl From<ModuleFlagBehavior> for FlagBehavior {
 
 #[pyfunction]
 pub(crate) fn get_flag(py: Python, module: Py<Module>, key: &str) -> Option<PyObject> {
-    let module  = module.borrow(py);
+    let module = module.borrow(py);
     if let Some(flag) = module.module.get_flag(key) {
-        let ave = flag.as_any_value_enum();
-        let value = unsafe { Value::from_any(py, module.context.clone(), ave)};
+        let ave = AnyValueEnum::MetadataValue(flag);
+        let value = unsafe { Value::from_any(py, module.context.clone(), ave) };
         value.ok()
     } else {
         None
@@ -216,16 +220,31 @@ pub(crate) fn get_flag(py: Python, module: Py<Module>, key: &str) -> Option<PyOb
 }
 
 #[pyfunction]
-pub(crate) fn add_metadata_flag(py: Python, module: Py<Module>, key: &str, behavior: ModuleFlagBehavior, flag: &Value)-> PyResult<()> {
-    let module  = module.borrow(py);
+pub(crate) fn add_metadata_flag(
+    py: Python,
+    module: Py<Module>,
+    key: &str,
+    behavior: ModuleFlagBehavior,
+    flag: &Value,
+) -> PyResult<()> {
+    let module = module.borrow(py);
     let value = BasicMetadataValueEnum::try_from(unsafe { flag.get() })?;
-    module.module.add_metadata_flag(key, behavior.into(), value.into_metadata_value());
+    module
+        .module
+        .add_metadata_flag(key, behavior.into(), value.into_metadata_value());
     Ok(())
 }
 
 #[pyfunction]
-pub(crate) fn add_value_flag(module: &Module, key: &str, behavior: ModuleFlagBehavior, flag: &Value) -> PyResult<()> {
+pub(crate) fn add_value_flag(
+    module: &Module,
+    key: &str,
+    behavior: ModuleFlagBehavior,
+    flag: &Value,
+) -> PyResult<()> {
     let value = BasicValueEnum::try_from(unsafe { flag.get() })?;
-    module.module.add_basic_value_flag(key, behavior.into(), value);
+    module
+        .module
+        .add_basic_value_flag(key, behavior.into(), value);
     Ok(())
 }
