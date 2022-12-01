@@ -220,7 +220,7 @@ class Builder:
 
         :param lhs: The left-hand side.
         :param rhs: The right-hand side.
-        :return: The result.
+        :returns: The result.
         """
         ...
     def or_(self, lhs: Value, rhs: Value) -> Value:
@@ -229,7 +229,7 @@ class Builder:
 
         :param lhs: The left-hand side.
         :param rhs: The right-hand side.
-        :return: The result.
+        :returns: The result.
         """
         ...
     def xor(self, lhs: Value, rhs: Value) -> Value:
@@ -238,7 +238,7 @@ class Builder:
 
         :param lhs: The left-hand side.
         :param rhs: The right-hand side.
-        :return: The result.
+        :returns: The result.
         """
         ...
     def add(self, lhs: Value, rhs: Value) -> Value:
@@ -247,7 +247,7 @@ class Builder:
 
         :param lhs: The left-hand side.
         :param rhs: The right-hand side.
-        :return: The sum.
+        :returns: The sum.
         """
         ...
     def sub(self, lhs: Value, rhs: Value) -> Value:
@@ -256,7 +256,7 @@ class Builder:
 
         :param lhs: The left-hand side.
         :param rhs: The right-hand side.
-        :return: The difference.
+        :returns: The difference.
         """
         ...
     def mul(self, lhs: Value, rhs: Value) -> Value:
@@ -265,7 +265,7 @@ class Builder:
 
         :param lhs: The left-hand side.
         :param rhs: The right-hand side.
-        :return: The product.
+        :returns: The product.
         """
         ...
     def shl(self, lhs: Value, rhs: Value) -> Value:
@@ -274,7 +274,7 @@ class Builder:
 
         :param lhs: The value to shift.
         :param rhs: The number of bits to shift by.
-        :return: The result.
+        :returns: The result.
         """
         ...
     def lshr(self, lhs: Value, rhs: Value) -> Value:
@@ -283,7 +283,7 @@ class Builder:
 
         :param lhs: The value to shift.
         :param rhs: The number of bits to shift by.
-        :return: The result.
+        :returns: The result.
         """
         ...
     def icmp(self, pred: IntPredicate, lhs: Value, rhs: Value) -> Value:
@@ -293,7 +293,7 @@ class Builder:
         :param pred: The predicate to compare by.
         :param lhs: The left-hand side.
         :param rhs: The right-hand side.
-        :return: The boolean result.
+        :returns: The boolean result.
         """
         ...
     def call(
@@ -306,7 +306,7 @@ class Builder:
 
         :param value: The value to call.
         :param args: The arguments to the function.
-        :return: The return value, or None if the function has a void return type.
+        :returns: The return value, or None if the function has a void return type.
         """
         ...
     def if_(
@@ -334,7 +334,7 @@ class Builder:
         Inserts an unconditional branch instruction.
 
         :param dest: The destination block.
-        :return: The branch instruction.
+        :returns: The branch instruction.
         """
         ...
     def ret(self, value: Optional[Value]) -> Instruction:
@@ -342,7 +342,7 @@ class Builder:
         Inserts a return instruction.
 
         :param value: The value to return. If `None`, returns void.
-        :return: The return instruction.
+        :returns: The return instruction.
         """
         ...
 
@@ -367,7 +367,7 @@ class Constant(Value):
         Creates the null or zero constant for the given type.
 
         :param type: The type of the constant.
-        :return: The null or zero constant.
+        :returns: The null or zero constant.
         """
         ...
     @property
@@ -448,7 +448,7 @@ class Function(Constant):
         Gets an attribute of this function with the given name if it has one.
 
         :param name: The name of the attribute.
-        :return: The attribute.
+        :returns: The attribute.
         """
         ...
 
@@ -579,7 +579,7 @@ class Module:
 
         :param ir: The LLVM IR for a module.
         :param name: The name of the module.
-        :return: The module.
+        :returns: The module.
         """
         ...
     @staticmethod
@@ -589,7 +589,7 @@ class Module:
 
         :param bitcode: The LLVM bitcode for a module.
         :param name: The name of the module.
-        :return: The module.
+        :returns: The module.
         """
         ...
     @property
@@ -614,7 +614,7 @@ class Module:
         """
         Verifies that this module is valid.
 
-        :return: An error description if this module is invalid or `None` if this module is valid.
+        :returns: An error description if this module is invalid or `None` if this module is valid.
         """
         ...
     def __str__(self) -> str:
@@ -765,7 +765,7 @@ class Type:
         The void type.
 
         :param context: The LLVM context.
-        :return: The void type.
+        :returns: The void type.
         """
         ...
     @staticmethod
@@ -774,7 +774,7 @@ class Type:
         The double type.
 
         :param context: The LLVM context.
-        :return: The double type.
+        :returns: The double type.
         """
         ...
     @property
@@ -804,7 +804,7 @@ def const(ty: Type, value: Union[bool, int, float]) -> Constant:
 
     :param ty: The type of the value.
     :param value: The value of the constant.
-    :return: The constant value.
+    :returns: The constant value.
     """
     ...
 
@@ -818,7 +818,7 @@ def entry_point(
     :param name: The entry point name.
     :param required_num_qubits: The number of qubits required by the entry point.
     :param required_num_results: The number of results required by the entry point.
-    :return: An entry point.
+    :returns: An entry point.
     """
     ...
 
@@ -827,7 +827,7 @@ def extract_byte_string(value: Value) -> Optional[bytes]:
     If the value is a pointer to a constant byte string, extracts it.
 
     :param value: The value.
-    :return: The constant byte string.
+    :returns: The constant byte string.
     """
     ...
 
@@ -837,7 +837,7 @@ def global_byte_string(module: Module, value: bytes) -> Constant:
 
     :param module: The parent module.
     :param value: The byte string value without a null terminator.
-    :return: A pointer to the start of the null-terminated byte string.
+    :returns: A pointer to the start of the null-terminated byte string.
     """
     ...
 
@@ -846,7 +846,7 @@ def is_entry_point(function: Function) -> bool:
     Whether the function is an entry point.
 
     :param function: The function.
-    :return: True if the function is an entry point.
+    :returns: True if the function is an entry point.
     """
     ...
 
@@ -855,7 +855,7 @@ def is_interop_friendly(function: Function) -> bool:
     Whether the function is interop-friendly.
 
     :param function: The function.
-    :return: True if the function is interop-friendly.
+    :returns: True if the function is interop-friendly.
     """
     ...
 
@@ -864,7 +864,7 @@ def is_qubit_type(ty: Type) -> bool:
     Whether the type is the QIR qubit type.
 
     :param Type ty: The type.
-    :return: True if the type is the QIR qubit type.
+    :returns: True if the type is the QIR qubit type.
     """
     ...
 
@@ -873,7 +873,7 @@ def is_result_type(ty: Type) -> bool:
     Whether the type is the QIR result type.
 
     :param ty: The type.
-    :return: True if the type is the QIR result type.
+    :returns: True if the type is the QIR result type.
     """
     ...
 
@@ -883,7 +883,7 @@ def qubit(context: Context, id: int) -> Constant:
 
     :param context: The LLVM context.
     :param id: The static qubit ID.
-    :return: A static qubit value.
+    :returns: A static qubit value.
     """
     ...
 
@@ -892,7 +892,7 @@ def qubit_id(value: Value) -> Optional[int]:
     If the value is a static qubit ID, extracts it.
 
     :param value: The value.
-    :return: The static qubit ID.
+    :returns: The static qubit ID.
     """
     ...
 
@@ -901,7 +901,7 @@ def qubit_type(context: Context) -> Type:
     The QIR qubit type.
 
     :param context: The LLVM context.
-    :return: The qubit type.
+    :returns: The qubit type.
     """
     ...
 
@@ -910,7 +910,7 @@ def required_num_qubits(function: Function) -> Optional[int]:
     If the function declares a required number of qubits, extracts it.
 
     :param function: The function.
-    :return: The required number of qubits.
+    :returns: The required number of qubits.
     """
     ...
 
@@ -919,7 +919,7 @@ def required_num_results(function: Function) -> Optional[int]:
     If the function declares a required number of results, extracts it.
 
     :param function: The function.
-    :return: The required number of results.
+    :returns: The required number of results.
     """
     ...
 
@@ -929,7 +929,7 @@ def result(context: Context, id: int) -> Constant:
 
     :param context: The LLVM context.
     :param id: The static result ID.
-    :return: A static result value.
+    :returns: A static result value.
     """
     ...
 
@@ -938,7 +938,7 @@ def result_id(value: Value) -> Optional[int]:
     If the value is a static result ID, extracts it.
 
     :param value: The value.
-    :return: The static result ID.
+    :returns: The static result ID.
     """
     ...
 
@@ -947,6 +947,6 @@ def result_type(context: Context) -> Type:
     The QIR result type.
 
     :param Context context: The LLVM context.
-    :return: The result type.
+    :returns: The result type.
     """
     ...

@@ -78,7 +78,7 @@ class SimpleModule:
 
         :param name: The name of the function.
         :param ty: The type of the function.
-        :return: The function value.
+        :returns: The function value.
         """
         return Function(ty, Linkage.EXTERNAL, name, self._module)
 
@@ -87,7 +87,7 @@ class SimpleModule:
         Adds a global null-terminated byte string constant to the module.
 
         :param Value: The byte string value without a null terminator.
-        :return: A pointer to the start of the null-terminated byte string.
+        :returns: A pointer to the start of the null-terminated byte string.
         """
         return pyqir.global_byte_string(self._module, value)
 
