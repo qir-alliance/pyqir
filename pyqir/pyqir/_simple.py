@@ -83,33 +83,32 @@ class SimpleModule:
         return Function(ty, Linkage.EXTERNAL, name, self._module)
 
     def add_byte_string(self, value: bytes) -> Constant:
-        """Adds a global null-terminated byte string constant to the module.
+        """
+        Adds a global null-terminated byte string constant to the module.
 
         :param Value: The byte string value without a null terminator.
-        :returns: A pointer to the start of the null-terminated byte string.
+        :return: A pointer to the start of the null-terminated byte string.
         """
         return pyqir.global_byte_string(self._module, value)
 
     def ir(self) -> str:
         """Emits the LLVM IR for the module as plain text."""
-
         ret = self._builder.ret(None)
-        error = self._module.verify()
-        if error is not None:
-            raise ValueError(error)
-
-        ir = str(self._module)
-        ret.erase()
-        return ir
+        try:
+            error = self._module.verify()
+            if error is not None:
+                raise ValueError(error)
+            return str(self._module)
+        finally:
+            ret.erase()
 
     def bitcode(self) -> bytes:
         """Emits the LLVM bitcode for the module as a sequence of bytes."""
-
         ret = self._builder.ret(None)
-        error = self._module.verify()
-        if error is not None:
-            raise ValueError(error)
-
-        bitcode = self._module.bitcode
-        ret.erase()
-        return bitcode
+        try:
+            error = self._module.verify()
+            if error is not None:
+                raise ValueError(error)
+            return self._module.bitcode
+        finally:
+            ret.erase()
