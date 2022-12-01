@@ -311,7 +311,8 @@ def test_variable_wrong_external_type() -> None:
     mod.builder.call(bar, [x])
 
     with pytest.raises(
-        OSError, match="^Call parameter type does not match function signature!"
+        ValueError,
+        match="^Call parameter type does not match function signature!",
     ):
         mod.ir()
 

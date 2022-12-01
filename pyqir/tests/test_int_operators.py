@@ -84,5 +84,8 @@ def test_type_mismatch() -> None:
     assert x is not None
     y = mod.builder.add(x, pyqir.const(IntType(mod.context, 18), 2))
     mod.builder.call(sink, [y])
-    with pytest.raises(OSError):
+    with pytest.raises(
+        ValueError,
+        match="^Both operands to a binary operator are not of the same type!",
+    ):
         mod.ir()

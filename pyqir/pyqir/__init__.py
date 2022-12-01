@@ -25,7 +25,6 @@ from pyqir._native import (
     Opcode,
     Phi,
     PointerType,
-    SimpleModule,
     StructType,
     Switch,
     Type,
@@ -38,15 +37,16 @@ from pyqir._native import (
     is_interop_friendly,
     is_qubit_type,
     is_result_type,
+    qubit,
     qubit_id,
     qubit_type,
-    qubit,
     required_num_qubits,
     required_num_results,
+    result,
     result_id,
     result_type,
-    result,
 )
+from pyqir._simple import SimpleModule
 
 __all__ = [
     "ArrayType",
