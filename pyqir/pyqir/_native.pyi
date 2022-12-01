@@ -502,7 +502,7 @@ class Instruction(Value):
         """
         Removes this instruction from its parent basic block, then deletes it from memory.
 
-        .. warning:: Using this instruction after erasing it is undefined behavior.
+        Warning: Using this instruction after erasing it is undefined behavior.
         """
         ...
 
