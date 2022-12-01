@@ -67,6 +67,15 @@ impl Instruction {
                 .collect()
         }
     }
+
+    /// Removes this instruction from its parent basic block, then deletes it from memory.
+    ///
+    /// .. warning:: Using this instruction after erasing it is undefined behavior.
+    ///
+    /// :rtype: None
+    fn erase(&self) {
+        self.0.erase_from_basic_block();
+    }
 }
 
 impl Instruction {

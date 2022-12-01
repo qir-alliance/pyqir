@@ -10,7 +10,6 @@ use crate::{
     },
     module::{Attribute, Linkage, Module},
     qis::BasicQisBuilder,
-    simple::SimpleModule,
     types::{
         is_qubit_type, is_result_type, qubit_type, result_type, ArrayType, FunctionType, IntType,
         PointerType, StructType, Type,
@@ -49,7 +48,6 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Phi>()?;
     m.add_class::<PointerType>()?;
     m.add_class::<PyNonadaptiveJit>()?;
-    m.add_class::<SimpleModule>()?;
     m.add_class::<StructType>()?;
     m.add_class::<Switch>()?;
     m.add_class::<Type>()?;
