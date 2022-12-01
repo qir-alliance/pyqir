@@ -37,8 +37,8 @@ impl Module {
     ///
     /// :param str ir: The LLVM IR for a module.
     /// :param typing.Optional[str] name: The name of the module.
-    /// :rtype: Module
     /// :returns: The module.
+    /// :rtype: Module
     #[staticmethod]
     #[pyo3(text_signature = "(context, ir, name=\"\")")]
     fn from_ir(py: Python, context: Py<Context>, ir: &str, name: Option<&str>) -> PyResult<Self> {
@@ -60,8 +60,8 @@ impl Module {
     ///
     /// :param bytes bitcode: The LLVM bitcode for a module.
     /// :param typing.Optional[str] name: The name of the module.
-    /// :rtype: Module
     /// :returns: The module.
+    /// :rtype: Module
     #[staticmethod]
     #[pyo3(text_signature = "(context, bitcode, name=\"\")")]
     fn from_bitcode(

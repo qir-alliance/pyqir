@@ -446,8 +446,8 @@ impl Function {
     /// Gets an attribute of this function with the given name if it has one.
     ///
     /// :param str name: The name of the attribute.
-    /// :rtype: typing.Optional[Attribute]
     /// :returns: The attribute.
+    /// :rtype: typing.Optional[Attribute]
     #[pyo3(text_signature = "(name)")]
     fn attribute(&self, name: &str) -> Option<Attribute> {
         Some(Attribute(
@@ -852,8 +852,8 @@ pub(crate) fn entry_point(
 /// Whether the function is an entry point.
 ///
 /// :param Function function: The function.
-/// :rtype: bool
 /// :returns: True if the function is an entry point.
+/// :rtype: bool
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn is_entry_point(function: &Function) -> bool {
@@ -863,8 +863,8 @@ pub(crate) fn is_entry_point(function: &Function) -> bool {
 /// Whether the function is interop-friendly.
 ///
 /// :param Function function: The function.
-/// :rtype: bool
 /// :returns: True if the function is interop-friendly.
+/// :rtype: bool
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn is_interop_friendly(function: &Function) -> bool {
@@ -874,8 +874,8 @@ pub(crate) fn is_interop_friendly(function: &Function) -> bool {
 /// If the function declares a required number of qubits, extracts it.
 ///
 /// :param Function function: The function.
-/// :rtype: typing.Optional[int]
 /// :returns: The required number of qubits.
+/// :rtype: typing.Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
@@ -885,8 +885,8 @@ pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
 /// If the function declares a required number of results, extracts it.
 ///
 /// :param Function function: The function.
-/// :rtype: Optional[int]
 /// :returns: The required number of results.
+/// :rtype: Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
@@ -909,8 +909,8 @@ pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> P
 /// If the value is a pointer to a constant byte string, extracts it.
 ///
 /// :param Value value: The value.
-/// :rtype: typing.Optional[bytes]
 /// :returns: The constant byte string.
+/// :rtype: typing.Optional[bytes]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn extract_byte_string<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {

@@ -333,8 +333,8 @@ pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject>
 /// Whether the type is the QIR qubit type.
 ///
 /// :param Type ty: The type.
-/// :rtype: bool
 /// :returns: True if the type is the QIR qubit type.
+/// :rtype: bool
 #[pyfunction]
 #[pyo3(text_signature = "(ty)")]
 pub(crate) fn is_qubit_type(ty: &Type) -> bool {
@@ -360,8 +360,8 @@ pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject
 /// Whether the type is the QIR result type.
 ///
 /// :param Type ty: The type.
-/// :rtype: bool
 /// :returns: True if the type is the QIR result type.
+/// :rtype: bool
 #[pyfunction]
 #[pyo3(text_signature = "(ty)")]
 pub(crate) fn is_result_type(ty: &Type) -> bool {
