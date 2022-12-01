@@ -60,6 +60,7 @@ impl<'ctx> Simulator {
         out
     }
 
+    #[allow(clippy::too_many_lines)]
     fn bind(module: &Module<'ctx>, ee: &ExecutionEngine<'ctx>) {
         let intrinsics = Intrinsics::new(module);
         if let Some(ins) = intrinsics.barrier {

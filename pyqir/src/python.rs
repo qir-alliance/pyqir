@@ -8,7 +8,10 @@ use crate::{
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    module::{verify_module, Attribute, Module},
+    module::{
+        add_metadata_flag, add_value_flag, get_flag, verify_module, Attribute, Module,
+        ModuleFlagBehavior,
+    },
     qis::BasicQisBuilder,
     rt::{array_record_output, initialize, result_record_output, tuple_record_output},
     simple::SimpleModule,
@@ -46,6 +49,7 @@ fn _native(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<IntType>()?;
     m.add_class::<Linkage>()?;
     m.add_class::<Module>()?;
+    m.add_class::<ModuleFlagBehavior>()?;
     m.add_class::<Opcode>()?;
     m.add_class::<Phi>()?;
     m.add_class::<PointerType>()?;
@@ -55,9 +59,12 @@ fn _native(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Switch>()?;
     m.add_class::<Type>()?;
     m.add_class::<Value>()?;
+    m.add_function(wrap_pyfunction!(add_value_flag, m)?)?;
+    m.add_function(wrap_pyfunction!(add_metadata_flag, m)?)?;
     m.add_function(wrap_pyfunction!(const_getelementptr, m)?)?;
     m.add_function(wrap_pyfunction!(entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(extract_bytes, m)?)?;
+    m.add_function(wrap_pyfunction!(get_flag, m)?)?;
     m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(is_interop_friendly, m)?)?;
     m.add_function(wrap_pyfunction!(is_qubit_type, m)?)?;

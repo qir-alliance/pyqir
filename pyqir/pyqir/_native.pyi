@@ -206,6 +206,14 @@ def required_num_results(function: Function) -> Optional[int]: ...
 def result_id(value: Value) -> Optional[int]: ...
 def result(context: Context, id: int) -> Constant: ...
 
+class ModuleFlagBehavior(Enum):
+    ERROR: ModuleFlagBehavior
+    WARNING: ModuleFlagBehavior
+    REQUIRE: ModuleFlagBehavior
+    OVERRIDE: ModuleFlagBehavior
+    APPEND: ModuleFlagBehavior
+    APPEND_UNIQUE: ModuleFlagBehavior
+
 class Opcode(Enum):
     ADD: Opcode
     ADDR_SPACE_CAST: Opcode
@@ -358,6 +366,13 @@ class Module:
     def __str__(self) -> str: ...
 
 def verify_module(module: Module) -> Optional[str]: ...
+def get_flag(module: Module, name: str) -> Optional[Value]: ...
+def add_value_flag(
+    module: Module, name: str, behavior: ModuleFlagBehavior, value: Value
+) -> Optional[str]: ...
+def add_metadata_flag(
+    module: Module, name: str, behavior: ModuleFlagBehavior, value: Value
+) -> Optional[str]: ...
 
 class PyNonadaptiveJit:
     def eval(

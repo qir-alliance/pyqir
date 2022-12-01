@@ -159,7 +159,7 @@ fn load_file(path: impl AsRef<Path>, context: &Context) -> Result<Module, String
 #[cfg(test)]
 mod tests {
     use super::{run_module, run_module_file};
-    use crate::evaluation::interop::{Instruction, SemanticModel, Single};
+    use crate::evaluation::interop::{Instruction, SemanticModel};
     use inkwell::{context::Context, memory_buffer::MemoryBuffer, module::Module};
     use serial_test::serial;
     use std::path::PathBuf;

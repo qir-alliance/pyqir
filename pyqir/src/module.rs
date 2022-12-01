@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{context::Context, values::Value};
-use inkwell::memory_buffer::MemoryBuffer;
+use inkwell::{memory_buffer::MemoryBuffer, module::FlagBehavior, values::{BasicValueEnum, BasicMetadataValueEnum, MetadataValue, AnyValue}};
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use std::mem::transmute;
 
@@ -11,7 +11,7 @@ use std::mem::transmute;
 /// :param Context context: The global context.
 /// :param str name: The module name.
 #[pyclass(unsendable)]
-pub(crate) struct Module {
+pub struct Module {
     module: inkwell::module::Module<'static>,
     context: Py<Context>,
 }
@@ -151,4 +151,81 @@ impl Attribute {
 #[pyfunction]
 pub(crate) fn verify_module(module: &Module) -> Option<String> {
     module.module.verify().map_err(|e| e.to_string()).err()
+}
+
+/// An instruction opcode.
+#[pyclass]
+#[derive(Clone)]
+pub(crate) enum ModuleFlagBehavior {
+    /// Emits an error if two values disagree, otherwise the resulting value is that of the operands.
+    #[pyo3(name = "ERROR")]
+    Error,
+    /// Emits a warning if two values disagree. The result value will be the operand for the flag from the first module being linked.
+    #[pyo3(name = "WARNING")]
+    Warning,
+    /// Adds a requirement that another module flag be present and have a specified value after linking is performed. The value must be a metadata pair, where the first element of the pair is the ID of the module flag to be restricted, and the second element of the pair is the value the module flag should be restricted to. This behavior can be used to restrict the allowable results (via triggering of an error) of linking IDs with the **Override** behavior.
+    #[pyo3(name = "REQUIRE")]
+    Require,
+    /// Uses the specified value, regardless of the behavior or value of the other module. If both modules specify **Override**, but the values differ, an error will be emitted.
+    #[pyo3(name = "OVERRIDE")]
+    Override,
+    /// Appends the two values, which are required to be metadata nodes.
+    #[pyo3(name = "APPEND")]
+    Append,
+    /// Appends the two values, which are required to be metadata nodes. However, duplicate entries in the second list are dropped during the append operation.
+    #[pyo3(name = "APPEND_UNIQUE")]
+    AppendUnique,
+}
+
+impl From<FlagBehavior> for ModuleFlagBehavior {
+    fn from(flag: FlagBehavior) -> Self {
+        match flag {
+            FlagBehavior::Error => ModuleFlagBehavior::Error,
+            FlagBehavior::Warning => ModuleFlagBehavior::Warning,
+            FlagBehavior::Require => ModuleFlagBehavior::Require,
+            FlagBehavior::Override => ModuleFlagBehavior::Override,
+            FlagBehavior::Append => ModuleFlagBehavior::Append,
+            FlagBehavior::AppendUnique => ModuleFlagBehavior::AppendUnique,
+        }
+    }
+}
+
+impl From<ModuleFlagBehavior> for FlagBehavior {
+    fn from(flag: ModuleFlagBehavior) -> Self {
+        match flag {
+            ModuleFlagBehavior::Error => FlagBehavior::Error,
+            ModuleFlagBehavior::Warning => FlagBehavior::Warning,
+            ModuleFlagBehavior::Require => FlagBehavior::Require,
+            ModuleFlagBehavior::Override => FlagBehavior::Override,
+            ModuleFlagBehavior::Append => FlagBehavior::Append,
+            ModuleFlagBehavior::AppendUnique => FlagBehavior::AppendUnique,
+        }
+    }
+}
+
+#[pyfunction]
+pub(crate) fn get_flag(py: Python, module: Py<Module>, key: &str) -> Option<PyObject> {
+    let module  = module.borrow(py);
+    if let Some(flag) = module.module.get_flag(key) {
+        let ave = flag.as_any_value_enum();
+        let value = unsafe { Value::from_any(py, module.context.clone(), ave)};
+        value.ok()
+    } else {
+        None
+    }
+}
+
+#[pyfunction]
+pub(crate) fn add_metadata_flag(py: Python, module: Py<Module>, key: &str, behavior: ModuleFlagBehavior, flag: &Value)-> PyResult<()> {
+    let module  = module.borrow(py);
+    let value = BasicMetadataValueEnum::try_from(unsafe { flag.get() })?;
+    module.module.add_metadata_flag(key, behavior.into(), value.into_metadata_value());
+    Ok(())
+}
+
+#[pyfunction]
+pub(crate) fn add_value_flag(module: &Module, key: &str, behavior: ModuleFlagBehavior, flag: &Value) -> PyResult<()> {
+    let value = BasicValueEnum::try_from(unsafe { flag.get() })?;
+    module.module.add_basic_value_flag(key, behavior.into(), value);
+    Ok(())
 }

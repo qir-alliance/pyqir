@@ -8,10 +8,7 @@ type QUBIT = u64;
 type RESULT = u64;
 use mut_static::MutStatic;
 
-use crate::evaluation::interop::{
-    ClassicalRegister, Controlled, Instruction, Measured, QuantumRegister, Rotated, SemanticModel,
-    Single,
-};
+use crate::evaluation::interop::{ClassicalRegister, Instruction, QuantumRegister, SemanticModel};
 
 lazy_static! {
     pub static ref CURRENT_GATES: MutStatic<BaseProfile> = MutStatic::from(BaseProfile::new());

@@ -105,7 +105,10 @@ impl Instruction {
     pub fn new(name: &str, args: Vec<&str>) -> Self {
         Instruction {
             name: name.to_string(),
-            args: args.into_iter().map(|x| x.to_string()).collect(),
+            args: args
+                .into_iter()
+                .map(std::string::ToString::to_string)
+                .collect(),
         }
     }
 }
