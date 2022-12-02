@@ -8,21 +8,17 @@ use crate::{
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    module::{
-        add_metadata_flag, add_value_flag, get_flag, verify_module, Attribute, Module,
-        ModuleFlagBehavior,
-    },
+    module::{Attribute, Linkage, Module, ModuleFlagBehavior, add_metadata_flag, add_value_flag, get_flag},
     qis::BasicQisBuilder,
     rt::{array_record_output, initialize, result_record_output, tuple_record_output},
-    simple::SimpleModule,
     types::{
         is_qubit_type, is_result_type, qubit_type, result_type, ArrayType, FunctionType, IntType,
         PointerType, StructType, Type,
     },
     values::{
-        const_getelementptr, entry_point, extract_bytes, is_entry_point, is_interop_friendly,
+        entry_point, extract_byte_string, global_byte_string, is_entry_point, is_interop_friendly,
         qubit, qubit_id, r#const, required_num_qubits, required_num_results, result, result_id,
-        BasicBlock, Constant, FloatConstant, Function, IntConstant, Linkage, Value,
+        BasicBlock, Constant, FloatConstant, Function, IntConstant, Value,
     },
 };
 use pyo3::{prelude::*, types::PyDict, wrap_pymodule};
@@ -54,17 +50,16 @@ fn _native(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Phi>()?;
     m.add_class::<PointerType>()?;
     m.add_class::<PyNonadaptiveJit>()?;
-    m.add_class::<SimpleModule>()?;
     m.add_class::<StructType>()?;
     m.add_class::<Switch>()?;
     m.add_class::<Type>()?;
     m.add_class::<Value>()?;
     m.add_function(wrap_pyfunction!(add_value_flag, m)?)?;
     m.add_function(wrap_pyfunction!(add_metadata_flag, m)?)?;
-    m.add_function(wrap_pyfunction!(const_getelementptr, m)?)?;
     m.add_function(wrap_pyfunction!(entry_point, m)?)?;
-    m.add_function(wrap_pyfunction!(extract_bytes, m)?)?;
+    m.add_function(wrap_pyfunction!(extract_byte_string, m)?)?;
     m.add_function(wrap_pyfunction!(get_flag, m)?)?;
+    m.add_function(wrap_pyfunction!(global_byte_string, m)?)?;
     m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(is_interop_friendly, m)?)?;
     m.add_function(wrap_pyfunction!(is_qubit_type, m)?)?;
@@ -78,7 +73,6 @@ fn _native(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(result_id, m)?)?;
     m.add_function(wrap_pyfunction!(result_type, m)?)?;
     m.add_function(wrap_pyfunction!(result, m)?)?;
-    m.add_function(wrap_pyfunction!(verify_module, m)?)?;
 
     m.add_wrapped(wrap_pymodule!(_rt))?;
     let sys = PyModule::import(py, "sys")?;
@@ -94,6 +88,4 @@ fn _rt(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(initialize, m)?)?;
     m.add_function(wrap_pyfunction!(result_record_output, m)?)?;
     m.add_function(wrap_pyfunction!(tuple_record_output, m)?)?;
-
-    Ok(())
 }

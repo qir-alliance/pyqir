@@ -20,9 +20,7 @@ it to low-level Python-based lab software such as
 
 ## Installation
 
-For more information about how to install the PyQIR packages to run the
-examples, see the
-[docs](https://qir-alliance.github.io/pyqir/getting-started/installing.html).
+For more information about how to install the PyQIR packages to run the examples, see the [docs](https://www.qir-alliance.org/pyqir/).
 
 ## Generating Bernstein-Vazirani
 

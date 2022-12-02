@@ -4,14 +4,14 @@
 #![allow(clippy::used_underscore_binding)]
 
 use crate::{
-    context::{self, Context},
+    context::Context,
     instructions::Instruction,
-    module::{Attribute, Module},
+    module::{Attribute, Linkage, Module},
     types::{FunctionType, Type},
 };
 use inkwell::{
     attributes::AttributeLoc,
-    types::{AnyType, AnyTypeEnum},
+    types::AnyTypeEnum,
     values::{
         AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, FloatValue, FunctionValue,
         GlobalValue, InstructionValue, IntValue, PointerValue,
@@ -30,10 +30,12 @@ use pyo3::{
     conversion::ToPyObject,
     exceptions::{PyTypeError, PyValueError},
     prelude::*,
-    types::PyBytes,
+    types::{PyBytes, PyLong},
+    PyRef,
 };
 use qirlib::values;
 use std::{
+    borrow::Borrow,
     convert::{Into, TryFrom, TryInto},
     ffi::CStr,
     fmt::{self, Display, Formatter},
@@ -45,9 +47,9 @@ use std::{
 /// A value.
 #[pyclass(subclass, unsendable)]
 #[derive(Clone)]
-pub struct Value {
+pub(crate) struct Value {
     value: AnyValue<'static>,
-    context: Py<Context>,
+    owner: Owner,
 }
 
 #[pymethods]
@@ -57,7 +59,7 @@ impl Value {
     /// :type: Type
     #[getter]
     fn r#type(&self, py: Python) -> PyResult<PyObject> {
-        unsafe { Type::from_any(py, self.context.clone(), self.value.ty()) }
+        unsafe { Type::from_any(py, self.owner.context(py), self.value.ty()) }
     }
 
     /// The name of this value or the empty string if this value is anonymous.
@@ -75,37 +77,118 @@ impl Value {
 }
 
 impl Value {
+    pub(crate) unsafe fn new(owner: Owner, value: AnyValue) -> PyClassInitializer<Self> {
+        let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
+        PyClassInitializer::from(Self { value, owner })
+    }
+
     pub(crate) unsafe fn from_any<'ctx>(
         py: Python,
-        context: Py<Context>,
+        owner: Owner,
         value: impl Into<AnyValue<'ctx>>,
     ) -> PyResult<PyObject> {
         let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value.into());
         #[allow(clippy::same_functions_in_if_condition)]
         if let Ok(inst) = value.try_into() {
-            Instruction::from_inst(py, context, inst)
+            Instruction::from_inst(py, owner, inst)
         } else if let Ok(block) = value.try_into() {
-            let base = PyClassInitializer::from(Self { value, context });
+            let base = PyClassInitializer::from(Self { value, owner });
             let block = base.add_subclass(BasicBlock(block));
             Ok(Py::new(py, block)?.to_object(py))
         } else if value.is_const() {
-            Constant::from_any(py, context, value)
+            Constant::from_any(py, owner, value)
         } else {
-            Ok(Py::new(py, Self { value, context })?.to_object(py))
+            Ok(Py::new(py, Self { value, owner })?.to_object(py))
         }
-    }
-
-    pub(crate) unsafe fn init(context: Py<Context>, value: AnyValue) -> PyClassInitializer<Self> {
-        let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
-        PyClassInitializer::from(Self { value, context })
     }
 
     pub(crate) unsafe fn get(&self) -> AnyValue<'static> {
         self.value
     }
 
-    pub(crate) fn context(&self) -> &Py<Context> {
-        &self.context
+    pub(crate) fn owner(&self) -> &Owner {
+        &self.owner
+    }
+}
+
+/// To store Inkwell values in Python classes, we transmute the lifetime to `'static`. You need to
+/// be careful when using Inkwell types with unsafely extended lifetimes. Follow these rules:
+///
+/// 1. When storing in a data type, always include an `Owner` field containing the owning module, if
+///    there is one, or the context otherwise.
+/// 2. Before passing an LLVM object to an Inkwell function, call `Owner::merge` to ensure that the
+///    owners of all of the objects are compatible.
+pub(crate) enum Owner {
+    Context(Py<Context>),
+    Module(Py<Module>),
+}
+
+impl Owner {
+    pub(crate) fn context(&self, py: Python) -> Py<Context> {
+        match self {
+            Self::Context(context) => context.clone_ref(py),
+            Self::Module(module) => module.borrow(py).context().clone_ref(py),
+        }
+    }
+
+    /// Merges a sequence of owners into a single owner that lives at least as long as every owner
+    /// in the sequence.
+    ///
+    /// # Errors
+    /// Fails if the the given owners use more than one distinct context or module.
+    ///
+    /// # Panics
+    /// Panics if the sequence is empty.
+    pub(crate) fn merge(
+        py: Python,
+        owners: impl IntoIterator<Item = impl Borrow<Self>>,
+    ) -> PyResult<Self> {
+        owners
+            .into_iter()
+            .try_fold(None, |o1, o2| match (o1, o2.borrow()) {
+                (None, owner) => Ok(Some(owner.clone_ref(py))),
+                (Some(Self::Context(c1)), Self::Context(c2))
+                    if *c1.borrow(py) == *c2.borrow(py) =>
+                {
+                    Ok(Some(Self::Context(c1)))
+                }
+                (Some(Self::Context(c)), Self::Module(m))
+                    if *c.borrow(py) == *m.borrow(py).context().borrow(py) =>
+                {
+                    Ok(Some(Self::Module(m.clone_ref(py))))
+                }
+                (Some(Self::Module(m)), Self::Context(c))
+                    if *m.borrow(py).context().borrow(py) == *c.borrow(py) =>
+                {
+                    Ok(Some(Self::Module(m)))
+                }
+                (Some(Self::Module(m1)), Self::Module(m2)) if *m1.borrow(py) == *m2.borrow(py) => {
+                    Ok(Some(Self::Module(m1)))
+                }
+                _ => Err(PyValueError::new_err(
+                    "Some values are from different contexts or modules.",
+                )),
+            })
+            .map(|o| o.expect("No owners were given."))
+    }
+
+    pub(crate) fn clone_ref(&self, py: Python) -> Owner {
+        match self {
+            Self::Context(context) => Self::Context(context.clone_ref(py)),
+            Self::Module(module) => Self::Module(module.clone_ref(py)),
+        }
+    }
+}
+
+impl From<Py<Context>> for Owner {
+    fn from(context: Py<Context>) -> Self {
+        Self::Context(context)
+    }
+}
+
+impl From<Py<Module>> for Owner {
+    fn from(module: Py<Module>) -> Self {
+        Self::Module(module)
     }
 }
 
@@ -115,10 +198,10 @@ impl Value {
 /// block is given, a `parent` function must be given, and this basic block is appended to the end
 /// of that function.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 /// :param str name: The block name.
-/// :param Optional[Function] parent: The parent function.
-/// :param Optional[BasicBlock] before: The block to insert this block before.
+/// :param typing.Optional[Function] parent: The parent function.
+/// :param typing.Optional[BasicBlock] before: The block to insert this block before.
 #[pyclass(extends = Value, unsendable)]
 #[pyo3(text_signature = "(context, name, parent=None, before=None)")]
 pub(crate) struct BasicBlock(inkwell::basic_block::BasicBlock<'static>);
@@ -130,15 +213,28 @@ impl BasicBlock {
         py: Python,
         context: Py<Context>,
         name: &str,
-        parent: Option<&Function>,
-        before: Option<&BasicBlock>,
+        parent: Option<PyRef<Function>>,
+        before: Option<PyRef<BasicBlock>>,
     ) -> PyResult<PyClassInitializer<Self>> {
+        let parent_value = parent.as_ref().map(|f| f.0);
+        let parent = parent.map(PyRef::into_super);
+        let owner = Owner::merge(
+            py,
+            [
+                Some(&context.clone_ref(py).into()),
+                parent.as_ref().map(|f| &f.as_ref().owner),
+                before.as_ref().map(|b| &b.as_ref().owner),
+            ]
+            .into_iter()
+            .flatten(),
+        )?;
+
         let block = {
             let context = context.borrow(py);
-            let block = match (parent, before) {
+            let block = match (parent_value, before) {
                 (None, None) => Err(PyValueError::new_err("Can't create block without parent.")),
-                (Some(parent), None) => Ok(context.append_basic_block(parent.0, name)),
-                (Some(parent), Some(before)) if before.0.get_parent() != Some(parent.0) => Err(
+                (Some(parent), None) => Ok(context.append_basic_block(parent, name)),
+                (Some(parent), Some(before)) if before.0.get_parent() != Some(parent) => Err(
                     PyValueError::new_err("Insert before block isn't in parent function."),
                 ),
                 (_, Some(before)) => Ok(context.prepend_basic_block(before.0, name)),
@@ -153,36 +249,32 @@ impl BasicBlock {
         };
 
         let value = block.into();
-        Ok(PyClassInitializer::from(Value { value, context }).add_subclass(Self(block)))
+        Ok(PyClassInitializer::from(Value { value, owner }).add_subclass(Self(block)))
     }
 
     /// The instructions in this basic block.
     ///
-    /// :type: List[Instruction]
+    /// :type: typing.List[Instruction]
     #[getter]
     fn instructions(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        let block = slf.0;
-        let context = &slf.into_super().context;
         let mut insts = Vec::new();
-        let mut inst = block.get_first_instruction();
-
+        let mut inst = slf.0.get_first_instruction();
         while let Some(i) = inst {
-            insts.push(unsafe { Instruction::from_inst(py, context.clone(), i) }?);
+            insts.push(unsafe { Instruction::from_inst(py, slf.as_ref().owner.clone_ref(py), i) }?);
             inst = i.get_next_instruction();
         }
-
         Ok(insts)
     }
 
     /// The terminating instruction of this basic block if there is one.
     ///
-    /// :type: Optional[Instruction]
+    /// :type: typing.Optional[Instruction]
     #[getter]
     fn terminator(slf: PyRef<Self>, py: Python) -> PyResult<Option<PyObject>> {
         match slf.0.get_terminator() {
             Some(terminator) => {
-                let context = slf.into_super().context.clone();
-                unsafe { Instruction::from_inst(py, context, terminator) }.map(Some)
+                let owner = slf.into_super().owner.clone_ref(py);
+                unsafe { Instruction::from_inst(py, owner, terminator) }.map(Some)
             }
             None => Ok(None),
         }
@@ -220,7 +312,7 @@ impl Constant {
                 Err(PyValueError::new_err("Can't create null for this type."))
             }
         }?;
-        unsafe { Value::from_any(py, ty.context().clone(), value) }
+        unsafe { Value::from_any(py, ty.context().clone_ref(py).into(), value) }
     }
 
     /// Whether this value is the null value for its type.
@@ -233,10 +325,10 @@ impl Constant {
 }
 
 impl Constant {
-    unsafe fn from_any(py: Python, context: Py<Context>, value: AnyValue) -> PyResult<PyObject> {
+    unsafe fn from_any(py: Python, owner: Owner, value: AnyValue) -> PyResult<PyObject> {
         if value.is_const() {
             let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
-            let base = PyClassInitializer::from(Value { value, context }).add_subclass(Constant);
+            let base = PyClassInitializer::from(Value { value, owner }).add_subclass(Constant);
             match value.try_into() {
                 Ok(AnyValueEnum::IntValue(_)) => {
                     Ok(Py::new(py, base.add_subclass(IntConstant))?.to_object(py))
@@ -304,50 +396,59 @@ impl Function {
         ty: PyRef<FunctionType>,
         linkage: Linkage,
         name: &str,
-        module: &Module,
+        module: Py<Module>,
     ) -> PyResult<PyClassInitializer<Self>> {
-        let function_ty = unsafe { ty.get() };
-        let context = module.context();
-        context::require_same(py, [ty.into_super().context(), context])?;
-        let function =
-            unsafe { module.get() }.add_function(name, function_ty, Some(linkage.into()));
-        Ok(unsafe { Value::init(context.clone(), function.into()) }
+        let owner = Owner::merge(
+            py,
+            [
+                Owner::Context(ty.as_ref().context().clone_ref(py)),
+                Owner::Module(module.clone_ref(py)),
+            ],
+        )?;
+
+        let value = unsafe { module.borrow(py).get() }.add_function(
+            name,
+            unsafe { ty.get() },
+            Some(linkage.into()),
+        );
+
+        Ok(unsafe { Value::new(owner, value.into()) }
             .add_subclass(Constant)
-            .add_subclass(Self(function)))
+            .add_subclass(Self(value)))
     }
 
     /// The parameters to this function.
     ///
-    /// :type: List[Value]
+    /// :type: typing.List[Value]
     #[getter]
     fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let params = slf.0.get_params();
-        let context = &slf.into_super().into_super().context;
+        let owner = &slf.into_super().into_super().owner;
         params
             .into_iter()
-            .map(|p| unsafe { Value::from_any(py, context.clone(), p) })
+            .map(|p| unsafe { Value::from_any(py, owner.clone_ref(py), p) })
             .collect()
     }
 
     /// The basic blocks in this function.
     ///
-    /// :type: List[BasicBlock]
+    /// :type: typing.List[BasicBlock]
     #[getter]
     fn basic_blocks(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let function = slf.0;
-        let context = &slf.into_super().into_super().context;
+        let owner = &slf.into_super().into_super().owner;
         function
             .get_basic_blocks()
             .into_iter()
-            .map(|b| unsafe { Value::from_any(py, context.clone(), b) })
+            .map(|b| unsafe { Value::from_any(py, owner.clone_ref(py), b) })
             .collect()
     }
 
     /// Gets an attribute of this function with the given name if it has one.
     ///
     /// :param str name: The name of the attribute.
-    /// :rtype: Optional[Attribute]
     /// :returns: The attribute.
+    /// :rtype: typing.Optional[Attribute]
     #[pyo3(text_signature = "(name)")]
     fn attribute(&self, name: &str) -> Option<Attribute> {
         Some(Attribute(
@@ -359,52 +460,6 @@ impl Function {
 impl Function {
     pub(crate) unsafe fn get(&self) -> FunctionValue<'static> {
         self.0
-    }
-}
-
-/// The linkage kind for a global value in a module.
-#[pyclass]
-#[derive(Clone)]
-pub(crate) enum Linkage {
-    #[pyo3(name = "APPENDING")]
-    Appending,
-    #[pyo3(name = "AVAILABLE_EXTERNALLY")]
-    AvailableExternally,
-    #[pyo3(name = "COMMON")]
-    Common,
-    #[pyo3(name = "EXTERNAL")]
-    External,
-    #[pyo3(name = "EXTERNAL_WEAK")]
-    ExternalWeak,
-    #[pyo3(name = "INTERNAL")]
-    Internal,
-    #[pyo3(name = "LINK_ONCE_ANY")]
-    LinkOnceAny,
-    #[pyo3(name = "LINK_ONCE_ODR")]
-    LinkOnceOdr,
-    #[pyo3(name = "PRIVATE")]
-    Private,
-    #[pyo3(name = "WEAK_ANY")]
-    WeakAny,
-    #[pyo3(name = "WEAK_ODR")]
-    WeakOdr,
-}
-
-impl From<Linkage> for inkwell::module::Linkage {
-    fn from(linkage: Linkage) -> Self {
-        match linkage {
-            Linkage::Appending => Self::Appending,
-            Linkage::AvailableExternally => Self::AvailableExternally,
-            Linkage::Common => Self::Common,
-            Linkage::External => Self::External,
-            Linkage::ExternalWeak => Self::ExternalWeak,
-            Linkage::Internal => Self::Internal,
-            Linkage::LinkOnceAny => Self::LinkOnceAny,
-            Linkage::LinkOnceOdr => Self::LinkOnceODR,
-            Linkage::Private => Self::Private,
-            Linkage::WeakAny => Self::WeakAny,
-            Linkage::WeakOdr => Self::WeakODR,
-        }
     }
 }
 
@@ -678,65 +733,63 @@ impl Drop for Message {
     }
 }
 
+#[derive(FromPyObject)]
+pub(crate) enum Literal<'py> {
+    Bool(bool),
+    Int(&'py PyLong),
+    Float(f64),
+}
+
+impl Literal<'_> {
+    pub(crate) fn to_value(&self, ty: AnyTypeEnum<'static>) -> PyResult<AnyValue> {
+        match (ty, self) {
+            (AnyTypeEnum::IntType(ty), &Self::Bool(b)) => Ok(ty.const_int(b.into(), false).into()),
+            (AnyTypeEnum::IntType(ty), &Self::Int(i)) => {
+                Ok(ty.const_int(i.extract()?, false).into())
+            }
+            (AnyTypeEnum::FloatType(ty), &Self::Float(f)) => Ok(ty.const_float(f).into()),
+            _ => Err(PyTypeError::new_err(
+                "Can't convert Python value into this type.",
+            )),
+        }
+    }
+}
+
 /// Creates a constant value.
 ///
 /// :param Type ty: The type of the value.
-/// :param Union[int, float] value: The value of the constant.
+/// :param typing.Union[bool, int, float] value: The value of the constant.
 /// :returns: The constant value.
 /// :rtype: Value
 #[pyfunction]
 #[pyo3(text_signature = "(ty, value)")]
-pub(crate) fn r#const(py: Python, ty: &Type, value: &PyAny) -> PyResult<PyObject> {
-    let context = ty.context().clone();
-    let value = extract_constant(unsafe { &ty.get() }, value)?;
-    unsafe { Value::from_any(py, context, value) }
-}
-
-/// Creates a `getelementptr` (GEP) constant expression.
-///
-/// :param Value value: The aggregate value.
-/// :param Sequence[Value] indices: The indices of the element.
-/// :returns: The GEP constant expression.
-/// :rtype: ConstantExpr
-#[pyfunction]
-#[pyo3(text_signature = "(constant, indices)")]
-#[allow(clippy::needless_pass_by_value)]
-pub(crate) fn const_getelementptr(
-    py: Python,
-    constant: PyRef<Constant>,
-    indices: Vec<Value>,
-) -> PyResult<PyObject> {
-    let value = constant.into_super();
-    let indices = indices
-        .iter()
-        .map(|i| IntValue::try_from(i.value).map_err(Into::into))
-        .collect::<PyResult<Vec<_>>>()?;
-    let pointer = PointerValue::try_from(value.value)?;
-    let gep = unsafe { pointer.const_gep(&indices) };
-    unsafe { Value::from_any(py, value.context.clone(), gep) }
+pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObject> {
+    let owner = ty.context().clone_ref(py).into();
+    unsafe { Value::from_any(py, owner, value.to_value(ty.get())?) }
 }
 
 /// Creates a static qubit value.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 /// :param int id: The static qubit ID.
 /// :returns: A static qubit value.
 /// :rtype: Value
 #[pyfunction]
+#[pyo3(text_signature = "(context, id)")]
 pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
     let value = {
         let context = context.borrow(py);
         let value = values::qubit(&context.void_type().get_context(), id);
         unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
     };
-    unsafe { Value::from_any(py, context, value) }
+    unsafe { Value::from_any(py, Owner::Context(context), value) }
 }
 
 /// If the value is a static qubit ID, extracts it.
 ///
 /// :param Value value: The value.
 /// :returns: The static qubit ID.
-/// :rtype: Optional[int]
+/// :rtype: typing.Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
@@ -745,25 +798,26 @@ pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
 
 /// Creates a static result value.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 /// :param int id: The static result ID.
 /// :returns: A static result value.
 /// :rtype: Value
 #[pyfunction]
+#[pyo3(text_signature = "(context, id)")]
 pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
     let value = {
         let context = context.borrow(py);
         let value = values::result(&context.void_type().get_context(), id);
         unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
     };
-    unsafe { Value::from_any(py, context, value) }
+    unsafe { Value::from_any(py, Owner::Context(context), value) }
 }
 
 /// If the value is a static result ID, extracts it.
 ///
 /// :param Value value: The value.
 /// :returns: The static result ID.
-/// :rtype: Optional[int]
+/// :rtype: typing.Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn result_id(value: &Value) -> Option<u64> {
@@ -779,27 +833,28 @@ pub(crate) fn result_id(value: &Value) -> Option<u64> {
 /// :returns: An entry point.
 /// :rtype: Function
 #[pyfunction]
+#[pyo3(text_signature = "(module, name, required_num_qubits, required_num_results)")]
 pub(crate) fn entry_point(
     py: Python,
-    module: &Module,
+    module: Py<Module>,
     name: &str,
     required_num_qubits: u64,
     required_num_results: u64,
 ) -> PyResult<PyObject> {
     let entry_point = values::entry_point(
-        unsafe { module.get() },
+        unsafe { module.borrow(py).get() },
         name,
         required_num_qubits,
         required_num_results,
     );
-    unsafe { Value::from_any(py, module.context().clone(), entry_point) }
+    unsafe { Value::from_any(py, Owner::Module(module), entry_point) }
 }
 
 /// Whether the function is an entry point.
 ///
 /// :param Function function: The function.
-/// :rtype: bool
 /// :returns: True if the function is an entry point.
+/// :rtype: bool
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn is_entry_point(function: &Function) -> bool {
@@ -809,8 +864,8 @@ pub(crate) fn is_entry_point(function: &Function) -> bool {
 /// Whether the function is interop-friendly.
 ///
 /// :param Function function: The function.
-/// :rtype: bool
 /// :returns: True if the function is interop-friendly.
+/// :rtype: bool
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn is_interop_friendly(function: &Function) -> bool {
@@ -820,8 +875,8 @@ pub(crate) fn is_interop_friendly(function: &Function) -> bool {
 /// If the function declares a required number of qubits, extracts it.
 ///
 /// :param Function function: The function.
-/// :rtype: Optional[int]
 /// :returns: The required number of qubits.
+/// :rtype: typing.Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
@@ -831,49 +886,35 @@ pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
 /// If the function declares a required number of results, extracts it.
 ///
 /// :param Function function: The function.
-/// :rtype: Optional[int]
 /// :returns: The required number of results.
+/// :rtype: Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
     values::required_num_results(unsafe { function.get() })
 }
 
-/// If the value is a pointer to a constant byte array, extracts it.
+/// Creates a global null-terminated byte string constant in a module.
+///
+/// :param Module module: The parent module.
+/// :param bytes value: The byte string value without a null terminator.
+/// :returns: A pointer to the start of the null-terminated byte string.
+/// :rtype: Constant
+#[pyfunction]
+#[pyo3(text_signature = "(module, value)")]
+pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> PyResult<PyObject> {
+    let string = values::global_string(unsafe { module.get() }, value);
+    unsafe { Value::from_any(py, module.context().clone_ref(py).into(), string) }
+}
+
+/// If the value is a pointer to a constant byte string, extracts it.
 ///
 /// :param Value value: The value.
-/// :rtype: Optional[bytes]
-/// :returns: The constant byte array.
+/// :returns: The constant byte string.
+/// :rtype: typing.Optional[bytes]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
-pub(crate) fn extract_bytes<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
-    let bytes = values::extract_bytes(unsafe { value.get() }.try_into().ok()?)?;
-    Some(PyBytes::new(py, bytes))
-}
-
-pub(crate) unsafe fn extract_any<'ctx>(
-    ty: &impl AnyType<'ctx>,
-    ob: &PyAny,
-) -> PyResult<AnyValue<'ctx>> {
-    ob.extract()
-        .map(|v: Value| v.value)
-        .or_else(|_| extract_constant(ty, ob))
-}
-
-fn extract_constant<'ctx>(ty: &impl AnyType<'ctx>, ob: &PyAny) -> PyResult<AnyValue<'ctx>> {
-    match ty.as_any_type_enum() {
-        AnyTypeEnum::IntType(int) => Ok(int.const_int(ob.extract()?, true).into()),
-        AnyTypeEnum::FloatType(float) => Ok(float.const_float(ob.extract()?).into()),
-        _ => Err(PyTypeError::new_err(
-            "Can't convert Python value into this type.",
-        )),
-    }
-}
-
-pub(crate) fn extract_contexts<'a>(
-    values: impl IntoIterator<Item = &'a PyAny> + 'a,
-) -> impl Iterator<Item = Py<Context>> + 'a {
-    values
-        .into_iter()
-        .filter_map(|v| Some(v.extract::<Value>().ok()?.context))
+pub(crate) fn extract_byte_string<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
+    let string = values::extract_string(unsafe { value.get() }.try_into().ok()?)?;
+    Some(PyBytes::new(py, string))
 }

@@ -3,9 +3,9 @@
 
 use crate::{
     builder::Builder,
-    context,
-    values::{self, Value},
+    values::{ConvertError, Owner, Value},
 };
+use inkwell::values::FloatValue;
 use pyo3::prelude::*;
 use qirlib::qis::BuilderExt as qis;
 use std::convert::TryInto;
@@ -44,7 +44,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, control, target)")]
     fn cx(&self, py: Python, control: &Value, target: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), control.context(), target.context()])?;
+        Owner::merge(py, [builder.owner(), control.owner(), target.owner()])?;
         unsafe { builder.get() }.build_cx(
             unsafe { control.get() }.try_into()?,
             unsafe { target.get() }.try_into()?,
@@ -60,7 +60,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, control, target)")]
     fn cz(&self, py: Python, control: &Value, target: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), control.context(), target.context()])?;
+        Owner::merge(py, [builder.owner(), control.owner(), target.owner()])?;
         unsafe { builder.get() }.build_cz(
             unsafe { control.get() }.try_into()?,
             unsafe { target.get() }.try_into()?,
@@ -70,12 +70,12 @@ impl BasicQisBuilder {
 
     /// Inserts a Hadamard gate.
     ///
-    /// :param qubit: The target qubit.
+    /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
     fn h(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), qubit.context()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_h(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -88,7 +88,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit, result)")]
     fn mz(&self, py: Python, qubit: &Value, result: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), qubit.context(), result.context()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner(), result.owner()])?;
         unsafe { builder.get() }.build_mz(
             unsafe { qubit.get() }.try_into()?,
             unsafe { result.get() }.try_into()?,
@@ -103,68 +103,86 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn reset(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), qubit.context()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_reset(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
     /// Inserts a rotation gate about the :math:`x` axis.
     ///
-    /// :param Union[Value, float] theta: The angle to rotate by.
+    /// :param typing.Union[Value, float] theta: The angle to rotate by.
     /// :param Value qubit: The qubit to rotate.
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
-    fn rx(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
+    fn rx(&self, py: Python, theta: Angle, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(
+        Owner::merge(
             py,
-            values::extract_contexts([theta])
-                .chain([builder.context().clone(), qubit.context().clone()]),
+            [Some(builder.owner()), theta.owner(), Some(qubit.owner())]
+                .into_iter()
+                .flatten(),
         )?;
 
-        let context = builder.context().borrow(py);
-        let theta = unsafe { values::extract_any(&context.f64_type(), theta)? };
-        unsafe { builder.get() }.build_rx(theta.try_into()?, unsafe { qubit.get() }.try_into()?);
+        let context = builder.owner().context(py);
+        let context = context.borrow(py);
+        unsafe {
+            builder
+                .get()
+                .build_rx(theta.to_float(&context)?, qubit.get().try_into()?);
+        }
+
         Ok(())
     }
 
     /// Inserts a rotation gate about the :math:`y` axis.
     ///
-    /// :param Union[Value, float] theta: The angle to rotate by.
+    /// :param typing.Union[Value, float] theta: The angle to rotate by.
     /// :param Value qubit: The qubit to rotate.
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
-    fn ry(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
+    fn ry(&self, py: Python, theta: Angle, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(
+        Owner::merge(
             py,
-            values::extract_contexts([theta])
-                .chain([builder.context().clone(), qubit.context().clone()]),
+            [Some(builder.owner()), theta.owner(), Some(qubit.owner())]
+                .into_iter()
+                .flatten(),
         )?;
 
-        let context = builder.context().borrow(py);
-        let theta = unsafe { values::extract_any(&context.f64_type(), theta)? };
-        unsafe { builder.get() }.build_ry(theta.try_into()?, unsafe { qubit.get() }.try_into()?);
+        let context = builder.owner().context(py);
+        let context = context.borrow(py);
+        unsafe {
+            builder
+                .get()
+                .build_ry(theta.to_float(&context)?, qubit.get().try_into()?);
+        }
+
         Ok(())
     }
 
     /// Inserts a rotation gate about the :math:`z` axis.
     ///
-    /// :param Union[Value, float] theta: The angle to rotate by.
+    /// :param typing.Union[Value, float] theta: The angle to rotate by.
     /// :param Value qubit: The qubit to rotate.
     /// :rtype: None
     #[pyo3(text_signature = "(self, theta, qubit)")]
-    fn rz(&self, py: Python, theta: &PyAny, qubit: &Value) -> PyResult<()> {
+    fn rz(&self, py: Python, theta: Angle, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(
+        Owner::merge(
             py,
-            values::extract_contexts([theta])
-                .chain([builder.context().clone(), qubit.context().clone()]),
+            [Some(builder.owner()), theta.owner(), Some(qubit.owner())]
+                .into_iter()
+                .flatten(),
         )?;
 
-        let context = builder.context().borrow(py);
-        let theta = unsafe { values::extract_any(&context.f64_type(), theta)? };
-        unsafe { builder.get() }.build_rz(theta.try_into()?, unsafe { qubit.get() }.try_into()?);
+        let context = builder.owner().context(py);
+        let context = context.borrow(py);
+        unsafe {
+            builder
+                .get()
+                .build_rz(theta.to_float(&context)?, qubit.get().try_into()?);
+        }
+
         Ok(())
     }
 
@@ -175,7 +193,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn s(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), qubit.context()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_s(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -187,7 +205,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn s_adj(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), qubit.context()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_s_adj(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -215,19 +233,19 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn t(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), qubit.context()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_t(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
 
     /// Inserts an adjoint :math:`T` gate.
     ///
-    /// :param qubit: The target qubit.
+    /// :param Value qubit: The target qubit.
     /// :rtype: None
     #[pyo3(text_signature = "(self, qubit)")]
     fn t_adj(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), qubit.context()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_t_adj(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -239,7 +257,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn x(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), qubit.context()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_x(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -251,7 +269,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn y(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), qubit.context()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_y(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -263,7 +281,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit)")]
     fn z(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), qubit.context()])?;
+        Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_z(unsafe { qubit.get() }.try_into()?);
         Ok(())
     }
@@ -275,9 +293,9 @@ impl BasicQisBuilder {
     /// and zero callables should use this module's builder to build instructions.
     ///
     /// :param Value cond: The result condition to branch on.
-    /// :param Callable[[], None] one:
+    /// :param typing.Callable[[], None] one:
     ///     A callable that inserts instructions for the branch where the result is one.
-    /// :param Callable[[], None] zero:
+    /// :param typing.Callable[[], None] zero:
     ///     A callable that inserts instructions for the branch where the result is zero.
     /// :rtype: None
     #[pyo3(text_signature = "(self, cond, one, zero)")]
@@ -289,11 +307,36 @@ impl BasicQisBuilder {
         zero: Option<&PyAny>,
     ) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), cond.context()])?;
+        Owner::merge(py, [builder.owner(), cond.owner()])?;
         unsafe { builder.get() }.try_build_if_result(
             unsafe { cond.get() }.try_into()?,
             || one.iter().try_for_each(|f| f.call0().map(|_| ())),
             || zero.iter().try_for_each(|f| f.call0().map(|_| ())),
         )
+    }
+}
+
+#[derive(FromPyObject)]
+enum Angle<'py> {
+    Value(PyRef<'py, Value>),
+    Constant(f64),
+}
+
+impl Angle<'_> {
+    fn owner(&self) -> Option<&Owner> {
+        match self {
+            Angle::Value(v) => Some(v.owner()),
+            Angle::Constant(_) => None,
+        }
+    }
+
+    unsafe fn to_float<'ctx>(
+        &self,
+        context: &'ctx inkwell::context::Context,
+    ) -> Result<FloatValue<'ctx>, ConvertError> {
+        match self {
+            Angle::Value(v) => v.get().try_into(),
+            &Angle::Constant(c) => Ok(context.f64_type().const_float(c)),
+        }
     }
 }

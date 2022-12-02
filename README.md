@@ -17,11 +17,8 @@ This repository contains:
 
 ## Documentation
 
-- [Installing
-  PyQIR](https://qir-alliance.github.io/pyqir/getting-started/installing.html)
-- [Building PyQIR from
-  source](https://qir-alliance.github.io/pyqir/development-guide/building.html)
-- [Compatibility](https://qir-alliance.github.io/pyqir/development-guide/compatibility.html)
+- [Getting Started](https://www.qir-alliance.org/pyqir/)
+- [Building from Source](https://www.qir-alliance.org/pyqir/building.html)
 
 ## Feedback
 

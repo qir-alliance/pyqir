@@ -9,12 +9,13 @@ from pyqir import (
     BasicBlock,
     Call,
     Constant,
+    Context,
     Function,
     IntConstant,
     IntType,
     Module,
     Opcode,
-    extract_bytes,
+    extract_byte_string,
     is_entry_point,
     is_interop_friendly,
     is_qubit_type,
@@ -26,7 +27,7 @@ from pyqir import (
 
 def test_parser() -> None:
     bitcode = Path("tests/teleportchain.baseprofile.bc").read_bytes()
-    mod = Module.from_bitcode(bitcode)
+    mod = Module.from_bitcode(Context(), bitcode)
     assert len(mod.functions) == 21
 
     func_name = (
@@ -90,7 +91,7 @@ def test_parser() -> None:
 
 def test_parser_select_support() -> None:
     bitcode = Path("tests/select.bc").read_bytes()
-    mod = Module.from_bitcode(bitcode)
+    mod = Module.from_bitcode(Context(), bitcode)
     func = next(filter(is_entry_point, mod.functions))
     block = func.basic_blocks[0]
     select = block.instructions[5]
@@ -121,7 +122,7 @@ def test_parser_select_support() -> None:
 
 def test_global_string() -> None:
     bitcode = Path("tests/hello.bc").read_bytes()
-    mod = Module.from_bitcode(bitcode)
+    mod = Module.from_bitcode(Context(), bitcode)
     func_name = "program__main__body"
     func = next(filter(lambda f: f.name == func_name, mod.functions))
     assert isinstance(func, Function)
@@ -132,14 +133,14 @@ def test_global_string() -> None:
     assert isinstance(call, Call)
     assert call.callee.name == "__quantum__rt__string_create"
 
-    value = extract_bytes(call.args[0])
+    value = extract_byte_string(call.args[0])
     assert value is not None
     assert value.decode("utf-8") == "Hello World!\0"
 
 
 def test_parser_zext_support() -> None:
     bitcode = Path("tests/select.bc").read_bytes()
-    mod = Module.from_bitcode(bitcode)
+    mod = Module.from_bitcode(Context(), bitcode)
     func = next(filter(is_entry_point, mod.functions))
     block = func.basic_blocks[0]
     inst = block.instructions[7]
@@ -162,13 +163,13 @@ def test_parser_zext_support() -> None:
 def test_loading_invalid_bitcode() -> None:
     bitcode = Path("tests/teleportchain.ll.reference").read_bytes()
     with pytest.raises(ValueError) as e:
-        Module.from_bitcode(bitcode)
+        Module.from_bitcode(Context(), bitcode)
     assert e.value.args[0] == "Invalid bitcode signature"
 
 
 def test_parser_internals() -> None:
     bitcode = Path("tests/teleportchain.baseprofile.bc").read_bytes()
-    mod = Module.from_bitcode(bitcode)
+    mod = Module.from_bitcode(Context(), bitcode)
     func_name = (
         "TeleportChain__DemonstrateTeleportationUsingPresharedEntanglement__Interop"
     )

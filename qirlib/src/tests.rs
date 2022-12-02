@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{passes, values};
+use crate::values;
 use inkwell::{builder::Builder, context::Context, support::LLVMString};
 use normalize_line_endings::normalized;
 use std::{env, fs, path::PathBuf};
@@ -62,7 +62,6 @@ fn build_ir(
     build(&builder);
     builder.build_return(None);
 
-    passes::run_basic(&module);
     module.verify()?;
     Ok(module.print_to_string())
 }
