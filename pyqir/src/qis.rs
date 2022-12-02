@@ -30,10 +30,9 @@ impl BasicQisBuilder {
     ///
     /// :rtype: None
     #[pyo3(text_signature = "(self)")]
-    fn barrier(&self, py: Python) -> PyResult<()> {
+    fn barrier(&self, py: Python) {
         let builder = self.builder.borrow(py);
         unsafe { builder.get() }.build_barrier();
-        Ok(())
     }
 
     /// Inserts a controlled Pauli :math:`X` gate.

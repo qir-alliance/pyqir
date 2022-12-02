@@ -85,7 +85,7 @@ unsafe fn initialize(module: LLVMModuleRef) -> LLVMValueRef {
     let i8type = LLVMInt8TypeInContext(context);
     let i8p = LLVMPointerType(i8type, 0);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [i8p]);
-    let name = format!("__quantum__rt__{}", name);
+    let name = format!("__quantum__rt__{name}");
     declare_bare(module, &name, ty)
 }
 
@@ -112,7 +112,7 @@ unsafe fn record_output(
     let i8type = LLVMInt8TypeInContext(context);
     let i8p = LLVMPointerType(i8type, 0);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [param_type, i8p]);
-    let name = format!("__quantum__rt__{}", name);
+    let name = format!("__quantum__rt__{name}");
     declare_bare(module, &name, ty)
 }
 

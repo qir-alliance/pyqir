@@ -148,7 +148,7 @@ fn load_file(path: impl AsRef<Path>, context: &Context) -> Result<Module, String
             .and_then(|buffer| context.create_module_from_ir(buffer))
             .map_err(|e| e.to_string()),
         Some("bc") => Module::parse_bitcode_from_path(path, context).map_err(|e| e.to_string()),
-        _ => Err(format!("Unsupported file extension '{:?}'.", extension)),
+        _ => Err(format!("Unsupported file extension '{extension:?}'.")),
     }
 }
 

@@ -25,7 +25,7 @@ impl<'ctx> Simulator {
 
         let bad_funcs = Simulator::unsupported_function_names(module);
         if !bad_funcs.is_empty() {
-            return Err(format!("Unsupported functions {}.", bad_funcs));
+            return Err(format!("Unsupported functions {bad_funcs}."));
         }
 
         Simulator::bind(module, ee);

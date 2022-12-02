@@ -289,12 +289,12 @@ impl BaseProfile {
     }
 
     fn get_qubit_string(qubit: QUBIT) -> String {
-        format!("{}", qubit)
+        format!("{qubit}")
     }
 
     fn get_result_string(result: Option<RESULT>) -> String {
         match result {
-            Some(value) => format!("{}", value),
+            Some(value) => format!("{value}"),
             None => String::new(),
         }
     }

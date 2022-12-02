@@ -414,7 +414,8 @@ unsafe fn declare(
         Functor::Body => "body",
         Functor::Adjoint => "adj",
     };
-    let name = CString::new(format!("__quantum__qis__{}__{}", name, suffix)).unwrap();
+    let name = CString::new(format!("__quantum__qis__{name}__{suffix}"))
+        .expect("Could not create QIS declaration from name/suffix");
     let function = LLVMGetNamedFunction(module, name.as_ptr().cast());
     if function.is_null() {
         let function = LLVMAddFunction(module, name.as_ptr().cast(), ty);
