@@ -3,9 +3,7 @@
 
 from pyqir import Builder, Value
 
-def array_record_output(
-    builder: Builder, num_elements: Value, label: Value
-) -> None:
+def array_record_output(builder: Builder, num_elements: Value, label: Value) -> None:
     """
     Inserts a marker in the generated output that indicates the start
     of an array and how many array elements it has.
@@ -36,9 +34,7 @@ def result_record_output(builder: Builder, result: Value, label: Value) -> None:
     """
     ...
 
-def tuple_record_output(
-    builder: Builder, num_elements: Value, label: Value
-) -> None:
+def tuple_record_output(builder: Builder, num_elements: Value, label: Value) -> None:
     """
     Inserts a marker in the generated output that indicates the start
     of a tuple and how many tuple elements it has.

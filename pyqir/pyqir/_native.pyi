@@ -638,6 +638,8 @@ class Module:
         ...
 
 class ModuleFlagBehavior(Enum):
+    """Module flag behavior choices"""
+
     ERROR: ModuleFlagBehavior
     WARNING: ModuleFlagBehavior
     REQUIRE: ModuleFlagBehavior
