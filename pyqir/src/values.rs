@@ -6,11 +6,10 @@
 use crate::{
     context::Context,
     instructions::Instruction,
-    module::{Attribute, Linkage, Module},
+    module::{Attribute, AttributeIndex, Linkage, Module},
     types::{FunctionType, Type},
 };
 use inkwell::{
-    attributes::AttributeLoc,
     types::AnyTypeEnum,
     values::{
         AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, FloatValue, FunctionValue,
@@ -443,16 +442,15 @@ impl Function {
             .collect()
     }
 
-    /// Gets an attribute of this function with the given kind.
+    /// Gets an attribute.
     ///
+    /// :param AttributeIndex index: The position of the attribute within this function.
     /// :param str kind: The attribute kind.
     /// :returns: The attribute.
     /// :rtype: typing.Optional[Attribute]
     #[pyo3(text_signature = "(kind)")]
-    fn attribute(&self, kind: &str) -> Option<Attribute> {
-        self.0
-            .get_string_attribute(AttributeLoc::Function, kind)
-            .map(Attribute)
+    fn attribute(&self, index: &AttributeIndex, kind: &str) -> Option<Attribute> {
+        self.0.get_string_attribute(index.0, kind).map(Attribute)
     }
 }
 

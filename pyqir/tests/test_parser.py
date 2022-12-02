@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from pyqir import (
+    AttributeIndex,
     BasicBlock,
     Call,
     Constant,
@@ -186,7 +187,7 @@ def test_parser_internals() -> None:
     assert interop_funcs[0].name == func_name
     assert required_num_qubits(interop_funcs[0]) == 6
 
-    attribute = interop_funcs[0].attribute("requiredQubits")
+    attribute = interop_funcs[0].attribute(AttributeIndex.FUNCTION, "requiredQubits")
     assert attribute is not None
     assert attribute.string_value == "6"
 

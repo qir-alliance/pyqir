@@ -8,7 +8,7 @@ use crate::{
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    module::{Attribute, Linkage, Module},
+    module::{Attribute, AttributeIndex, Linkage, Module},
     qis::BasicQisBuilder,
     types::{
         is_qubit_type, is_result_type, qubit_type, result_type, ArrayType, FunctionType, IntType,
@@ -26,6 +26,7 @@ use pyo3::prelude::*;
 fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<ArrayType>()?;
     m.add_class::<Attribute>()?;
+    m.add_class::<AttributeIndex>()?;
     m.add_class::<BasicBlock>()?;
     m.add_class::<BasicQisBuilder>()?;
     m.add_class::<Builder>()?;
