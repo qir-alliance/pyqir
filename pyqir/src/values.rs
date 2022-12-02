@@ -4,10 +4,10 @@
 #![allow(clippy::used_underscore_binding)]
 
 use crate::{
-    context::Context,
     instructions::Instruction,
-    module::{Attribute, AttributeIndex, Linkage, Module},
+    module::{Linkage, Module},
     types::{FunctionType, Type},
+    Attribute, AttributeIndex, Context,
 };
 use inkwell::{
     types::AnyTypeEnum,

@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 
 use crate::{
-    context::Context,
     instructions::IntPredicate,
     types,
     values::{AnyValue, BasicBlock, Literal, Owner, Value},
+    Context,
 };
 use inkwell::{
     types::{AnyTypeEnum, BasicTypeEnum, FunctionType},

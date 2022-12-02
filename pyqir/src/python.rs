@@ -3,12 +3,11 @@
 
 use crate::{
     builder::Builder,
-    context::Context,
     evaluator::PyNonadaptiveJit,
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    module::{Attribute, AttributeIndex, Linkage, Module},
+    module::{Linkage, Module},
     qis::BasicQisBuilder,
     types::{
         is_qubit_type, is_result_type, qubit_type, result_type, ArrayType, FunctionType, IntType,
@@ -19,6 +18,7 @@ use crate::{
         qubit, qubit_id, r#const, required_num_qubits, required_num_results, result, result_id,
         BasicBlock, Constant, FloatConstant, Function, IntConstant, Value,
     },
+    Attribute, AttributeIndex, Context,
 };
 use pyo3::prelude::*;
 
