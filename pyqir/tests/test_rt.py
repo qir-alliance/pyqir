@@ -60,7 +60,7 @@ def test_tuple_record_output_tagged() -> None:
     assert call in mod.ir()
 
 
-def test_result_record_output_tagged() -> None:
+def test_result_record_output_untagged() -> None:
     mod = SimpleModule("result_record_output", 0, 1)
     i8p = PointerType(IntType(mod.context, 8))
     rt.result_record_output(mod.builder, mod.results[0], Constant.null(i8p))

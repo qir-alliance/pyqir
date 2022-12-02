@@ -62,7 +62,7 @@ pub(crate) fn result_record_output(
 /// :param Builder builder: The IR Builder used to create the instructions
 /// :param Value reserved: Reserved. For base profile QIR, a const null i8* Value should be passed.
 #[pyfunction]
-#[pyo3(text_signature = "(builder, num_elements, label)")]
+#[pyo3(text_signature = "(builder, reserved)")]
 #[allow(clippy::needless_pass_by_value)]
 pub(crate) fn initialize(py: Python, builder: Py<Builder>, reserved: &Value) -> PyResult<()> {
     let builder = builder.borrow(py);
@@ -78,6 +78,7 @@ pub(crate) fn initialize(py: Python, builder: Py<Builder>, reserved: &Value) -> 
 /// :param Value num_elements: How many tuple elements the tuple has
 /// :param str label: A string label for the tuple. Depending on the output schema, the label is included in the output or omitted.
 #[pyfunction]
+#[pyo3(text_signature = "(builder, num_elements, label)")]
 #[allow(clippy::needless_pass_by_value)]
 pub(crate) fn tuple_record_output(
     py: Python,

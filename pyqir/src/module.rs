@@ -224,26 +224,20 @@ impl Attribute {
     }
 }
 
-/// An instruction opcode.
+/// Module flag behavior choices
 #[pyclass]
 #[derive(Clone)]
 pub(crate) enum ModuleFlagBehavior {
-    /// Emits an error if two values disagree, otherwise the resulting value is that of the operands.
     #[pyo3(name = "ERROR")]
     Error,
-    /// Emits a warning if two values disagree. The result value will be the operand for the flag from the first module being linked.
     #[pyo3(name = "WARNING")]
     Warning,
-    /// Adds a requirement that another module flag be present and have a specified value after linking is performed. The value must be a metadata pair, where the first element of the pair is the ID of the module flag to be restricted, and the second element of the pair is the value the module flag should be restricted to. This behavior can be used to restrict the allowable results (via triggering of an error) of linking IDs with the **Override** behavior.
     #[pyo3(name = "REQUIRE")]
     Require,
-    /// Uses the specified value, regardless of the behavior or value of the other module. If both modules specify **Override**, but the values differ, an error will be emitted.
     #[pyo3(name = "OVERRIDE")]
     Override,
-    /// Appends the two values, which are required to be metadata nodes.
     #[pyo3(name = "APPEND")]
     Append,
-    /// Appends the two values, which are required to be metadata nodes. However, duplicate entries in the second list are dropped during the append operation.
     #[pyo3(name = "APPEND_UNIQUE")]
     AppendUnique,
 }
