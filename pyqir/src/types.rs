@@ -24,7 +24,7 @@ pub(crate) struct Type {
 impl Type {
     /// The void type.
     ///
-    /// :param Context context: The global context.
+    /// :param Context context: The LLVM context.
     /// :returns: The void type.
     /// :rtype: Type
     #[staticmethod]
@@ -40,7 +40,7 @@ impl Type {
 
     /// The double type.
     ///
-    /// :param Context context: The global context.
+    /// :param Context context: The LLVM context.
     /// :returns: The double type.
     /// :rtype: Type
     #[staticmethod]
@@ -110,7 +110,7 @@ impl Type {
 
 /// An integer type.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 /// :param int width: The number of bits in the integer.
 #[pyclass(extends = Type, unsendable)]
 #[pyo3(text_signature = "(context, width)")]
@@ -316,7 +316,7 @@ impl PointerType {
 
 /// The QIR qubit type.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 /// :returns: The qubit type.
 /// :rtype: Type
 #[pyfunction]
@@ -333,8 +333,8 @@ pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject>
 /// Whether the type is the QIR qubit type.
 ///
 /// :param Type ty: The type.
-/// :rtype: bool
 /// :returns: True if the type is the QIR qubit type.
+/// :rtype: bool
 #[pyfunction]
 #[pyo3(text_signature = "(ty)")]
 pub(crate) fn is_qubit_type(ty: &Type) -> bool {
@@ -343,7 +343,7 @@ pub(crate) fn is_qubit_type(ty: &Type) -> bool {
 
 /// The QIR result type.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 /// :returns: The result type.
 /// :rtype: Type
 #[pyfunction]
@@ -360,8 +360,8 @@ pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject
 /// Whether the type is the QIR result type.
 ///
 /// :param Type ty: The type.
-/// :rtype: bool
 /// :returns: True if the type is the QIR result type.
+/// :rtype: bool
 #[pyfunction]
 #[pyo3(text_signature = "(ty)")]
 pub(crate) fn is_result_type(ty: &Type) -> bool {

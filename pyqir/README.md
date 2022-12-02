@@ -162,7 +162,3 @@ that you have the right to, and actually do, grant us the rights to use your
 contribution. A CLA-bot will automatically determine whether you need to provide
 a CLA and decorate the PR appropriately. Simply follow the
 instructions provided by the bot. You will only need to do this once.
-
-## Building and Testing
-
-See [Building](https://qir-alliance.github.io/pyqir/development-guide/building.html).

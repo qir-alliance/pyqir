@@ -8,9 +8,9 @@ use inkwell::memory_buffer::MemoryBuffer;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use std::mem::transmute;
 
-/// A module is a collection of functions.
+/// A module is a collection of global values.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 /// :param str name: The module name.
 #[pyclass(unsendable)]
 #[pyo3(text_signature = "(context, str)")]
@@ -37,8 +37,8 @@ impl Module {
     ///
     /// :param str ir: The LLVM IR for a module.
     /// :param typing.Optional[str] name: The name of the module.
-    /// :rtype: Module
     /// :returns: The module.
+    /// :rtype: Module
     #[staticmethod]
     #[pyo3(text_signature = "(context, ir, name=\"\")")]
     fn from_ir(py: Python, context: Py<Context>, ir: &str, name: Option<&str>) -> PyResult<Self> {
@@ -60,8 +60,8 @@ impl Module {
     ///
     /// :param bytes bitcode: The LLVM bitcode for a module.
     /// :param typing.Optional[str] name: The name of the module.
-    /// :rtype: Module
     /// :returns: The module.
+    /// :rtype: Module
     #[staticmethod]
     #[pyo3(text_signature = "(context, bitcode, name=\"\")")]
     fn from_bitcode(
@@ -118,7 +118,7 @@ impl Module {
         PyBytes::new(py, self.module.write_bitcode_to_memory().as_slice())
     }
 
-    /// The global context.
+    /// The LLVM context.
     ///
     /// :type: Context
     #[getter]
@@ -134,6 +134,9 @@ impl Module {
         self.module.verify().map_err(|e| e.to_string()).err()
     }
 
+    /// Converts this module into an LLVM IR string.
+    ///
+    /// :rtype: str
     fn __str__(&self) -> String {
         self.module.to_string()
     }

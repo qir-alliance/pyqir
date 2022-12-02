@@ -21,7 +21,7 @@ use std::{
 
 /// An instruction builder.
 ///
-/// :param Context context: The global context.
+/// :param Context context: The LLVM context.
 #[pyclass(unsendable)]
 pub(crate) struct Builder {
     builder: inkwell::builder::Builder<'static>,
@@ -208,7 +208,7 @@ impl Builder {
     /// :param IntPredicate pred: The predicate to compare by.
     /// :param Value lhs: The left-hand side.
     /// :param Value rhs: The right-hand side.
-    /// :return: The boolean result.
+    /// :returns: The boolean result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, pred, lhs, rhs)")]
     fn icmp(&self, py: Python, pred: IntPredicate, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
