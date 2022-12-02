@@ -188,7 +188,7 @@ def test_parser_internals() -> None:
 
     attribute = interop_funcs[0].attribute("requiredQubits")
     assert attribute is not None
-    assert attribute.value == "6"
+    assert attribute.string_value == "6"
 
     blocks = func.basic_blocks
     assert len(blocks) == 9

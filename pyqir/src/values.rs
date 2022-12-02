@@ -443,16 +443,16 @@ impl Function {
             .collect()
     }
 
-    /// Gets an attribute of this function with the given name if it has one.
+    /// Gets an attribute of this function with the given kind.
     ///
-    /// :param str name: The name of the attribute.
+    /// :param str kind: The attribute kind.
     /// :returns: The attribute.
     /// :rtype: typing.Optional[Attribute]
-    #[pyo3(text_signature = "(name)")]
-    fn attribute(&self, name: &str) -> Option<Attribute> {
-        Some(Attribute(
-            self.0.get_string_attribute(AttributeLoc::Function, name)?,
-        ))
+    #[pyo3(text_signature = "(kind)")]
+    fn attribute(&self, kind: &str) -> Option<Attribute> {
+        self.0
+            .get_string_attribute(AttributeLoc::Function, kind)
+            .map(Attribute)
     }
 }
 

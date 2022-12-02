@@ -21,8 +21,8 @@ class Attribute:
     """An attribute."""
 
     @property
-    def value(self) -> str:
-        """The value of the attribute as a string."""
+    def string_value(self) -> Optional[str]:
+        """The value of this attribute as a string, or `None` if this is not a string attribute."""
         ...
 
 class BasicBlock(Value):
@@ -445,9 +445,9 @@ class Function(Constant):
         ...
     def attribute(self, name: str) -> Optional[Attribute]:
         """
-        Gets an attribute of this function with the given name if it has one.
+        Gets an attribute of this function with the given kind.
 
-        :param name: The name of the attribute.
+        :param kind: The attribute kind.
         :returns: The attribute.
         """
         ...

@@ -208,14 +208,20 @@ pub(crate) struct Attribute(pub(crate) inkwell::attributes::Attribute);
 
 #[pymethods]
 impl Attribute {
-    /// The value of the attribute as a string.
+    /// The value of this attribute as a string, or `None` if this is not a string attribute.
     ///
-    /// :type: str
+    /// :type: typing.Optional[str]
     #[getter]
-    fn value(&self) -> &str {
-        self.0
-            .get_string_value()
-            .to_str()
-            .expect("Value is not valid UTF-8.")
+    fn string_value(&self) -> Option<&str> {
+        if self.0.is_string() {
+            Some(
+                self.0
+                    .get_string_value()
+                    .to_str()
+                    .expect("Value is not valid UTF-8."),
+            )
+        } else {
+            None
+        }
     }
 }
