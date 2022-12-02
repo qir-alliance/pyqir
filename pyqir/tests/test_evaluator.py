@@ -10,7 +10,6 @@ from pyqir import (
     PointerType,
     SimpleModule,
     const,
-    const_getelementptr,
 )
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
 
@@ -66,16 +65,14 @@ def test_rt_calls_are_noop() -> None:
     i8p = PointerType(IntType(mod.context, 8))
     rt.initialize(mod.builder, Constant.null(i8p))
     qis.h(mod.qubits[1])
-    tag = mod.add_global_string(b"some tag")
-    i32 = IntType(mod.context, 32)
-    gep = const_getelementptr(tag, [const(i32, 0), const(i32, 0)])
-    rt.array_record_output(mod.builder, const(IntType(mod.context, 64), 42), gep)
+    label = mod.add_byte_string(b"some tag")
+    rt.array_record_output(mod.builder, const(IntType(mod.context, 64), 42), label)
     rt.array_record_output(
         mod.builder, const(IntType(mod.context, 64), 7), Constant.null(i8p)
     )
-    rt.result_record_output(mod.builder, mod.results[0], gep)
+    rt.result_record_output(mod.builder, mod.results[0], label)
     rt.result_record_output(mod.builder, mod.results[0], Constant.null(i8p))
-    rt.tuple_record_output(mod.builder, const(IntType(mod.context, 64), 43), gep)
+    rt.tuple_record_output(mod.builder, const(IntType(mod.context, 64), 43), label)
     rt.tuple_record_output(
         mod.builder, const(IntType(mod.context, 64), 16), Constant.null(i8p)
     )

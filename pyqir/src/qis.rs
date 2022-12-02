@@ -218,7 +218,7 @@ impl BasicQisBuilder {
     #[pyo3(text_signature = "(self, qubit1, qubit2)")]
     fn swap(&self, py: Python, qubit1: &Value, qubit2: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        context::require_same(py, [builder.context(), qubit1.context(), qubit2.context()])?;
+        Owner::merge(py, [builder.owner(), qubit1.owner(), qubit2.owner()])?;
         unsafe { builder.get() }.build_swap(
             unsafe { qubit1.get() }.try_into()?,
             unsafe { qubit2.get() }.try_into()?,

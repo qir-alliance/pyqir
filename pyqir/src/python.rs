@@ -8,7 +8,9 @@ use crate::{
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    module::{Attribute, Linkage, Module, ModuleFlagBehavior, add_metadata_flag, add_value_flag, get_flag},
+    module::{
+        add_metadata_flag, add_value_flag, get_flag, Attribute, Linkage, Module, ModuleFlagBehavior,
+    },
     qis::BasicQisBuilder,
     rt::{array_record_output, initialize, result_record_output, tuple_record_output},
     types::{
@@ -88,4 +90,5 @@ fn _rt(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(initialize, m)?)?;
     m.add_function(wrap_pyfunction!(result_record_output, m)?)?;
     m.add_function(wrap_pyfunction!(tuple_record_output, m)?)?;
+    Ok(())
 }

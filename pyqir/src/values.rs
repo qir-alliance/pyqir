@@ -46,7 +46,6 @@ use std::{
 
 /// A value.
 #[pyclass(subclass, unsendable)]
-#[derive(Clone)]
 pub(crate) struct Value {
     value: AnyValue<'static>,
     owner: Owner,

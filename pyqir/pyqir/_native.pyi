@@ -349,7 +349,6 @@ class Builder:
 class Call(Instruction):
     """A call instruction."""
 
-
     @property
     def callee(self) -> Value:
         """The value being called."""

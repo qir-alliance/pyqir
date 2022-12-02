@@ -276,10 +276,11 @@ impl From<ModuleFlagBehavior> for FlagBehavior {
 
 #[pyfunction]
 pub(crate) fn get_flag(py: Python, module: Py<Module>, key: &str) -> Option<PyObject> {
-    let module = module.borrow(py);
-    if let Some(flag) = module.module.get_flag(key) {
+    let flag = module.borrow(py).module.get_flag(key);
+    let owner = module.into();
+    if let Some(flag) = flag {
         let ave = AnyValueEnum::MetadataValue(flag);
-        let value = unsafe { Value::from_any(py, module.context.clone(), ave) };
+        let value = unsafe { Value::from_any(py, owner, ave) };
         value.ok()
     } else {
         None
@@ -315,4 +316,3 @@ pub(crate) fn add_value_flag(
         .add_basic_value_flag(key, behavior.into(), value);
     Ok(())
 }
-
