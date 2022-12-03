@@ -28,6 +28,14 @@ class Attribute:
 class AttributeGroup:
     """A group of attributes that belong to a specific part of a function."""
 
+    def __contains__(self, item: str) -> bool:
+        """
+        Tests if an attribute is a member of the group.
+
+        :param item: The attribute kind.
+        :returns: True if the group has an attribute with the given kind.
+        """
+        ...
     def __getitem__(self, key: str) -> Attribute:
         """
         Gets an attribute based on its kind.

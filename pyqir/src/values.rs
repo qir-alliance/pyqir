@@ -530,6 +530,17 @@ pub(crate) struct AttributeGroup {
 
 #[pymethods]
 impl AttributeGroup {
+    /// Tests if an attribute is a member of the group.
+    ///
+    /// :param str item: The attribute kind.
+    /// :returns: True if the group has an attribute with the given kind.
+    /// :rtype: bool
+    fn __contains__(&self, py: Python, item: &str) -> bool {
+        unsafe { self.function.borrow(py).get() }
+            .get_string_attribute(self.index, item)
+            .is_some()
+    }
+
     /// Gets an attribute based on its kind.
     ///
     /// :param str key: The attribute kind.
