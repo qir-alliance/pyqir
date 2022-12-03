@@ -25,19 +25,36 @@ class Attribute:
         """The value of this attribute as a string, or `None` if this is not a string attribute."""
         ...
 
+class AttributeGroup:
+    """A group of attributes that belong to a specific part of a function."""
+
+    def __getitem__(self, key: str) -> Attribute:
+        """
+        Gets an attribute based on its kind.
+
+        :param key: The attribute kind.
+        :returns: The attribute.
+        """
+        ...
+
 class AttributeIndex:
-    """The position of an attribute within a function declaration."""
+    """An index of every attribute group for a function."""
 
-    FUNCTION: AttributeIndex
-    RETURN: AttributeIndex
-    @staticmethod
-    def param(n: int) -> AttributeIndex:
+    def param(self, n: int) -> AttributeGroup:
         """
-        The attribute index for the nth parameter, starting from zero.
+        The attributes for a parameter.
 
-        :param n: The parameter number.
-        :returns: The attribute index.
+        :param n: The parameter number, starting from zero.
+        :returns: The parameter attributes.
         """
+        ...
+    @property
+    def ret(self) -> AttributeGroup:
+        """The attributes for the return type."""
+        ...
+    @property
+    def func(self) -> AttributeGroup:
+        """The attributes for the function itself."""
         ...
 
 class BasicBlock(Value):
@@ -458,14 +475,9 @@ class Function(Constant):
     def basic_blocks(self) -> List[BasicBlock]:
         """The basic blocks in this function."""
         ...
-    def attribute(self, index: AttributeIndex, name: str) -> Optional[Attribute]:
-        """
-        Gets an attribute.
-
-        :param index: The position of the attribute within this function.
-        :param kind: The attribute kind.
-        :returns: The attribute.
-        """
+    @property
+    def attributes(self) -> AttributeIndex:
+        """The attributes for this function."""
         ...
 
 class FunctionType(Type):

@@ -7,9 +7,10 @@ use crate::{
     instructions::Instruction,
     module::{Linkage, Module},
     types::{FunctionType, Type},
-    Attribute, AttributeIndex, Context,
+    Context,
 };
 use inkwell::{
+    attributes::AttributeLoc,
     types::AnyTypeEnum,
     values::{
         AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, FloatValue, FunctionValue,
@@ -27,7 +28,7 @@ use llvm_sys::{
 };
 use pyo3::{
     conversion::ToPyObject,
-    exceptions::{PyTypeError, PyValueError},
+    exceptions::{PyKeyError, PyTypeError, PyValueError},
     prelude::*,
     types::{PyBytes, PyLong},
     PyRef,
@@ -442,21 +443,103 @@ impl Function {
             .collect()
     }
 
-    /// Gets an attribute.
-    ///
-    /// :param AttributeIndex index: The position of the attribute within this function.
-    /// :param str kind: The attribute kind.
-    /// :returns: The attribute.
-    /// :rtype: typing.Optional[Attribute]
-    #[pyo3(text_signature = "(kind)")]
-    fn attribute(&self, index: &AttributeIndex, kind: &str) -> Option<Attribute> {
-        self.0.get_string_attribute(index.0, kind).map(Attribute)
+    /// The attributes for this function.
+    #[getter]
+    fn attributes(slf: Py<Function>) -> AttributeIndex {
+        AttributeIndex(slf)
     }
 }
 
 impl Function {
     pub(crate) unsafe fn get(&self) -> FunctionValue<'static> {
         self.0
+    }
+}
+
+/// An attribute.
+#[pyclass(unsendable)]
+pub(crate) struct Attribute(pub(crate) inkwell::attributes::Attribute);
+
+#[pymethods]
+impl Attribute {
+    /// The value of this attribute as a string, or `None` if this is not a string attribute.
+    ///
+    /// :type: typing.Optional[str]
+    #[getter]
+    fn string_value(&self) -> Option<&str> {
+        if self.0.is_string() {
+            Some(
+                self.0
+                    .get_string_value()
+                    .to_str()
+                    .expect("Value is not valid UTF-8."),
+            )
+        } else {
+            None
+        }
+    }
+}
+
+/// An index of every attribute group for a function.
+#[pyclass]
+pub(crate) struct AttributeIndex(Py<Function>);
+
+#[pymethods]
+impl AttributeIndex {
+    /// The attributes for a parameter.
+    ///
+    /// :param int n: The parameter number, starting from zero.
+    /// :returns: The parameter attributes.
+    /// :rtype: AttributeGroup
+    fn param(&self, py: Python, n: u32) -> AttributeGroup {
+        AttributeGroup {
+            function: self.0.clone_ref(py),
+            index: AttributeLoc::Param(n),
+        }
+    }
+
+    /// The attributes for the return type.
+    ///
+    /// :type: AttributeGroup
+    #[getter]
+    fn ret(&self, py: Python) -> AttributeGroup {
+        AttributeGroup {
+            function: self.0.clone_ref(py),
+            index: AttributeLoc::Return,
+        }
+    }
+
+    /// The attributes for the function itself.
+    ///
+    /// :type: AttributeGroup
+    #[getter]
+    fn func(&self, py: Python) -> AttributeGroup {
+        AttributeGroup {
+            function: self.0.clone_ref(py),
+            index: AttributeLoc::Function,
+        }
+    }
+}
+
+/// A group of attributes that belong to a specific part of a function.
+#[pyclass]
+pub(crate) struct AttributeGroup {
+    function: Py<Function>,
+    index: AttributeLoc,
+}
+
+#[pymethods]
+impl AttributeGroup {
+    /// Gets an attribute based on its kind.
+    ///
+    /// :param str key: The attribute kind.
+    /// :returns: The attribute.
+    /// :rtype: Attribute
+    fn __getitem__(&self, py: Python, key: &str) -> PyResult<Attribute> {
+        unsafe { self.function.borrow(py).get() }
+            .get_string_attribute(self.index, key)
+            .map(Attribute)
+            .ok_or_else(|| PyKeyError::new_err(key.to_owned()))
     }
 }
 

@@ -22,7 +22,6 @@ mod qis;
 mod types;
 mod values;
 
-use inkwell::attributes::AttributeLoc;
 use pyo3::prelude::*;
 use std::ops::Deref;
 
@@ -44,52 +43,5 @@ impl Deref for Context {
 
     fn deref(&self) -> &Self::Target {
         &self.0
-    }
-}
-
-/// An attribute.
-#[pyclass(unsendable)]
-pub(crate) struct Attribute(pub(crate) inkwell::attributes::Attribute);
-
-#[pymethods]
-impl Attribute {
-    /// The value of this attribute as a string, or `None` if this is not a string attribute.
-    ///
-    /// :type: typing.Optional[str]
-    #[getter]
-    fn string_value(&self) -> Option<&str> {
-        if self.0.is_string() {
-            Some(
-                self.0
-                    .get_string_value()
-                    .to_str()
-                    .expect("Value is not valid UTF-8."),
-            )
-        } else {
-            None
-        }
-    }
-}
-
-/// The position of an attribute within a function declaration.
-#[pyclass]
-pub(crate) struct AttributeIndex(pub(crate) AttributeLoc);
-
-#[pymethods]
-impl AttributeIndex {
-    #[classattr]
-    const FUNCTION: Self = Self(AttributeLoc::Function);
-
-    #[classattr]
-    const RETURN: Self = Self(AttributeLoc::Return);
-
-    /// The attribute index for the nth parameter, starting from zero.
-    ///
-    /// :param int n: The parameter number.
-    /// :returns: The attribute index.
-    /// :rtype: AttributeIndex
-    #[staticmethod]
-    fn param(n: u32) -> Self {
-        Self(AttributeLoc::Param(n))
     }
 }
