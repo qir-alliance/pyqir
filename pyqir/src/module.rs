@@ -3,7 +3,7 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::{values::Value, Context};
+use crate::{context::Context, values::Value};
 use inkwell::memory_buffer::MemoryBuffer;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use std::mem::transmute;

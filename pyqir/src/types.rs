@@ -3,7 +3,7 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::{values::Owner, Context};
+use crate::{context::Context, values::Owner};
 use inkwell::{
     types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum},
     AddressSpace, LLVMReference,

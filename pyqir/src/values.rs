@@ -4,10 +4,10 @@
 #![allow(clippy::used_underscore_binding)]
 
 use crate::{
+    context::Context,
     instructions::Instruction,
     module::{Linkage, Module},
     types::{FunctionType, Type},
-    Context,
 };
 use inkwell::{
     attributes::AttributeLoc,

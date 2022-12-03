@@ -3,6 +3,7 @@
 
 use crate::{
     builder::Builder,
+    context::Context,
     evaluator::PyNonadaptiveJit,
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
@@ -19,7 +20,6 @@ use crate::{
         Attribute, AttributeGroup, AttributeIndex, BasicBlock, Constant, FloatConstant, Function,
         IntConstant, Value,
     },
-    Context,
 };
 use pyo3::prelude::*;
 
