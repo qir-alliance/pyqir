@@ -19,6 +19,40 @@ pub(crate) struct BasicQisBuilder {
     builder: Py<Builder>,
 }
 
+/// Inserts a barrier instruction
+///
+/// :rtype: None
+#[pyfunction]
+#[pyo3(text_signature = "(builder)")]
+#[allow(clippy::needless_pass_by_value)]
+pub(crate) fn barrier(py: Python, builder: Py<Builder>) {
+    let builder = builder.borrow(py);
+    unsafe { builder.get() }.build_barrier();
+}
+
+/// Inserts a swap gate
+///
+/// :param Value qubit1: The first qubit to apply the gate to.
+/// :param Value qubit2: The second qubit to apply the gate to.
+/// :rtype: None
+#[pyfunction]
+#[pyo3(text_signature = "(builder, qubit1, qubit2)")]
+#[allow(clippy::needless_pass_by_value)]
+pub(crate) fn swap(
+    py: Python,
+    builder: Py<Builder>,
+    qubit1: &Value,
+    qubit2: &Value,
+) -> PyResult<()> {
+    let builder = builder.borrow(py);
+    Owner::merge(py, [builder.owner(), qubit1.owner(), qubit2.owner()])?;
+    unsafe { builder.get() }.build_swap(
+        unsafe { qubit1.get() }.try_into()?,
+        unsafe { qubit2.get() }.try_into()?,
+    );
+    Ok(())
+}
+
 #[pymethods]
 impl BasicQisBuilder {
     #[new]
@@ -26,13 +60,30 @@ impl BasicQisBuilder {
         BasicQisBuilder { builder }
     }
 
-    /// Inserts a barrier instruction
+    /// Inserts Toffoli or doubly-controlled :math:`X` gate.
     ///
+    /// :param Value control1: The first control qubit.
+    /// :param Value control2: The second control qubit.
+    /// :param Value target: The target qubit.
     /// :rtype: None
-    #[pyo3(text_signature = "(self)")]
-    fn barrier(&self, py: Python) {
+    #[pyo3(text_signature = "(self, control, target)")]
+    fn ccx(&self, py: Python, control1: &Value, control2: &Value, target: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
-        unsafe { builder.get() }.build_barrier();
+        Owner::merge(
+            py,
+            [
+                builder.owner(),
+                control1.owner(),
+                control2.owner(),
+                target.owner(),
+            ],
+        )?;
+        unsafe { builder.get() }.build_ccx(
+            unsafe { control1.get() }.try_into()?,
+            unsafe { control2.get() }.try_into()?,
+            unsafe { target.get() }.try_into()?,
+        );
+        Ok(())
     }
 
     /// Inserts a controlled Pauli :math:`X` gate.
@@ -206,22 +257,6 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe { builder.get() }.build_s_adj(unsafe { qubit.get() }.try_into()?);
-        Ok(())
-    }
-
-    /// Inserts a swap gate
-    ///
-    /// :param Value qubit1: The first qubit to apply the gate to.
-    /// :param Value qubit2: The second qubit to apply the gate to.
-    /// :rtype: None
-    #[pyo3(text_signature = "(self, qubit1, qubit2)")]
-    fn swap(&self, py: Python, qubit1: &Value, qubit2: &Value) -> PyResult<()> {
-        let builder = self.builder.borrow(py);
-        Owner::merge(py, [builder.owner(), qubit1.owner(), qubit2.owner()])?;
-        unsafe { builder.get() }.build_swap(
-            unsafe { qubit1.get() }.try_into()?,
-            unsafe { qubit2.get() }.try_into()?,
-        );
         Ok(())
     }
 

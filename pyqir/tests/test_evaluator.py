@@ -14,6 +14,7 @@ from pyqir import (
 from pyqir.evaluator import GateLogger, GateSet, NonadaptiveEvaluator
 
 import pyqir.rt as rt
+import pyqir.qis as qis
 
 
 def test_bell_qir() -> None:
@@ -34,8 +35,7 @@ def test_bell_qir() -> None:
 def test_barrier() -> None:
     name = "barrier"
     mod = SimpleModule(f"test_{name}", 0, 0)
-    qis = BasicQisBuilder(mod.builder)
-    qis.barrier()
+    qis.barrier(mod.builder)
 
     logger = GateLogger()
     _eval(mod, logger, [])
@@ -47,8 +47,7 @@ def test_barrier() -> None:
 def test_swap() -> None:
     name = "swap"
     mod = SimpleModule(f"test_{name}", 2, 0)
-    qis = BasicQisBuilder(mod.builder)
-    qis.swap(mod.qubits[1], mod.qubits[0])
+    qis.swap(mod.builder, mod.qubits[1], mod.qubits[0])
 
     logger = GateLogger()
     _eval(mod, logger, [])
@@ -60,11 +59,11 @@ def test_swap() -> None:
 def test_rt_calls_are_noop() -> None:
     name = "rt_calls"
     mod = SimpleModule(f"test_{name}", 2, 1)
-    qis = BasicQisBuilder(mod.builder)
+    basic = BasicQisBuilder(mod.builder)
 
     i8p = PointerType(IntType(mod.context, 8))
     rt.initialize(mod.builder, Constant.null(i8p))
-    qis.h(mod.qubits[1])
+    basic.h(mod.qubits[1])
     label = mod.add_byte_string(b"some tag")
     rt.array_record_output(mod.builder, const(IntType(mod.context, 64), 42), label)
     rt.array_record_output(
@@ -76,7 +75,7 @@ def test_rt_calls_are_noop() -> None:
     rt.tuple_record_output(
         mod.builder, const(IntType(mod.context, 64), 16), Constant.null(i8p)
     )
-    qis.h(mod.qubits[0])
+    basic.h(mod.qubits[0])
 
     logger = GateLogger()
     _eval(mod, logger, [])

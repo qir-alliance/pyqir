@@ -6,6 +6,7 @@ from typing import Callable, Union
 import pytest
 
 import pyqir
+import pyqir.qis
 from pyqir import BasicQisBuilder, Context, SimpleModule, Type, Value
 
 
@@ -34,16 +35,32 @@ def test_single(
 @pytest.mark.parametrize(
     "name, get_gate",
     [
-        ("swap", lambda qis: qis.swap),
+        ("swap", lambda _basic: pyqir.qis.swap),
     ],
 )
 def test_two_qubit_gates(
     name: str, get_gate: Callable[[BasicQisBuilder], Callable[[Value, Value], None]]
 ) -> None:
     mod = SimpleModule("test_two_qubit_gates", 2, 0)
-    qis = BasicQisBuilder(mod.builder)
-    get_gate(qis)(mod.qubits[0], mod.qubits[1])
+    basic = BasicQisBuilder(mod.builder)
+    get_gate(basic)(mod.builder, mod.qubits[0], mod.qubits[1])
     call = f"call void @__quantum__qis__{name}__body(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*))"
+    assert call in mod.ir()
+
+
+@pytest.mark.parametrize(
+    "name, get_gate",
+    [
+        ("ccx", lambda qis: qis.ccx),
+    ],
+)
+def test_three_qubit_gates(
+    name: str, get_gate: Callable[[BasicQisBuilder], Callable[[Value, Value], None]]
+) -> None:
+    mod = SimpleModule("test_three_qubit_gates", 3, 0)
+    basic = BasicQisBuilder(mod.builder)
+    get_gate(basic)(mod.qubits[0], mod.qubits[1], mod.qubits[2])
+    call = f"call void @__quantum__qis__{name}__body(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*), %Qubit* inttoptr (i64 2 to %Qubit*))"
     assert call in mod.ir()
 
 

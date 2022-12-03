@@ -12,6 +12,7 @@ use crate::{
         add_metadata_flag, add_value_flag, get_flag, Attribute, Linkage, Module, ModuleFlagBehavior,
     },
     qis::BasicQisBuilder,
+    qis::{barrier, swap},
     rt::{array_record_output, initialize, result_record_output, tuple_record_output},
     types::{
         is_qubit_type, is_result_type, qubit_type, result_type, ArrayType, FunctionType, IntType,
@@ -76,11 +77,23 @@ fn _native(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(result_type, m)?)?;
     m.add_function(wrap_pyfunction!(result, m)?)?;
 
+    m.add_wrapped(wrap_pymodule!(_qis))?;
+    let sys = PyModule::import(py, "sys")?;
+    let sys_modules: &PyDict = sys.getattr("modules")?.downcast()?;
+    sys_modules.set_item("pyqir.qis._native", m.getattr("_qis")?)?;
+
     m.add_wrapped(wrap_pymodule!(_rt))?;
     let sys = PyModule::import(py, "sys")?;
     let sys_modules: &PyDict = sys.getattr("modules")?.downcast()?;
     sys_modules.set_item("pyqir.rt._native", m.getattr("_rt")?)?;
 
+    Ok(())
+}
+
+#[pymodule]
+fn _qis(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(barrier, m)?)?;
+    m.add_function(wrap_pyfunction!(swap, m)?)?;
     Ok(())
 }
 

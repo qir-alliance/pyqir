@@ -43,6 +43,8 @@ impl From<AttributeIndex> for u32 {
 pub trait BuilderExt<'ctx> {
     fn build_barrier(&self);
 
+    fn build_ccx(&self, control1: PointerValue, control2: PointerValue, qubit: PointerValue);
+
     fn build_cx(&self, control: PointerValue, qubit: PointerValue);
 
     fn build_cz(&self, control: PointerValue, qubit: PointerValue);
@@ -98,6 +100,16 @@ impl<'ctx> BuilderExt<'ctx> for Builder<'ctx> {
                 self.get_ref(),
                 no_param(builder_module(self.get_ref()), "barrier", Functor::Body),
                 &mut [],
+            );
+        }
+    }
+
+    fn build_ccx(&self, control1: PointerValue, control2: PointerValue, qubit: PointerValue) {
+        unsafe {
+            build_call(
+                self.get_ref(),
+                doubly_controlled_gate(builder_module(self.get_ref()), "ccx"),
+                &mut [control1.get_ref(), control2.get_ref(), qubit.get_ref()],
             );
         }
     }
@@ -353,6 +365,13 @@ unsafe fn controlled_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
     declare(module, name, Functor::Body, ty)
 }
 
+unsafe fn doubly_controlled_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
+    let context = LLVMGetModuleContext(module);
+    let qubit = types::qubit_unchecked(context);
+    let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit, qubit]);
+    declare(module, name, Functor::Body, ty)
+}
+
 unsafe fn rotation_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let ty = function_type(
@@ -451,6 +470,14 @@ mod tests {
         let builder = context.create_builder();
         let context = context.void_type().get_context();
         builder.build_x(qubit(&context, 0));
+    }
+
+    #[test]
+    fn ccx() -> Result<(), String> {
+        assert_reference_ir("qis/ccx", 3, 0, |builder| {
+            let context = builder.get_insert_block().unwrap().get_context();
+            builder.build_ccx(qubit(&context, 0), qubit(&context, 1), qubit(&context, 2));
+        })
     }
 
     #[test]

@@ -67,10 +67,13 @@ class BasicQisBuilder:
         :param builder: The underlying builder used to build QIS instructions.
         """
         ...
-    def barrier(self) -> None:
+    def ccx(self, control1: Value, control2: Value, target: Value) -> None:
         """
-        Inserts a barrier instruction
+        Inserts Toffoli or doubly-controlled :math:`X` gate.
 
+        :param Value control1: The first control qubit.
+        :param Value control2: The second control qubit.
+        :param Value target: The target qubit.
         :rtype: None
         """
         ...
@@ -148,15 +151,6 @@ class BasicQisBuilder:
         Inserts an adjoint :math:`S` gate.
 
         :param qubit: The target qubit.
-        """
-        ...
-    def swap(self, qubit1: Value, qubit2: Value) -> None:
-        """
-        Inserts a swap gate
-
-        :param Value qubit1: The first qubit to apply the gate to.
-        :param Value qubit2: The second qubit to apply the gate to.
-        :rtype: None
         """
         ...
     def t(self, qubit: Value) -> None:
