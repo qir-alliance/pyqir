@@ -130,6 +130,45 @@ impl Module {
         &self.context
     }
 
+    #[pyo3(text_signature = "(key)")]
+    pub(crate) fn get_flag(slf: Py<Module>, py: Python, key: &str) -> Option<PyObject> {
+        let flag = slf.borrow(py).module.get_flag(key);
+        let owner = slf.into();
+        if let Some(flag) = flag {
+            let ave = AnyValueEnum::MetadataValue(flag);
+            let value = unsafe { Value::from_any(py, owner, ave) };
+            value.ok()
+        } else {
+            None
+        }
+    }
+
+    #[pyo3(text_signature = "(key, behavior, flag)")]
+    pub(crate) fn add_metadata_flag(
+        &self,
+        key: &str,
+        behavior: ModuleFlagBehavior,
+        flag: &Value,
+    ) -> PyResult<()> {
+        let value = BasicMetadataValueEnum::try_from(unsafe { flag.get() })?;
+        self.module
+            .add_metadata_flag(key, behavior.into(), value.into_metadata_value());
+        Ok(())
+    }
+
+    #[pyo3(text_signature = "(key, behavior, flag)")]
+    pub(crate) fn add_value_flag(
+        &self,
+        key: &str,
+        behavior: ModuleFlagBehavior,
+        flag: &Value,
+    ) -> PyResult<()> {
+        let value = BasicValueEnum::try_from(unsafe { flag.get() })?;
+        self.module
+            .add_basic_value_flag(key, behavior.into(), value);
+        Ok(())
+    }
+
     /// Verifies that this module is valid.
     ///
     /// :returns: An error description if this module is invalid or `None` if this module is valid.
@@ -266,47 +305,4 @@ impl From<ModuleFlagBehavior> for FlagBehavior {
             ModuleFlagBehavior::AppendUnique => FlagBehavior::AppendUnique,
         }
     }
-}
-
-#[pyfunction]
-pub(crate) fn get_flag(py: Python, module: Py<Module>, key: &str) -> Option<PyObject> {
-    let flag = module.borrow(py).module.get_flag(key);
-    let owner = module.into();
-    if let Some(flag) = flag {
-        let ave = AnyValueEnum::MetadataValue(flag);
-        let value = unsafe { Value::from_any(py, owner, ave) };
-        value.ok()
-    } else {
-        None
-    }
-}
-
-#[pyfunction]
-pub(crate) fn add_metadata_flag(
-    py: Python,
-    module: Py<Module>,
-    key: &str,
-    behavior: ModuleFlagBehavior,
-    flag: &Value,
-) -> PyResult<()> {
-    let module = module.borrow(py);
-    let value = BasicMetadataValueEnum::try_from(unsafe { flag.get() })?;
-    module
-        .module
-        .add_metadata_flag(key, behavior.into(), value.into_metadata_value());
-    Ok(())
-}
-
-#[pyfunction]
-pub(crate) fn add_value_flag(
-    module: &Module,
-    key: &str,
-    behavior: ModuleFlagBehavior,
-    flag: &Value,
-) -> PyResult<()> {
-    let value = BasicValueEnum::try_from(unsafe { flag.get() })?;
-    module
-        .module
-        .add_basic_value_flag(key, behavior.into(), value);
-    Ok(())
 }

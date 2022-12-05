@@ -8,9 +8,7 @@ use crate::{
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    module::{
-        add_metadata_flag, add_value_flag, get_flag, Attribute, Linkage, Module, ModuleFlagBehavior,
-    },
+    module::{Attribute, Linkage, Module, ModuleFlagBehavior},
     qis::BasicQisBuilder,
     qis::{barrier, swap},
     rt::{array_record_output, initialize, result_record_output, tuple_record_output},
@@ -57,11 +55,8 @@ fn _native(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Switch>()?;
     m.add_class::<Type>()?;
     m.add_class::<Value>()?;
-    m.add_function(wrap_pyfunction!(add_value_flag, m)?)?;
-    m.add_function(wrap_pyfunction!(add_metadata_flag, m)?)?;
     m.add_function(wrap_pyfunction!(entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(extract_byte_string, m)?)?;
-    m.add_function(wrap_pyfunction!(get_flag, m)?)?;
     m.add_function(wrap_pyfunction!(global_byte_string, m)?)?;
     m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(is_interop_friendly, m)?)?;
