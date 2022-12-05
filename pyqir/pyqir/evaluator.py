@@ -83,6 +83,11 @@ class GateLogger(GateSet):
     def barrier(self) -> None:
         self.instructions.append(f"barrier")
 
+    def ccx(self, control1: str, control2, target: str) -> None:
+        self.instructions.append(
+            f"ccx qubit[{control1}], qubit[{control2}], qubit[{target}]"
+        )
+
     def cx(self, control: str, target: str) -> None:
         self.instructions.append(f"cx qubit[{control}], qubit[{target}]")
 
