@@ -445,8 +445,8 @@ impl Function {
 
     /// The attributes for this function.
     #[getter]
-    fn attributes(slf: Py<Function>) -> AttributeGroup {
-        AttributeGroup(slf)
+    fn attributes(slf: Py<Function>) -> AttributeList {
+        AttributeList(slf)
     }
 }
 
@@ -480,19 +480,19 @@ impl Attribute {
     }
 }
 
-/// A group of all attributes for a function.
+/// The attribute list for a function.
 #[pyclass]
-pub(crate) struct AttributeGroup(Py<Function>);
+pub(crate) struct AttributeList(Py<Function>);
 
 #[pymethods]
-impl AttributeGroup {
+impl AttributeList {
     /// The attributes for a parameter.
     ///
     /// :param int n: The parameter number, starting from zero.
     /// :returns: The parameter attributes.
     /// :rtype: AttributeDict
-    fn param(&self, py: Python, n: u32) -> AttributeDict {
-        AttributeDict {
+    fn param(&self, py: Python, n: u32) -> AttributeSet {
+        AttributeSet {
             function: self.0.clone_ref(py),
             index: AttributeLoc::Param(n),
         }
@@ -502,8 +502,8 @@ impl AttributeGroup {
     ///
     /// :type: AttributeDict
     #[getter]
-    fn ret(&self, py: Python) -> AttributeDict {
-        AttributeDict {
+    fn ret(&self, py: Python) -> AttributeSet {
+        AttributeSet {
             function: self.0.clone_ref(py),
             index: AttributeLoc::Return,
         }
@@ -513,24 +513,24 @@ impl AttributeGroup {
     ///
     /// :type: AttributeDict
     #[getter]
-    fn func(&self, py: Python) -> AttributeDict {
-        AttributeDict {
+    fn func(&self, py: Python) -> AttributeSet {
+        AttributeSet {
             function: self.0.clone_ref(py),
             index: AttributeLoc::Function,
         }
     }
 }
 
-/// A group of attributes for a specific part of a function.
+/// A set of attributes for a specific part of a function.
 #[pyclass]
-pub(crate) struct AttributeDict {
+pub(crate) struct AttributeSet {
     function: Py<Function>,
     index: AttributeLoc,
 }
 
 #[pymethods]
-impl AttributeDict {
-    /// Tests if an attribute is a member of the group.
+impl AttributeSet {
+    /// Tests if an attribute is a member of the set.
     ///
     /// :param str item: The attribute kind.
     /// :returns: True if the group has an attribute with the given kind.

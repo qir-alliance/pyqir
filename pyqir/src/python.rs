@@ -17,7 +17,7 @@ use crate::{
     values::{
         entry_point, extract_byte_string, global_byte_string, is_entry_point, is_interop_friendly,
         qubit, qubit_id, r#const, required_num_qubits, required_num_results, result, result_id,
-        Attribute, AttributeDict, AttributeGroup, BasicBlock, Constant, FloatConstant, Function,
+        Attribute, AttributeList, AttributeSet, BasicBlock, Constant, FloatConstant, Function,
         IntConstant, Value,
     },
 };
@@ -27,8 +27,8 @@ use pyo3::prelude::*;
 fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<ArrayType>()?;
     m.add_class::<Attribute>()?;
-    m.add_class::<AttributeDict>()?;
-    m.add_class::<AttributeGroup>()?;
+    m.add_class::<AttributeList>()?;
+    m.add_class::<AttributeSet>()?;
     m.add_class::<BasicBlock>()?;
     m.add_class::<BasicQisBuilder>()?;
     m.add_class::<Builder>()?;

@@ -25,12 +25,32 @@ class Attribute:
         """The value of this attribute as a string, or `None` if this is not a string attribute."""
         ...
 
-class AttributeDict:
-    """A group of attributes for a specific part of a function."""
+class AttributeList:
+    """The attribute list for a function."""
+
+    def param(self, n: int) -> AttributeSet:
+        """
+        The attributes for a parameter.
+
+        :param n: The parameter number, starting from zero.
+        :returns: The parameter attributes.
+        """
+        ...
+    @property
+    def ret(self) -> AttributeSet:
+        """The attributes for the return type."""
+        ...
+    @property
+    def func(self) -> AttributeSet:
+        """The attributes for the function itself."""
+        ...
+
+class AttributeSet:
+    """A set of attributes for a specific part of a function."""
 
     def __contains__(self, item: str) -> bool:
         """
-        Tests if an attribute is a member of the group.
+        Tests if an attribute is a member of the set.
 
         :param item: The attribute kind.
         :returns: True if the group has an attribute with the given kind.
@@ -43,26 +63,6 @@ class AttributeDict:
         :param key: The attribute kind.
         :returns: The attribute.
         """
-        ...
-
-class AttributeGroup:
-    """A group of all attributes for a function."""
-
-    def param(self, n: int) -> AttributeDict:
-        """
-        The attributes for a parameter.
-
-        :param n: The parameter number, starting from zero.
-        :returns: The parameter attributes.
-        """
-        ...
-    @property
-    def ret(self) -> AttributeDict:
-        """The attributes for the return type."""
-        ...
-    @property
-    def func(self) -> AttributeDict:
-        """The attributes for the function itself."""
         ...
 
 class BasicBlock(Value):
@@ -484,7 +484,7 @@ class Function(Constant):
         """The basic blocks in this function."""
         ...
     @property
-    def attributes(self) -> AttributeGroup:
+    def attributes(self) -> AttributeList:
         """The attributes for this function."""
         ...
 
