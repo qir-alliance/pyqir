@@ -21,8 +21,48 @@ class Attribute:
     """An attribute."""
 
     @property
-    def value(self) -> str:
-        """The value of the attribute as a string."""
+    def string_value(self) -> Optional[str]:
+        """The value of this attribute as a string, or `None` if this is not a string attribute."""
+        ...
+
+class AttributeList:
+    """The attribute list for a function."""
+
+    def param(self, n: int) -> AttributeSet:
+        """
+        The attributes for a parameter.
+
+        :param n: The parameter number, starting from zero.
+        :returns: The parameter attributes.
+        """
+        ...
+    @property
+    def ret(self) -> AttributeSet:
+        """The attributes for the return type."""
+        ...
+    @property
+    def func(self) -> AttributeSet:
+        """The attributes for the function itself."""
+        ...
+
+class AttributeSet:
+    """A set of attributes for a specific part of a function."""
+
+    def __contains__(self, item: str) -> bool:
+        """
+        Tests if an attribute is a member of the set.
+
+        :param item: The attribute kind.
+        :returns: True if the group has an attribute with the given kind.
+        """
+        ...
+    def __getitem__(self, key: str) -> Attribute:
+        """
+        Gets an attribute based on its kind.
+
+        :param key: The attribute kind.
+        :returns: The attribute.
+        """
         ...
 
 class BasicBlock(Value):
@@ -443,13 +483,9 @@ class Function(Constant):
     def basic_blocks(self) -> List[BasicBlock]:
         """The basic blocks in this function."""
         ...
-    def attribute(self, name: str) -> Optional[Attribute]:
-        """
-        Gets an attribute of this function with the given name if it has one.
-
-        :param name: The name of the attribute.
-        :returns: The attribute.
-        """
+    @property
+    def attributes(self) -> AttributeList:
+        """The attributes for this function."""
         ...
 
 class FunctionType(Type):

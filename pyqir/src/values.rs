@@ -6,7 +6,7 @@
 use crate::{
     context::Context,
     instructions::Instruction,
-    module::{Attribute, Linkage, Module},
+    module::{Linkage, Module},
     types::{FunctionType, Type},
 };
 use inkwell::{
@@ -28,7 +28,7 @@ use llvm_sys::{
 };
 use pyo3::{
     conversion::ToPyObject,
-    exceptions::{PyTypeError, PyValueError},
+    exceptions::{PyKeyError, PyTypeError, PyValueError},
     prelude::*,
     types::{PyBytes, PyLong},
     PyRef,
@@ -443,22 +443,114 @@ impl Function {
             .collect()
     }
 
-    /// Gets an attribute of this function with the given name if it has one.
-    ///
-    /// :param str name: The name of the attribute.
-    /// :returns: The attribute.
-    /// :rtype: typing.Optional[Attribute]
-    #[pyo3(text_signature = "(name)")]
-    fn attribute(&self, name: &str) -> Option<Attribute> {
-        Some(Attribute(
-            self.0.get_string_attribute(AttributeLoc::Function, name)?,
-        ))
+    /// The attributes for this function.
+    #[getter]
+    fn attributes(slf: Py<Function>) -> AttributeList {
+        AttributeList(slf)
     }
 }
 
 impl Function {
     pub(crate) unsafe fn get(&self) -> FunctionValue<'static> {
         self.0
+    }
+}
+
+/// An attribute.
+#[pyclass(unsendable)]
+pub(crate) struct Attribute(pub(crate) inkwell::attributes::Attribute);
+
+#[pymethods]
+impl Attribute {
+    /// The value of this attribute as a string, or `None` if this is not a string attribute.
+    ///
+    /// :type: typing.Optional[str]
+    #[getter]
+    fn string_value(&self) -> Option<&str> {
+        if self.0.is_string() {
+            Some(
+                self.0
+                    .get_string_value()
+                    .to_str()
+                    .expect("Value is not valid UTF-8."),
+            )
+        } else {
+            None
+        }
+    }
+}
+
+/// The attribute list for a function.
+#[pyclass]
+pub(crate) struct AttributeList(Py<Function>);
+
+#[pymethods]
+impl AttributeList {
+    /// The attributes for a parameter.
+    ///
+    /// :param int n: The parameter number, starting from zero.
+    /// :returns: The parameter attributes.
+    /// :rtype: AttributeDict
+    fn param(&self, py: Python, n: u32) -> AttributeSet {
+        AttributeSet {
+            function: self.0.clone_ref(py),
+            index: AttributeLoc::Param(n),
+        }
+    }
+
+    /// The attributes for the return type.
+    ///
+    /// :type: AttributeDict
+    #[getter]
+    fn ret(&self, py: Python) -> AttributeSet {
+        AttributeSet {
+            function: self.0.clone_ref(py),
+            index: AttributeLoc::Return,
+        }
+    }
+
+    /// The attributes for the function itself.
+    ///
+    /// :type: AttributeDict
+    #[getter]
+    fn func(&self, py: Python) -> AttributeSet {
+        AttributeSet {
+            function: self.0.clone_ref(py),
+            index: AttributeLoc::Function,
+        }
+    }
+}
+
+/// A set of attributes for a specific part of a function.
+#[pyclass]
+pub(crate) struct AttributeSet {
+    function: Py<Function>,
+    index: AttributeLoc,
+}
+
+#[pymethods]
+impl AttributeSet {
+    /// Tests if an attribute is a member of the set.
+    ///
+    /// :param str item: The attribute kind.
+    /// :returns: True if the group has an attribute with the given kind.
+    /// :rtype: bool
+    fn __contains__(&self, py: Python, item: &str) -> bool {
+        unsafe { self.function.borrow(py).get() }
+            .get_string_attribute(self.index, item)
+            .is_some()
+    }
+
+    /// Gets an attribute based on its kind.
+    ///
+    /// :param str key: The attribute kind.
+    /// :returns: The attribute.
+    /// :rtype: Attribute
+    fn __getitem__(&self, py: Python, key: &str) -> PyResult<Attribute> {
+        unsafe { self.function.borrow(py).get() }
+            .get_string_attribute(self.index, key)
+            .map(Attribute)
+            .ok_or_else(|| PyKeyError::new_err(key.to_owned()))
     }
 }
 
