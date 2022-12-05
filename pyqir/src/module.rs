@@ -245,24 +245,6 @@ impl From<Linkage> for inkwell::module::Linkage {
     }
 }
 
-/// An attribute.
-#[pyclass(unsendable)]
-pub(crate) struct Attribute(pub(crate) inkwell::attributes::Attribute);
-
-#[pymethods]
-impl Attribute {
-    /// The value of the attribute as a string.
-    ///
-    /// :type: str
-    #[getter]
-    fn value(&self) -> &str {
-        self.0
-            .get_string_value()
-            .to_str()
-            .expect("Value is not valid UTF-8.")
-    }
-}
-
 /// Module flag behavior choices
 #[pyclass]
 #[derive(Clone)]

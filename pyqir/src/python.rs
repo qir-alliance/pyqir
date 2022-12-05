@@ -8,7 +8,7 @@ use crate::{
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    module::{Attribute, Linkage, Module, ModuleFlagBehavior},
+    module::{Linkage, Module, ModuleFlagBehavior},
     qis::BasicQisBuilder,
     qis::{barrier, swap},
     rt::{array_record_output, initialize, result_record_output, tuple_record_output},
@@ -19,7 +19,8 @@ use crate::{
     values::{
         entry_point, extract_byte_string, global_byte_string, is_entry_point, is_interop_friendly,
         qubit, qubit_id, r#const, required_num_qubits, required_num_results, result, result_id,
-        BasicBlock, Constant, FloatConstant, Function, IntConstant, Value,
+        Attribute, AttributeList, AttributeSet, BasicBlock, Constant, FloatConstant, Function,
+        IntConstant, Value,
     },
 };
 use pyo3::{prelude::*, types::PyDict, wrap_pymodule};
@@ -28,6 +29,8 @@ use pyo3::{prelude::*, types::PyDict, wrap_pymodule};
 fn _native(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<ArrayType>()?;
     m.add_class::<Attribute>()?;
+    m.add_class::<AttributeList>()?;
+    m.add_class::<AttributeSet>()?;
     m.add_class::<BasicBlock>()?;
     m.add_class::<BasicQisBuilder>()?;
     m.add_class::<Builder>()?;
