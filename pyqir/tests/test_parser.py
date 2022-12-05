@@ -186,10 +186,7 @@ def test_parser_internals() -> None:
     assert interop_funcs[0].name == func_name
     assert required_num_qubits(interop_funcs[0]) == 6
 
-    attributes = interop_funcs[0].attributes.func
-    assert "requiredQubits" in attributes
-
-    attribute = attributes["requiredQubits"]
+    attribute = interop_funcs[0].attributes.func["requiredQubits"]
     assert attribute.string_value == "6"
 
     blocks = func.basic_blocks
@@ -261,3 +258,30 @@ def test_parser_internals() -> None:
 
     assert not entry_block.instructions[10].type.is_void
     assert entry_block.instructions[10].name == ""
+
+
+def test_attribute_values() -> None:
+    ir = Path("tests/attributes.ll").read_text()
+    module = Module.from_ir(Context(), ir)
+    attributes = module.functions[0].attributes
+    assert attributes.ret["ret_attr"].string_value == "ret value"
+    assert attributes.param(0)["param0_attr"].string_value == "param0 value"
+    assert attributes.param(2)["param2_attr"].string_value == "param2 value"
+    assert attributes.func["fn_attr"].string_value == "fn value"
+
+
+def test_contains_attribute() -> None:
+    ir = Path("tests/attributes.ll").read_text()
+    module = Module.from_ir(Context(), ir)
+    attributes = module.functions[0].attributes
+    assert "ret_attr" in attributes.ret
+    assert attributes.ret["ret_attr"] is not None
+
+
+def test_not_contains_attribute() -> None:
+    ir = Path("tests/attributes.ll").read_text()
+    module = Module.from_ir(Context(), ir)
+    attributes = module.functions[0].attributes
+    assert "foo" not in attributes.ret
+    with pytest.raises(KeyError):
+        attributes.ret["foo"]
