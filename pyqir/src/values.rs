@@ -445,8 +445,8 @@ impl Function {
 
     /// The attributes for this function.
     #[getter]
-    fn attributes(slf: Py<Function>) -> AttributeIndex {
-        AttributeIndex(slf)
+    fn attributes(slf: Py<Function>) -> AttributeGroup {
+        AttributeGroup(slf)
     }
 }
 
@@ -480,19 +480,19 @@ impl Attribute {
     }
 }
 
-/// An index of every attribute group for a function.
+/// A group of all attributes for a function.
 #[pyclass]
-pub(crate) struct AttributeIndex(Py<Function>);
+pub(crate) struct AttributeGroup(Py<Function>);
 
 #[pymethods]
-impl AttributeIndex {
+impl AttributeGroup {
     /// The attributes for a parameter.
     ///
     /// :param int n: The parameter number, starting from zero.
     /// :returns: The parameter attributes.
-    /// :rtype: AttributeGroup
-    fn param(&self, py: Python, n: u32) -> AttributeGroup {
-        AttributeGroup {
+    /// :rtype: AttributeDict
+    fn param(&self, py: Python, n: u32) -> AttributeDict {
+        AttributeDict {
             function: self.0.clone_ref(py),
             index: AttributeLoc::Param(n),
         }
@@ -500,10 +500,10 @@ impl AttributeIndex {
 
     /// The attributes for the return type.
     ///
-    /// :type: AttributeGroup
+    /// :type: AttributeDict
     #[getter]
-    fn ret(&self, py: Python) -> AttributeGroup {
-        AttributeGroup {
+    fn ret(&self, py: Python) -> AttributeDict {
+        AttributeDict {
             function: self.0.clone_ref(py),
             index: AttributeLoc::Return,
         }
@@ -511,25 +511,25 @@ impl AttributeIndex {
 
     /// The attributes for the function itself.
     ///
-    /// :type: AttributeGroup
+    /// :type: AttributeDict
     #[getter]
-    fn func(&self, py: Python) -> AttributeGroup {
-        AttributeGroup {
+    fn func(&self, py: Python) -> AttributeDict {
+        AttributeDict {
             function: self.0.clone_ref(py),
             index: AttributeLoc::Function,
         }
     }
 }
 
-/// A group of attributes that belong to a specific part of a function.
+/// A group of attributes for a specific part of a function.
 #[pyclass]
-pub(crate) struct AttributeGroup {
+pub(crate) struct AttributeDict {
     function: Py<Function>,
     index: AttributeLoc,
 }
 
 #[pymethods]
-impl AttributeGroup {
+impl AttributeDict {
     /// Tests if an attribute is a member of the group.
     ///
     /// :param str item: The attribute kind.

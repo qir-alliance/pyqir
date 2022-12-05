@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 
 from pyqir import (
-    AttributeIndex,
     BasicBlock,
     Call,
     Constant,

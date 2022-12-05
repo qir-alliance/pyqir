@@ -4,8 +4,8 @@
 from pyqir._native import (
     ArrayType,
     Attribute,
+    AttributeDict,
     AttributeGroup,
-    AttributeIndex,
     BasicBlock,
     BasicQisBuilder,
     Builder,
@@ -53,8 +53,8 @@ from pyqir._simple import SimpleModule
 __all__ = [
     "ArrayType",
     "Attribute",
+    "AttributeDict",
     "AttributeGroup",
-    "AttributeIndex",
     "BasicBlock",
     "BasicQisBuilder",
     "Builder",

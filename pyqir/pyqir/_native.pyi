@@ -25,8 +25,8 @@ class Attribute:
         """The value of this attribute as a string, or `None` if this is not a string attribute."""
         ...
 
-class AttributeGroup:
-    """A group of attributes that belong to a specific part of a function."""
+class AttributeDict:
+    """A group of attributes for a specific part of a function."""
 
     def __contains__(self, item: str) -> bool:
         """
@@ -45,10 +45,10 @@ class AttributeGroup:
         """
         ...
 
-class AttributeIndex:
-    """An index of every attribute group for a function."""
+class AttributeGroup:
+    """A group of all attributes for a function."""
 
-    def param(self, n: int) -> AttributeGroup:
+    def param(self, n: int) -> AttributeDict:
         """
         The attributes for a parameter.
 
@@ -57,11 +57,11 @@ class AttributeIndex:
         """
         ...
     @property
-    def ret(self) -> AttributeGroup:
+    def ret(self) -> AttributeDict:
         """The attributes for the return type."""
         ...
     @property
-    def func(self) -> AttributeGroup:
+    def func(self) -> AttributeDict:
         """The attributes for the function itself."""
         ...
 
@@ -484,7 +484,7 @@ class Function(Constant):
         """The basic blocks in this function."""
         ...
     @property
-    def attributes(self) -> AttributeIndex:
+    def attributes(self) -> AttributeGroup:
         """The attributes for this function."""
         ...
 
