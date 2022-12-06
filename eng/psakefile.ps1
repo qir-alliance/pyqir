@@ -347,13 +347,11 @@ task update-noticefiles {
     # https://github.com/EmbarkStudios/cargo-about
     $config = Join-Path $Root notice.toml
     $template = Join-Path $Root notice.hbs
-    foreach ($project in @($Pyqir, $PyqirParser)) {
-        Invoke-LoggedCommand -workingDirectory $project {
-            $notice = Join-Path $project NOTICE-WHEEL.txt
-            cargo about generate --config $config --all-features --output-file $notice $template
-            $contents = Get-Content -Raw $notice
-            [System.Web.HttpUtility]::HtmlDecode($contents) | Out-File $notice
-        }
+    $notice = Join-Path $Pyqir NOTICE-WHEEL.txt
+    Invoke-LoggedCommand -workingDirectory $Pyqir {
+        cargo about generate --config $config --all-features --output-file $notice $template
+        $contents = Get-Content -Raw $notice
+        [System.Web.HttpUtility]::HtmlDecode($contents) | Out-File $notice
     }
 }
 
