@@ -66,7 +66,7 @@ impl BasicQisBuilder {
     /// :param Value control2: The second control qubit.
     /// :param Value target: The target qubit.
     /// :rtype: None
-    #[pyo3(text_signature = "(self, control, target)")]
+    #[pyo3(text_signature = "(self, control1, control2, target)")]
     fn ccx(&self, py: Python, control1: &Value, control2: &Value, target: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(
