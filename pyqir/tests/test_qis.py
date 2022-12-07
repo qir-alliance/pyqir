@@ -7,7 +7,7 @@ import pytest
 
 import pyqir
 import pyqir.qis
-from pyqir import BasicQisBuilder, Context, SimpleModule, Type, Value
+from pyqir import BasicQisBuilder, Builder, Context, SimpleModule, Type, Value
 
 
 @pytest.mark.parametrize(
@@ -35,15 +35,14 @@ def test_single(
 @pytest.mark.parametrize(
     "name, get_gate",
     [
-        ("swap", lambda _basic: pyqir.qis.swap),
+        ("swap", lambda: pyqir.qis.swap),
     ],
 )
 def test_two_qubit_gates(
-    name: str, get_gate: Callable[[BasicQisBuilder], Callable[[Value, Value], None]]
+    name: str, get_gate: Callable[[], Callable[[Builder, Value, Value], None]],
 ) -> None:
     mod = SimpleModule("test_two_qubit_gates", 2, 0)
-    basic = BasicQisBuilder(mod.builder)
-    get_gate(basic)(mod.builder, mod.qubits[0], mod.qubits[1])
+    get_gate()(mod.builder, mod.qubits[0], mod.qubits[1])
     call = f"call void @__quantum__qis__{name}__body(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*))"
     assert call in mod.ir()
 
