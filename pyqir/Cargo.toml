@@ -1,7 +1,7 @@
 [package]
 authors = ["Microsoft"]
 name = "pyqir"
-version = "0.7.0"
+version = "0.8.0-alpha.1"
 edition = "2021"
 license = "MIT"
 description = "PyQIR parses, generates and evaluates the Quantum Intermediate Representation."
