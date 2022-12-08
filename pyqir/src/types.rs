@@ -324,8 +324,7 @@ impl PointerType {
 pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
     let ty = {
         let context = context.borrow(py);
-        let ty = types::qubit(&context.void_type().get_context()).into();
-        unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
+        unsafe { inkwell::types::PointerType::new(types::qubit(context.get_ref())) }.into()
     };
     unsafe { Type::from_any(py, context, ty) }
 }
@@ -338,7 +337,7 @@ pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject>
 #[pyfunction]
 #[pyo3(text_signature = "(ty)")]
 pub(crate) fn is_qubit_type(ty: &Type) -> bool {
-    types::is_qubit(ty.ty)
+    unsafe { types::is_qubit(ty.ty.get_ref()) }
 }
 
 /// The QIR result type.
@@ -351,8 +350,7 @@ pub(crate) fn is_qubit_type(ty: &Type) -> bool {
 pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
     let ty = {
         let context = context.borrow(py);
-        let ty = types::result(&context.void_type().get_context()).into();
-        unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
+        unsafe { inkwell::types::PointerType::new(types::result(context.get_ref())) }.into()
     };
     unsafe { Type::from_any(py, context, ty) }
 }
@@ -365,7 +363,7 @@ pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject
 #[pyfunction]
 #[pyo3(text_signature = "(ty)")]
 pub(crate) fn is_result_type(ty: &Type) -> bool {
-    types::is_result(ty.ty)
+    unsafe { types::is_result(ty.ty.get_ref()) }
 }
 
 pub(crate) fn basic_to_any(ty: BasicTypeEnum) -> AnyTypeEnum {

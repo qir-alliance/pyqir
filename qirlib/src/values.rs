@@ -25,12 +25,12 @@ pub fn qubit<'ctx>(context: &ContextRef<'ctx>, id: u64) -> PointerValue<'ctx> {
     context
         .i64_type()
         .const_int(id, false)
-        .const_to_pointer(types::qubit(context))
+        .const_to_pointer(unsafe { PointerType::new(types::qubit(context.get_ref())) })
 }
 
 #[must_use]
 pub fn qubit_id(value: AnyValueEnum) -> Option<u64> {
-    if types::is_qubit(value.get_type()) {
+    if unsafe { types::is_qubit(value.get_type().get_ref()) } {
         pointer_to_int(value)
     } else {
         None
@@ -42,12 +42,12 @@ pub fn result<'ctx>(context: &ContextRef<'ctx>, id: u64) -> PointerValue<'ctx> {
     context
         .i64_type()
         .const_int(id, false)
-        .const_to_pointer(types::result(context))
+        .const_to_pointer(unsafe { PointerType::new(types::result(context.get_ref())) })
 }
 
 #[must_use]
 pub fn result_id(value: AnyValueEnum) -> Option<u64> {
-    if types::is_result(value.get_type()) {
+    if unsafe { types::is_result(value.get_type().get_ref()) } {
         pointer_to_int(value)
     } else {
         None

@@ -279,16 +279,13 @@ unsafe fn builder_module(builder: LLVMBuilderRef) -> LLVMModuleRef {
 
 unsafe fn simple_gate(module: LLVMModuleRef, name: &str, functor: Functor) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
-    let ty = function_type(
-        LLVMVoidTypeInContext(context),
-        &mut [types::qubit_unchecked(context)],
-    );
+    let ty = function_type(LLVMVoidTypeInContext(context), &mut [types::qubit(context)]);
     declare(module, name, functor, ty)
 }
 
 unsafe fn controlled_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
-    let qubit = types::qubit_unchecked(context);
+    let qubit = types::qubit(context);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit]);
     declare(module, name, Functor::Body, ty)
 }
@@ -297,10 +294,7 @@ unsafe fn rotation_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let ty = function_type(
         LLVMVoidTypeInContext(context),
-        &mut [
-            LLVMDoubleTypeInContext(context),
-            types::qubit_unchecked(context),
-        ],
+        &mut [LLVMDoubleTypeInContext(context), types::qubit(context)],
     );
     declare(module, name, Functor::Body, ty)
 }
@@ -309,10 +303,7 @@ unsafe fn mz(module: LLVMModuleRef) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let ty = function_type(
         LLVMVoidTypeInContext(context),
-        &mut [
-            types::qubit_unchecked(context),
-            types::result_unchecked(context),
-        ],
+        &mut [types::qubit(context), types::result(context)],
     );
     declare(module, "mz", Functor::Body, ty)
 }
@@ -321,7 +312,7 @@ unsafe fn read_result(module: LLVMModuleRef) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let ty = function_type(
         LLVMInt1TypeInContext(context),
-        &mut [types::result_unchecked(context)],
+        &mut [types::result(context)],
     );
     declare(module, "read_result", Functor::Body, ty)
 }

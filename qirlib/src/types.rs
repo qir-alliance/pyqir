@@ -1,45 +1,32 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::{
-    context::ContextRef,
-    types::{AnyTypeEnum, PointerType},
-    LLVMReference,
-};
 use llvm_sys::{
-    core::{LLVMGetTypeByName2, LLVMPointerType, LLVMStructCreateNamed},
+    core::{
+        LLVMGetElementType, LLVMGetStructName, LLVMGetTypeByName2, LLVMGetTypeKind,
+        LLVMIsOpaqueStruct, LLVMPointerType, LLVMStructCreateNamed,
+    },
     prelude::*,
+    LLVMTypeKind,
 };
 use std::ffi::CStr;
 
 const QUBIT: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"Qubit\0") };
 const RESULT: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"Result\0") };
 
-#[must_use]
-pub fn qubit<'ctx>(context: &ContextRef<'ctx>) -> PointerType<'ctx> {
-    unsafe { PointerType::new(qubit_unchecked(context.get_ref())) }
-}
-
-pub(crate) unsafe fn qubit_unchecked(context: LLVMContextRef) -> LLVMTypeRef {
+pub unsafe fn qubit(context: LLVMContextRef) -> LLVMTypeRef {
     LLVMPointerType(get_or_create_struct(context, QUBIT), 0)
 }
 
-#[must_use]
-pub fn is_qubit(ty: AnyTypeEnum) -> bool {
+pub unsafe fn is_qubit(ty: LLVMTypeRef) -> bool {
     is_opaque_pointer_to(ty, QUBIT)
 }
 
-#[must_use]
-pub fn result<'ctx>(context: &ContextRef<'ctx>) -> PointerType<'ctx> {
-    unsafe { PointerType::new(result_unchecked(context.get_ref())) }
-}
-
-pub(crate) unsafe fn result_unchecked(context: LLVMContextRef) -> LLVMTypeRef {
+pub unsafe fn result(context: LLVMContextRef) -> LLVMTypeRef {
     LLVMPointerType(get_or_create_struct(context, RESULT), 0)
 }
 
-#[must_use]
-pub fn is_result(ty: AnyTypeEnum) -> bool {
+pub unsafe fn is_result(ty: LLVMTypeRef) -> bool {
     is_opaque_pointer_to(ty, RESULT)
 }
 
@@ -53,39 +40,40 @@ unsafe fn get_or_create_struct(context: LLVMContextRef, name: &CStr) -> LLVMType
     }
 }
 
-fn is_opaque_pointer_to(ty: AnyTypeEnum, name: &CStr) -> bool {
-    match ty {
-        AnyTypeEnum::PointerType(p) => match p.get_element_type() {
-            AnyTypeEnum::StructType(s) => s.get_name() == Some(name),
-            _ => false,
-        },
-        _ => false,
+unsafe fn is_opaque_pointer_to(ty: LLVMTypeRef, name: &CStr) -> bool {
+    if LLVMGetTypeKind(ty) == LLVMTypeKind::LLVMPointerTypeKind {
+        let pointee = LLVMGetElementType(ty);
+        LLVMGetTypeKind(pointee) == LLVMTypeKind::LLVMStructTypeKind
+            && LLVMIsOpaqueStruct(ty) != 0
+            && CStr::from_ptr(LLVMGetStructName(pointee)) == name
+    } else {
+        false
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use inkwell::context::Context;
+    use crate::wrappers::Context;
+    use llvm_sys::core::LLVMContextCreate;
 
     #[test]
-    fn qubit_can_be_declared() {
-        let context = Context::create();
-        let context = context.void_type().get_context();
-        verify_opaque_pointer("Qubit", qubit(&context));
+    fn qubit_type() {
+        unsafe {
+            let context = Context::new(LLVMContextCreate());
+            let qubit = qubit(*context);
+            assert!(is_qubit(qubit));
+            assert!(!is_result(qubit));
+        }
     }
 
     #[test]
-    fn result_can_be_declared() {
-        let context = Context::create();
-        let context = context.void_type().get_context();
-        verify_opaque_pointer("Result", result(&context));
-    }
-
-    fn verify_opaque_pointer(name: &str, ty: PointerType) {
-        let pointee = ty.get_element_type().into_struct_type();
-        assert_eq!(pointee.get_name().unwrap().to_str(), Ok(name));
-        assert!(pointee.is_opaque());
-        assert_eq!(pointee.get_field_types(), &[]);
+    fn result_type() {
+        unsafe {
+            let context = Context::new(LLVMContextCreate());
+            let result = result(*context);
+            assert!(is_result(result));
+            assert!(!is_qubit(result));
+        }
     }
 }
