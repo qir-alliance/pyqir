@@ -8,23 +8,34 @@ use crate::{
 };
 use inkwell::{
     types::{AnyTypeEnum, BasicTypeEnum, FunctionType},
-    values::{AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, CallableValue, IntValue},
+    values::{AnyValueEnum, BasicMetadataValueEnum, CallSiteValue, InstructionValue},
     LLVMReference,
+};
+use libc::c_char;
+use llvm_sys::{
+    core::{
+        LLVMBuildAdd, LLVMBuildAnd, LLVMBuildBr, LLVMBuildCall, LLVMBuildICmp, LLVMBuildLShr,
+        LLVMBuildMul, LLVMBuildOr, LLVMBuildRet, LLVMBuildRetVoid, LLVMBuildShl, LLVMBuildSub,
+        LLVMBuildXor, LLVMCreateBuilderInContext, LLVMDisposeBuilder, LLVMPositionBuilderAtEnd,
+    },
+    prelude::*,
 };
 use pyo3::{exceptions::PyValueError, prelude::*};
 use qirlib::builder::try_build_if;
 use std::{
     convert::{Into, TryFrom, TryInto},
-    mem::transmute,
+    ops::Deref,
     result::Result,
 };
+
+const NO_NAME: *const c_char = b"\0".as_ptr().cast();
 
 /// An instruction builder.
 ///
 /// :param Context context: The LLVM context.
 #[pyclass(unsendable)]
 pub(crate) struct Builder {
-    builder: inkwell::builder::Builder<'static>,
+    builder: LLVMBuilderRef,
     owner: Owner,
 }
 
@@ -32,16 +43,7 @@ pub(crate) struct Builder {
 impl Builder {
     #[new]
     pub(crate) fn new(py: Python, context: Py<Context>) -> Self {
-        let builder = {
-            let context = context.borrow(py);
-            let builder = context.create_builder();
-            unsafe {
-                transmute::<inkwell::builder::Builder<'_>, inkwell::builder::Builder<'static>>(
-                    builder,
-                )
-            }
-        };
-
+        let builder = unsafe { LLVMCreateBuilderInContext(context.borrow(py).get_ref()) };
         Self {
             builder,
             owner: context.into(),
@@ -62,7 +64,9 @@ impl Builder {
         }
 
         self.owner = owner.clone_ref(py);
-        self.builder.position_at_end(unsafe { block.get() });
+        unsafe {
+            LLVMPositionBuilderAtEnd(self.builder, block.get().get_ref());
+        }
         Ok(())
     }
 
@@ -75,12 +79,15 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn and_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
-        let value = self.builder.build_and::<IntValue>(
-            unsafe { lhs.get() }.try_into()?,
-            unsafe { rhs.get() }.try_into()?,
-            "",
-        );
-        unsafe { Value::from_any(py, owner, value) }
+        unsafe {
+            let value = LLVMBuildAnd(
+                self.builder,
+                lhs.get().get_ref(),
+                rhs.get().get_ref(),
+                NO_NAME,
+            );
+            Value::from_any(py, owner, AnyValueEnum::new(value))
+        }
     }
 
     /// Inserts a bitwise logical or instruction.
@@ -92,12 +99,15 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn or_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
-        let value = self.builder.build_or::<IntValue>(
-            unsafe { lhs.get() }.try_into()?,
-            unsafe { rhs.get() }.try_into()?,
-            "",
-        );
-        unsafe { Value::from_any(py, owner, value) }
+        unsafe {
+            let value = LLVMBuildOr(
+                self.builder,
+                lhs.get().get_ref(),
+                rhs.get().get_ref(),
+                NO_NAME,
+            );
+            Value::from_any(py, owner, AnyValueEnum::new(value))
+        }
     }
 
     /// Inserts a bitwise logical exclusive or instruction.
@@ -109,12 +119,15 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn xor(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
-        let value = self.builder.build_xor::<IntValue>(
-            unsafe { lhs.get() }.try_into()?,
-            unsafe { rhs.get() }.try_into()?,
-            "",
-        );
-        unsafe { Value::from_any(py, owner, value) }
+        unsafe {
+            let value = LLVMBuildXor(
+                self.builder,
+                lhs.get().get_ref(),
+                rhs.get().get_ref(),
+                NO_NAME,
+            );
+            Value::from_any(py, owner, AnyValueEnum::new(value))
+        }
     }
 
     /// Inserts an addition instruction.
@@ -126,12 +139,15 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn add(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
-        let value = self.builder.build_int_add::<IntValue>(
-            unsafe { lhs.get() }.try_into()?,
-            unsafe { rhs.get() }.try_into()?,
-            "",
-        );
-        unsafe { Value::from_any(py, owner, value) }
+        unsafe {
+            let value = LLVMBuildAdd(
+                self.builder,
+                lhs.get().get_ref(),
+                rhs.get().get_ref(),
+                NO_NAME,
+            );
+            Value::from_any(py, owner, AnyValueEnum::new(value))
+        }
     }
 
     /// Inserts a subtraction instruction.
@@ -143,12 +159,15 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn sub(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
-        let value = self.builder.build_int_sub::<IntValue>(
-            unsafe { lhs.get() }.try_into()?,
-            unsafe { rhs.get() }.try_into()?,
-            "",
-        );
-        unsafe { Value::from_any(py, owner, value) }
+        unsafe {
+            let value = LLVMBuildSub(
+                self.builder,
+                lhs.get().get_ref(),
+                rhs.get().get_ref(),
+                NO_NAME,
+            );
+            Value::from_any(py, owner, AnyValueEnum::new(value))
+        }
     }
 
     /// Inserts a multiplication instruction.
@@ -160,12 +179,15 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn mul(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
-        let value = self.builder.build_int_mul::<IntValue>(
-            unsafe { lhs.get() }.try_into()?,
-            unsafe { rhs.get() }.try_into()?,
-            "",
-        );
-        unsafe { Value::from_any(py, owner, value) }
+        unsafe {
+            let value = LLVMBuildMul(
+                self.builder,
+                lhs.get().get_ref(),
+                rhs.get().get_ref(),
+                NO_NAME,
+            );
+            Value::from_any(py, owner, AnyValueEnum::new(value))
+        }
     }
 
     /// Inserts a shift left instruction.
@@ -177,12 +199,15 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn shl(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
-        let value = self.builder.build_left_shift::<IntValue>(
-            unsafe { lhs.get() }.try_into()?,
-            unsafe { rhs.get() }.try_into()?,
-            "",
-        );
-        unsafe { Value::from_any(py, owner, value) }
+        unsafe {
+            let value = LLVMBuildShl(
+                self.builder,
+                lhs.get().get_ref(),
+                rhs.get().get_ref(),
+                NO_NAME,
+            );
+            Value::from_any(py, owner, AnyValueEnum::new(value))
+        }
     }
 
     /// Inserts a logical (zero fill) shift right instruction.
@@ -194,13 +219,15 @@ impl Builder {
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn lshr(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
-        let value = self.builder.build_right_shift::<IntValue>(
-            unsafe { lhs.get() }.try_into()?,
-            unsafe { rhs.get() }.try_into()?,
-            false,
-            "",
-        );
-        unsafe { Value::from_any(py, owner, value) }
+        unsafe {
+            let value = LLVMBuildLShr(
+                self.builder,
+                lhs.get().get_ref(),
+                rhs.get().get_ref(),
+                NO_NAME,
+            );
+            Value::from_any(py, owner, AnyValueEnum::new(value))
+        }
     }
 
     /// Inserts an integer comparison instruction.
@@ -213,13 +240,16 @@ impl Builder {
     #[pyo3(text_signature = "(self, pred, lhs, rhs)")]
     fn icmp(&self, py: Python, pred: IntPredicate, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
-        let value = self.builder.build_int_compare::<IntValue>(
-            pred.into(),
-            unsafe { lhs.get() }.try_into()?,
-            unsafe { rhs.get() }.try_into()?,
-            "",
-        );
-        unsafe { Value::from_any(py, owner, value) }
+        unsafe {
+            let value = LLVMBuildICmp(
+                self.builder,
+                inkwell::IntPredicate::from(pred).into(),
+                lhs.get().get_ref(),
+                rhs.get().get_ref(),
+                NO_NAME,
+            );
+            Value::from_any(py, owner, AnyValueEnum::new(value))
+        }
     }
 
     /// Inserts a call instruction.
@@ -244,17 +274,24 @@ impl Builder {
             )))?;
         }
 
-        let args = args
+        let mut args = args
             .iter()
             .zip(param_types)
-            .map(|(arg, ty)| unsafe { arg.to_value(ty) }.map_err(Into::into))
+            .map(|(arg, ty)| unsafe { arg.to_value(ty).map(|v| v.get_ref()) }.map_err(Into::into))
             .collect::<PyResult<Vec<_>>>()?;
 
-        let call = self.builder.build_call(callable.value, &args, "");
-        let value = call.try_as_basic_value().left();
-        value
-            .map(|v| unsafe { Value::from_any(py, owner, v) })
-            .transpose()
+        unsafe {
+            let call = CallSiteValue::new(LLVMBuildCall(
+                self.builder,
+                callee.get().get_ref(),
+                args.as_mut_ptr(),
+                args.len().try_into().unwrap(),
+                NO_NAME,
+            ));
+
+            let value = call.try_as_basic_value().left();
+            value.map(|v| Value::from_any(py, owner, v)).transpose()
+        }
     }
 
     /// Inserts a branch conditioned on a boolean.
@@ -279,7 +316,7 @@ impl Builder {
         Owner::merge(py, [&self.owner, cond.owner()])?;
         unsafe {
             try_build_if(
-                self.builder.get_ref(),
+                self.builder,
                 cond.get().get_ref(),
                 || r#true.iter().try_for_each(|f| f.call0().map(|_| ())),
                 || r#false.iter().try_for_each(|f| f.call0().map(|_| ())),
@@ -295,10 +332,10 @@ impl Builder {
     #[pyo3(text_signature = "(dest)")]
     fn br(&self, py: Python, dest: PyRef<BasicBlock>) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, dest.as_ref().owner()])?;
-        let inst = self
-            .builder
-            .build_unconditional_branch(unsafe { dest.get() });
-        unsafe { Value::from_any(py, owner, inst) }
+        unsafe {
+            let inst = LLVMBuildBr(self.builder, dest.get().get_ref());
+            Value::from_any(py, owner, InstructionValue::new(inst))
+        }
     }
 
     /// Inserts a return instruction.
@@ -309,29 +346,43 @@ impl Builder {
     #[pyo3(text_signature = "(value)")]
     fn ret(&self, py: Python, value: Option<&Value>) -> PyResult<PyObject> {
         let (inst, owner) = match value {
-            None => (self.builder.build_return(None), self.owner.clone_ref(py)),
+            None => (
+                unsafe { LLVMBuildRetVoid(self.builder) },
+                self.owner.clone_ref(py),
+            ),
             Some(value) => {
                 let owner = Owner::merge(py, [&self.owner, value.owner()])?;
-                let value = BasicValueEnum::try_from(unsafe { value.get() })?;
-                (self.builder.build_return(Some(&value)), owner)
+                let inst = unsafe { LLVMBuildRet(self.builder, value.get().get_ref()) };
+                (inst, owner)
             }
         };
-        unsafe { Value::from_any(py, owner, inst) }
+        unsafe { Value::from_any(py, owner, InstructionValue::new(inst)) }
     }
 }
 
 impl Builder {
-    pub(crate) unsafe fn get(&self) -> &inkwell::builder::Builder<'static> {
-        &self.builder
-    }
-
     pub(crate) fn owner(&self) -> &Owner {
         &self.owner
     }
 }
 
+impl Deref for Builder {
+    type Target = LLVMBuilderRef;
+
+    fn deref(&self) -> &Self::Target {
+        &self.builder
+    }
+}
+
+impl Drop for Builder {
+    fn drop(&mut self) {
+        unsafe {
+            LLVMDisposeBuilder(self.builder);
+        }
+    }
+}
+
 struct Callable<'ctx> {
-    value: CallableValue<'ctx>,
     ty: FunctionType<'ctx>,
 }
 
@@ -340,15 +391,9 @@ impl<'ctx> TryFrom<AnyValue<'ctx>> for Callable<'ctx> {
 
     fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
         match value {
-            AnyValue::Any(AnyValueEnum::FunctionValue(f)) => Some(Self {
-                value: CallableValue::from(f),
-                ty: f.get_type(),
-            }),
+            AnyValue::Any(AnyValueEnum::FunctionValue(f)) => Some(Self { ty: f.get_type() }),
             AnyValue::Any(AnyValueEnum::PointerValue(p)) => match p.get_type().get_element_type() {
-                AnyTypeEnum::FunctionType(ty) => Some(Self {
-                    value: CallableValue::try_from(p).unwrap(),
-                    ty,
-                }),
+                AnyTypeEnum::FunctionType(ty) => Some(Self { ty }),
                 _ => None,
             },
             _ => None,

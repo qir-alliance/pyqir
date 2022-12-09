@@ -36,11 +36,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), control.owner(), target.owner()])?;
         unsafe {
-            qis::build_cx(
-                builder.get().get_ref(),
-                control.get().get_ref(),
-                target.get().get_ref(),
-            );
+            qis::build_cx(**builder, control.get().get_ref(), target.get().get_ref());
         }
         Ok(())
     }
@@ -55,11 +51,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), control.owner(), target.owner()])?;
         unsafe {
-            qis::build_cz(
-                builder.get().get_ref(),
-                control.get().get_ref(),
-                target.get().get_ref(),
-            );
+            qis::build_cz(**builder, control.get().get_ref(), target.get().get_ref());
         }
         Ok(())
     }
@@ -73,7 +65,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe {
-            qis::build_h(builder.get().get_ref(), qubit.get().get_ref());
+            qis::build_h(**builder, qubit.get().get_ref());
         }
         Ok(())
     }
@@ -88,11 +80,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner(), result.owner()])?;
         unsafe {
-            qis::build_mz(
-                builder.get().get_ref(),
-                qubit.get().get_ref(),
-                result.get().get_ref(),
-            );
+            qis::build_mz(**builder, qubit.get().get_ref(), result.get().get_ref());
         }
         Ok(())
     }
@@ -106,7 +94,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe {
-            qis::build_reset(builder.get().get_ref(), qubit.get().get_ref());
+            qis::build_reset(**builder, qubit.get().get_ref());
         }
         Ok(())
     }
@@ -130,7 +118,7 @@ impl BasicQisBuilder {
         let context = context.borrow(py);
         unsafe {
             qis::build_rx(
-                builder.get().get_ref(),
+                **builder,
                 theta.to_float(&context)?.get_ref(),
                 qubit.get().get_ref(),
             );
@@ -158,7 +146,7 @@ impl BasicQisBuilder {
         let context = context.borrow(py);
         unsafe {
             qis::build_ry(
-                builder.get().get_ref(),
+                **builder,
                 theta.to_float(&context)?.get_ref(),
                 qubit.get().get_ref(),
             );
@@ -186,7 +174,7 @@ impl BasicQisBuilder {
         let context = context.borrow(py);
         unsafe {
             qis::build_rz(
-                builder.get().get_ref(),
+                **builder,
                 theta.to_float(&context)?.get_ref(),
                 qubit.get().get_ref(),
             );
@@ -204,7 +192,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe {
-            qis::build_s(builder.get().get_ref(), qubit.get().get_ref());
+            qis::build_s(**builder, qubit.get().get_ref());
         }
         Ok(())
     }
@@ -218,7 +206,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe {
-            qis::build_s_adj(builder.get().get_ref(), qubit.get().get_ref());
+            qis::build_s_adj(**builder, qubit.get().get_ref());
         }
         Ok(())
     }
@@ -232,7 +220,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe {
-            qis::build_t(builder.get().get_ref(), qubit.get().get_ref());
+            qis::build_t(**builder, qubit.get().get_ref());
         }
         Ok(())
     }
@@ -246,7 +234,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe {
-            qis::build_t_adj(builder.get().get_ref(), qubit.get().get_ref());
+            qis::build_t_adj(**builder, qubit.get().get_ref());
         }
         Ok(())
     }
@@ -260,7 +248,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe {
-            qis::build_x(builder.get().get_ref(), qubit.get().get_ref());
+            qis::build_x(**builder, qubit.get().get_ref());
         }
         Ok(())
     }
@@ -274,7 +262,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe {
-            qis::build_y(builder.get().get_ref(), qubit.get().get_ref());
+            qis::build_y(**builder, qubit.get().get_ref());
         }
         Ok(())
     }
@@ -288,7 +276,7 @@ impl BasicQisBuilder {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
         unsafe {
-            qis::build_z(builder.get().get_ref(), qubit.get().get_ref());
+            qis::build_z(**builder, qubit.get().get_ref());
         }
         Ok(())
     }
@@ -317,7 +305,7 @@ impl BasicQisBuilder {
         Owner::merge(py, [builder.owner(), cond.owner()])?;
         unsafe {
             qis::try_build_if_result(
-                builder.get().get_ref(),
+                **builder,
                 cond.get().get_ref(),
                 || one.iter().try_for_each(|f| f.call0().map(|_| ())),
                 || zero.iter().try_for_each(|f| f.call0().map(|_| ())),
