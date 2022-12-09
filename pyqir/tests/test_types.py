@@ -54,8 +54,8 @@ def test_pointer() -> None:
 
 
 def test_void_pointer() -> None:
-    with pytest.raises(ValueError):
-        PointerType(Type.void(Context()))
+    voidp = PointerType(Type.void(Context()))
+    assert voidp.pointee.is_void
 
 
 def test_qubit() -> None:

@@ -4,7 +4,6 @@
 use crate::{
     context::Context,
     instructions::IntPredicate,
-    types,
     values::{AnyValue, BasicBlock, Literal, Owner, Value},
 };
 use inkwell::{
@@ -375,10 +374,18 @@ impl Argument<'_> {
     unsafe fn to_value(&self, ty: BasicTypeEnum<'static>) -> PyResult<BasicMetadataValueEnum> {
         match self {
             Argument::Value(v) => v.get().try_into().map_err(Into::into),
-            Argument::Literal(l) => l
-                .to_value(types::basic_to_any(ty))?
-                .try_into()
-                .map_err(Into::into),
+            Argument::Literal(l) => l.to_value(basic_to_any(ty))?.try_into().map_err(Into::into),
         }
+    }
+}
+
+fn basic_to_any(ty: BasicTypeEnum) -> AnyTypeEnum {
+    match ty {
+        BasicTypeEnum::ArrayType(a) => a.into(),
+        BasicTypeEnum::FloatType(f) => f.into(),
+        BasicTypeEnum::IntType(i) => i.into(),
+        BasicTypeEnum::PointerType(p) => p.into(),
+        BasicTypeEnum::StructType(s) => s.into(),
+        BasicTypeEnum::VectorType(v) => v.into(),
     }
 }

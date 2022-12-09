@@ -58,7 +58,7 @@ impl Value {
     /// :type: Type
     #[getter]
     fn r#type(&self, py: Python) -> PyResult<PyObject> {
-        unsafe { Type::from_any(py, self.owner.context(py), self.value.ty()) }
+        unsafe { Type::from_ptr(py, self.owner.context(py), self.value.ty().get_ref()) }
     }
 
     /// The name of this value or the empty string if this value is anonymous.
@@ -300,7 +300,7 @@ impl Constant {
     #[staticmethod]
     #[pyo3(text_signature = "(ty)")]
     fn null(py: Python, ty: &Type) -> PyResult<PyObject> {
-        let value: AnyValueEnum = match unsafe { ty.get() } {
+        let value: AnyValueEnum = match unsafe { AnyTypeEnum::new(**ty) } {
             AnyTypeEnum::ArrayType(a) => Ok(a.const_zero().into()),
             AnyTypeEnum::FloatType(f) => Ok(f.const_zero().into()),
             AnyTypeEnum::IntType(i) => Ok(i.const_zero().into()),
@@ -407,7 +407,7 @@ impl Function {
 
         let value = unsafe { module.borrow(py).get() }.add_function(
             name,
-            unsafe { ty.get() },
+            unsafe { inkwell::types::FunctionType::new(**ty.into_super()) },
             Some(linkage.into()),
         );
 
@@ -856,7 +856,8 @@ impl Literal<'_> {
 #[pyo3(text_signature = "(ty, value)")]
 pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObject> {
     let owner = ty.context().clone_ref(py).into();
-    unsafe { Value::from_any(py, owner, value.to_value(ty.get())?) }
+    let ty = unsafe { AnyTypeEnum::new(**ty) };
+    unsafe { Value::from_any(py, owner, value.to_value(ty)?) }
 }
 
 /// Creates a static qubit value.
