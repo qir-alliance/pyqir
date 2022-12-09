@@ -39,7 +39,8 @@ def test_single(
     ],
 )
 def test_two_qubit_gates(
-    name: str, get_gate: Callable[[], Callable[[Builder, Value, Value], None]],
+    name: str,
+    get_gate: Callable[[], Callable[[Builder, Value, Value], None]],
 ) -> None:
     mod = SimpleModule("test_two_qubit_gates", 2, 0)
     get_gate()(mod.builder, mod.qubits[0], mod.qubits[1])
