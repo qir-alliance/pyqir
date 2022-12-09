@@ -350,11 +350,16 @@ unsafe fn function_type(ret: LLVMTypeRef, params: &mut [LLVMTypeRef]) -> LLVMTyp
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        tests::assert_reference_ir,
-        values::{qubit, result},
-    };
-    use inkwell::context::Context;
+    use crate::{tests::assert_reference_ir, values};
+    use inkwell::context::{Context, ContextRef};
+
+    fn qubit<'ctx>(context: &ContextRef<'ctx>, id: u64) -> PointerValue<'ctx> {
+        unsafe { PointerValue::new(values::qubit(context.get_ref(), id)) }
+    }
+
+    fn result<'ctx>(context: &ContextRef<'ctx>, id: u64) -> PointerValue<'ctx> {
+        unsafe { PointerValue::new(values::result(context.get_ref(), id)) }
+    }
 
     #[test]
     #[should_panic(expected = "The builder's position has not been set.")]

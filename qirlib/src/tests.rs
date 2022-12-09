@@ -2,9 +2,11 @@
 // Licensed under the MIT License.
 
 use crate::values;
-use inkwell::{builder::Builder, context::Context, support::LLVMString};
+use inkwell::{
+    builder::Builder, context::Context, support::LLVMString, values::FunctionValue, LLVMReference,
+};
 use normalize_line_endings::normalized;
-use std::{env, fs, path::PathBuf};
+use std::{env, ffi::CStr, fs, path::PathBuf};
 
 /// Compares generated IR against reference files in the "resources/tests" folder. If changes
 /// to code generation break the tests:
@@ -54,8 +56,15 @@ fn build_ir(
 ) -> Result<LLVMString, LLVMString> {
     let context = Context::create();
     let module = context.create_module(name);
-    let entry_point =
-        values::entry_point(&module, "main", required_num_qubits, required_num_results);
+    let entry_point = unsafe {
+        FunctionValue::new(values::entry_point(
+            module.get_ref(),
+            CStr::from_bytes_with_nul_unchecked(b"main\0"),
+            required_num_qubits,
+            required_num_results,
+        ))
+    }
+    .unwrap();
 
     let builder = context.create_builder();
     builder.position_at_end(context.append_basic_block(entry_point, ""));

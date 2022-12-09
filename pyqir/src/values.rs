@@ -37,7 +37,7 @@ use qirlib::values;
 use std::{
     borrow::Borrow,
     convert::{Into, TryFrom, TryInto},
-    ffi::CStr,
+    ffi::{CStr, CString},
     fmt::{self, Display, Formatter},
     mem::transmute,
     ops::Deref,
@@ -870,8 +870,7 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObjec
 pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
     let value = {
         let context = context.borrow(py);
-        let value = values::qubit(&context.void_type().get_context(), id);
-        unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
+        unsafe { PointerValue::new(values::qubit(context.get_ref(), id)) }
     };
     unsafe { Value::from_any(py, Owner::Context(context), value) }
 }
@@ -884,7 +883,7 @@ pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObj
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
-    values::qubit_id(unsafe { value.get() }.try_into().ok()?)
+    unsafe { values::qubit_id(value.get().get_ref()) }
 }
 
 /// Creates a static result value.
@@ -898,8 +897,7 @@ pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
 pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
     let value = {
         let context = context.borrow(py);
-        let value = values::result(&context.void_type().get_context(), id);
-        unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
+        unsafe { PointerValue::new(values::result(context.get_ref(), id)) }
     };
     unsafe { Value::from_any(py, Owner::Context(context), value) }
 }
@@ -912,7 +910,7 @@ pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyOb
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn result_id(value: &Value) -> Option<u64> {
-    values::result_id(unsafe { value.get() }.try_into().ok()?)
+    unsafe { values::result_id(value.get().get_ref()) }
 }
 
 /// Creates an entry point.
@@ -932,12 +930,16 @@ pub(crate) fn entry_point(
     required_num_qubits: u64,
     required_num_results: u64,
 ) -> PyResult<PyObject> {
-    let entry_point = values::entry_point(
-        unsafe { module.borrow(py).get() },
-        name,
-        required_num_qubits,
-        required_num_results,
-    );
+    let name = CString::new(name).unwrap();
+    let entry_point = unsafe {
+        FunctionValue::new(values::entry_point(
+            module.borrow(py).get().get_ref(),
+            name.as_c_str(),
+            required_num_qubits,
+            required_num_results,
+        ))
+    }
+    .unwrap();
     unsafe { Value::from_any(py, Owner::Module(module), entry_point) }
 }
 
@@ -949,7 +951,7 @@ pub(crate) fn entry_point(
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn is_entry_point(function: &Function) -> bool {
-    values::is_entry_point(unsafe { function.get() })
+    unsafe { values::is_entry_point(function.get().get_ref()) }
 }
 
 /// Whether the function is interop-friendly.
@@ -960,7 +962,7 @@ pub(crate) fn is_entry_point(function: &Function) -> bool {
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn is_interop_friendly(function: &Function) -> bool {
-    values::is_interop_friendly(unsafe { function.get() })
+    unsafe { values::is_interop_friendly(function.get().get_ref()) }
 }
 
 /// If the function declares a required number of qubits, extracts it.
@@ -971,7 +973,7 @@ pub(crate) fn is_interop_friendly(function: &Function) -> bool {
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
-    values::required_num_qubits(unsafe { function.get() })
+    unsafe { values::required_num_qubits(function.get().get_ref()) }
 }
 
 /// If the function declares a required number of results, extracts it.
@@ -982,7 +984,7 @@ pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
-    values::required_num_results(unsafe { function.get() })
+    unsafe { values::required_num_results(function.get().get_ref()) }
 }
 
 /// Creates a global null-terminated byte string constant in a module.
@@ -994,7 +996,7 @@ pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
 #[pyfunction]
 #[pyo3(text_signature = "(module, value)")]
 pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> PyResult<PyObject> {
-    let string = values::global_string(unsafe { module.get() }, value);
+    let string = unsafe { PointerValue::new(values::global_string(module.get().get_ref(), value)) };
     unsafe { Value::from_any(py, module.context().clone_ref(py).into(), string) }
 }
 
@@ -1006,6 +1008,6 @@ pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> P
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn extract_byte_string<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
-    let string = values::extract_string(unsafe { value.get() }.try_into().ok()?)?;
-    Some(PyBytes::new(py, string))
+    let string = unsafe { values::extract_string(value.get().get_ref())? };
+    Some(PyBytes::new(py, &string))
 }
