@@ -259,9 +259,8 @@ unsafe fn function_type(ret: LLVMTypeRef, params: &mut [LLVMTypeRef]) -> LLVMTyp
 mod tests {
     use super::*;
     use crate::{
-        tests::assert_reference_ir,
+        tests::{assert_reference_ir, Builder, Context},
         values::{qubit, result},
-        wrappers::{Builder, Context},
     };
     use llvm_sys::{
         core::{

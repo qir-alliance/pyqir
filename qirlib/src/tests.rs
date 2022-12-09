@@ -1,16 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{
-    values,
-    wrappers::{Builder, Message},
-};
+use crate::values;
+use libc::c_char;
 use llvm_sys::{
     analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
     core::{
-        LLVMAppendBasicBlockInContext, LLVMBuildRetVoid, LLVMContextCreate,
-        LLVMCreateBuilderInContext, LLVMModuleCreateWithNameInContext, LLVMPositionBuilderAtEnd,
-        LLVMPrintModuleToString,
+        LLVMAppendBasicBlockInContext, LLVMBuildRetVoid, LLVMContextCreate, LLVMContextDispose,
+        LLVMCreateBuilderInContext, LLVMDisposeBuilder, LLVMDisposeMessage,
+        LLVMModuleCreateWithNameInContext, LLVMPositionBuilderAtEnd, LLVMPrintModuleToString,
     },
     prelude::*,
 };
@@ -18,12 +16,91 @@ use normalize_line_endings::normalized;
 use std::{
     env,
     ffi::{CStr, CString},
+    fmt::{self, Debug, Formatter},
     fs,
+    ops::Deref,
     path::PathBuf,
     ptr::null_mut,
 };
 
 const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
+pub(crate) struct Context(LLVMContextRef);
+
+impl Context {
+    pub(crate) unsafe fn new(context: LLVMContextRef) -> Self {
+        Self(context)
+    }
+}
+
+impl Deref for Context {
+    type Target = LLVMContextRef;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Drop for Context {
+    fn drop(&mut self) {
+        unsafe {
+            LLVMContextDispose(self.0);
+        }
+    }
+}
+
+pub(crate) struct Message(*mut c_char);
+
+impl Message {
+    pub(crate) unsafe fn new(message: *mut c_char) -> Self {
+        Self(message)
+    }
+}
+
+impl Debug for Message {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{:?}", unsafe { CStr::from_ptr(self.0) })
+    }
+}
+
+impl Deref for Message {
+    type Target = CStr;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { CStr::from_ptr(self.0) }
+    }
+}
+
+impl Drop for Message {
+    fn drop(&mut self) {
+        unsafe {
+            LLVMDisposeMessage(self.0);
+        }
+    }
+}
+
+pub(crate) struct Builder(LLVMBuilderRef);
+
+impl Builder {
+    pub(crate) unsafe fn new(builder: LLVMBuilderRef) -> Self {
+        Self(builder)
+    }
+}
+
+impl Deref for Builder {
+    type Target = LLVMBuilderRef;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Drop for Builder {
+    fn drop(&mut self) {
+        unsafe {
+            LLVMDisposeBuilder(self.0);
+        }
+    }
+}
 
 /// Compares generated IR against reference files in the "resources/tests" folder. If changes
 /// to code generation break the tests:

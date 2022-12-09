@@ -54,7 +54,7 @@ unsafe fn is_opaque_pointer_to(ty: LLVMTypeRef, name: &CStr) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::wrappers::Context;
+    use crate::tests::Context;
     use llvm_sys::core::LLVMContextCreate;
 
     #[test]

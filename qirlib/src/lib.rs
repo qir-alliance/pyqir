@@ -29,5 +29,3 @@ mod tests;
 pub mod types;
 #[cfg(not(feature = "no-llvm-linking"))]
 pub mod values;
-#[cfg(not(feature = "no-llvm-linking"))]
-pub mod wrappers;
