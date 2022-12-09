@@ -6,10 +6,12 @@
 use crate::{context::Context, values::Value};
 use inkwell::{
     memory_buffer::MemoryBuffer,
-    module::FlagBehavior,
     values::{AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum},
+    LLVMReference,
 };
+use llvm_sys::core::LLVMValueAsMetadata;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
+use qirlib::extensions::{fixed_LLVMAddModuleFlag, LLVMModFlagBehavior};
 use std::mem::transmute;
 
 /// A module is a collection of global values.
@@ -145,8 +147,19 @@ impl Module {
         metadata: &Value,
     ) -> PyResult<()> {
         let value = BasicMetadataValueEnum::try_from(unsafe { metadata.get() })?;
-        self.module
-            .add_metadata_flag(id, behavior.into(), value.into_metadata_value());
+        let md = unsafe { LLVMValueAsMetadata(value.into_metadata_value().get_ref()) };
+
+        unsafe {
+            fixed_LLVMAddModuleFlag(
+                self.module.get_ref(),
+                behavior
+                    .try_into()
+                    .expect("Could not convert behavior for the current version of LLVM"),
+                id.as_ptr() as *mut ::libc::c_char,
+                id.len(),
+                md,
+            );
+        }
         Ok(())
     }
 
@@ -165,7 +178,19 @@ impl Module {
         flag: &Value,
     ) -> PyResult<()> {
         let value = BasicValueEnum::try_from(unsafe { flag.get() })?;
-        self.module.add_basic_value_flag(id, behavior.into(), value);
+        let md = unsafe { LLVMValueAsMetadata(value.get_ref()) };
+
+        unsafe {
+            fixed_LLVMAddModuleFlag(
+                self.module.get_ref(),
+                behavior
+                    .try_into()
+                    .expect("Could not convert behavior for the current version of LLVM"),
+                id.as_ptr() as *mut ::libc::c_char,
+                id.len(),
+                md,
+            );
+        }
         Ok(())
     }
 
@@ -280,30 +305,48 @@ pub(crate) enum ModuleFlagBehavior {
     Append,
     #[pyo3(name = "APPEND_UNIQUE")]
     AppendUnique,
+    #[pyo3(name = "MAX")]
+    Max,
+    #[pyo3(name = "MIN")]
+    Min,
 }
 
-impl From<FlagBehavior> for ModuleFlagBehavior {
-    fn from(flag: FlagBehavior) -> Self {
+impl From<LLVMModFlagBehavior> for ModuleFlagBehavior {
+    fn from(flag: LLVMModFlagBehavior) -> Self {
         match flag {
-            FlagBehavior::Error => ModuleFlagBehavior::Error,
-            FlagBehavior::Warning => ModuleFlagBehavior::Warning,
-            FlagBehavior::Require => ModuleFlagBehavior::Require,
-            FlagBehavior::Override => ModuleFlagBehavior::Override,
-            FlagBehavior::Append => ModuleFlagBehavior::Append,
-            FlagBehavior::AppendUnique => ModuleFlagBehavior::AppendUnique,
+            LLVMModFlagBehavior::Error => ModuleFlagBehavior::Error,
+            LLVMModFlagBehavior::Warning => ModuleFlagBehavior::Warning,
+            LLVMModFlagBehavior::Require => ModuleFlagBehavior::Require,
+            LLVMModFlagBehavior::Override => ModuleFlagBehavior::Override,
+            LLVMModFlagBehavior::Append => ModuleFlagBehavior::Append,
+            LLVMModFlagBehavior::AppendUnique => ModuleFlagBehavior::AppendUnique,
+            LLVMModFlagBehavior::Max => ModuleFlagBehavior::Max,
+            #[cfg(any(feature = "llvm14-0"))]
+            LLVMModFlagBehavior::Min => ModuleFlagBehavior::Min,
         }
     }
 }
 
-impl From<ModuleFlagBehavior> for FlagBehavior {
-    fn from(flag: ModuleFlagBehavior) -> Self {
+impl TryFrom<ModuleFlagBehavior> for LLVMModFlagBehavior {
+    type Error = PyErr;
+
+    fn try_from(
+        flag: ModuleFlagBehavior,
+    ) -> Result<Self, <LLVMModFlagBehavior as TryFrom<ModuleFlagBehavior>>::Error> {
         match flag {
-            ModuleFlagBehavior::Error => FlagBehavior::Error,
-            ModuleFlagBehavior::Warning => FlagBehavior::Warning,
-            ModuleFlagBehavior::Require => FlagBehavior::Require,
-            ModuleFlagBehavior::Override => FlagBehavior::Override,
-            ModuleFlagBehavior::Append => FlagBehavior::Append,
-            ModuleFlagBehavior::AppendUnique => FlagBehavior::AppendUnique,
+            ModuleFlagBehavior::Error => Ok(LLVMModFlagBehavior::Error),
+            ModuleFlagBehavior::Warning => Ok(LLVMModFlagBehavior::Warning),
+            ModuleFlagBehavior::Require => Ok(LLVMModFlagBehavior::Require),
+            ModuleFlagBehavior::Override => Ok(LLVMModFlagBehavior::Override),
+            ModuleFlagBehavior::Append => Ok(LLVMModFlagBehavior::Append),
+            ModuleFlagBehavior::AppendUnique => Ok(LLVMModFlagBehavior::AppendUnique),
+            ModuleFlagBehavior::Max => Ok(LLVMModFlagBehavior::Max),
+            #[cfg(any(feature = "llvm14-0"))]
+            ModuleFlagBehavior::Min => LLVMModFlagBehavior::Min,
+            #[cfg(not(feature = "llvm14-0"))]
+            _ => Err(PyValueError::new_err(
+                "Min is not supported for this version of LLVM",
+            )),
         }
     }
 }

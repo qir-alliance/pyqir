@@ -13,6 +13,7 @@ from pyqir import (
     FunctionType,
     Linkage,
     Module,
+    ModuleFlagBehavior,
     Value,
 )
 
@@ -51,6 +52,23 @@ class SimpleModule:
 
         entry_point = pyqir.entry_point(self._module, "main", num_qubits, num_results)
         self._builder.insert_at_end(BasicBlock(context, "entry", entry_point))
+
+        i1 = pyqir.IntType(context, 1)
+        i32 = pyqir.IntType(context, 32)
+        self._module.add_value_flag(
+            ModuleFlagBehavior.ERROR, "qir_major_version", pyqir.const(i32, 1)
+        )
+        self._module.add_value_flag(
+            ModuleFlagBehavior.MAX, "qir_minor_version", pyqir.const(i32, 0)
+        )
+        self._module.add_value_flag(
+            ModuleFlagBehavior.ERROR, "dynamic_qubit_management", pyqir.const(i1, False)
+        )
+        self._module.add_value_flag(
+            ModuleFlagBehavior.ERROR,
+            "dynamic_result_management",
+            pyqir.const(i1, False),
+        )
 
     @property
     def context(self) -> Context:

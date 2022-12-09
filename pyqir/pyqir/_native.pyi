@@ -720,6 +720,8 @@ class ModuleFlagBehavior(Enum):
     OVERRIDE: ModuleFlagBehavior
     APPEND: ModuleFlagBehavior
     APPEND_UNIQUE: ModuleFlagBehavior
+    MAX: ModuleFlagBehavior
+    # MIN: ModuleFlagBehavior
 
 class Opcode(Enum):
     """An instruction opcode."""
@@ -909,7 +911,12 @@ def const(ty: Type, value: Union[bool, int, float]) -> Constant:
     ...
 
 def entry_point(
-    module: Module, name: str, required_num_qubits: int, required_num_results: int
+    module: Module,
+    name: str,
+    required_num_qubits: int,
+    required_num_results: int,
+    qir_profiles: str = "custom",
+    output_labeling_schema: str = "custom",
 ) -> Function:
     """
     Creates an entry point.
@@ -917,7 +924,9 @@ def entry_point(
     :param module: The parent module.
     :param name: The entry point name.
     :param required_num_qubits: The number of qubits required by the entry point.
-    :param required_num_results: The number of results required by the entry point.
+    :param required_num_results: The maximal number of measurement results that need to be stored while executing the entry point function
+    :param qir_profiles: Value identifying the profile the entry point has been compiled for. Use base_profile when QIR is compliant.
+    :param output_labeling_schema: An arbitrary string value that identifies the schema used by a compiler frontend that produced the IR to label the recorded output
     :returns: An entry point.
     """
     ...

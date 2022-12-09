@@ -96,6 +96,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // llvm-sys components
     println!("cargo:rerun-if-changed=external.rs");
     println!("cargo:rerun-if-changed=target.c");
+    println!("cargo:rerun-if-changed=extensions.cpp");
 
     // Download vars passed to cmake
     println!("cargo:rerun-if-env-changed=QIRLIB_DOWNLOAD_LLVM");
@@ -130,6 +131,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("LLVM_SYS_{{}}_PREFIX will provide the LLVM linking");
     } else {
         println!("No LLVM linking");
+    }
+    if !cfg!(feature = "no-llvm-linking") {
+        let build_dir = get_build_dir()?;
+        compile_extensions(&build_dir);
     }
 
     Ok(())
@@ -251,6 +256,15 @@ fn compile_target_wrappers(build_dir: &Path) {
     Build::new().file(target_c).compile("targetwrappers");
 }
 
+fn compile_extensions(build_dir: &Path) {
+    let extensions_c = build_dir.join("extensions.cpp");
+    env::set_var("CXXFLAGS", llvm_sys::get_llvm_cxxflags());
+    Build::new()
+        .file(extensions_c)
+        .cpp(true)
+        .compile("llvmcppextensions");
+}
+
 fn get_package_file_name() -> Result<String, Box<dyn Error>> {
     let mut base_name = get_package_name()?;
 
@@ -313,14 +327,30 @@ fn get_llvm_install_dir() -> PathBuf {
 }
 
 fn locate_llvm_config() -> Option<PathBuf> {
-    let dir = get_llvm_install_dir();
-    let prefix = dir.join("bin");
-    let binary_name = llvm_config_name();
-    let binary_path = prefix.join(binary_name);
-    if binary_path.as_path().exists() {
-        Some(binary_path)
+    let major = if cfg!(feature = "llvm11-0") {
+        "11"
+    } else if cfg!(feature = "llvm12-0") {
+        "12"
+    } else if cfg!(feature = "llvm13-0") {
+        "13"
+    } else if cfg!(feature = "llvm14-0") {
+        "14"
     } else {
-        None
+        "unknown"
+    };
+    if let Ok(path) = env::var(format!("DEP_LLVM_{major}_CONFIG_PATH")) {
+        Some(PathBuf::from(path))
+    } else {
+        let dir = get_llvm_install_dir();
+        println!("Looking in {:?}", dir);
+        let prefix = dir.join("bin");
+        let binary_name = llvm_config_name();
+        let binary_path = prefix.join(binary_name);
+        if binary_path.as_path().exists() {
+            Some(binary_path)
+        } else {
+            None
+        }
     }
 }
 

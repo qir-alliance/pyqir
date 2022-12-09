@@ -79,6 +79,22 @@ pub mod llvm_sys {
             .join(" ")
     }
 
+    pub fn get_llvm_cxxflags() -> String {
+        let output = llvm_config("--cxxflags");
+        if target_env_is("msvc") {
+            // MSVC doesn't accept -W... options, so don't try to strip them and
+            // possibly strip something that should be retained. Also do nothing if
+            // the user requests it.
+            return output;
+        }
+
+        llvm_config("--cxxflags")
+            .split(&[' ', '\n'][..])
+            .filter(|word| !word.starts_with("-W"))
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
     pub fn target_env_is(name: &str) -> bool {
         match env::var_os("CARGO_CFG_TARGET_ENV") {
             Some(s) => s == name,
