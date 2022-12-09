@@ -129,11 +129,11 @@ impl Module {
     pub(crate) fn context(&self) -> &Py<Context> {
         &self.context
     }
-    
+
     /// Adds a metadata flag to the llvm.module.flags metadata
-    /// 
+    ///
     /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
-    /// 
+    ///
     /// :param behavior: flag specifying the behavior when two (or more) modules are merged together
     /// :param id: metadata string that is a unique ID for the metadata.
     /// :param metadata: metadata value of the flag
@@ -165,15 +165,14 @@ impl Module {
         flag: &Value,
     ) -> PyResult<()> {
         let value = BasicValueEnum::try_from(unsafe { flag.get() })?;
-        self.module
-            .add_basic_value_flag(id, behavior.into(), value);
+        self.module.add_basic_value_flag(id, behavior.into(), value);
         Ok(())
     }
 
     /// Gets the flag value from the llvm.module.flags metadata for a given id
     ///
     /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
-    /// 
+    ///
     /// :param id: metadata string that is a unique ID for the metadata.
     /// :returns: value of the flag if found, otherwise None
     #[pyo3(text_signature = "(id)")]

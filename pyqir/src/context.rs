@@ -20,7 +20,7 @@ impl Context {
     }
 
     /// Creates a metadata string
-    /// 
+    ///
     /// :param string: the value of the metadata string to create
     /// :returns: metadata string value of the supplied string
     #[pyo3(text_signature = "(string)")]
