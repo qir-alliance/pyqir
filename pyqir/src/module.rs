@@ -129,44 +129,64 @@ impl Module {
     pub(crate) fn context(&self) -> &Py<Context> {
         &self.context
     }
+    
+    /// Adds a metadata flag to the llvm.module.flags metadata
+    /// 
+    /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
+    /// 
+    /// :param behavior: flag specifying the behavior when two (or more) modules are merged together
+    /// :param id: metadata string that is a unique ID for the metadata.
+    /// :param metadata: metadata value of the flag
+    #[pyo3(text_signature = "(behavior, id, metadata)")]
+    pub(crate) fn add_metadata_flag(
+        &self,
+        behavior: ModuleFlagBehavior,
+        id: &str,
+        metadata: &Value,
+    ) -> PyResult<()> {
+        let value = BasicMetadataValueEnum::try_from(unsafe { metadata.get() })?;
+        self.module
+            .add_metadata_flag(id, behavior.into(), value.into_metadata_value());
+        Ok(())
+    }
 
-    #[pyo3(text_signature = "(key)")]
-    pub(crate) fn get_flag(slf: Py<Module>, py: Python, key: &str) -> Option<PyObject> {
-        let flag = slf.borrow(py).module.get_flag(key);
-        let owner = slf.into();
+    /// Adds a value flag to the llvm.module.flags metadata
+    ///
+    /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
+    ///
+    /// :param behavior: flag specifying the behavior when two (or more) modules are merged together
+    /// :param id: metadata string that is a unique ID for the metadata.
+    /// :param value: value of the flag
+    #[pyo3(text_signature = "(behavior, id, flag)")]
+    pub(crate) fn add_value_flag(
+        &self,
+        behavior: ModuleFlagBehavior,
+        id: &str,
+        flag: &Value,
+    ) -> PyResult<()> {
+        let value = BasicValueEnum::try_from(unsafe { flag.get() })?;
+        self.module
+            .add_basic_value_flag(id, behavior.into(), value);
+        Ok(())
+    }
+
+    /// Gets the flag value from the llvm.module.flags metadata for a given id
+    ///
+    /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
+    /// 
+    /// :param id: metadata string that is a unique ID for the metadata.
+    /// :returns: value of the flag if found, otherwise None
+    #[pyo3(text_signature = "(id)")]
+    pub(crate) fn get_flag(slf: Py<Module>, py: Python, id: &str) -> Option<PyObject> {
+        let flag = slf.borrow(py).module.get_flag(id);
         if let Some(flag) = flag {
             let ave = AnyValueEnum::MetadataValue(flag);
+            let owner = slf.into();
             let value = unsafe { Value::from_any(py, owner, ave) };
             value.ok()
         } else {
             None
         }
-    }
-
-    #[pyo3(text_signature = "(key, behavior, flag)")]
-    pub(crate) fn add_metadata_flag(
-        &self,
-        key: &str,
-        behavior: ModuleFlagBehavior,
-        flag: &Value,
-    ) -> PyResult<()> {
-        let value = BasicMetadataValueEnum::try_from(unsafe { flag.get() })?;
-        self.module
-            .add_metadata_flag(key, behavior.into(), value.into_metadata_value());
-        Ok(())
-    }
-
-    #[pyo3(text_signature = "(key, behavior, flag)")]
-    pub(crate) fn add_value_flag(
-        &self,
-        key: &str,
-        behavior: ModuleFlagBehavior,
-        flag: &Value,
-    ) -> PyResult<()> {
-        let value = BasicValueEnum::try_from(unsafe { flag.get() })?;
-        self.module
-            .add_basic_value_flag(key, behavior.into(), value);
-        Ok(())
     }
 
     /// Verifies that this module is valid.

@@ -431,6 +431,14 @@ class Context:
     def __init__(self) -> None:
         """Initializes a context."""
         ...
+    def create_metadata_string(self, string: str) -> Value:
+        """
+        Creates a metadata string
+
+        :param string: the value of the metadata string to create
+        :returns: metadata string value of the supplied string
+        """
+        ...
 
 class FCmp(Instruction):
     """A floating-point comparison instruction."""
@@ -655,6 +663,42 @@ class Module:
     @property
     def context(self) -> Context:
         """The LLVM context."""
+        ...
+    def add_metadata_flag(
+        self, name: str, behavior: ModuleFlagBehavior, value: Value
+    ) -> None:
+        """
+        Adds a metadata flag to the llvm.module.flags metadata
+
+        See https://llvm.org/docs/LangRef.html#module-flags-metadata
+
+        :param behavior: flag specifying the behavior when two (or more) modules are merged together
+        :param id: metadata string that is a unique ID for the metadata.
+        :param metadata: metadata value of the flag
+        """
+        ...
+    def add_value_flag(
+        self, name: str, behavior: ModuleFlagBehavior, value: Value
+    ) -> None:
+        """
+        Adds a value flag to the llvm.module.flags metadata
+
+        See https://llvm.org/docs/LangRef.html#module-flags-metadata
+
+        :param behavior: flag specifying the behavior when two (or more) modules are merged together
+        :param id: metadata string that is a unique ID for the metadata.
+        :param value: value of the flag
+        """
+        ...
+    def get_flag(self, name: str) -> Optional[Value]:
+        """
+        Gets the flag value from the llvm.module.flags metadata for a given id
+
+        See https://llvm.org/docs/LangRef.html#module-flags-metadata
+
+        :param id: metadata string that is a unique ID for the metadata.
+        :returns: value of the flag if found, otherwise None
+        """
         ...
     def verify(self) -> Optional[str]:
         """
@@ -1006,11 +1050,3 @@ def result_type(context: Context) -> Type:
     :returns: The result type.
     """
     ...
-
-def get_flag(module: Module, name: str) -> Optional[Value]: ...
-def add_value_flag(
-    module: Module, name: str, behavior: ModuleFlagBehavior, value: Value
-) -> Optional[str]: ...
-def add_metadata_flag(
-    module: Module, name: str, behavior: ModuleFlagBehavior, value: Value
-) -> Optional[str]: ...
