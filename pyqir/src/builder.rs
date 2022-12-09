@@ -10,9 +10,10 @@ use crate::{
 use inkwell::{
     types::{AnyTypeEnum, BasicTypeEnum, FunctionType},
     values::{AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, CallableValue, IntValue},
+    LLVMReference,
 };
 use pyo3::{exceptions::PyValueError, prelude::*};
-use qirlib::builder::Ext;
+use qirlib::builder::try_build_if;
 use std::{
     convert::{Into, TryFrom, TryInto},
     mem::transmute,
@@ -277,11 +278,14 @@ impl Builder {
         r#false: Option<&PyAny>,
     ) -> PyResult<()> {
         Owner::merge(py, [&self.owner, cond.owner()])?;
-        self.builder.try_build_if(
-            unsafe { cond.get() }.try_into()?,
-            || r#true.iter().try_for_each(|f| f.call0().map(|_| ())),
-            || r#false.iter().try_for_each(|f| f.call0().map(|_| ())),
-        )
+        unsafe {
+            try_build_if(
+                self.builder.get_ref(),
+                cond.get().get_ref(),
+                || r#true.iter().try_for_each(|f| f.call0().map(|_| ())),
+                || r#false.iter().try_for_each(|f| f.call0().map(|_| ())),
+            )
+        }
     }
 
     /// Inserts an unconditional branch instruction.

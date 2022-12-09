@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    builder::{build_if_unchecked, try_build_if_unchecked},
+    builder::{build_if, try_build_if},
     types,
 };
 use inkwell::{
@@ -228,7 +228,7 @@ impl<'ctx> BuilderExt<'ctx> for Builder<'ctx> {
     ) {
         unsafe {
             let bool_cond = build_read_result(self.get_ref(), cond.get_ref());
-            build_if_unchecked(self, bool_cond, build_one, build_zero);
+            build_if(self.get_ref(), bool_cond, build_one, build_zero);
         }
     }
 
@@ -240,7 +240,7 @@ impl<'ctx> BuilderExt<'ctx> for Builder<'ctx> {
     ) -> Result<(), E> {
         unsafe {
             let bool_cond = build_read_result(self.get_ref(), cond.get_ref());
-            try_build_if_unchecked(self, bool_cond, build_one, build_zero)
+            try_build_if(self.get_ref(), bool_cond, build_one, build_zero)
         }
     }
 }

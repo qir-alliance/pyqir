@@ -1,45 +1,23 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use inkwell::{basic_block::BasicBlock, builder::Builder, values::IntValue, LLVMReference};
-use llvm_sys::{core::LLVMBuildCondBr, prelude::*};
-use std::convert::Infallible;
+use llvm_sys::{
+    core::{
+        LLVMAppendBasicBlockInContext, LLVMBuildBr, LLVMBuildCondBr, LLVMGetBasicBlockParent,
+        LLVMGetInsertBlock, LLVMGetTypeContext, LLVMPositionBuilderAtEnd, LLVMTypeOf,
+    },
+    prelude::*,
+};
+use std::{convert::Infallible, ptr::NonNull};
 
-pub trait Ext {
-    fn build_if(&self, cond: IntValue, build_true: impl FnOnce(), build_false: impl FnOnce());
-
-    #[allow(clippy::missing_errors_doc)]
-    fn try_build_if<E>(
-        &self,
-        cond: IntValue,
-        build_true: impl FnOnce() -> Result<(), E>,
-        build_false: impl FnOnce() -> Result<(), E>,
-    ) -> Result<(), E>;
-}
-
-impl Ext for Builder<'_> {
-    fn build_if(&self, cond: IntValue, build_true: impl FnOnce(), build_false: impl FnOnce()) {
-        unsafe { build_if_unchecked(self, cond.get_ref(), build_true, build_false) }
-    }
-
-    fn try_build_if<E>(
-        &self,
-        cond: IntValue,
-        build_true: impl FnOnce() -> Result<(), E>,
-        build_false: impl FnOnce() -> Result<(), E>,
-    ) -> Result<(), E> {
-        unsafe { try_build_if_unchecked(self, cond.get_ref(), build_true, build_false) }
-    }
-}
-
-pub(crate) unsafe fn build_if_unchecked(
-    builder: &Builder,
+pub unsafe fn build_if(
+    builder: LLVMBuilderRef,
     cond: LLVMValueRef,
     build_true: impl FnOnce(),
     build_false: impl FnOnce(),
 ) {
     let always_ok: Result<(), Infallible> = Ok(());
-    try_build_if_unchecked(
+    try_build_if(
         builder,
         cond,
         || {
@@ -54,36 +32,32 @@ pub(crate) unsafe fn build_if_unchecked(
     .unwrap();
 }
 
-pub(crate) unsafe fn try_build_if_unchecked<E>(
-    builder: &Builder,
+pub unsafe fn try_build_if<E>(
+    builder: LLVMBuilderRef,
     cond: LLVMValueRef,
     build_true: impl FnOnce() -> Result<(), E>,
     build_false: impl FnOnce() -> Result<(), E>,
 ) -> Result<(), E> {
-    let function = builder
-        .get_insert_block()
-        .and_then(BasicBlock::get_parent)
-        .expect("The builder's position has not been set.");
+    let function = NonNull::new(LLVMGetInsertBlock(builder))
+        .and_then(|b| NonNull::new(LLVMGetBasicBlockParent(b.as_ptr())))
+        .expect("The builder's position has not been set.")
+        .as_ptr();
 
-    let context = function.get_type().get_context();
-    let then_block = context.append_basic_block(function, "then");
-    let else_block = context.append_basic_block(function, "else");
-    LLVMBuildCondBr(
-        builder.get_ref(),
-        cond,
-        then_block.get_ref(),
-        else_block.get_ref(),
-    );
-    let continue_block = context.append_basic_block(function, "continue");
+    let context = LLVMGetTypeContext(LLVMTypeOf(function));
+    let then_block = LLVMAppendBasicBlockInContext(context, function, b"then\0".as_ptr().cast());
+    let else_block = LLVMAppendBasicBlockInContext(context, function, b"else\0".as_ptr().cast());
+    LLVMBuildCondBr(builder, cond, then_block, else_block);
+    let continue_block =
+        LLVMAppendBasicBlockInContext(context, function, b"continue\0".as_ptr().cast());
 
-    builder.position_at_end(then_block);
+    LLVMPositionBuilderAtEnd(builder, then_block);
     build_true()?;
-    builder.build_unconditional_branch(continue_block);
+    LLVMBuildBr(builder, continue_block);
 
-    builder.position_at_end(else_block);
+    LLVMPositionBuilderAtEnd(builder, else_block);
     build_false()?;
-    builder.build_unconditional_branch(continue_block);
+    LLVMBuildBr(builder, continue_block);
 
-    builder.position_at_end(continue_block);
+    LLVMPositionBuilderAtEnd(builder, continue_block);
     Ok(())
 }
