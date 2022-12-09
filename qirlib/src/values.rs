@@ -202,22 +202,22 @@ mod tests {
     use crate::tests::assert_reference_ir;
 
     #[test]
-    fn zero_required_qubits_results() -> Result<(), String> {
-        assert_reference_ir("module/zero_required_qubits_results", 0, 0, |_| ())
+    fn zero_required_qubits_results() {
+        assert_reference_ir("module/zero_required_qubits_results", 0, 0, |_| ());
     }
 
     #[test]
-    fn one_required_qubit() -> Result<(), String> {
-        assert_reference_ir("module/one_required_qubit", 1, 0, |_| ())
+    fn one_required_qubit() {
+        assert_reference_ir("module/one_required_qubit", 1, 0, |_| ());
     }
 
     #[test]
-    fn one_required_result() -> Result<(), String> {
-        assert_reference_ir("module/one_required_result", 0, 1, |_| ())
+    fn one_required_result() {
+        assert_reference_ir("module/one_required_result", 0, 1, |_| ());
     }
 
     #[test]
-    fn many_required_qubits_results() -> Result<(), String> {
-        assert_reference_ir("module/many_required_qubits_results", 5, 7, |_| ())
+    fn many_required_qubits_results() {
+        assert_reference_ir("module/many_required_qubits_results", 5, 7, |_| ());
     }
 }

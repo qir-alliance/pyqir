@@ -1,12 +1,29 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::values;
-use inkwell::{
-    builder::Builder, context::Context, support::LLVMString, values::FunctionValue, LLVMReference,
+use crate::{
+    values,
+    wrappers::{Builder, Message},
+};
+use llvm_sys::{
+    analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
+    core::{
+        LLVMAppendBasicBlockInContext, LLVMBuildRetVoid, LLVMContextCreate,
+        LLVMCreateBuilderInContext, LLVMModuleCreateWithNameInContext, LLVMPositionBuilderAtEnd,
+        LLVMPrintModuleToString,
+    },
+    prelude::*,
 };
 use normalize_line_endings::normalized;
-use std::{env, ffi::CStr, fs, path::PathBuf};
+use std::{
+    env,
+    ffi::{CStr, CString},
+    fs,
+    path::PathBuf,
+    ptr::null_mut,
+};
+
+const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
 
 /// Compares generated IR against reference files in the "resources/tests" folder. If changes
 /// to code generation break the tests:
@@ -19,12 +36,11 @@ pub(crate) fn assert_reference_ir(
     id: &str,
     required_num_qubits: u64,
     required_num_results: u64,
-    build: impl for<'ctx> Fn(&Builder<'ctx>),
-) -> Result<(), String> {
-    const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
+    build: impl Fn(LLVMBuilderRef),
+) {
     let (prefix, name) = split_id(id);
-    let actual_ir = build_ir(name, required_num_qubits, required_num_results, build)
-        .map_err(|e| e.to_string())?;
+    let c_name = &CString::new(name).unwrap();
+    let actual_ir = build_ir(c_name, required_num_qubits, required_num_results, build).unwrap();
 
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("resources");
@@ -34,45 +50,51 @@ pub(crate) fn assert_reference_ir(
     path.set_extension("ll");
 
     if env::var(PYQIR_TEST_SAVE_REFERENCES).is_ok() {
-        fs::create_dir_all(path.parent().unwrap()).map_err(|e| e.to_string())?;
-        fs::write(&path, actual_ir.to_bytes()).map_err(|e| e.to_string())?;
-        Err(format!(
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(&path, actual_ir.to_bytes()).unwrap();
+        panic!(
             "Saved reference IR. Run again without the {} environment variable.",
             PYQIR_TEST_SAVE_REFERENCES
-        ))
+        )
     } else {
-        let contents = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        let contents = fs::read_to_string(&path).unwrap();
         let expected_ir: String = normalized(contents.chars()).collect();
-        assert_eq!(expected_ir, actual_ir.to_str().map_err(|e| e.to_string())?);
-        Ok(())
+        assert_eq!(expected_ir, actual_ir.to_str().unwrap());
     }
 }
 
 fn build_ir(
-    name: &str,
+    name: &CStr,
     required_num_qubits: u64,
     required_num_results: u64,
-    build: impl for<'ctx> Fn(&Builder<'ctx>),
-) -> Result<LLVMString, LLVMString> {
-    let context = Context::create();
-    let module = context.create_module(name);
-    let entry_point = unsafe {
-        FunctionValue::new(values::entry_point(
-            module.get_ref(),
+    build: impl Fn(LLVMBuilderRef),
+) -> Result<Message, Message> {
+    unsafe {
+        let context = LLVMContextCreate();
+        let module = LLVMModuleCreateWithNameInContext(name.as_ptr(), context);
+        let entry_point = values::entry_point(
+            module,
             CStr::from_bytes_with_nul_unchecked(b"main\0"),
             required_num_qubits,
             required_num_results,
-        ))
+        );
+
+        let builder = Builder::new(LLVMCreateBuilderInContext(context));
+        LLVMPositionBuilderAtEnd(
+            *builder,
+            LLVMAppendBasicBlockInContext(context, entry_point, b"\0".as_ptr().cast()),
+        );
+        build(*builder);
+        LLVMBuildRetVoid(*builder);
+
+        let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
+        let mut error = null_mut();
+        if LLVMVerifyModule(module, action, &mut error) == 0 {
+            Ok(Message::new(LLVMPrintModuleToString(module)))
+        } else {
+            Err(Message::new(error))
+        }
     }
-    .unwrap();
-
-    let builder = context.create_builder();
-    builder.position_at_end(context.append_basic_block(entry_point, ""));
-    build(&builder);
-    builder.build_return(None);
-
-    module.verify()?;
-    Ok(module.print_to_string())
 }
 
 fn split_id(id: &str) -> (Vec<&str>, &str) {
