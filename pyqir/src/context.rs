@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#![allow(clippy::used_underscore_binding)]
+
 use inkwell::values::AnyValueEnum;
 use pyo3::prelude::*;
 use std::ops::Deref;
