@@ -126,7 +126,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("Linking llvm");
         link_llvm();
         let build_dir = get_build_dir()?;
-        compile_target_wrappers(&build_dir);
+        compile_target_wrappers(&build_dir)?;
     } else if cfg!(feature = "external-llvm-linking") {
         println!("LLVM_SYS_{{}}_PREFIX will provide the LLVM linking");
     } else {
@@ -134,7 +134,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     if !cfg!(feature = "no-llvm-linking") {
         let build_dir = get_build_dir()?;
-        compile_extensions(&build_dir);
+        compile_extensions(&build_dir)?;
     }
 
     Ok(())
@@ -250,19 +250,21 @@ fn link_llvm() {
     }
 }
 
-fn compile_target_wrappers(build_dir: &Path) {
-    let target_c = build_dir.join("target.c");
+fn compile_target_wrappers(build_dir: &Path) -> Result<(), Box<dyn Error>> {
+    let target_c = build_dir.join("target.c").canonicalize()?;
     env::set_var("CFLAGS", llvm_sys::get_llvm_cflags());
     Build::new().file(target_c).compile("targetwrappers");
+    Ok(())
 }
 
-fn compile_extensions(build_dir: &Path) {
-    let extensions_c = build_dir.join("extensions.cpp");
+fn compile_extensions(build_dir: &Path) -> Result<(), Box<dyn Error>> {
+    let extensions_c = build_dir.join("extensions.cpp").canonicalize()?;
     env::set_var("CXXFLAGS", llvm_sys::get_llvm_cxxflags());
     Build::new()
         .file(extensions_c)
         .cpp(true)
         .compile("llvmcppextensions");
+    Ok(())
 }
 
 fn get_package_file_name() -> Result<String, Box<dyn Error>> {
