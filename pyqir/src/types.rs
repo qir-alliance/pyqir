@@ -5,17 +5,8 @@
 
 use crate::{context::Context, values::Owner};
 use inkwell::LLVMReference;
-use llvm_sys::{
-    core::{
-        LLVMCountParamTypes, LLVMCountStructElementTypes, LLVMDoubleTypeInContext,
-        LLVMFunctionType, LLVMGetArrayLength, LLVMGetElementType, LLVMGetIntTypeWidth,
-        LLVMGetParamTypes, LLVMGetPointerAddressSpace, LLVMGetReturnType,
-        LLVMGetStructElementTypes, LLVMGetStructName, LLVMGetTypeKind, LLVMIntTypeInContext,
-        LLVMPointerType, LLVMVoidTypeInContext,
-    },
-    prelude::*,
-    LLVMTypeKind,
-};
+#[allow(clippy::wildcard_imports)]
+use llvm_sys::{core::*, prelude::*, LLVMTypeKind};
 use pyo3::{conversion::ToPyObject, prelude::*};
 use qirlib::types;
 use std::{ffi::CStr, ops::Deref};

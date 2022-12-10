@@ -4,22 +4,14 @@
 #![allow(clippy::used_underscore_binding)]
 
 use crate::values::{BasicBlock, Owner, Value};
-use either::Either::{Left, Right};
-use inkwell::{
-    values::InstructionOpcode,
-    values::{InstructionValue, PhiValue},
-    LLVMReference,
-};
-use llvm_sys::core::LLVMIsATerminatorInst;
+#[allow(clippy::wildcard_imports)]
+use llvm_sys::{core::*, prelude::*, LLVMIntPredicate, LLVMOpcode, LLVMRealPredicate};
 use pyo3::{conversion::ToPyObject, prelude::*};
-use std::{
-    convert::{Into, TryInto},
-    mem::transmute,
-};
+use std::convert::Into;
 
 /// An instruction.
-#[pyclass(extends = Value, subclass, unsendable)]
-pub(crate) struct Instruction(InstructionValue<'static>);
+#[pyclass(extends = Value, subclass)]
+pub(crate) struct Instruction;
 
 #[pymethods]
 impl Instruction {
@@ -27,8 +19,8 @@ impl Instruction {
     ///
     /// :type: Opcode
     #[getter]
-    fn opcode(&self) -> Opcode {
-        self.0.get_opcode().into()
+    fn opcode(slf: PyRef<Self>) -> Opcode {
+        unsafe { LLVMGetInstructionOpcode(**slf.into_super()) }.into()
     }
 
     /// The operands to the instruction.
@@ -36,13 +28,12 @@ impl Instruction {
     /// :type: typing.List[Value]
     #[getter]
     fn operands(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        let owner = slf.as_ref().owner();
-        (0..slf.0.get_num_operands())
-            .map(|i| match slf.0.get_operand(i).unwrap() {
-                Left(value) => unsafe { Value::from_any(py, owner.clone_ref(py), value) },
-                Right(block) => unsafe { Value::from_any(py, owner.clone_ref(py), block) },
-            })
-            .collect()
+        let slf = slf.into_super();
+        unsafe {
+            (0..u32::try_from(LLVMGetNumOperands(**slf)).unwrap())
+                .map(|i| Value::from_ptr(py, slf.owner().clone_ref(py), LLVMGetOperand(**slf, i)))
+                .collect()
+        }
     }
 
     /// The basic blocks that are successors to this instruction. If this is not a terminator, the
@@ -51,7 +42,7 @@ impl Instruction {
     /// :type: typing.List[BasicBlock]
     #[getter]
     fn successors(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        if unsafe { LLVMIsATerminatorInst(slf.0.get_ref()) }.is_null() {
+        if unsafe { LLVMIsATerminatorInst(**slf.as_ref()) }.is_null() {
             Ok(Vec::new())
         } else {
             // then_some is stabilized in Rust 1.62.
@@ -73,28 +64,26 @@ impl Instruction {
     /// .. warning:: Using this instruction after erasing it is undefined behavior.
     ///
     /// :rtype: None
-    fn erase(&self) {
-        self.0.erase_from_basic_block();
+    fn erase(slf: PyRef<Self>) {
+        unsafe {
+            LLVMInstructionEraseFromParent(**slf.into_super());
+        }
     }
 }
 
 impl Instruction {
-    pub(crate) unsafe fn from_inst(
+    pub(crate) unsafe fn from_ptr(
         py: Python,
         owner: Owner,
-        inst: InstructionValue,
+        value: LLVMValueRef,
     ) -> PyResult<PyObject> {
-        let inst = transmute::<InstructionValue<'_>, InstructionValue<'static>>(inst);
-        let base = Value::new(owner, inst.into()).add_subclass(Self(inst));
-        match inst.get_opcode() {
-            InstructionOpcode::Switch => Ok(Py::new(py, base.add_subclass(Switch))?.to_object(py)),
-            InstructionOpcode::ICmp => Ok(Py::new(py, base.add_subclass(ICmp))?.to_object(py)),
-            InstructionOpcode::FCmp => Ok(Py::new(py, base.add_subclass(FCmp))?.to_object(py)),
-            InstructionOpcode::Call => Ok(Py::new(py, base.add_subclass(Call))?.to_object(py)),
-            InstructionOpcode::Phi => {
-                let phi = Phi(inst.try_into().unwrap());
-                Ok(Py::new(py, base.add_subclass(phi))?.to_object(py))
-            }
+        let base = Value::new(owner, value).add_subclass(Self);
+        match LLVMGetInstructionOpcode(value) {
+            LLVMOpcode::LLVMSwitch => Ok(Py::new(py, base.add_subclass(Switch))?.to_object(py)),
+            LLVMOpcode::LLVMICmp => Ok(Py::new(py, base.add_subclass(ICmp))?.to_object(py)),
+            LLVMOpcode::LLVMFCmp => Ok(Py::new(py, base.add_subclass(FCmp))?.to_object(py)),
+            LLVMOpcode::LLVMCall => Ok(Py::new(py, base.add_subclass(Call))?.to_object(py)),
+            LLVMOpcode::LLVMPHI => Ok(Py::new(py, base.add_subclass(Phi))?.to_object(py)),
             _ => Ok(Py::new(py, base)?.to_object(py)),
         }
     }
@@ -239,76 +228,76 @@ pub(crate) enum Opcode {
     ZExt,
 }
 
-impl From<InstructionOpcode> for Opcode {
-    fn from(opcode: InstructionOpcode) -> Self {
+impl From<LLVMOpcode> for Opcode {
+    fn from(opcode: LLVMOpcode) -> Self {
         match opcode {
-            InstructionOpcode::Add => Self::Add,
-            InstructionOpcode::AddrSpaceCast => Self::AddrSpaceCast,
-            InstructionOpcode::Alloca => Self::Alloca,
-            InstructionOpcode::And => Self::And,
-            InstructionOpcode::AShr => Self::AShr,
-            InstructionOpcode::AtomicCmpXchg => Self::AtomicCmpXchg,
-            InstructionOpcode::AtomicRMW => Self::AtomicRmw,
-            InstructionOpcode::BitCast => Self::BitCast,
-            InstructionOpcode::Br => Self::Br,
-            InstructionOpcode::Call => Self::Call,
-            InstructionOpcode::CallBr => Self::CallBr,
-            InstructionOpcode::CatchPad => Self::CatchPad,
-            InstructionOpcode::CatchRet => Self::CatchRet,
-            InstructionOpcode::CatchSwitch => Self::CatchSwitch,
-            InstructionOpcode::CleanupPad => Self::CleanupPad,
-            InstructionOpcode::CleanupRet => Self::CleanupRet,
-            InstructionOpcode::ExtractElement => Self::ExtractElement,
-            InstructionOpcode::ExtractValue => Self::ExtractValue,
-            InstructionOpcode::FNeg => Self::FNeg,
-            InstructionOpcode::FAdd => Self::FAdd,
-            InstructionOpcode::FCmp => Self::FCmp,
-            InstructionOpcode::FDiv => Self::FDiv,
-            InstructionOpcode::Fence => Self::Fence,
-            InstructionOpcode::FMul => Self::FMul,
-            InstructionOpcode::FPExt => Self::FPExt,
-            InstructionOpcode::FPToSI => Self::FPToSI,
-            InstructionOpcode::FPToUI => Self::FPToUI,
-            InstructionOpcode::FPTrunc => Self::FPTrunc,
-            InstructionOpcode::Freeze => Self::Freeze,
-            InstructionOpcode::FRem => Self::FRem,
-            InstructionOpcode::FSub => Self::FSub,
-            InstructionOpcode::GetElementPtr => Self::GetElementPtr,
-            InstructionOpcode::ICmp => Self::ICmp,
-            InstructionOpcode::IndirectBr => Self::IndirectBr,
-            InstructionOpcode::InsertElement => Self::InsertElement,
-            InstructionOpcode::InsertValue => Self::InsertValue,
-            InstructionOpcode::IntToPtr => Self::IntToPtr,
-            InstructionOpcode::Invoke => Self::Invoke,
-            InstructionOpcode::LandingPad => Self::LandingPad,
-            InstructionOpcode::Load => Self::Load,
-            InstructionOpcode::LShr => Self::LShr,
-            InstructionOpcode::Mul => Self::Mul,
-            InstructionOpcode::Or => Self::Or,
-            InstructionOpcode::Phi => Self::Phi,
-            InstructionOpcode::PtrToInt => Self::PtrToInt,
-            InstructionOpcode::Resume => Self::Resume,
-            InstructionOpcode::Return => Self::Ret,
-            InstructionOpcode::SDiv => Self::SDiv,
-            InstructionOpcode::Select => Self::Select,
-            InstructionOpcode::SExt => Self::SExt,
-            InstructionOpcode::Shl => Self::Shl,
-            InstructionOpcode::ShuffleVector => Self::ShuffleVector,
-            InstructionOpcode::SIToFP => Self::SIToFP,
-            InstructionOpcode::SRem => Self::SRem,
-            InstructionOpcode::Store => Self::Store,
-            InstructionOpcode::Sub => Self::Sub,
-            InstructionOpcode::Switch => Self::Switch,
-            InstructionOpcode::Trunc => Self::Trunc,
-            InstructionOpcode::UDiv => Self::UDiv,
-            InstructionOpcode::UIToFP => Self::UIToFP,
-            InstructionOpcode::Unreachable => Self::Unreachable,
-            InstructionOpcode::URem => Self::URem,
-            InstructionOpcode::UserOp1 => Self::UserOp1,
-            InstructionOpcode::UserOp2 => Self::UserOp2,
-            InstructionOpcode::VAArg => Self::VaArg,
-            InstructionOpcode::Xor => Self::Xor,
-            InstructionOpcode::ZExt => Self::ZExt,
+            LLVMOpcode::LLVMAdd => Self::Add,
+            LLVMOpcode::LLVMAddrSpaceCast => Self::AddrSpaceCast,
+            LLVMOpcode::LLVMAlloca => Self::Alloca,
+            LLVMOpcode::LLVMAnd => Self::And,
+            LLVMOpcode::LLVMAShr => Self::AShr,
+            LLVMOpcode::LLVMAtomicCmpXchg => Self::AtomicCmpXchg,
+            LLVMOpcode::LLVMAtomicRMW => Self::AtomicRmw,
+            LLVMOpcode::LLVMBitCast => Self::BitCast,
+            LLVMOpcode::LLVMBr => Self::Br,
+            LLVMOpcode::LLVMCall => Self::Call,
+            LLVMOpcode::LLVMCallBr => Self::CallBr,
+            LLVMOpcode::LLVMCatchPad => Self::CatchPad,
+            LLVMOpcode::LLVMCatchRet => Self::CatchRet,
+            LLVMOpcode::LLVMCatchSwitch => Self::CatchSwitch,
+            LLVMOpcode::LLVMCleanupPad => Self::CleanupPad,
+            LLVMOpcode::LLVMCleanupRet => Self::CleanupRet,
+            LLVMOpcode::LLVMExtractElement => Self::ExtractElement,
+            LLVMOpcode::LLVMExtractValue => Self::ExtractValue,
+            LLVMOpcode::LLVMFNeg => Self::FNeg,
+            LLVMOpcode::LLVMFAdd => Self::FAdd,
+            LLVMOpcode::LLVMFCmp => Self::FCmp,
+            LLVMOpcode::LLVMFDiv => Self::FDiv,
+            LLVMOpcode::LLVMFence => Self::Fence,
+            LLVMOpcode::LLVMFMul => Self::FMul,
+            LLVMOpcode::LLVMFPExt => Self::FPExt,
+            LLVMOpcode::LLVMFPToSI => Self::FPToSI,
+            LLVMOpcode::LLVMFPToUI => Self::FPToUI,
+            LLVMOpcode::LLVMFPTrunc => Self::FPTrunc,
+            LLVMOpcode::LLVMFreeze => Self::Freeze,
+            LLVMOpcode::LLVMFRem => Self::FRem,
+            LLVMOpcode::LLVMFSub => Self::FSub,
+            LLVMOpcode::LLVMGetElementPtr => Self::GetElementPtr,
+            LLVMOpcode::LLVMICmp => Self::ICmp,
+            LLVMOpcode::LLVMIndirectBr => Self::IndirectBr,
+            LLVMOpcode::LLVMInsertElement => Self::InsertElement,
+            LLVMOpcode::LLVMInsertValue => Self::InsertValue,
+            LLVMOpcode::LLVMIntToPtr => Self::IntToPtr,
+            LLVMOpcode::LLVMInvoke => Self::Invoke,
+            LLVMOpcode::LLVMLandingPad => Self::LandingPad,
+            LLVMOpcode::LLVMLoad => Self::Load,
+            LLVMOpcode::LLVMLShr => Self::LShr,
+            LLVMOpcode::LLVMMul => Self::Mul,
+            LLVMOpcode::LLVMOr => Self::Or,
+            LLVMOpcode::LLVMPHI => Self::Phi,
+            LLVMOpcode::LLVMPtrToInt => Self::PtrToInt,
+            LLVMOpcode::LLVMResume => Self::Resume,
+            LLVMOpcode::LLVMRet => Self::Ret,
+            LLVMOpcode::LLVMSDiv => Self::SDiv,
+            LLVMOpcode::LLVMSelect => Self::Select,
+            LLVMOpcode::LLVMSExt => Self::SExt,
+            LLVMOpcode::LLVMShl => Self::Shl,
+            LLVMOpcode::LLVMShuffleVector => Self::ShuffleVector,
+            LLVMOpcode::LLVMSIToFP => Self::SIToFP,
+            LLVMOpcode::LLVMSRem => Self::SRem,
+            LLVMOpcode::LLVMStore => Self::Store,
+            LLVMOpcode::LLVMSub => Self::Sub,
+            LLVMOpcode::LLVMSwitch => Self::Switch,
+            LLVMOpcode::LLVMTrunc => Self::Trunc,
+            LLVMOpcode::LLVMUDiv => Self::UDiv,
+            LLVMOpcode::LLVMUIToFP => Self::UIToFP,
+            LLVMOpcode::LLVMUnreachable => Self::Unreachable,
+            LLVMOpcode::LLVMURem => Self::URem,
+            LLVMOpcode::LLVMUserOp1 => Self::UserOp1,
+            LLVMOpcode::LLVMUserOp2 => Self::UserOp2,
+            LLVMOpcode::LLVMVAArg => Self::VaArg,
+            LLVMOpcode::LLVMXor => Self::Xor,
+            LLVMOpcode::LLVMZExt => Self::ZExt,
         }
     }
 }
@@ -324,10 +313,8 @@ impl Switch {
     /// :type: Value
     #[getter]
     fn cond(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
-        let inst = slf.into_super();
-        let cond = inst.0.get_operand(0).unwrap().left().unwrap();
-        let owner = inst.as_ref().owner().clone_ref(py);
-        unsafe { Value::from_any(py, owner, cond) }
+        let slf = slf.into_super().into_super();
+        unsafe { Value::from_ptr(py, slf.owner().clone_ref(py), LLVMGetOperand(**slf, 0)) }
     }
 
     /// The default successor block if none of the cases match.
@@ -335,10 +322,8 @@ impl Switch {
     /// :type: BasicBlock
     #[getter]
     fn default(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
-        let inst = slf.into_super();
-        let block = inst.0.get_operand(1).unwrap().right().unwrap();
-        let owner = inst.as_ref().owner().clone_ref(py);
-        unsafe { Value::from_any(py, owner, block) }
+        let slf = slf.into_super().into_super();
+        unsafe { Value::from_ptr(py, slf.owner().clone_ref(py), LLVMGetOperand(**slf, 1)) }
     }
 
     /// The switch cases.
@@ -346,21 +331,19 @@ impl Switch {
     /// :type: typing.List[typing.Tuple[Value, BasicBlock]]
     #[getter]
     fn cases(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(PyObject, PyObject)>> {
-        let inst_ref = slf.into_super();
-        let inst = inst_ref.0;
-        let value = inst_ref.into_super();
-        let owner = value.owner();
-
-        (2..inst.get_num_operands())
-            .step_by(2)
-            .map(|i| {
-                let cond = inst.get_operand(i).unwrap().left().unwrap();
-                let cond = unsafe { Value::from_any(py, owner.clone_ref(py), cond)? };
-                let succ = inst.get_operand(i + 1).unwrap().right().unwrap();
-                let succ = unsafe { Value::from_any(py, owner.clone_ref(py), succ)? };
-                Ok((cond, succ))
-            })
-            .collect()
+        let slf = slf.into_super().into_super();
+        unsafe {
+            (2..u32::try_from(LLVMGetNumOperands(**slf)).unwrap())
+                .step_by(2)
+                .map(|i| {
+                    let owner = slf.owner();
+                    let cond = Value::from_ptr(py, owner.clone_ref(py), LLVMGetOperand(**slf, i))?;
+                    let succ =
+                        Value::from_ptr(py, owner.clone_ref(py), LLVMGetOperand(**slf, i + 1))?;
+                    Ok((cond, succ))
+                })
+                .collect()
+        }
     }
 }
 
@@ -375,7 +358,7 @@ impl ICmp {
     /// :type: IntPredicate
     #[getter]
     fn predicate(slf: PyRef<Self>) -> IntPredicate {
-        slf.into_super().0.get_icmp_predicate().unwrap().into()
+        unsafe { LLVMGetICmpPredicate(**slf.into_super().into_super()) }.into()
     }
 }
 
@@ -405,36 +388,36 @@ pub(crate) enum IntPredicate {
     Sle,
 }
 
-impl From<inkwell::IntPredicate> for IntPredicate {
-    fn from(pred: inkwell::IntPredicate) -> Self {
+impl From<LLVMIntPredicate> for IntPredicate {
+    fn from(pred: LLVMIntPredicate) -> Self {
         match pred {
-            inkwell::IntPredicate::EQ => Self::Eq,
-            inkwell::IntPredicate::NE => Self::Ne,
-            inkwell::IntPredicate::UGT => Self::Ugt,
-            inkwell::IntPredicate::UGE => Self::Uge,
-            inkwell::IntPredicate::ULT => Self::Ult,
-            inkwell::IntPredicate::ULE => Self::Ule,
-            inkwell::IntPredicate::SGT => Self::Sgt,
-            inkwell::IntPredicate::SGE => Self::Sge,
-            inkwell::IntPredicate::SLT => Self::Slt,
-            inkwell::IntPredicate::SLE => Self::Sle,
+            LLVMIntPredicate::LLVMIntEQ => Self::Eq,
+            LLVMIntPredicate::LLVMIntNE => Self::Ne,
+            LLVMIntPredicate::LLVMIntUGT => Self::Ugt,
+            LLVMIntPredicate::LLVMIntUGE => Self::Uge,
+            LLVMIntPredicate::LLVMIntULT => Self::Ult,
+            LLVMIntPredicate::LLVMIntULE => Self::Ule,
+            LLVMIntPredicate::LLVMIntSGT => Self::Sgt,
+            LLVMIntPredicate::LLVMIntSGE => Self::Sge,
+            LLVMIntPredicate::LLVMIntSLT => Self::Slt,
+            LLVMIntPredicate::LLVMIntSLE => Self::Sle,
         }
     }
 }
 
-impl From<IntPredicate> for inkwell::IntPredicate {
+impl From<IntPredicate> for LLVMIntPredicate {
     fn from(pred: IntPredicate) -> Self {
         match pred {
-            IntPredicate::Eq => Self::EQ,
-            IntPredicate::Ne => Self::NE,
-            IntPredicate::Ugt => Self::UGT,
-            IntPredicate::Uge => Self::UGE,
-            IntPredicate::Ult => Self::ULT,
-            IntPredicate::Ule => Self::ULE,
-            IntPredicate::Sgt => Self::SGT,
-            IntPredicate::Sge => Self::SGE,
-            IntPredicate::Slt => Self::SLT,
-            IntPredicate::Sle => Self::SLE,
+            IntPredicate::Eq => Self::LLVMIntEQ,
+            IntPredicate::Ne => Self::LLVMIntNE,
+            IntPredicate::Ugt => Self::LLVMIntUGT,
+            IntPredicate::Uge => Self::LLVMIntUGE,
+            IntPredicate::Ult => Self::LLVMIntULT,
+            IntPredicate::Ule => Self::LLVMIntULE,
+            IntPredicate::Sgt => Self::LLVMIntSGT,
+            IntPredicate::Sge => Self::LLVMIntSGE,
+            IntPredicate::Slt => Self::LLVMIntSLT,
+            IntPredicate::Sle => Self::LLVMIntSLE,
         }
     }
 }
@@ -450,7 +433,7 @@ impl FCmp {
     /// :type: FloatPredicate
     #[getter]
     fn predicate(slf: PyRef<Self>) -> FloatPredicate {
-        slf.into_super().0.get_fcmp_predicate().unwrap().into()
+        unsafe { LLVMGetFCmpPredicate(**slf.into_super().into_super()) }.into()
     }
 }
 
@@ -492,31 +475,31 @@ pub(crate) enum FloatPredicate {
     True,
 }
 
-impl From<inkwell::FloatPredicate> for FloatPredicate {
-    fn from(pred: inkwell::FloatPredicate) -> Self {
+impl From<LLVMRealPredicate> for FloatPredicate {
+    fn from(pred: LLVMRealPredicate) -> Self {
         match pred {
-            inkwell::FloatPredicate::OEQ => Self::Oeq,
-            inkwell::FloatPredicate::OGE => Self::Oge,
-            inkwell::FloatPredicate::OGT => Self::Ogt,
-            inkwell::FloatPredicate::OLE => Self::Ole,
-            inkwell::FloatPredicate::OLT => Self::Olt,
-            inkwell::FloatPredicate::ONE => Self::One,
-            inkwell::FloatPredicate::ORD => Self::Ord,
-            inkwell::FloatPredicate::PredicateFalse => Self::False,
-            inkwell::FloatPredicate::PredicateTrue => Self::True,
-            inkwell::FloatPredicate::UEQ => Self::Ueq,
-            inkwell::FloatPredicate::UGE => Self::Uge,
-            inkwell::FloatPredicate::UGT => Self::Ugt,
-            inkwell::FloatPredicate::ULE => Self::Ule,
-            inkwell::FloatPredicate::ULT => Self::Ult,
-            inkwell::FloatPredicate::UNE => Self::Une,
-            inkwell::FloatPredicate::UNO => Self::Uno,
+            LLVMRealPredicate::LLVMRealOEQ => Self::Oeq,
+            LLVMRealPredicate::LLVMRealOGE => Self::Oge,
+            LLVMRealPredicate::LLVMRealOGT => Self::Ogt,
+            LLVMRealPredicate::LLVMRealOLE => Self::Ole,
+            LLVMRealPredicate::LLVMRealOLT => Self::Olt,
+            LLVMRealPredicate::LLVMRealONE => Self::One,
+            LLVMRealPredicate::LLVMRealORD => Self::Ord,
+            LLVMRealPredicate::LLVMRealPredicateFalse => Self::False,
+            LLVMRealPredicate::LLVMRealPredicateTrue => Self::True,
+            LLVMRealPredicate::LLVMRealUEQ => Self::Ueq,
+            LLVMRealPredicate::LLVMRealUGE => Self::Uge,
+            LLVMRealPredicate::LLVMRealUGT => Self::Ugt,
+            LLVMRealPredicate::LLVMRealULE => Self::Ule,
+            LLVMRealPredicate::LLVMRealULT => Self::Ult,
+            LLVMRealPredicate::LLVMRealUNE => Self::Une,
+            LLVMRealPredicate::LLVMRealUNO => Self::Uno,
         }
     }
 }
 
 /// A call instruction.
-#[pyclass(extends = Instruction, unsendable)]
+#[pyclass(extends = Instruction)]
 pub(crate) struct Call;
 
 #[pymethods]
@@ -526,11 +509,8 @@ impl Call {
     /// :type: Value
     #[getter]
     fn callee(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
-        let inst = slf.into_super();
-        let last = inst.0.get_operand(inst.0.get_num_operands() - 1);
-        let callee = last.unwrap().left().unwrap();
-        let owner = inst.into_super().owner().clone_ref(py);
-        unsafe { Value::from_any(py, owner, callee) }
+        let slf = slf.into_super().into_super();
+        unsafe { Value::from_ptr(py, slf.owner().clone_ref(py), LLVMGetCalledValue(**slf)) }
     }
 
     /// The arguments to the call.
@@ -538,16 +518,15 @@ impl Call {
     /// :type: typing.List[Value]
     #[getter]
     fn args(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        let inst = slf.into_super();
-        let mut args = Instruction::operands(inst, py)?;
+        let mut args = Instruction::operands(slf.into_super(), py)?;
         args.pop().unwrap();
         Ok(args)
     }
 }
 
 /// A phi node instruction.
-#[pyclass(extends = Instruction, unsendable)]
-pub(crate) struct Phi(PhiValue<'static>);
+#[pyclass(extends = Instruction)]
+pub(crate) struct Phi;
 
 #[pymethods]
 impl Phi {
@@ -556,17 +535,17 @@ impl Phi {
     /// :type: typing.List[typing.Tuple[Value, BasicBlock]]
     #[getter]
     fn incoming(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(PyObject, PyObject)>> {
-        let phi = slf.0;
-        let value = slf.into_super().into_super();
-        let owner = value.owner();
-
-        (0..phi.count_incoming())
-            .map(|i| {
-                let (value, block) = phi.get_incoming(i).unwrap();
-                let value = unsafe { Value::from_any(py, owner.clone_ref(py), value)? };
-                let block = unsafe { Value::from_any(py, owner.clone_ref(py), block)? };
-                Ok((value, block))
-            })
-            .collect()
+        let slf = slf.into_super().into_super();
+        unsafe {
+            (0..LLVMCountIncoming(**slf))
+                .map(|i| {
+                    let value = LLVMGetIncomingValue(**slf, i);
+                    let value = Value::from_ptr(py, slf.owner().clone_ref(py), value)?;
+                    let block = LLVMBasicBlockAsValue(LLVMGetIncomingBlock(**slf, i));
+                    let block = Value::from_ptr(py, slf.owner().clone_ref(py), block)?;
+                    Ok((value, block))
+                })
+                .collect()
+        }
     }
 }

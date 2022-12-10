@@ -10,7 +10,6 @@ homepage = "https://github.com/qir-alliance/pyqir"
 repository = "https://github.com/qir-alliance/pyqir"
 
 [dependencies]
-either = "1.8"
 inkwell = { path = "../../../samarsha/inkwell", default-features = false, features = ["internal-getters"] }
 libc = "0.2"
 llvm-sys-110 = { package = "llvm-sys", version = "110.0", optional = true }
