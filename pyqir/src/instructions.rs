@@ -5,9 +5,9 @@
 
 use crate::values::{BasicBlock, Owner, Value};
 #[allow(clippy::wildcard_imports)]
-use llvm_sys::{core::*, prelude::*, LLVMIntPredicate, LLVMOpcode, LLVMRealPredicate};
+use llvm_sys::{core::*, LLVMIntPredicate, LLVMOpcode, LLVMRealPredicate, LLVMValue};
 use pyo3::{conversion::ToPyObject, prelude::*};
-use std::convert::Into;
+use std::{convert::Into, ptr::NonNull};
 
 /// An instruction.
 #[pyclass(extends = Value, subclass)]
@@ -20,7 +20,7 @@ impl Instruction {
     /// :type: Opcode
     #[getter]
     fn opcode(slf: PyRef<Self>) -> Opcode {
-        unsafe { LLVMGetInstructionOpcode(**slf.into_super()) }.into()
+        unsafe { LLVMGetInstructionOpcode(slf.into_super().as_ptr()) }.into()
     }
 
     /// The operands to the instruction.
@@ -29,9 +29,13 @@ impl Instruction {
     #[getter]
     fn operands(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let slf = slf.into_super();
+        let owner = slf.owner();
         unsafe {
-            (0..u32::try_from(LLVMGetNumOperands(**slf)).unwrap())
-                .map(|i| Value::from_ptr(py, slf.owner().clone_ref(py), LLVMGetOperand(**slf, i)))
+            (0..u32::try_from(LLVMGetNumOperands(slf.as_ptr())).unwrap())
+                .map(|i| {
+                    let operand = LLVMGetOperand(slf.as_ptr(), i);
+                    Value::from_ptr(py, owner.clone_ref(py), NonNull::new(operand).unwrap())
+                })
                 .collect()
         }
     }
@@ -42,7 +46,7 @@ impl Instruction {
     /// :type: typing.List[BasicBlock]
     #[getter]
     fn successors(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        if unsafe { LLVMIsATerminatorInst(**slf.as_ref()) }.is_null() {
+        if unsafe { LLVMIsATerminatorInst(slf.as_ref().as_ptr()) }.is_null() {
             Ok(Vec::new())
         } else {
             // then_some is stabilized in Rust 1.62.
@@ -66,7 +70,7 @@ impl Instruction {
     /// :rtype: None
     fn erase(slf: PyRef<Self>) {
         unsafe {
-            LLVMInstructionEraseFromParent(**slf.into_super());
+            LLVMInstructionEraseFromParent(slf.into_super().as_ptr());
         }
     }
 }
@@ -75,10 +79,10 @@ impl Instruction {
     pub(crate) unsafe fn from_ptr(
         py: Python,
         owner: Owner,
-        value: LLVMValueRef,
+        value: NonNull<LLVMValue>,
     ) -> PyResult<PyObject> {
         let base = Value::new(owner, value).add_subclass(Self);
-        match LLVMGetInstructionOpcode(value) {
+        match LLVMGetInstructionOpcode(value.as_ptr()) {
             LLVMOpcode::LLVMSwitch => Ok(Py::new(py, base.add_subclass(Switch))?.to_object(py)),
             LLVMOpcode::LLVMICmp => Ok(Py::new(py, base.add_subclass(ICmp))?.to_object(py)),
             LLVMOpcode::LLVMFCmp => Ok(Py::new(py, base.add_subclass(FCmp))?.to_object(py)),
@@ -314,7 +318,10 @@ impl Switch {
     #[getter]
     fn cond(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super().into_super();
-        unsafe { Value::from_ptr(py, slf.owner().clone_ref(py), LLVMGetOperand(**slf, 0)) }
+        unsafe {
+            let value = LLVMGetOperand(slf.as_ptr(), 0);
+            Value::from_ptr(py, slf.owner().clone_ref(py), NonNull::new(value).unwrap())
+        }
     }
 
     /// The default successor block if none of the cases match.
@@ -323,7 +330,10 @@ impl Switch {
     #[getter]
     fn default(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super().into_super();
-        unsafe { Value::from_ptr(py, slf.owner().clone_ref(py), LLVMGetOperand(**slf, 1)) }
+        unsafe {
+            let value = LLVMGetOperand(slf.as_ptr(), 1);
+            Value::from_ptr(py, slf.owner().clone_ref(py), NonNull::new(value).unwrap())
+        }
     }
 
     /// The switch cases.
@@ -332,15 +342,17 @@ impl Switch {
     #[getter]
     fn cases(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(PyObject, PyObject)>> {
         let slf = slf.into_super().into_super();
+        let owner = slf.owner();
         unsafe {
-            (2..u32::try_from(LLVMGetNumOperands(**slf)).unwrap())
+            (2..u32::try_from(LLVMGetNumOperands(slf.as_ptr())).unwrap())
                 .step_by(2)
                 .map(|i| {
-                    let owner = slf.owner();
-                    let cond = Value::from_ptr(py, owner.clone_ref(py), LLVMGetOperand(**slf, i))?;
-                    let succ =
-                        Value::from_ptr(py, owner.clone_ref(py), LLVMGetOperand(**slf, i + 1))?;
-                    Ok((cond, succ))
+                    let cond = LLVMGetOperand(slf.as_ptr(), i);
+                    let succ = LLVMGetOperand(slf.as_ptr(), i + 1);
+                    Ok((
+                        Value::from_ptr(py, owner.clone_ref(py), NonNull::new(cond).unwrap())?,
+                        Value::from_ptr(py, owner.clone_ref(py), NonNull::new(succ).unwrap())?,
+                    ))
                 })
                 .collect()
         }
@@ -358,7 +370,7 @@ impl ICmp {
     /// :type: IntPredicate
     #[getter]
     fn predicate(slf: PyRef<Self>) -> IntPredicate {
-        unsafe { LLVMGetICmpPredicate(**slf.into_super().into_super()) }.into()
+        unsafe { LLVMGetICmpPredicate(slf.into_super().into_super().as_ptr()) }.into()
     }
 }
 
@@ -433,7 +445,7 @@ impl FCmp {
     /// :type: FloatPredicate
     #[getter]
     fn predicate(slf: PyRef<Self>) -> FloatPredicate {
-        unsafe { LLVMGetFCmpPredicate(**slf.into_super().into_super()) }.into()
+        unsafe { LLVMGetFCmpPredicate(slf.into_super().into_super().as_ptr()) }.into()
     }
 }
 
@@ -510,7 +522,10 @@ impl Call {
     #[getter]
     fn callee(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super().into_super();
-        unsafe { Value::from_ptr(py, slf.owner().clone_ref(py), LLVMGetCalledValue(**slf)) }
+        unsafe {
+            let value = LLVMGetCalledValue(slf.as_ptr());
+            Value::from_ptr(py, slf.owner().clone_ref(py), NonNull::new(value).unwrap())
+        }
     }
 
     /// The arguments to the call.
@@ -536,14 +551,16 @@ impl Phi {
     #[getter]
     fn incoming(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(PyObject, PyObject)>> {
         let slf = slf.into_super().into_super();
+        let owner = slf.owner();
         unsafe {
-            (0..LLVMCountIncoming(**slf))
+            (0..LLVMCountIncoming(slf.as_ptr()))
                 .map(|i| {
-                    let value = LLVMGetIncomingValue(**slf, i);
-                    let value = Value::from_ptr(py, slf.owner().clone_ref(py), value)?;
-                    let block = LLVMBasicBlockAsValue(LLVMGetIncomingBlock(**slf, i));
-                    let block = Value::from_ptr(py, slf.owner().clone_ref(py), block)?;
-                    Ok((value, block))
+                    let value = LLVMGetIncomingValue(slf.as_ptr(), i);
+                    let block = LLVMBasicBlockAsValue(LLVMGetIncomingBlock(slf.as_ptr(), i));
+                    Ok((
+                        Value::from_ptr(py, owner.clone_ref(py), NonNull::new(value).unwrap())?,
+                        Value::from_ptr(py, owner.clone_ref(py), NonNull::new(block).unwrap())?,
+                    ))
                 })
                 .collect()
         }

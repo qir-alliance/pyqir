@@ -52,7 +52,7 @@ impl Builder {
 
         self.owner = owner.clone_ref(py);
         unsafe {
-            LLVMPositionBuilderAtEnd(self.as_ptr(), **block);
+            LLVMPositionBuilderAtEnd(self.as_ptr(), block.as_ptr());
         }
         Ok(())
     }
@@ -67,8 +67,8 @@ impl Builder {
     fn and_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
-            let value = LLVMBuildAnd(self.as_ptr(), **lhs, **rhs, raw_cstr!(""));
-            Value::from_ptr(py, owner, value)
+            let value = LLVMBuildAnd(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
+            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
         }
     }
 
@@ -82,8 +82,8 @@ impl Builder {
     fn or_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
-            let value = LLVMBuildOr(self.as_ptr(), **lhs, **rhs, raw_cstr!(""));
-            Value::from_ptr(py, owner, value)
+            let value = LLVMBuildOr(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
+            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
         }
     }
 
@@ -97,8 +97,8 @@ impl Builder {
     fn xor(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
-            let value = LLVMBuildXor(self.as_ptr(), **lhs, **rhs, raw_cstr!(""));
-            Value::from_ptr(py, owner, value)
+            let value = LLVMBuildXor(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
+            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
         }
     }
 
@@ -112,8 +112,8 @@ impl Builder {
     fn add(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
-            let value = LLVMBuildAdd(self.as_ptr(), **lhs, **rhs, raw_cstr!(""));
-            Value::from_ptr(py, owner, value)
+            let value = LLVMBuildAdd(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
+            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
         }
     }
 
@@ -127,8 +127,8 @@ impl Builder {
     fn sub(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
-            let value = LLVMBuildSub(self.as_ptr(), **lhs, **rhs, raw_cstr!(""));
-            Value::from_ptr(py, owner, value)
+            let value = LLVMBuildSub(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
+            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
         }
     }
 
@@ -142,8 +142,8 @@ impl Builder {
     fn mul(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
-            let value = LLVMBuildMul(self.as_ptr(), **lhs, **rhs, raw_cstr!(""));
-            Value::from_ptr(py, owner, value)
+            let value = LLVMBuildMul(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
+            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
         }
     }
 
@@ -157,8 +157,8 @@ impl Builder {
     fn shl(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
-            let value = LLVMBuildShl(self.as_ptr(), **lhs, **rhs, raw_cstr!(""));
-            Value::from_ptr(py, owner, value)
+            let value = LLVMBuildShl(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
+            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
         }
     }
 
@@ -172,8 +172,8 @@ impl Builder {
     fn lshr(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
-            let value = LLVMBuildLShr(self.as_ptr(), **lhs, **rhs, raw_cstr!(""));
-            Value::from_ptr(py, owner, value)
+            let value = LLVMBuildLShr(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
+            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
         }
     }
 
@@ -188,8 +188,14 @@ impl Builder {
     fn icmp(&self, py: Python, pred: IntPredicate, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
-            let value = LLVMBuildICmp(self.as_ptr(), pred.into(), **lhs, **rhs, raw_cstr!(""));
-            Value::from_ptr(py, owner, value)
+            let value = LLVMBuildICmp(
+                self.as_ptr(),
+                pred.into(),
+                lhs.as_ptr(),
+                rhs.as_ptr(),
+                raw_cstr!(""),
+            );
+            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
         }
     }
 
@@ -206,7 +212,7 @@ impl Builder {
         let owner = Owner::merge(py, arg_owners.chain([&self.owner, callee.owner()]))?;
 
         unsafe {
-            let fn_type = callable_fn_type(**callee)
+            let fn_type = callable_fn_type(callee.as_ptr())
                 .ok_or_else(|| PyValueError::new_err("Callee is not callable."))?
                 .as_ptr();
             let count = LLVMCountParamTypes(fn_type).try_into().unwrap();
@@ -230,12 +236,12 @@ impl Builder {
 
             let value = LLVMBuildCall(
                 self.as_ptr(),
-                **callee,
+                callee.as_ptr(),
                 args.as_mut_ptr(),
                 args.len().try_into().unwrap(),
                 raw_cstr!(""),
             );
-            Value::from_ptr(py, owner, value)
+            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
         }
     }
 
@@ -262,7 +268,7 @@ impl Builder {
         unsafe {
             try_build_if(
                 self.as_ptr(),
-                **cond,
+                cond.as_ptr(),
                 || r#true.iter().try_for_each(|f| f.call0().map(|_| ())),
                 || r#false.iter().try_for_each(|f| f.call0().map(|_| ())),
             )
@@ -277,7 +283,10 @@ impl Builder {
     #[pyo3(text_signature = "(dest)")]
     fn br(&self, py: Python, dest: PyRef<BasicBlock>) -> PyResult<PyObject> {
         let owner = Owner::merge(py, [&self.owner, dest.as_ref().owner()])?;
-        unsafe { Value::from_ptr(py, owner, LLVMBuildBr(self.builder.as_ptr(), **dest)) }
+        unsafe {
+            let value = LLVMBuildBr(self.builder.as_ptr(), dest.as_ptr());
+            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
+        }
     }
 
     /// Inserts a return instruction.
@@ -294,11 +303,11 @@ impl Builder {
             ),
             Some(value) => {
                 let owner = Owner::merge(py, [&self.owner, value.owner()])?;
-                let inst = unsafe { LLVMBuildRet(self.as_ptr(), **value) };
+                let inst = unsafe { LLVMBuildRet(self.as_ptr(), value.as_ptr()) };
                 (inst, owner)
             }
         };
-        unsafe { Value::from_ptr(py, owner, value) }
+        unsafe { Value::from_ptr(py, owner, NonNull::new(value).unwrap()) }
     }
 }
 
@@ -340,7 +349,7 @@ impl Argument<'_> {
 
     unsafe fn to_value(&self, ty: LLVMTypeRef) -> PyResult<LLVMValueRef> {
         match self {
-            Argument::Value(v) => Ok(***v),
+            Argument::Value(v) => Ok(v.as_ptr()),
             Argument::Literal(l) => l.to_value(ty),
         }
     }
