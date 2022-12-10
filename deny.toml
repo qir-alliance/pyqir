@@ -26,9 +26,3 @@ allow = [
     "MIT",
     "Unicode-DFS-2016",
 ]
-
-[sources.allow-org]
-# github.com organizations to allow git sources for
-github = [
-    "TheDan64",
-]
