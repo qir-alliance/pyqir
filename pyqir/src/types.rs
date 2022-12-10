@@ -5,15 +5,15 @@
 
 use crate::{core::Context, values::Owner};
 #[allow(clippy::wildcard_imports)]
-use llvm_sys::{core::*, prelude::*, LLVMTypeKind};
+use llvm_sys::{core::*, LLVMType, LLVMTypeKind};
 use pyo3::{conversion::ToPyObject, prelude::*};
 use qirlib::types;
-use std::{ffi::CStr, ops::Deref};
+use std::{ffi::CStr, ops::Deref, ptr::NonNull};
 
 /// A type.
 #[pyclass(subclass, unsendable)]
 pub(crate) struct Type {
-    ty: LLVMTypeRef,
+    ty: NonNull<LLVMType>,
     context: Py<Context>,
 }
 
@@ -27,11 +27,11 @@ impl Type {
     #[staticmethod]
     #[pyo3(text_signature = "(context)")]
     fn void(py: Python, context: Py<Context>) -> Self {
-        let ty = {
-            let context = context.borrow(py);
-            unsafe { LLVMVoidTypeInContext(context.as_ptr()) }
-        };
-        Type { ty, context }
+        let ty = unsafe { LLVMVoidTypeInContext(context.borrow(py).as_ptr()) };
+        Type {
+            ty: NonNull::new(ty).unwrap(),
+            context,
+        }
     }
 
     /// The double type.
@@ -42,11 +42,11 @@ impl Type {
     #[staticmethod]
     #[pyo3(text_signature = "(context)")]
     fn double(py: Python, context: Py<Context>) -> Self {
-        let ty = {
-            let context = context.borrow(py);
-            unsafe { LLVMDoubleTypeInContext(context.as_ptr()) }
-        };
-        Type { ty, context }
+        let ty = unsafe { LLVMDoubleTypeInContext(context.borrow(py).as_ptr()) };
+        Type {
+            ty: NonNull::new(ty).unwrap(),
+            context,
+        }
     }
 
     /// Whether this type is the void type.
@@ -54,7 +54,7 @@ impl Type {
     /// :type: bool
     #[getter]
     fn is_void(&self) -> bool {
-        unsafe { LLVMGetTypeKind(self.ty) == LLVMTypeKind::LLVMVoidTypeKind }
+        unsafe { LLVMGetTypeKind(self.as_ptr()) == LLVMTypeKind::LLVMVoidTypeKind }
     }
 
     /// Whether this type is the bool type.
@@ -62,7 +62,7 @@ impl Type {
     /// :type: bool
     #[getter]
     fn is_double(&self) -> bool {
-        unsafe { LLVMGetTypeKind(self.ty) == LLVMTypeKind::LLVMDoubleTypeKind }
+        unsafe { LLVMGetTypeKind(self.as_ptr()) == LLVMTypeKind::LLVMDoubleTypeKind }
     }
 }
 
@@ -70,10 +70,10 @@ impl Type {
     pub(crate) unsafe fn from_ptr(
         py: Python,
         context: Py<Context>,
-        ty: LLVMTypeRef,
+        ty: NonNull<LLVMType>,
     ) -> PyResult<PyObject> {
         let base = PyClassInitializer::from(Self { ty, context });
-        match LLVMGetTypeKind(ty) {
+        match LLVMGetTypeKind(ty.as_ptr()) {
             LLVMTypeKind::LLVMArrayTypeKind => {
                 Ok(Py::new(py, base.add_subclass(ArrayType))?.to_object(py))
             }
@@ -99,7 +99,7 @@ impl Type {
 }
 
 impl Deref for Type {
-    type Target = LLVMTypeRef;
+    type Target = NonNull<LLVMType>;
 
     fn deref(&self) -> &Self::Target {
         &self.ty
@@ -118,11 +118,14 @@ pub(crate) struct IntType;
 impl IntType {
     #[new]
     fn new(py: Python, context: Py<Context>, width: u32) -> (Self, Type) {
-        let ty = {
-            let context = context.borrow(py);
-            unsafe { LLVMIntTypeInContext(context.as_ptr(), width) }
-        };
-        (Self, Type { ty, context })
+        let ty = unsafe { LLVMIntTypeInContext(context.borrow(py).as_ptr(), width) };
+        (
+            Self,
+            Type {
+                ty: NonNull::new(ty).unwrap(),
+                context,
+            },
+        )
     }
 
     /// The number of bits in the integer.
@@ -130,7 +133,7 @@ impl IntType {
     /// :type: int
     #[getter]
     fn width(slf: PyRef<Self>) -> u32 {
-        unsafe { LLVMGetIntTypeWidth(slf.into_super().ty) }
+        unsafe { LLVMGetIntTypeWidth(slf.into_super().as_ptr()) }
     }
 }
 
@@ -154,10 +157,10 @@ impl FunctionType {
                 .chain([ret.context.clone_ref(py).into()]),
         )?;
 
-        let mut params: Vec<_> = params.iter().map(|ty| ty.ty).collect();
+        let mut params: Vec<_> = params.iter().map(|ty| ty.as_ptr()).collect();
         let ty = unsafe {
             LLVMFunctionType(
-                **ret,
+                ret.as_ptr(),
                 params.as_mut_ptr(),
                 params.len().try_into().unwrap(),
                 0,
@@ -167,7 +170,7 @@ impl FunctionType {
         Ok((
             Self,
             Type {
-                ty,
+                ty: NonNull::new(ty).unwrap(),
                 context: ret.context.clone_ref(py),
             },
         ))
@@ -180,7 +183,10 @@ impl FunctionType {
     fn ret(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super();
         let context = slf.context.clone_ref(py);
-        unsafe { Type::from_ptr(py, context, LLVMGetReturnType(slf.ty)) }
+        unsafe {
+            let ty = LLVMGetReturnType(slf.as_ptr());
+            Type::from_ptr(py, context, NonNull::new(ty).unwrap())
+        }
     }
 
     /// The types of the function parameters.
@@ -190,13 +196,13 @@ impl FunctionType {
     fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let slf = slf.into_super();
         unsafe {
-            let count = LLVMCountParamTypes(slf.ty).try_into().unwrap();
+            let count = LLVMCountParamTypes(slf.as_ptr()).try_into().unwrap();
             let mut params = Vec::with_capacity(count);
-            LLVMGetParamTypes(slf.ty, params.as_mut_ptr());
+            LLVMGetParamTypes(slf.as_ptr(), params.as_mut_ptr());
             params.set_len(count);
             params
                 .into_iter()
-                .map(|ty| Type::from_ptr(py, slf.context.clone_ref(py), ty))
+                .map(|ty| Type::from_ptr(py, slf.context.clone_ref(py), NonNull::new(ty).unwrap()))
                 .collect()
         }
     }
@@ -212,7 +218,7 @@ impl StructType {
     #[getter]
     fn name(slf: PyRef<Self>) -> Option<&str> {
         unsafe {
-            let name = LLVMGetStructName(slf.into_super().ty);
+            let name = LLVMGetStructName(slf.into_super().as_ptr());
             if name.is_null() {
                 None
             } else {
@@ -228,13 +234,15 @@ impl StructType {
     fn fields(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let slf = slf.into_super();
         unsafe {
-            let count = LLVMCountStructElementTypes(slf.ty).try_into().unwrap();
+            let count = LLVMCountStructElementTypes(slf.as_ptr())
+                .try_into()
+                .unwrap();
             let mut fields = Vec::with_capacity(count);
-            LLVMGetStructElementTypes(slf.ty, fields.as_mut_ptr());
+            LLVMGetStructElementTypes(slf.as_ptr(), fields.as_mut_ptr());
             fields.set_len(count);
             fields
                 .into_iter()
-                .map(|ty| Type::from_ptr(py, slf.context.clone_ref(py), ty))
+                .map(|ty| Type::from_ptr(py, slf.context.clone_ref(py), NonNull::new(ty).unwrap()))
                 .collect()
         }
     }
@@ -252,7 +260,10 @@ impl ArrayType {
     #[getter]
     fn element(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super();
-        unsafe { Type::from_ptr(py, slf.context.clone_ref(py), LLVMGetElementType(slf.ty)) }
+        unsafe {
+            let ty = LLVMGetElementType(slf.as_ptr());
+            Type::from_ptr(py, slf.context.clone_ref(py), NonNull::new(ty).unwrap())
+        }
     }
 
     /// The number of elements in the array.
@@ -260,7 +271,7 @@ impl ArrayType {
     /// :type: int
     #[getter]
     fn count(slf: PyRef<Self>) -> u32 {
-        unsafe { LLVMGetArrayLength(slf.into_super().ty) }
+        unsafe { LLVMGetArrayLength(slf.into_super().as_ptr()) }
     }
 }
 
@@ -275,10 +286,11 @@ pub(crate) struct PointerType;
 impl PointerType {
     #[new]
     fn new(py: Python, pointee: &Type) -> (Self, Type) {
+        let ty = unsafe { LLVMPointerType(pointee.as_ptr(), 0) };
         (
             Self,
             Type {
-                ty: unsafe { LLVMPointerType(pointee.ty, 0) },
+                ty: NonNull::new(ty).unwrap(),
                 context: pointee.context.clone_ref(py),
             },
         )
@@ -290,7 +302,10 @@ impl PointerType {
     #[getter]
     fn pointee(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super();
-        unsafe { Type::from_ptr(py, slf.context.clone_ref(py), LLVMGetElementType(slf.ty)) }
+        unsafe {
+            let ty = LLVMGetElementType(slf.as_ptr());
+            Type::from_ptr(py, slf.context.clone_ref(py), NonNull::new(ty).unwrap())
+        }
     }
 
     /// The pointer address space.
@@ -298,7 +313,7 @@ impl PointerType {
     /// :type: int
     #[getter]
     fn address_space(slf: PyRef<Self>) -> u32 {
-        unsafe { LLVMGetPointerAddressSpace(slf.into_super().ty) }
+        unsafe { LLVMGetPointerAddressSpace(slf.into_super().as_ptr()) }
     }
 }
 
@@ -312,7 +327,7 @@ impl PointerType {
 pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
     unsafe {
         let ty = types::qubit(context.borrow(py).as_ptr());
-        Type::from_ptr(py, context, ty)
+        Type::from_ptr(py, context, NonNull::new(ty).unwrap())
     }
 }
 
@@ -324,7 +339,7 @@ pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject>
 #[pyfunction]
 #[pyo3(text_signature = "(ty)")]
 pub(crate) fn is_qubit_type(ty: &Type) -> bool {
-    unsafe { types::is_qubit(ty.ty) }
+    unsafe { types::is_qubit(ty.as_ptr()) }
 }
 
 /// The QIR result type.
@@ -337,7 +352,7 @@ pub(crate) fn is_qubit_type(ty: &Type) -> bool {
 pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
     unsafe {
         let ty = types::result(context.borrow(py).as_ptr());
-        Type::from_ptr(py, context, ty)
+        Type::from_ptr(py, context, NonNull::new(ty).unwrap())
     }
 }
 
@@ -349,5 +364,5 @@ pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject
 #[pyfunction]
 #[pyo3(text_signature = "(ty)")]
 pub(crate) fn is_result_type(ty: &Type) -> bool {
-    unsafe { types::is_result(ty.ty) }
+    unsafe { types::is_result(ty.as_ptr()) }
 }

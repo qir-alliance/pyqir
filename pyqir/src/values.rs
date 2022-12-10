@@ -46,7 +46,10 @@ impl Value {
     /// :type: Type
     #[getter]
     fn r#type(&self, py: Python) -> PyResult<PyObject> {
-        unsafe { Type::from_ptr(py, self.owner.context(py), LLVMTypeOf(self.as_ptr())) }
+        unsafe {
+            let ty = LLVMTypeOf(self.as_ptr());
+            Type::from_ptr(py, self.owner.context(py), NonNull::new(ty).unwrap())
+        }
     }
 
     /// The name of this value or the empty string if this value is anonymous.
@@ -308,7 +311,7 @@ impl Constant {
     fn null(py: Python, ty: &Type) -> PyResult<PyObject> {
         let context = ty.context().clone_ref(py);
         unsafe {
-            let value = LLVMConstNull(**ty);
+            let value = LLVMConstNull(ty.as_ptr());
             Value::from_ptr(py, context.into(), NonNull::new(value).unwrap())
         }
     }
@@ -403,7 +406,8 @@ impl Function {
 
         let name = CString::new(name).unwrap();
         unsafe {
-            let function = LLVMAddFunction(**module.borrow(py), name.as_ptr(), **ty.into_super());
+            let function =
+                LLVMAddFunction(**module.borrow(py), name.as_ptr(), ty.into_super().as_ptr());
             LLVMSetLinkage(function, linkage.into());
             Ok(Value::new(owner, NonNull::new(function).unwrap())
                 .add_subclass(Constant)
@@ -416,7 +420,7 @@ impl Function {
         let slf = slf.into_super().into_super();
         unsafe {
             let ty = LLVMGetElementType(LLVMTypeOf(slf.as_ptr()));
-            Type::from_ptr(py, slf.owner().context(py), ty)
+            Type::from_ptr(py, slf.owner().context(py), NonNull::new(ty).unwrap())
         }
     }
 
@@ -608,7 +612,10 @@ impl Literal<'_> {
 #[pyo3(text_signature = "(ty, value)")]
 pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObject> {
     let owner = ty.context().clone_ref(py).into();
-    unsafe { Value::from_ptr(py, owner, NonNull::new(value.to_value(**ty)?).unwrap()) }
+    unsafe {
+        let value = value.to_value(ty.as_ptr())?;
+        Value::from_ptr(py, owner, NonNull::new(value).unwrap())
+    }
 }
 
 /// Creates a static qubit value.
