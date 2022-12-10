@@ -5,12 +5,12 @@
 
 use crate::{
     context::Context,
+    core::Message,
     instructions::Instruction,
     module::{Linkage, Module},
     types::{FunctionType, Type},
 };
 use inkwell::LLVMReference;
-use libc::c_char;
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{
     core::*, prelude::*, LLVMAttributeFunctionIndex, LLVMAttributeIndex, LLVMAttributeReturnIndex,
@@ -27,8 +27,9 @@ use qirlib::values;
 use std::{
     borrow::Borrow,
     convert::{Into, TryInto},
-    ffi::{CStr, CString},
+    ffi::CString,
     ops::Deref,
+    ptr::NonNull,
     slice, str,
 };
 
@@ -62,8 +63,8 @@ impl Value {
 
     fn __str__(&self) -> String {
         unsafe {
-            let message = Message(LLVMPrintValueToString(self.value));
-            CStr::from_ptr(message.0).to_str().unwrap().to_string()
+            let message = Message::new(NonNull::new(LLVMPrintValueToString(self.value)).unwrap());
+            message.to_str().unwrap().to_string()
         }
     }
 }
@@ -392,15 +393,14 @@ impl Function {
             ],
         )?;
 
-        let value = unsafe { module.borrow(py).get() }.add_function(
-            name,
-            unsafe { inkwell::types::FunctionType::new(**ty.into_super()) },
-            Some(linkage.into()),
-        );
-
-        Ok(unsafe { Value::new(owner, value.get_ref()) }
-            .add_subclass(Constant)
-            .add_subclass(Self))
+        let name = CString::new(name).unwrap();
+        unsafe {
+            let function = LLVMAddFunction(**module.borrow(py), name.as_ptr(), **ty.into_super());
+            LLVMSetLinkage(function, linkage.into());
+            Ok(Value::new(owner, function)
+                .add_subclass(Constant)
+                .add_subclass(Self))
+        }
     }
 
     /// The parameters to this function.
@@ -554,22 +554,6 @@ impl AttributeSet {
     }
 }
 
-struct Message(*mut c_char);
-
-impl Deref for Message {
-    type Target = CStr;
-
-    fn deref(&self) -> &Self::Target {
-        unsafe { CStr::from_ptr(self.0) }
-    }
-}
-
-impl Drop for Message {
-    fn drop(&mut self) {
-        unsafe { LLVMDisposeMessage(self.0) }
-    }
-}
-
 #[derive(FromPyObject)]
 pub(crate) enum Literal<'py> {
     Bool(bool),
@@ -681,7 +665,7 @@ pub(crate) fn entry_point(
     let name = CString::new(name).unwrap();
     let entry_point = unsafe {
         values::entry_point(
-            module.borrow(py).get().get_ref(),
+            **module.borrow(py),
             name.as_c_str(),
             required_num_qubits,
             required_num_results,
@@ -743,7 +727,7 @@ pub(crate) fn required_num_results(function: PyRef<Function>) -> Option<u64> {
 #[pyfunction]
 #[pyo3(text_signature = "(module, value)")]
 pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> PyResult<PyObject> {
-    let string = unsafe { values::global_string(module.get().get_ref(), value) };
+    let string = unsafe { values::global_string(**module, value) };
     unsafe { Value::from_ptr(py, module.context().clone_ref(py).into(), string) }
 }
 

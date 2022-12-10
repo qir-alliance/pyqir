@@ -20,7 +20,7 @@ use std::{
     fs,
     ops::Deref,
     path::PathBuf,
-    ptr::null_mut,
+    ptr,
 };
 
 const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
@@ -165,7 +165,7 @@ fn build_ir(
         LLVMBuildRetVoid(*builder);
 
         let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
-        let mut error = null_mut();
+        let mut error = ptr::null_mut();
         if LLVMVerifyModule(module, action, &mut error) == 0 {
             Ok(Message::new(LLVMPrintModuleToString(module)))
         } else {
