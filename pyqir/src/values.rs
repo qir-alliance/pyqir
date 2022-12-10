@@ -402,6 +402,15 @@ impl Function {
         }
     }
 
+    #[getter]
+    fn r#type(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
+        let slf = slf.into_super().into_super();
+        unsafe {
+            let ty = LLVMGetElementType(LLVMTypeOf(slf.value));
+            Type::from_ptr(py, slf.owner().context(py), ty)
+        }
+    }
+
     /// The parameters to this function.
     ///
     /// :type: typing.List[Value]
