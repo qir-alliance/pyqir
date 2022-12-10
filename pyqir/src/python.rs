@@ -3,7 +3,7 @@
 
 use crate::{
     builder::Builder,
-    context::Context,
+    core::Context,
     evaluator::PyNonadaptiveJit,
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,

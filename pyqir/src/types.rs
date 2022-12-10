@@ -3,8 +3,7 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::{context::Context, values::Owner};
-use inkwell::LLVMReference;
+use crate::{core::Context, values::Owner};
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{core::*, prelude::*, LLVMTypeKind};
 use pyo3::{conversion::ToPyObject, prelude::*};
@@ -30,7 +29,7 @@ impl Type {
     fn void(py: Python, context: Py<Context>) -> Self {
         let ty = {
             let context = context.borrow(py);
-            unsafe { LLVMVoidTypeInContext(context.get_ref()) }
+            unsafe { LLVMVoidTypeInContext(context.as_ptr()) }
         };
         Type { ty, context }
     }
@@ -45,7 +44,7 @@ impl Type {
     fn double(py: Python, context: Py<Context>) -> Self {
         let ty = {
             let context = context.borrow(py);
-            unsafe { LLVMDoubleTypeInContext(context.get_ref()) }
+            unsafe { LLVMDoubleTypeInContext(context.as_ptr()) }
         };
         Type { ty, context }
     }
@@ -121,7 +120,7 @@ impl IntType {
     fn new(py: Python, context: Py<Context>, width: u32) -> (Self, Type) {
         let ty = {
             let context = context.borrow(py);
-            unsafe { LLVMIntTypeInContext(context.get_ref(), width) }
+            unsafe { LLVMIntTypeInContext(context.as_ptr(), width) }
         };
         (Self, Type { ty, context })
     }
@@ -312,7 +311,7 @@ impl PointerType {
 #[pyo3(text_signature = "(context)")]
 pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
     unsafe {
-        let ty = types::qubit(context.borrow(py).get_ref());
+        let ty = types::qubit(context.borrow(py).as_ptr());
         Type::from_ptr(py, context, ty)
     }
 }
@@ -337,7 +336,7 @@ pub(crate) fn is_qubit_type(ty: &Type) -> bool {
 #[pyo3(text_signature = "(context)")]
 pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
     unsafe {
-        let ty = types::result(context.borrow(py).get_ref());
+        let ty = types::result(context.borrow(py).as_ptr());
         Type::from_ptr(py, context, ty)
     }
 }

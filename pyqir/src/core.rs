@@ -3,11 +3,31 @@
 
 use libc::c_char;
 use llvm_sys::{
-    core::{LLVMDisposeMemoryBuffer, LLVMDisposeMessage},
+    core::{LLVMContextCreate, LLVMDisposeMemoryBuffer, LLVMDisposeMessage},
     prelude::*,
-    LLVMMemoryBuffer,
+    LLVMContext, LLVMMemoryBuffer,
 };
+use pyo3::prelude::*;
 use std::{ffi::CStr, ops::Deref, ptr::NonNull};
+
+/// The context owns global state needed by most LLVM objects.
+#[pyclass(unsendable)]
+#[derive(Eq, PartialEq)]
+pub(crate) struct Context(NonNull<LLVMContext>);
+
+#[pymethods]
+impl Context {
+    #[new]
+    pub(crate) fn new() -> Self {
+        Self(NonNull::new(unsafe { LLVMContextCreate() }).unwrap())
+    }
+}
+
+impl Context {
+    pub(crate) fn as_ptr(&self) -> LLVMContextRef {
+        self.0.as_ptr()
+    }
+}
 
 pub(crate) struct Message(NonNull<c_char>);
 

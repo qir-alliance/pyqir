@@ -4,12 +4,11 @@
 #![allow(clippy::used_underscore_binding)]
 
 use crate::{
-    context::Context,
+    core::Context,
     core::{MemoryBuffer, Message},
     values::Value,
 };
 use core::slice;
-use inkwell::LLVMReference;
 #[allow(clippy::wildcard_imports, deprecated)]
 use llvm_sys::{
     analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
@@ -45,7 +44,7 @@ impl Module {
     pub(crate) fn new(py: Python, context: Py<Context>, name: &str) -> Self {
         let name = CString::new(name).unwrap();
         let module = unsafe {
-            LLVMModuleCreateWithNameInContext(name.as_ptr(), context.borrow(py).get_ref())
+            LLVMModuleCreateWithNameInContext(name.as_ptr(), context.borrow(py).as_ptr())
         };
         Self { module, context }
     }
@@ -67,7 +66,7 @@ impl Module {
         let mut module = ptr::null_mut();
         let mut error = ptr::null_mut();
         unsafe {
-            let context_ref = context.borrow(py).get_ref();
+            let context_ref = context.borrow(py).as_ptr();
             if LLVMParseIRInContext(context_ref, buffer, &mut module, &mut error) != 0 {
                 let error = Message::new(NonNull::new(error).unwrap());
                 return Err(PyValueError::new_err(error.to_str().unwrap().to_string()));
@@ -105,7 +104,7 @@ impl Module {
         let mut module = ptr::null_mut();
         let mut error = ptr::null_mut();
         unsafe {
-            let context_ref = context.borrow(py).get_ref();
+            let context_ref = context.borrow(py).as_ptr();
             #[allow(deprecated)]
             if LLVMParseBitcodeInContext(context_ref, buffer.as_ptr(), &mut module, &mut error) == 0
             {

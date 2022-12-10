@@ -2,11 +2,10 @@
 // Licensed under the MIT License.
 
 use crate::{
-    context::Context,
+    core::Context,
     instructions::IntPredicate,
     values::{BasicBlock, Literal, Owner, Value},
 };
-use inkwell::LLVMReference;
 use libc::c_char;
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{core::*, prelude::*, LLVMType, LLVMTypeKind};
@@ -33,7 +32,7 @@ pub(crate) struct Builder {
 impl Builder {
     #[new]
     pub(crate) fn new(py: Python, context: Py<Context>) -> Self {
-        let builder = unsafe { LLVMCreateBuilderInContext(context.borrow(py).get_ref()) };
+        let builder = unsafe { LLVMCreateBuilderInContext(context.borrow(py).as_ptr()) };
         Self {
             builder,
             owner: context.into(),

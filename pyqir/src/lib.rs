@@ -14,7 +14,6 @@ extern crate llvm_sys_130 as llvm_sys;
 extern crate llvm_sys_140 as llvm_sys;
 
 mod builder;
-mod context;
 mod core;
 mod evaluator;
 mod instructions;

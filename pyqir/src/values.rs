@@ -4,13 +4,12 @@
 #![allow(clippy::used_underscore_binding)]
 
 use crate::{
-    context::Context,
+    core::Context,
     core::Message,
     instructions::Instruction,
     module::{Linkage, Module},
     types::{FunctionType, Type},
 };
-use inkwell::LLVMReference;
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{
     core::*, prelude::*, LLVMAttributeFunctionIndex, LLVMAttributeIndex, LLVMAttributeReturnIndex,
@@ -227,7 +226,7 @@ impl BasicBlock {
             match (parent, before) {
                 (None, None) => Err(PyValueError::new_err("Can't create block without parent.")),
                 (Some(parent), None) => Ok(unsafe {
-                    LLVMAppendBasicBlockInContext(context.get_ref(), **parent, name.as_ptr())
+                    LLVMAppendBasicBlockInContext(context.as_ptr(), **parent, name.as_ptr())
                 }),
                 (Some(parent), Some(before))
                     if unsafe { LLVMGetBasicBlockParent(before.0) != **parent } =>
@@ -237,7 +236,7 @@ impl BasicBlock {
                     ))
                 }
                 (_, Some(before)) => Ok(unsafe {
-                    LLVMInsertBasicBlockInContext(context.get_ref(), before.0, name.as_ptr())
+                    LLVMInsertBasicBlockInContext(context.as_ptr(), before.0, name.as_ptr())
                 }),
             }
         }?;
@@ -602,7 +601,7 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObjec
 pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
     let value = {
         let context = context.borrow(py);
-        unsafe { values::qubit(context.get_ref(), id) }
+        unsafe { values::qubit(context.as_ptr(), id) }
     };
     unsafe { Value::from_ptr(py, Owner::Context(context), value) }
 }
@@ -629,7 +628,7 @@ pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
 pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
     let value = {
         let context = context.borrow(py);
-        unsafe { values::result(context.get_ref(), id) }
+        unsafe { values::result(context.as_ptr(), id) }
     };
     unsafe { Value::from_ptr(py, Owner::Context(context), value) }
 }

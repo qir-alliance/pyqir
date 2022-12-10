@@ -5,7 +5,6 @@ use crate::{
     builder::Builder,
     values::{Owner, Value},
 };
-use inkwell::LLVMReference;
 use llvm_sys::{
     core::{LLVMConstReal, LLVMDoubleTypeInContext},
     prelude::*,
@@ -120,7 +119,7 @@ impl BasicQisBuilder {
         let context = builder.owner().context(py);
         let context = context.borrow(py);
         unsafe {
-            qis::build_rx(**builder, theta.to_value(context.get_ref()), **qubit);
+            qis::build_rx(**builder, theta.to_value(context.as_ptr()), **qubit);
         }
         Ok(())
     }
@@ -143,7 +142,7 @@ impl BasicQisBuilder {
         let context = builder.owner().context(py);
         let context = context.borrow(py);
         unsafe {
-            qis::build_ry(**builder, theta.to_value(context.get_ref()), **qubit);
+            qis::build_ry(**builder, theta.to_value(context.as_ptr()), **qubit);
         }
         Ok(())
     }
@@ -166,7 +165,7 @@ impl BasicQisBuilder {
         let context = builder.owner().context(py);
         let context = context.borrow(py);
         unsafe {
-            qis::build_rz(**builder, theta.to_value(context.get_ref()), **qubit);
+            qis::build_rz(**builder, theta.to_value(context.as_ptr()), **qubit);
         }
         Ok(())
     }
