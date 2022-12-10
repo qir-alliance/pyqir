@@ -4,7 +4,6 @@
 use libc::c_char;
 use llvm_sys::{
     core::{LLVMContextCreate, LLVMDisposeMemoryBuffer, LLVMDisposeMessage},
-    prelude::*,
     LLVMContext, LLVMMemoryBuffer,
 };
 use pyo3::prelude::*;
@@ -23,9 +22,11 @@ impl Context {
     }
 }
 
-impl Context {
-    pub(crate) fn as_ptr(&self) -> LLVMContextRef {
-        self.0.as_ptr()
+impl Deref for Context {
+    type Target = NonNull<LLVMContext>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -57,9 +58,13 @@ impl MemoryBuffer {
     pub(crate) unsafe fn new(buffer: NonNull<LLVMMemoryBuffer>) -> Self {
         Self(buffer)
     }
+}
 
-    pub(crate) fn as_ptr(&self) -> LLVMMemoryBufferRef {
-        self.0.as_ptr()
+impl Deref for MemoryBuffer {
+    type Target = NonNull<LLVMMemoryBuffer>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
