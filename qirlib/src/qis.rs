@@ -281,9 +281,10 @@ mod tests {
     #[should_panic(expected = "The builder's position has not been set.")]
     fn builder_not_positioned() {
         unsafe {
-            let context = Context::new(LLVMContextCreate());
-            let builder = Builder::new(LLVMCreateBuilderInContext(*context));
-            build_x(*builder, qubit(*context, 0));
+            let context = Context::new(NonNull::new(LLVMContextCreate()).unwrap());
+            let builder =
+                Builder::new(NonNull::new(LLVMCreateBuilderInContext(context.as_ptr())).unwrap());
+            build_x(builder.as_ptr(), qubit(context.as_ptr(), 0));
         }
     }
 

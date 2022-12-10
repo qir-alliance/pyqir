@@ -56,12 +56,13 @@ mod tests {
     use super::*;
     use crate::tests::Context;
     use llvm_sys::core::LLVMContextCreate;
+    use std::ptr::NonNull;
 
     #[test]
     fn qubit_type() {
         unsafe {
-            let context = Context::new(LLVMContextCreate());
-            let qubit = qubit(*context);
+            let context = Context::new(NonNull::new(LLVMContextCreate()).unwrap());
+            let qubit = qubit(context.as_ptr());
             assert!(is_qubit(qubit));
             assert!(!is_result(qubit));
         }
@@ -70,8 +71,8 @@ mod tests {
     #[test]
     fn result_type() {
         unsafe {
-            let context = Context::new(LLVMContextCreate());
-            let result = result(*context);
+            let context = Context::new(NonNull::new(LLVMContextCreate()).unwrap());
+            let result = result(context.as_ptr());
             assert!(is_result(result));
             assert!(!is_qubit(result));
         }

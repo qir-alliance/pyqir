@@ -3,14 +3,12 @@
 
 use crate::values;
 use libc::c_char;
+#[allow(clippy::wildcard_imports)]
 use llvm_sys::{
     analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
-    core::{
-        LLVMAppendBasicBlockInContext, LLVMBuildRetVoid, LLVMContextCreate, LLVMContextDispose,
-        LLVMCreateBuilderInContext, LLVMDisposeBuilder, LLVMDisposeMessage,
-        LLVMModuleCreateWithNameInContext, LLVMPositionBuilderAtEnd, LLVMPrintModuleToString,
-    },
+    core::*,
     prelude::*,
+    LLVMBuilder, LLVMContext,
 };
 use normalize_line_endings::normalized;
 use std::{
@@ -20,20 +18,21 @@ use std::{
     fs,
     ops::Deref,
     path::PathBuf,
-    ptr,
+    ptr::{self, NonNull},
 };
 
 const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
-pub(crate) struct Context(LLVMContextRef);
+
+pub(crate) struct Context(NonNull<LLVMContext>);
 
 impl Context {
-    pub(crate) unsafe fn new(context: LLVMContextRef) -> Self {
+    pub(crate) unsafe fn new(context: NonNull<LLVMContext>) -> Self {
         Self(context)
     }
 }
 
 impl Deref for Context {
-    type Target = LLVMContextRef;
+    type Target = NonNull<LLVMContext>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -43,22 +42,22 @@ impl Deref for Context {
 impl Drop for Context {
     fn drop(&mut self) {
         unsafe {
-            LLVMContextDispose(self.0);
+            LLVMContextDispose(self.0.as_ptr());
         }
     }
 }
 
-pub(crate) struct Message(*mut c_char);
+pub(crate) struct Message(NonNull<c_char>);
 
 impl Message {
-    pub(crate) unsafe fn new(message: *mut c_char) -> Self {
+    pub(crate) unsafe fn new(message: NonNull<c_char>) -> Self {
         Self(message)
     }
 }
 
 impl Debug for Message {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{:?}", unsafe { CStr::from_ptr(self.0) })
+        write!(f, "{:?}", unsafe { CStr::from_ptr(self.0.as_ptr()) })
     }
 }
 
@@ -66,28 +65,28 @@ impl Deref for Message {
     type Target = CStr;
 
     fn deref(&self) -> &Self::Target {
-        unsafe { CStr::from_ptr(self.0) }
+        unsafe { CStr::from_ptr(self.0.as_ptr()) }
     }
 }
 
 impl Drop for Message {
     fn drop(&mut self) {
         unsafe {
-            LLVMDisposeMessage(self.0);
+            LLVMDisposeMessage(self.0.as_ptr());
         }
     }
 }
 
-pub(crate) struct Builder(LLVMBuilderRef);
+pub(crate) struct Builder(NonNull<LLVMBuilder>);
 
 impl Builder {
-    pub(crate) unsafe fn new(builder: LLVMBuilderRef) -> Self {
+    pub(crate) unsafe fn new(builder: NonNull<LLVMBuilder>) -> Self {
         Self(builder)
     }
 }
 
 impl Deref for Builder {
-    type Target = LLVMBuilderRef;
+    type Target = NonNull<LLVMBuilder>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -97,7 +96,7 @@ impl Deref for Builder {
 impl Drop for Builder {
     fn drop(&mut self) {
         unsafe {
-            LLVMDisposeBuilder(self.0);
+            LLVMDisposeBuilder(self.0.as_ptr());
         }
     }
 }
@@ -156,20 +155,22 @@ fn build_ir(
             required_num_results,
         );
 
-        let builder = Builder::new(LLVMCreateBuilderInContext(context));
+        let builder = LLVMCreateBuilderInContext(context);
+        let builder = Builder::new(NonNull::new(builder).unwrap());
         LLVMPositionBuilderAtEnd(
-            *builder,
+            builder.as_ptr(),
             LLVMAppendBasicBlockInContext(context, entry_point, b"\0".as_ptr().cast()),
         );
-        build(*builder);
-        LLVMBuildRetVoid(*builder);
+        build(builder.as_ptr());
+        LLVMBuildRetVoid(builder.as_ptr());
 
         let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
         let mut error = ptr::null_mut();
         if LLVMVerifyModule(module, action, &mut error) == 0 {
-            Ok(Message::new(LLVMPrintModuleToString(module)))
+            let ir = LLVMPrintModuleToString(module);
+            Ok(Message::new(NonNull::new(ir).unwrap()))
         } else {
-            Err(Message::new(error))
+            Err(Message::new(NonNull::new(error).unwrap()))
         }
     }
 }
