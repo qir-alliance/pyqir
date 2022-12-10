@@ -406,9 +406,13 @@ impl Function {
 
         let name = CString::new(name).unwrap();
         unsafe {
-            let function =
-                LLVMAddFunction(**module.borrow(py), name.as_ptr(), ty.into_super().as_ptr());
+            let function = LLVMAddFunction(
+                module.borrow(py).as_ptr(),
+                name.as_ptr(),
+                ty.into_super().as_ptr(),
+            );
             LLVMSetLinkage(function, linkage.into());
+
             Ok(Value::new(owner, NonNull::new(function).unwrap())
                 .add_subclass(Constant)
                 .add_subclass(Self))
@@ -692,7 +696,7 @@ pub(crate) fn entry_point(
     let name = CString::new(name).unwrap();
     unsafe {
         let entry_point = values::entry_point(
-            **module.borrow(py),
+            module.borrow(py).as_ptr(),
             name.as_c_str(),
             required_num_qubits,
             required_num_results,
@@ -756,7 +760,7 @@ pub(crate) fn required_num_results(function: PyRef<Function>) -> Option<u64> {
 pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> PyResult<PyObject> {
     let context = module.context().clone_ref(py);
     unsafe {
-        let string = values::global_string(**module, value);
+        let string = values::global_string(module.as_ptr(), value);
         Value::from_ptr(py, context.into(), NonNull::new(string).unwrap())
     }
 }

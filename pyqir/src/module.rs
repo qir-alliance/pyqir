@@ -16,8 +16,7 @@ use llvm_sys::{
     bit_writer::LLVMWriteBitcodeToMemoryBuffer,
     core::*,
     ir_reader::LLVMParseIRInContext,
-    prelude::*,
-    LLVMLinkage,
+    LLVMLinkage, LLVMModule,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use std::{
@@ -34,7 +33,7 @@ use std::{
 #[pyclass(unsendable)]
 #[pyo3(text_signature = "(context, str)")]
 pub(crate) struct Module {
-    module: LLVMModuleRef,
+    module: NonNull<LLVMModule>,
     context: Py<Context>,
 }
 
@@ -46,7 +45,10 @@ impl Module {
         let module = unsafe {
             LLVMModuleCreateWithNameInContext(name.as_ptr(), context.borrow(py).as_ptr())
         };
-        Self { module, context }
+        Self {
+            module: NonNull::new(module).unwrap(),
+            context,
+        }
     }
 
     /// Creates a module from LLVM IR.
@@ -73,7 +75,10 @@ impl Module {
             }
         }
 
-        Ok(Self { module, context })
+        Ok(Self {
+            module: NonNull::new(module).unwrap(),
+            context,
+        })
     }
 
     /// Creates a module from LLVM bitcode.
@@ -103,12 +108,16 @@ impl Module {
 
         let mut module = ptr::null_mut();
         let mut error = ptr::null_mut();
+        let context_ref = context.borrow(py).as_ptr();
+
         unsafe {
-            let context_ref = context.borrow(py).as_ptr();
             #[allow(deprecated)]
             if LLVMParseBitcodeInContext(context_ref, buffer.as_ptr(), &mut module, &mut error) == 0
             {
-                Ok(Self { module, context })
+                Ok(Self {
+                    module: NonNull::new(module).unwrap(),
+                    context,
+                })
             } else {
                 let error = Message::new(NonNull::new(error).unwrap());
                 Err(PyValueError::new_err(error.to_str().unwrap().to_string()))
@@ -123,7 +132,7 @@ impl Module {
     fn source_filename(&self) -> &str {
         unsafe {
             let mut len = 0;
-            let name = LLVMGetSourceFileName(self.module, &mut len);
+            let name = LLVMGetSourceFileName(self.as_ptr(), &mut len);
             str::from_utf8(slice::from_raw_parts(name.cast(), len)).unwrap()
         }
     }
@@ -131,7 +140,7 @@ impl Module {
     #[setter]
     fn set_source_filename(&self, value: &str) {
         unsafe {
-            LLVMSetSourceFileName(self.module, value.as_ptr().cast(), value.len());
+            LLVMSetSourceFileName(self.as_ptr(), value.as_ptr().cast(), value.len());
         }
     }
 
@@ -140,7 +149,7 @@ impl Module {
     /// :type: typing.List[Function]
     #[getter]
     fn functions(slf: Py<Module>, py: Python) -> PyResult<Vec<PyObject>> {
-        let module = slf.borrow(py).module;
+        let module = slf.borrow(py).as_ptr();
         let mut functions = Vec::new();
         unsafe {
             let mut function = LLVMGetFirstFunction(module);
@@ -158,7 +167,7 @@ impl Module {
     #[getter]
     fn bitcode<'py>(&self, py: Python<'py>) -> &'py PyBytes {
         let bytes = unsafe {
-            let buffer = LLVMWriteBitcodeToMemoryBuffer(self.module);
+            let buffer = LLVMWriteBitcodeToMemoryBuffer(self.as_ptr());
             let buffer = MemoryBuffer::new(NonNull::new(buffer).unwrap());
             slice::from_raw_parts(
                 LLVMGetBufferStart(buffer.as_ptr()).cast(),
@@ -184,7 +193,7 @@ impl Module {
         unsafe {
             let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
             let mut error = ptr::null_mut();
-            if LLVMVerifyModule(self.module, action, &mut error) == 0 {
+            if LLVMVerifyModule(self.as_ptr(), action, &mut error) == 0 {
                 None
             } else {
                 let error = Message::new(NonNull::new(error).unwrap());
@@ -198,7 +207,7 @@ impl Module {
     /// :rtype: str
     fn __str__(&self) -> String {
         unsafe {
-            Message::new(NonNull::new(LLVMPrintModuleToString(self.module)).unwrap())
+            Message::new(NonNull::new(LLVMPrintModuleToString(self.as_ptr())).unwrap())
                 .to_str()
                 .unwrap()
                 .to_string()
@@ -207,7 +216,7 @@ impl Module {
 }
 
 impl Deref for Module {
-    type Target = LLVMModuleRef;
+    type Target = NonNull<LLVMModule>;
 
     fn deref(&self) -> &Self::Target {
         &self.module
@@ -217,7 +226,7 @@ impl Deref for Module {
 impl Drop for Module {
     fn drop(&mut self) {
         unsafe {
-            LLVMDisposeModule(self.module);
+            LLVMDisposeModule(self.module.as_ptr());
         }
     }
 }
