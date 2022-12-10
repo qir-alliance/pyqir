@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::types;
+use const_str::raw_cstr;
 use core::slice;
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{
@@ -111,7 +112,7 @@ pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef
 
     let size = (value.len() + 1).try_into().unwrap();
     let ty = LLVMArrayType(LLVMInt8TypeInContext(context), size);
-    let global = LLVMAddGlobal(module, ty, b"\0".as_ptr().cast());
+    let global = LLVMAddGlobal(module, ty, raw_cstr!(""));
     LLVMSetLinkage(global, LLVMLinkage::LLVMInternalLinkage);
     LLVMSetGlobalConstant(global, 1);
     LLVMSetInitializer(global, string);

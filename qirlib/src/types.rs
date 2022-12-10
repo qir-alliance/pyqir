@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use const_str::cstr;
 use llvm_sys::{
     core::{
         LLVMGetElementType, LLVMGetStructName, LLVMGetTypeByName2, LLVMGetTypeKind,
@@ -11,8 +12,8 @@ use llvm_sys::{
 };
 use std::ffi::CStr;
 
-const QUBIT: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"Qubit\0") };
-const RESULT: &CStr = unsafe { CStr::from_bytes_with_nul_unchecked(b"Result\0") };
+const QUBIT: &CStr = cstr!("Qubit");
+const RESULT: &CStr = cstr!("Result");
 
 pub unsafe fn qubit(context: LLVMContextRef) -> LLVMTypeRef {
     LLVMPointerType(get_or_create_struct(context, QUBIT), 0)
@@ -31,10 +32,9 @@ pub unsafe fn is_result(ty: LLVMTypeRef) -> bool {
 }
 
 unsafe fn get_or_create_struct(context: LLVMContextRef, name: &CStr) -> LLVMTypeRef {
-    let name = name.as_ptr().cast();
-    let ty = LLVMGetTypeByName2(context, name);
+    let ty = LLVMGetTypeByName2(context, name.as_ptr());
     if ty.is_null() {
-        LLVMStructCreateNamed(context, name)
+        LLVMStructCreateNamed(context, name.as_ptr())
     } else {
         ty
     }

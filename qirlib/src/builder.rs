@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use const_str::raw_cstr;
 use llvm_sys::{
     core::{
         LLVMAppendBasicBlockInContext, LLVMBuildBr, LLVMBuildCondBr, LLVMGetBasicBlockParent,
@@ -44,11 +45,10 @@ pub unsafe fn try_build_if<E>(
         .as_ptr();
 
     let context = LLVMGetTypeContext(LLVMTypeOf(function));
-    let then_block = LLVMAppendBasicBlockInContext(context, function, b"then\0".as_ptr().cast());
-    let else_block = LLVMAppendBasicBlockInContext(context, function, b"else\0".as_ptr().cast());
+    let then_block = LLVMAppendBasicBlockInContext(context, function, raw_cstr!("then"));
+    let else_block = LLVMAppendBasicBlockInContext(context, function, raw_cstr!("else"));
     LLVMBuildCondBr(builder, cond, then_block, else_block);
-    let continue_block =
-        LLVMAppendBasicBlockInContext(context, function, b"continue\0".as_ptr().cast());
+    let continue_block = LLVMAppendBasicBlockInContext(context, function, raw_cstr!("continue"));
 
     LLVMPositionBuilderAtEnd(builder, then_block);
     build_true()?;

@@ -5,16 +5,10 @@ use crate::{
     builder::{build_if, try_build_if},
     types,
 };
+use const_str::raw_cstr;
 use libc::c_uint;
-use llvm_sys::{
-    core::{
-        LLVMAddFunction, LLVMBuildCall, LLVMDoubleTypeInContext, LLVMFunctionType,
-        LLVMGetBasicBlockParent, LLVMGetGlobalParent, LLVMGetInsertBlock, LLVMGetModuleContext,
-        LLVMGetNamedFunction, LLVMInt1TypeInContext, LLVMSetLinkage, LLVMVoidTypeInContext,
-    },
-    prelude::*,
-    LLVMLinkage,
-};
+#[allow(clippy::wildcard_imports)]
+use llvm_sys::{core::*, prelude::*, LLVMLinkage};
 use std::{ffi::CString, ptr::NonNull};
 
 pub unsafe fn build_cx(builder: LLVMBuilderRef, control: LLVMValueRef, qubit: LLVMValueRef) {
@@ -173,7 +167,7 @@ unsafe fn build_call(
         function,
         args.as_mut_ptr(),
         c_uint::try_from(args.len()).unwrap(),
-        [0].as_ptr(),
+        raw_cstr!(""),
     )
 }
 
@@ -236,9 +230,9 @@ unsafe fn declare(
         Functor::Adjoint => "adj",
     };
     let name = CString::new(format!("__quantum__qis__{}__{}", name, suffix)).unwrap();
-    let function = LLVMGetNamedFunction(module, name.as_ptr().cast());
+    let function = LLVMGetNamedFunction(module, name.as_ptr());
     if function.is_null() {
-        let function = LLVMAddFunction(module, name.as_ptr().cast(), ty);
+        let function = LLVMAddFunction(module, name.as_ptr(), ty);
         LLVMSetLinkage(function, LLVMLinkage::LLVMExternalLinkage);
         function
     } else {

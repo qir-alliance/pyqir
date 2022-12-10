@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::values;
+use const_str::{cstr, raw_cstr};
 use libc::c_char;
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{
@@ -150,7 +151,7 @@ fn build_ir(
         let module = LLVMModuleCreateWithNameInContext(name.as_ptr(), context);
         let entry_point = values::entry_point(
             module,
-            CStr::from_bytes_with_nul_unchecked(b"main\0"),
+            cstr!("main"),
             required_num_qubits,
             required_num_results,
         );
@@ -159,7 +160,7 @@ fn build_ir(
         let builder = Builder::new(NonNull::new(builder).unwrap());
         LLVMPositionBuilderAtEnd(
             builder.as_ptr(),
-            LLVMAppendBasicBlockInContext(context, entry_point, b"\0".as_ptr().cast()),
+            LLVMAppendBasicBlockInContext(context, entry_point, raw_cstr!("")),
         );
         build(builder.as_ptr());
         LLVMBuildRetVoid(builder.as_ptr());

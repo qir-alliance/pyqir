@@ -57,6 +57,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "const-str"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5bc011a04793b8ce7bca0efd59e3697c2061760df6efbb8c895e8a81548db67"
+
+[[package]]
 name = "dashmap"
 version = "5.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -479,6 +485,7 @@ dependencies = [
  "bitvec",
  "cc",
  "cmake",
+ "const-str",
  "inkwell",
  "lazy_static",
  "libc",

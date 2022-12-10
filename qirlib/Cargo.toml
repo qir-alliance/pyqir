@@ -12,6 +12,7 @@ rust-version = "1.59"
 
 [dependencies]
 bitvec = "1.0"
+const-str = "0.5"
 inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["internal-getters"] }
 lazy_static = "1.4"
 libc = "0.2"
