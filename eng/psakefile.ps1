@@ -272,7 +272,7 @@ task run-examples-in-containers {
 # run-examples assumes the wheels have already been installed locally
 task run-examples {
     exec -workingDirectory $Examples {
-        & $Python -m pip install --requirement requirements.txt
+        & $Python -m pip install --requirement requirements.txt --use-pep517
         & $Python -m pip install --force-reinstall (Get-Wheel pyqir)
 
         & $Python bell_pair.py | Tee-Object -Variable output
