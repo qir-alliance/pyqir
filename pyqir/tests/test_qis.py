@@ -55,7 +55,8 @@ def test_two_qubit_gates(
     ],
 )
 def test_three_qubit_gates(
-    name: str, get_gate: Callable[[BasicQisBuilder], Callable[[Value, Value, Value], None]]
+    name: str,
+    get_gate: Callable[[BasicQisBuilder], Callable[[Value, Value, Value], None]],
 ) -> None:
     mod = SimpleModule("test_three_qubit_gates", 3, 0)
     basic = BasicQisBuilder(mod.builder)
