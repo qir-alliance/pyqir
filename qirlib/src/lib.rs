@@ -17,7 +17,7 @@ pub mod builder;
 #[cfg(not(feature = "no-llvm-linking"))]
 pub mod evaluation;
 #[cfg(not(feature = "no-llvm-linking"))]
-pub mod extensions;
+pub mod llvm_wrapper;
 #[cfg(not(feature = "no-llvm-linking"))]
 pub mod qis;
 #[cfg(not(feature = "no-llvm-linking"))]

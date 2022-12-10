@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#include "llvm-c/Core.h"
+#include "LLVMWrapper.h"
+
 #include "llvm/IR/Module.h"
-#include "llvm/Support/CBindingWrapping.h"
 
 #ifdef _WIN32
 #define QIR_SHARED_API __declspec(dllexport)
@@ -16,7 +16,7 @@ extern "C"
 {
 #endif
 
-typedef enum LLVMModFlagBehavior {
+enum LLVMRustModFlagBehavior {
     Error = 1,
     Warning = 2,
     Require = 3,
@@ -24,44 +24,50 @@ typedef enum LLVMModFlagBehavior {
     Append = 5,
     AppendUnique = 6,
     Max = 7,
+#if LLVM_VERSION_GE(14, 0)
     Min = 8,
+#endif
 
     // Markers:
     ModFlagBehaviorFirstVal = Error,
+#if LLVM_VERSION_GE(14, 0)
     ModFlagBehaviorLastVal = Min
+#else
+    ModFlagBehaviorLastVal = Max
+#endif
   };
 
 
 static llvm::Module::ModFlagBehavior
-map_to_llvmModFlagBehavior(LLVMModFlagBehavior Behavior) {
+map_to_llvmRustModFlagBehavior(LLVMRustModFlagBehavior Behavior) {
   switch (Behavior) {
-  case LLVMModFlagBehavior::Error:
+  case LLVMRustModFlagBehavior::Error:
     return llvm::Module::ModFlagBehavior::Error;
-  case LLVMModFlagBehavior::Warning:
+  case LLVMRustModFlagBehavior::Warning:
     return llvm::Module::ModFlagBehavior::Warning;
-  case LLVMModFlagBehavior::Require:
+  case LLVMRustModFlagBehavior::Require:
     return llvm::Module::ModFlagBehavior::Require;
-  case LLVMModFlagBehavior::Override:
+  case LLVMRustModFlagBehavior::Override:
     return llvm::Module::ModFlagBehavior::Override;
-  case LLVMModFlagBehavior::Append:
+  case LLVMRustModFlagBehavior::Append:
     return llvm::Module::ModFlagBehavior::Append;
-  case LLVMModFlagBehavior::AppendUnique:
+  case LLVMRustModFlagBehavior::AppendUnique:
     return llvm::Module::ModFlagBehavior::AppendUnique;
-  case LLVMModFlagBehavior::Max:
+  case LLVMRustModFlagBehavior::Max:
     return llvm::Module::ModFlagBehavior::Max;
-  // Leaving this commented out for the moment. It requires
-  // LLVM 14 and I don't have a conditional definition to hook on.
-  // case LLVMModFlagBehavior::Min:
-  //   return llvm::Module::ModFlagBehavior::Min;
+#if LLVM_VERSION_GE(14, 0)
+  case LLVMRustModFlagBehavior::Min:
+    return llvm::Module::ModFlagBehavior::Min;
+#endif
   }
-  llvm_unreachable("Unknown LLVMModFlagBehavior");
+  llvm_unreachable("Unknown LLVMRustModFlagBehavior");
 }
 
-QIR_SHARED_API void fixed_LLVMAddModuleFlag(LLVMModuleRef M, LLVMModFlagBehavior Behavior,
+QIR_SHARED_API void LLVMRustAddModuleFlag(LLVMModuleRef M, LLVMRustModFlagBehavior Behavior,
                        const char *Key, size_t KeyLen,
                        LLVMMetadataRef Val) {
 
-  llvm::unwrap(M)->addModuleFlag(map_to_llvmModFlagBehavior(Behavior), {Key, KeyLen}, llvm::unwrap(Val));
+  llvm::unwrap(M)->addModuleFlag(map_to_llvmRustModFlagBehavior(Behavior), {Key, KeyLen}, llvm::unwrap(Val));
 }
 
 #ifdef __cplusplus

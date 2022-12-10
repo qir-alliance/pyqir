@@ -96,7 +96,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     // llvm-sys components
     println!("cargo:rerun-if-changed=external.rs");
     println!("cargo:rerun-if-changed=target.c");
-    println!("cargo:rerun-if-changed=extensions.cpp");
+    println!("cargo:rerun-if-changed=llvm-wrapper/LLVMWrapper.h");
+    println!("cargo:rerun-if-changed=llvm-wrapper/ModuleWrapper.cpp");
 
     // Download vars passed to cmake
     println!("cargo:rerun-if-env-changed=QIRLIB_DOWNLOAD_LLVM");
@@ -133,8 +134,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("No LLVM linking");
     }
     if !cfg!(feature = "no-llvm-linking") {
-        let build_dir = get_build_dir()?;
-        compile_extensions(&build_dir)?;
+        compile_llvm_wrapper()?;
     }
 
     Ok(())
@@ -257,13 +257,20 @@ fn compile_target_wrappers(build_dir: &Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn compile_extensions(build_dir: &Path) -> Result<(), Box<dyn Error>> {
-    let extensions_c = build_dir.join("extensions.cpp").canonicalize()?;
-    env::set_var("CXXFLAGS", llvm_sys::get_llvm_cxxflags());
-    Build::new()
-        .file(extensions_c)
+fn compile_llvm_wrapper() -> Result<(), Box<dyn Error>> {
+    let mut cfg = cc::Build::new();
+    cfg.warnings(false);
+    let cxxflags = llvm_sys::get_llvm_cxxflags();
+    for flag in cxxflags.split_whitespace() {
+        if flag.starts_with("-flto") {
+            continue;
+        }
+        cfg.flag(flag);
+    }
+    cfg.file("llvm-wrapper/ModuleWrapper.cpp")
         .cpp(true)
-        .compile("llvmcppextensions");
+        .cpp_link_stdlib(None)
+        .compile("llvm-wrapper");
     Ok(())
 }
 

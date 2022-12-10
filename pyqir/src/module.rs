@@ -11,7 +11,7 @@ use inkwell::{
 };
 use llvm_sys::core::LLVMValueAsMetadata;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
-use qirlib::extensions::{fixed_LLVMAddModuleFlag, LLVMModFlagBehavior};
+use qirlib::llvm_wrapper::{LLVMRustAddModuleFlag, LLVMRustModFlagBehavior};
 use std::mem::transmute;
 
 /// A module is a collection of global values.
@@ -150,7 +150,7 @@ impl Module {
         let md = unsafe { LLVMValueAsMetadata(value.into_metadata_value().get_ref()) };
 
         unsafe {
-            fixed_LLVMAddModuleFlag(
+            LLVMRustAddModuleFlag(
                 self.module.get_ref(),
                 behavior
                     .try_into()
@@ -181,7 +181,7 @@ impl Module {
         let md = unsafe { LLVMValueAsMetadata(value.get_ref()) };
 
         unsafe {
-            fixed_LLVMAddModuleFlag(
+            LLVMRustAddModuleFlag(
                 self.module.get_ref(),
                 behavior
                     .try_into()
@@ -311,42 +311,33 @@ pub(crate) enum ModuleFlagBehavior {
     Min,
 }
 
-impl From<LLVMModFlagBehavior> for ModuleFlagBehavior {
-    fn from(flag: LLVMModFlagBehavior) -> Self {
+impl From<LLVMRustModFlagBehavior> for ModuleFlagBehavior {
+    fn from(flag: LLVMRustModFlagBehavior) -> Self {
         match flag {
-            LLVMModFlagBehavior::Error => ModuleFlagBehavior::Error,
-            LLVMModFlagBehavior::Warning => ModuleFlagBehavior::Warning,
-            LLVMModFlagBehavior::Require => ModuleFlagBehavior::Require,
-            LLVMModFlagBehavior::Override => ModuleFlagBehavior::Override,
-            LLVMModFlagBehavior::Append => ModuleFlagBehavior::Append,
-            LLVMModFlagBehavior::AppendUnique => ModuleFlagBehavior::AppendUnique,
-            LLVMModFlagBehavior::Max => ModuleFlagBehavior::Max,
+            LLVMRustModFlagBehavior::Error => ModuleFlagBehavior::Error,
+            LLVMRustModFlagBehavior::Warning => ModuleFlagBehavior::Warning,
+            LLVMRustModFlagBehavior::Require => ModuleFlagBehavior::Require,
+            LLVMRustModFlagBehavior::Override => ModuleFlagBehavior::Override,
+            LLVMRustModFlagBehavior::Append => ModuleFlagBehavior::Append,
+            LLVMRustModFlagBehavior::AppendUnique => ModuleFlagBehavior::AppendUnique,
+            LLVMRustModFlagBehavior::Max => ModuleFlagBehavior::Max,
             #[cfg(any(feature = "llvm14-0"))]
-            LLVMModFlagBehavior::Min => ModuleFlagBehavior::Min,
+            LLVMRustModFlagBehavior::Min => ModuleFlagBehavior::Min,
         }
     }
 }
 
-impl TryFrom<ModuleFlagBehavior> for LLVMModFlagBehavior {
-    type Error = PyErr;
-
-    fn try_from(
-        flag: ModuleFlagBehavior,
-    ) -> Result<Self, <LLVMModFlagBehavior as TryFrom<ModuleFlagBehavior>>::Error> {
+impl From<ModuleFlagBehavior> for LLVMRustModFlagBehavior {
+    fn from(flag: ModuleFlagBehavior) -> Self {
         match flag {
-            ModuleFlagBehavior::Error => Ok(LLVMModFlagBehavior::Error),
-            ModuleFlagBehavior::Warning => Ok(LLVMModFlagBehavior::Warning),
-            ModuleFlagBehavior::Require => Ok(LLVMModFlagBehavior::Require),
-            ModuleFlagBehavior::Override => Ok(LLVMModFlagBehavior::Override),
-            ModuleFlagBehavior::Append => Ok(LLVMModFlagBehavior::Append),
-            ModuleFlagBehavior::AppendUnique => Ok(LLVMModFlagBehavior::AppendUnique),
-            ModuleFlagBehavior::Max => Ok(LLVMModFlagBehavior::Max),
-            #[cfg(any(feature = "llvm14-0"))]
-            ModuleFlagBehavior::Min => LLVMModFlagBehavior::Min,
-            #[cfg(not(feature = "llvm14-0"))]
-            _ => Err(PyValueError::new_err(
-                "Min is not supported for this version of LLVM",
-            )),
+            ModuleFlagBehavior::Error => LLVMRustModFlagBehavior::Error,
+            ModuleFlagBehavior::Warning => LLVMRustModFlagBehavior::Warning,
+            ModuleFlagBehavior::Require => LLVMRustModFlagBehavior::Require,
+            ModuleFlagBehavior::Override => LLVMRustModFlagBehavior::Override,
+            ModuleFlagBehavior::Append => LLVMRustModFlagBehavior::Append,
+            ModuleFlagBehavior::AppendUnique => LLVMRustModFlagBehavior::AppendUnique,
+            ModuleFlagBehavior::Max => LLVMRustModFlagBehavior::Max,
+            ModuleFlagBehavior::Min => todo!("Min is not supported on LLVM < 14"),
         }
     }
 }

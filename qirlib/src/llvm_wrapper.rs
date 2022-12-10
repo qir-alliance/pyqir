@@ -5,7 +5,7 @@ use llvm_sys::prelude::{LLVMMetadataRef, LLVMModuleRef};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum LLVMModFlagBehavior {
+pub enum LLVMRustModFlagBehavior {
     Error = 1,
     Warning = 2,
     Require = 3,
@@ -19,9 +19,9 @@ pub enum LLVMModFlagBehavior {
 
 extern "C" {
     /// Add a module-level flag to the module-level flags metadata if it doesn't already exist.
-    pub fn fixed_LLVMAddModuleFlag(
+    pub fn LLVMRustAddModuleFlag(
         M: LLVMModuleRef,
-        Behavior: LLVMModFlagBehavior,
+        Behavior: LLVMRustModFlagBehavior,
         Key: *const ::libc::c_char,
         KeyLen: ::libc::size_t,
         Val: LLVMMetadataRef,
