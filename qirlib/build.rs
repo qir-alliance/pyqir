@@ -270,6 +270,7 @@ fn compile_llvm_wrapper() -> Result<(), Box<dyn Error>> {
     cfg.file("llvm-wrapper/ModuleWrapper.cpp")
         .cpp(true)
         .cpp_link_stdlib(None)
+        .static_crt(true)
         .compile("llvm-wrapper");
     Ok(())
 }
