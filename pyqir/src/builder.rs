@@ -205,7 +205,7 @@ impl Builder {
     /// :param typing.Sequence[typing.Union[Value, bool, int, float]] args:
     ///     The arguments to the function.
     /// :returns: The return value, or None if the function has a void return type.
-    /// :rtype: Optional[Value]
+    /// :rtype: Value
     #[pyo3(text_signature = "(self, callee, args)")]
     fn call(&self, py: Python, callee: &Value, args: Vec<Argument>) -> PyResult<PyObject> {
         let arg_owners = args.iter().filter_map(Argument::owner);

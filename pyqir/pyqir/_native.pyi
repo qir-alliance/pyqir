@@ -340,13 +340,13 @@ class Builder:
         self,
         callee: Value,
         args: Sequence[Union[Value, bool, int, float]],
-    ) -> Optional[Value]:
+    ) -> Value:
         """
         Inserts a call instruction.
 
         :param value: The value to call.
         :param args: The arguments to the function.
-        :returns: The return value, or None if the function has a void return type.
+        :returns: The instruction value.
         """
         ...
     def if_(
