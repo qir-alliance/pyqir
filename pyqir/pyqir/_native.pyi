@@ -665,7 +665,7 @@ class Module:
         """The LLVM context."""
         ...
     def add_metadata_flag(
-        self, name: str, behavior: ModuleFlagBehavior, value: Value
+        self, behavior: ModuleFlagBehavior, id: str, value: Value
     ) -> None:
         """
         Adds a metadata flag to the llvm.module.flags metadata
@@ -678,7 +678,7 @@ class Module:
         """
         ...
     def add_value_flag(
-        self, name: str, behavior: ModuleFlagBehavior, value: Value
+        self, behavior: ModuleFlagBehavior, id: str, value: Value
     ) -> None:
         """
         Adds a value flag to the llvm.module.flags metadata
@@ -690,7 +690,7 @@ class Module:
         :param value: value of the flag
         """
         ...
-    def get_flag(self, name: str) -> Optional[Value]:
+    def get_flag(self, id: str) -> Optional[Value]:
         """
         Gets the flag value from the llvm.module.flags metadata for a given id
 
