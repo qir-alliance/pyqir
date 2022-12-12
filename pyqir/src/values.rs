@@ -81,10 +81,7 @@ impl Value {
         match LLVMGetValueKind(value) {
             LLVMValueKind::LLVMInstructionValueKind => Instruction::from_raw(py, owner, value),
             LLVMValueKind::LLVMBasicBlockValueKind => {
-                let value = NonNull::new(value).expect("Value is null.");
-                let base = PyClassInitializer::from(Self { value, owner });
-                let block = LLVMValueAsBasicBlock(value.as_ptr());
-                let block = base.add_subclass(BasicBlock(NonNull::new(block).unwrap()));
+                let block = BasicBlock::from_raw(owner, LLVMValueAsBasicBlock(value));
                 Ok(Py::new(py, block)?.to_object(py))
             }
             _ if LLVMIsConstant(value) != 0 => Constant::from_raw(py, owner, value),
@@ -284,6 +281,17 @@ impl BasicBlock {
                 Instruction::from_raw(py, owner, term).map(Some)
             }
         }
+    }
+}
+
+impl BasicBlock {
+    pub(crate) unsafe fn from_raw(
+        owner: Owner,
+        block: LLVMBasicBlockRef,
+    ) -> PyClassInitializer<Self> {
+        let block = NonNull::new(block).expect("Block is null.");
+        let value = NonNull::new(LLVMBasicBlockAsValue(block.as_ptr())).expect("Value is null.");
+        PyClassInitializer::from(Value { value, owner }).add_subclass(BasicBlock(block))
     }
 }
 

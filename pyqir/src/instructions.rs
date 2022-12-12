@@ -320,7 +320,7 @@ impl Switch {
     fn cond(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super().into_super();
         unsafe {
-            let value = LLVMGetOperand(slf.as_ptr(), 0);
+            let value = LLVMGetCondition(slf.as_ptr());
             Value::from_raw(py, slf.owner().clone_ref(py), value)
         }
     }
@@ -329,11 +329,12 @@ impl Switch {
     ///
     /// :type: BasicBlock
     #[getter]
-    fn default(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
+    fn default(slf: PyRef<Self>, py: Python) -> PyResult<Py<BasicBlock>> {
         let slf = slf.into_super().into_super();
         unsafe {
-            let value = LLVMGetOperand(slf.as_ptr(), 1);
-            Value::from_raw(py, slf.owner().clone_ref(py), value)
+            let block = LLVMGetSwitchDefaultDest(slf.as_ptr());
+            let block = BasicBlock::from_raw(slf.owner().clone_ref(py), block);
+            Py::new(py, block)
         }
     }
 
