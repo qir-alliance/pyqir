@@ -61,6 +61,8 @@ impl Module {
     #[pyo3(text_signature = "(context, ir, name=\"\")")]
     fn from_ir(py: Python, context: Py<Context>, ir: &str, name: Option<&str>) -> PyResult<Self> {
         let name = CString::new(name.unwrap_or_default()).unwrap();
+
+        // Don't dispose this buffer. LLVMParseIRInContext takes ownership.
         let buffer = unsafe {
             LLVMCreateMemoryBufferWithMemoryRange(ir.as_ptr().cast(), ir.len(), name.as_ptr(), 0)
         };
