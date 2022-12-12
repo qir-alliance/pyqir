@@ -110,8 +110,8 @@ pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef
         0,
     );
 
-    let size = (value.len() + 1).try_into().unwrap();
-    let ty = LLVMArrayType(LLVMInt8TypeInContext(context), size);
+    let len = LLVMGetArrayLength(LLVMTypeOf(string));
+    let ty = LLVMArrayType(LLVMInt8TypeInContext(context), len);
     let global = LLVMAddGlobal(module, ty, raw_cstr!(""));
     LLVMSetLinkage(global, LLVMLinkage::LLVMInternalLinkage);
     LLVMSetGlobalConstant(global, 1);

@@ -517,7 +517,7 @@ impl AttributeList {
     fn param(&self, py: Python, n: u32) -> AttributeSet {
         AttributeSet {
             function: self.0.clone_ref(py),
-            index: n + 1,
+            index: n + 1, // Parameter indices start from one.
         }
     }
 
