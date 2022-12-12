@@ -5,7 +5,7 @@
 
 use crate::{core::Context, values::Owner};
 #[allow(clippy::wildcard_imports)]
-use llvm_sys::{core::*, LLVMType, LLVMTypeKind};
+use llvm_sys::{core::*, prelude::*, LLVMType, LLVMTypeKind};
 use pyo3::{conversion::ToPyObject, prelude::*};
 use qirlib::types;
 use std::{ffi::CStr, ops::Deref, ptr::NonNull};
@@ -67,11 +67,12 @@ impl Type {
 }
 
 impl Type {
-    pub(crate) unsafe fn from_ptr(
+    pub(crate) unsafe fn from_raw(
         py: Python,
         context: Py<Context>,
-        ty: NonNull<LLVMType>,
+        ty: LLVMTypeRef,
     ) -> PyResult<PyObject> {
+        let ty = NonNull::new(ty).expect("Type is null.");
         let base = PyClassInitializer::from(Self { ty, context });
         match LLVMGetTypeKind(ty.as_ptr()) {
             LLVMTypeKind::LLVMArrayTypeKind => {
@@ -183,10 +184,7 @@ impl FunctionType {
     fn ret(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super();
         let context = slf.context.clone_ref(py);
-        unsafe {
-            let ty = LLVMGetReturnType(slf.as_ptr());
-            Type::from_ptr(py, context, NonNull::new(ty).unwrap())
-        }
+        unsafe { Type::from_raw(py, context, LLVMGetReturnType(slf.as_ptr())) }
     }
 
     /// The types of the function parameters.
@@ -202,7 +200,7 @@ impl FunctionType {
             params.set_len(count);
             params
                 .into_iter()
-                .map(|ty| Type::from_ptr(py, slf.context.clone_ref(py), NonNull::new(ty).unwrap()))
+                .map(|ty| Type::from_raw(py, slf.context.clone_ref(py), ty))
                 .collect()
         }
     }
@@ -242,7 +240,7 @@ impl StructType {
             fields.set_len(count);
             fields
                 .into_iter()
-                .map(|ty| Type::from_ptr(py, slf.context.clone_ref(py), NonNull::new(ty).unwrap()))
+                .map(|ty| Type::from_raw(py, slf.context.clone_ref(py), ty))
                 .collect()
         }
     }
@@ -262,7 +260,7 @@ impl ArrayType {
         let slf = slf.into_super();
         unsafe {
             let ty = LLVMGetElementType(slf.as_ptr());
-            Type::from_ptr(py, slf.context.clone_ref(py), NonNull::new(ty).unwrap())
+            Type::from_raw(py, slf.context.clone_ref(py), ty)
         }
     }
 
@@ -304,7 +302,7 @@ impl PointerType {
         let slf = slf.into_super();
         unsafe {
             let ty = LLVMGetElementType(slf.as_ptr());
-            Type::from_ptr(py, slf.context.clone_ref(py), NonNull::new(ty).unwrap())
+            Type::from_raw(py, slf.context.clone_ref(py), ty)
         }
     }
 
@@ -327,7 +325,7 @@ impl PointerType {
 pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
     unsafe {
         let ty = types::qubit(context.borrow(py).as_ptr());
-        Type::from_ptr(py, context, NonNull::new(ty).unwrap())
+        Type::from_raw(py, context, ty)
     }
 }
 
@@ -352,7 +350,7 @@ pub(crate) fn is_qubit_type(ty: &Type) -> bool {
 pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
     unsafe {
         let ty = types::result(context.borrow(py).as_ptr());
-        Type::from_ptr(py, context, NonNull::new(ty).unwrap())
+        Type::from_raw(py, context, ty)
     }
 }
 

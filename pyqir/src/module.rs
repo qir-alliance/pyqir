@@ -153,8 +153,8 @@ impl Module {
         let mut functions = Vec::new();
         unsafe {
             let mut function = LLVMGetFirstFunction(module);
-            while let Some(f) = NonNull::new(function) {
-                functions.push(Value::from_ptr(py, slf.clone_ref(py).into(), f)?);
+            while !function.is_null() {
+                functions.push(Value::from_raw(py, slf.clone_ref(py).into(), function)?);
                 function = LLVMGetNextFunction(function);
             }
         }

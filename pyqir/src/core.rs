@@ -3,7 +3,7 @@
 
 use libc::c_char;
 use llvm_sys::{
-    core::{LLVMContextCreate, LLVMDisposeMemoryBuffer, LLVMDisposeMessage},
+    core::{LLVMContextCreate, LLVMContextDispose, LLVMDisposeMemoryBuffer, LLVMDisposeMessage},
     LLVMContext, LLVMMemoryBuffer,
 };
 use pyo3::prelude::*;
@@ -27,6 +27,14 @@ impl Deref for Context {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl Drop for Context {
+    fn drop(&mut self) {
+        unsafe {
+            LLVMContextDispose(self.0.as_ptr());
+        }
     }
 }
 

@@ -5,7 +5,7 @@
 
 use crate::values::{BasicBlock, Owner, Value};
 #[allow(clippy::wildcard_imports)]
-use llvm_sys::{core::*, LLVMIntPredicate, LLVMOpcode, LLVMRealPredicate, LLVMValue};
+use llvm_sys::{core::*, prelude::*, LLVMIntPredicate, LLVMOpcode, LLVMRealPredicate};
 use pyo3::{conversion::ToPyObject, prelude::*};
 use std::{convert::Into, ptr::NonNull};
 
@@ -34,7 +34,7 @@ impl Instruction {
             (0..u32::try_from(LLVMGetNumOperands(slf.as_ptr())).unwrap())
                 .map(|i| {
                     let operand = LLVMGetOperand(slf.as_ptr(), i);
-                    Value::from_ptr(py, owner.clone_ref(py), NonNull::new(operand).unwrap())
+                    Value::from_raw(py, owner.clone_ref(py), operand)
                 })
                 .collect()
         }
@@ -76,12 +76,13 @@ impl Instruction {
 }
 
 impl Instruction {
-    pub(crate) unsafe fn from_ptr(
+    pub(crate) unsafe fn from_raw(
         py: Python,
         owner: Owner,
-        value: NonNull<LLVMValue>,
+        value: LLVMValueRef,
     ) -> PyResult<PyObject> {
-        let base = Value::new(owner, value).add_subclass(Self);
+        let value = NonNull::new(value).expect("Value is null.");
+        let base = PyClassInitializer::from(Value::new(owner, value)).add_subclass(Self);
         match LLVMGetInstructionOpcode(value.as_ptr()) {
             LLVMOpcode::LLVMSwitch => Ok(Py::new(py, base.add_subclass(Switch))?.to_object(py)),
             LLVMOpcode::LLVMICmp => Ok(Py::new(py, base.add_subclass(ICmp))?.to_object(py)),
@@ -320,7 +321,7 @@ impl Switch {
         let slf = slf.into_super().into_super();
         unsafe {
             let value = LLVMGetOperand(slf.as_ptr(), 0);
-            Value::from_ptr(py, slf.owner().clone_ref(py), NonNull::new(value).unwrap())
+            Value::from_raw(py, slf.owner().clone_ref(py), value)
         }
     }
 
@@ -332,7 +333,7 @@ impl Switch {
         let slf = slf.into_super().into_super();
         unsafe {
             let value = LLVMGetOperand(slf.as_ptr(), 1);
-            Value::from_ptr(py, slf.owner().clone_ref(py), NonNull::new(value).unwrap())
+            Value::from_raw(py, slf.owner().clone_ref(py), value)
         }
     }
 
@@ -350,8 +351,8 @@ impl Switch {
                     let cond = LLVMGetOperand(slf.as_ptr(), i);
                     let succ = LLVMGetOperand(slf.as_ptr(), i + 1);
                     Ok((
-                        Value::from_ptr(py, owner.clone_ref(py), NonNull::new(cond).unwrap())?,
-                        Value::from_ptr(py, owner.clone_ref(py), NonNull::new(succ).unwrap())?,
+                        Value::from_raw(py, owner.clone_ref(py), cond)?,
+                        Value::from_raw(py, owner.clone_ref(py), succ)?,
                     ))
                 })
                 .collect()
@@ -524,7 +525,7 @@ impl Call {
         let slf = slf.into_super().into_super();
         unsafe {
             let value = LLVMGetCalledValue(slf.as_ptr());
-            Value::from_ptr(py, slf.owner().clone_ref(py), NonNull::new(value).unwrap())
+            Value::from_raw(py, slf.owner().clone_ref(py), value)
         }
     }
 
@@ -558,8 +559,8 @@ impl Phi {
                     let value = LLVMGetIncomingValue(slf.as_ptr(), i);
                     let block = LLVMBasicBlockAsValue(LLVMGetIncomingBlock(slf.as_ptr(), i));
                     Ok((
-                        Value::from_ptr(py, owner.clone_ref(py), NonNull::new(value).unwrap())?,
-                        Value::from_ptr(py, owner.clone_ref(py), NonNull::new(block).unwrap())?,
+                        Value::from_raw(py, owner.clone_ref(py), value)?,
+                        Value::from_raw(py, owner.clone_ref(py), block)?,
                     ))
                 })
                 .collect()

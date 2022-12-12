@@ -68,7 +68,7 @@ impl Builder {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildAnd(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
-            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
+            Value::from_raw(py, owner, value)
         }
     }
 
@@ -83,7 +83,7 @@ impl Builder {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildOr(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
-            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
+            Value::from_raw(py, owner, value)
         }
     }
 
@@ -98,7 +98,7 @@ impl Builder {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildXor(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
-            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
+            Value::from_raw(py, owner, value)
         }
     }
 
@@ -113,7 +113,7 @@ impl Builder {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildAdd(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
-            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
+            Value::from_raw(py, owner, value)
         }
     }
 
@@ -128,7 +128,7 @@ impl Builder {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildSub(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
-            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
+            Value::from_raw(py, owner, value)
         }
     }
 
@@ -143,7 +143,7 @@ impl Builder {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildMul(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
-            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
+            Value::from_raw(py, owner, value)
         }
     }
 
@@ -158,7 +158,7 @@ impl Builder {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildShl(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
-            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
+            Value::from_raw(py, owner, value)
         }
     }
 
@@ -173,7 +173,7 @@ impl Builder {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildLShr(self.as_ptr(), lhs.as_ptr(), rhs.as_ptr(), raw_cstr!(""));
-            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
+            Value::from_raw(py, owner, value)
         }
     }
 
@@ -195,7 +195,7 @@ impl Builder {
                 rhs.as_ptr(),
                 raw_cstr!(""),
             );
-            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
+            Value::from_raw(py, owner, value)
         }
     }
 
@@ -241,7 +241,7 @@ impl Builder {
                 args.len().try_into().unwrap(),
                 raw_cstr!(""),
             );
-            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
+            Value::from_raw(py, owner, value)
         }
     }
 
@@ -285,7 +285,7 @@ impl Builder {
         let owner = Owner::merge(py, [&self.owner, dest.as_ref().owner()])?;
         unsafe {
             let value = LLVMBuildBr(self.builder.as_ptr(), dest.as_ptr());
-            Value::from_ptr(py, owner, NonNull::new(value).unwrap())
+            Value::from_raw(py, owner, value)
         }
     }
 
@@ -307,7 +307,7 @@ impl Builder {
                 (inst, owner)
             }
         };
-        unsafe { Value::from_ptr(py, owner, NonNull::new(value).unwrap()) }
+        unsafe { Value::from_raw(py, owner, value) }
     }
 }
 

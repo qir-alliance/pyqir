@@ -46,10 +46,7 @@ impl Value {
     /// :type: Type
     #[getter]
     fn r#type(&self, py: Python) -> PyResult<PyObject> {
-        unsafe {
-            let ty = LLVMTypeOf(self.as_ptr());
-            Type::from_ptr(py, self.owner.context(py), NonNull::new(ty).unwrap())
-        }
+        unsafe { Type::from_raw(py, self.owner.context(py), LLVMTypeOf(self.as_ptr())) }
     }
 
     /// The name of this value or the empty string if this value is anonymous.
@@ -72,25 +69,29 @@ impl Value {
 }
 
 impl Value {
-    pub(crate) unsafe fn new(owner: Owner, value: NonNull<LLVMValue>) -> PyClassInitializer<Self> {
-        PyClassInitializer::from(Self { value, owner })
+    pub(crate) unsafe fn new(owner: Owner, value: NonNull<LLVMValue>) -> Self {
+        Self { value, owner }
     }
 
-    pub(crate) unsafe fn from_ptr(
+    pub(crate) unsafe fn from_raw(
         py: Python,
         owner: Owner,
-        value: NonNull<LLVMValue>,
+        value: LLVMValueRef,
     ) -> PyResult<PyObject> {
-        match LLVMGetValueKind(value.as_ptr()) {
-            LLVMValueKind::LLVMInstructionValueKind => Instruction::from_ptr(py, owner, value),
+        match LLVMGetValueKind(value) {
+            LLVMValueKind::LLVMInstructionValueKind => Instruction::from_raw(py, owner, value),
             LLVMValueKind::LLVMBasicBlockValueKind => {
+                let value = NonNull::new(value).expect("Value is null.");
                 let base = PyClassInitializer::from(Self { value, owner });
                 let block = LLVMValueAsBasicBlock(value.as_ptr());
                 let block = base.add_subclass(BasicBlock(NonNull::new(block).unwrap()));
                 Ok(Py::new(py, block)?.to_object(py))
             }
-            _ if LLVMIsConstant(value.as_ptr()) != 0 => Constant::from_ptr(py, owner, value),
-            _ => Ok(Py::new(py, Self { value, owner })?.to_object(py)),
+            _ if LLVMIsConstant(value) != 0 => Constant::from_raw(py, owner, value),
+            _ => {
+                let value = NonNull::new(value).expect("Value is null.");
+                Ok(Py::new(py, Self { value, owner })?.to_object(py))
+            }
         }
     }
 
@@ -260,9 +261,9 @@ impl BasicBlock {
         let mut insts = Vec::new();
         unsafe {
             let mut inst = LLVMGetFirstInstruction(slf.as_ptr());
-            while let Some(i) = NonNull::new(inst) {
+            while !inst.is_null() {
                 let owner = slf.as_ref().owner.clone_ref(py);
-                insts.push(Instruction::from_ptr(py, owner, i)?);
+                insts.push(Instruction::from_raw(py, owner, inst)?);
                 inst = LLVMGetNextInstruction(inst);
             }
         }
@@ -276,12 +277,11 @@ impl BasicBlock {
     fn terminator(slf: PyRef<Self>, py: Python) -> PyResult<Option<PyObject>> {
         unsafe {
             let term = LLVMGetBasicBlockTerminator(slf.as_ptr());
-            match NonNull::new(term) {
-                None => Ok(None),
-                Some(term) => {
-                    let owner = slf.into_super().owner.clone_ref(py);
-                    Instruction::from_ptr(py, owner, term).map(Some)
-                }
+            if term.is_null() {
+                Ok(None)
+            } else {
+                let owner = slf.into_super().owner.clone_ref(py);
+                Instruction::from_raw(py, owner, term).map(Some)
             }
         }
     }
@@ -310,10 +310,7 @@ impl Constant {
     #[pyo3(text_signature = "(ty)")]
     fn null(py: Python, ty: &Type) -> PyResult<PyObject> {
         let context = ty.context().clone_ref(py);
-        unsafe {
-            let value = LLVMConstNull(ty.as_ptr());
-            Value::from_ptr(py, context.into(), NonNull::new(value).unwrap())
-        }
+        unsafe { Value::from_raw(py, context.into(), LLVMConstNull(ty.as_ptr())) }
     }
 
     /// Whether this value is the null value for its type.
@@ -326,7 +323,8 @@ impl Constant {
 }
 
 impl Constant {
-    unsafe fn from_ptr(py: Python, owner: Owner, value: NonNull<LLVMValue>) -> PyResult<PyObject> {
+    unsafe fn from_raw(py: Python, owner: Owner, value: LLVMValueRef) -> PyResult<PyObject> {
+        let value = NonNull::new(value).expect("Value is null.");
         if LLVMIsConstant(value.as_ptr()) == 0 {
             Err(PyValueError::new_err("Value is not constant."))
         } else {
@@ -406,14 +404,15 @@ impl Function {
 
         let name = CString::new(name).unwrap();
         unsafe {
-            let function = LLVMAddFunction(
+            let value = NonNull::new(LLVMAddFunction(
                 module.borrow(py).as_ptr(),
                 name.as_ptr(),
                 ty.into_super().as_ptr(),
-            );
-            LLVMSetLinkage(function, linkage.into());
+            ))
+            .expect("Function is null.");
+            LLVMSetLinkage(value.as_ptr(), linkage.into());
 
-            Ok(Value::new(owner, NonNull::new(function).unwrap())
+            Ok(PyClassInitializer::from(Value { value, owner })
                 .add_subclass(Constant)
                 .add_subclass(Self))
         }
@@ -424,7 +423,7 @@ impl Function {
         let slf = slf.into_super().into_super();
         unsafe {
             let ty = LLVMGetElementType(LLVMTypeOf(slf.as_ptr()));
-            Type::from_ptr(py, slf.owner().context(py), NonNull::new(ty).unwrap())
+            Type::from_raw(py, slf.owner().context(py), ty)
         }
     }
 
@@ -441,7 +440,7 @@ impl Function {
             params.set_len(count);
             params
                 .into_iter()
-                .map(|p| Value::from_ptr(py, slf.owner.clone_ref(py), NonNull::new(p).unwrap()))
+                .map(|p| Value::from_raw(py, slf.owner.clone_ref(py), p))
                 .collect()
         }
     }
@@ -459,10 +458,7 @@ impl Function {
             blocks.set_len(count);
             blocks
                 .into_iter()
-                .map(|b| {
-                    let value = LLVMBasicBlockAsValue(b);
-                    Value::from_ptr(py, slf.owner.clone_ref(py), NonNull::new(value).unwrap())
-                })
+                .map(|b| Value::from_raw(py, slf.owner.clone_ref(py), LLVMBasicBlockAsValue(b)))
                 .collect()
         }
     }
@@ -616,10 +612,7 @@ impl Literal<'_> {
 #[pyo3(text_signature = "(ty, value)")]
 pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObject> {
     let owner = ty.context().clone_ref(py).into();
-    unsafe {
-        let value = value.to_value(ty.as_ptr())?;
-        Value::from_ptr(py, owner, NonNull::new(value).unwrap())
-    }
+    unsafe { Value::from_raw(py, owner, value.to_value(ty.as_ptr())?) }
 }
 
 /// Creates a static qubit value.
@@ -631,11 +624,10 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObjec
 #[pyfunction]
 #[pyo3(text_signature = "(context, id)")]
 pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
-    let value = {
-        let context = context.borrow(py);
-        unsafe { values::qubit(context.as_ptr(), id) }
-    };
-    unsafe { Value::from_ptr(py, Owner::Context(context), NonNull::new(value).unwrap()) }
+    unsafe {
+        let value = values::qubit(context.borrow(py).as_ptr(), id);
+        Value::from_raw(py, context.into(), value)
+    }
 }
 
 /// If the value is a static qubit ID, extracts it.
@@ -658,11 +650,10 @@ pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
 #[pyfunction]
 #[pyo3(text_signature = "(context, id)")]
 pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
-    let value = {
-        let context = context.borrow(py);
-        unsafe { values::result(context.as_ptr(), id) }
-    };
-    unsafe { Value::from_ptr(py, context.into(), NonNull::new(value).unwrap()) }
+    unsafe {
+        let value = values::result(context.borrow(py).as_ptr(), id);
+        Value::from_raw(py, context.into(), value)
+    }
 }
 
 /// If the value is a static result ID, extracts it.
@@ -701,7 +692,7 @@ pub(crate) fn entry_point(
             required_num_qubits,
             required_num_results,
         );
-        Value::from_ptr(py, module.into(), NonNull::new(entry_point).unwrap())
+        Value::from_raw(py, module.into(), entry_point)
     }
 }
 
@@ -761,7 +752,7 @@ pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> P
     let context = module.context().clone_ref(py);
     unsafe {
         let string = values::global_string(module.as_ptr(), value);
-        Value::from_ptr(py, context.into(), NonNull::new(string).unwrap())
+        Value::from_raw(py, context.into(), string)
     }
 }
 
