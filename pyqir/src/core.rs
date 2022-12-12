@@ -1,13 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use libc::c_char;
 use llvm_sys::{
     core::{LLVMContextCreate, LLVMContextDispose, LLVMDisposeMemoryBuffer, LLVMDisposeMessage},
     LLVMContext, LLVMMemoryBuffer,
 };
 use pyo3::prelude::*;
-use std::{ffi::CStr, ops::Deref, ptr::NonNull};
+use std::{
+    ffi::{c_char, CStr},
+    ops::Deref,
+    ptr::NonNull,
+};
 
 /// The context owns global state needed by most LLVM objects.
 #[pyclass(unsendable)]

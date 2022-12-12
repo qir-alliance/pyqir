@@ -3,7 +3,6 @@
 
 use crate::values;
 use const_str::{cstr, raw_cstr};
-use libc::c_char;
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{
     analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
@@ -14,7 +13,7 @@ use llvm_sys::{
 use normalize_line_endings::normalized;
 use std::{
     env,
-    ffi::{CStr, CString},
+    ffi::{c_char, CStr, CString},
     fmt::{self, Debug, Formatter},
     fs,
     ops::Deref,

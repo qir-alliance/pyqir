@@ -6,7 +6,6 @@ use crate::{
     types,
 };
 use const_str::raw_cstr;
-use libc::c_uint;
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{core::*, prelude::*, LLVMLinkage};
 use std::{ffi::CString, ptr::NonNull};
@@ -166,7 +165,7 @@ unsafe fn build_call(
         builder,
         function,
         args.as_mut_ptr(),
-        c_uint::try_from(args.len()).unwrap(),
+        args.len().try_into().unwrap(),
         raw_cstr!(""),
     )
 }
@@ -244,7 +243,7 @@ unsafe fn function_type(ret: LLVMTypeRef, params: &mut [LLVMTypeRef]) -> LLVMTyp
     LLVMFunctionType(
         ret,
         params.as_mut_ptr(),
-        c_uint::try_from(params.len()).unwrap(),
+        params.len().try_into().unwrap(),
         0,
     )
 }
