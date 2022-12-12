@@ -61,9 +61,10 @@ impl Value {
 
     fn __str__(&self) -> String {
         unsafe {
-            let message = LLVMPrintValueToString(self.as_ptr());
-            let message = Message::new(NonNull::new(message).unwrap());
-            message.to_str().unwrap().to_string()
+            Message::from_raw(LLVMPrintValueToString(self.as_ptr()))
+                .to_str()
+                .unwrap()
+                .to_string()
         }
     }
 }

@@ -72,7 +72,7 @@ impl Module {
         unsafe {
             let context_ref = context.borrow(py).as_ptr();
             if LLVMParseIRInContext(context_ref, buffer, &mut module, &mut error) != 0 {
-                let error = Message::new(NonNull::new(error).unwrap());
+                let error = Message::from_raw(error);
                 return Err(PyValueError::new_err(error.to_str().unwrap().to_string()));
             }
         }
@@ -99,14 +99,13 @@ impl Module {
     ) -> PyResult<Self> {
         let name = CString::new(name.unwrap_or_default()).unwrap();
         let buffer = unsafe {
-            LLVMCreateMemoryBufferWithMemoryRange(
+            MemoryBuffer::from_raw(LLVMCreateMemoryBufferWithMemoryRange(
                 bitcode.as_ptr().cast(),
                 bitcode.len(),
                 name.as_ptr(),
                 0,
-            )
+            ))
         };
-        let buffer = unsafe { MemoryBuffer::new(NonNull::new(buffer).unwrap()) };
 
         let mut module = ptr::null_mut();
         let mut error = ptr::null_mut();
@@ -121,7 +120,7 @@ impl Module {
                     context,
                 })
             } else {
-                let error = Message::new(NonNull::new(error).unwrap());
+                let error = Message::from_raw(error);
                 Err(PyValueError::new_err(error.to_str().unwrap().to_string()))
             }
         }
@@ -169,8 +168,7 @@ impl Module {
     #[getter]
     fn bitcode<'py>(&self, py: Python<'py>) -> &'py PyBytes {
         let bytes = unsafe {
-            let buffer = LLVMWriteBitcodeToMemoryBuffer(self.as_ptr());
-            let buffer = MemoryBuffer::new(NonNull::new(buffer).unwrap());
+            let buffer = MemoryBuffer::from_raw(LLVMWriteBitcodeToMemoryBuffer(self.as_ptr()));
             slice::from_raw_parts(
                 LLVMGetBufferStart(buffer.as_ptr()).cast(),
                 LLVMGetBufferSize(buffer.as_ptr()),
@@ -198,7 +196,7 @@ impl Module {
             if LLVMVerifyModule(self.as_ptr(), action, &mut error) == 0 {
                 None
             } else {
-                let error = Message::new(NonNull::new(error).unwrap());
+                let error = Message::from_raw(error);
                 Some(error.to_str().unwrap().to_string())
             }
         }
@@ -209,7 +207,7 @@ impl Module {
     /// :rtype: str
     fn __str__(&self) -> String {
         unsafe {
-            Message::new(NonNull::new(LLVMPrintModuleToString(self.as_ptr())).unwrap())
+            Message::from_raw(LLVMPrintModuleToString(self.as_ptr()))
                 .to_str()
                 .unwrap()
                 .to_string()

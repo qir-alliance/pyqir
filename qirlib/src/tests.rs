@@ -26,8 +26,9 @@ const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
 pub(crate) struct Builder(NonNull<LLVMBuilder>);
 
 impl Builder {
-    pub(crate) unsafe fn new(builder: NonNull<LLVMBuilder>) -> Self {
-        Self(builder)
+    pub(crate) fn new(context: &Context) -> Self {
+        let builder = unsafe { LLVMCreateBuilderInContext(context.as_ptr()) };
+        Self(NonNull::new(builder).expect("Builder is null."))
     }
 }
 
@@ -46,11 +47,13 @@ impl Drop for Builder {
         }
     }
 }
+
 pub(crate) struct Context(NonNull<LLVMContext>);
 
 impl Context {
-    pub(crate) unsafe fn new(context: NonNull<LLVMContext>) -> Self {
-        Self(context)
+    pub(crate) fn new() -> Self {
+        let context = unsafe { LLVMContextCreate() };
+        Self(NonNull::new(context).expect("Context is null."))
     }
 }
 
@@ -73,8 +76,8 @@ impl Drop for Context {
 pub(crate) struct Message(NonNull<c_char>);
 
 impl Message {
-    pub(crate) unsafe fn new(message: NonNull<c_char>) -> Self {
-        Self(message)
+    pub(crate) unsafe fn from_raw(message: *mut c_char) -> Self {
+        Self(NonNull::new(message).expect("Message is null."))
     }
 }
 
@@ -103,8 +106,9 @@ impl Drop for Message {
 pub(crate) struct Module(NonNull<LLVMModule>);
 
 impl Module {
-    unsafe fn new(module: NonNull<LLVMModule>) -> Self {
-        Self(module)
+    fn new(context: &Context, name: &CStr) -> Self {
+        let module = unsafe { LLVMModuleCreateWithNameInContext(name.as_ptr(), context.as_ptr()) };
+        Self(NonNull::new(module).expect("Module is null."))
     }
 }
 
@@ -167,9 +171,8 @@ fn build_ir(
     build: impl Fn(LLVMBuilderRef),
 ) -> Result<Message, Message> {
     unsafe {
-        let context = Context::new(NonNull::new(LLVMContextCreate()).unwrap());
-        let module = LLVMModuleCreateWithNameInContext(name.as_ptr(), context.as_ptr());
-        let module = Module::new(NonNull::new(module).unwrap());
+        let context = Context::new();
+        let module = Module::new(&context, name);
         let entry_point = values::entry_point(
             module.as_ptr(),
             cstr!("main"),
@@ -177,8 +180,7 @@ fn build_ir(
             required_num_results,
         );
 
-        let builder = LLVMCreateBuilderInContext(context.as_ptr());
-        let builder = Builder::new(NonNull::new(builder).unwrap());
+        let builder = Builder::new(&context);
         LLVMPositionBuilderAtEnd(
             builder.as_ptr(),
             LLVMAppendBasicBlockInContext(context.as_ptr(), entry_point, raw_cstr!("")),
@@ -190,9 +192,9 @@ fn build_ir(
         let mut error = ptr::null_mut();
         if LLVMVerifyModule(module.as_ptr(), action, &mut error) == 0 {
             let ir = LLVMPrintModuleToString(module.as_ptr());
-            Ok(Message::new(NonNull::new(ir).unwrap()))
+            Ok(Message::from_raw(ir))
         } else {
-            Err(Message::new(NonNull::new(error).unwrap()))
+            Err(Message::from_raw(error))
         }
     }
 }

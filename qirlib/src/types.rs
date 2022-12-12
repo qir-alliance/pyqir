@@ -55,13 +55,11 @@ unsafe fn is_opaque_pointer_to(ty: LLVMTypeRef, name: &CStr) -> bool {
 mod tests {
     use super::*;
     use crate::tests::Context;
-    use llvm_sys::core::LLVMContextCreate;
-    use std::ptr::NonNull;
 
     #[test]
     fn qubit_type() {
         unsafe {
-            let context = Context::new(NonNull::new(LLVMContextCreate()).unwrap());
+            let context = Context::new();
             let qubit = qubit(context.as_ptr());
             assert!(is_qubit(qubit));
             assert!(!is_result(qubit));
@@ -71,7 +69,7 @@ mod tests {
     #[test]
     fn result_type() {
         unsafe {
-            let context = Context::new(NonNull::new(LLVMContextCreate()).unwrap());
+            let context = Context::new();
             let result = result(context.as_ptr());
             assert!(is_result(result));
             assert!(!is_qubit(result));
