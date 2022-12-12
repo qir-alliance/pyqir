@@ -6,7 +6,7 @@ is also the native implementation behind PyQIR.
 
 ## Requirements
 
-- Rust 1.59+
+- Rust 1.64+
 - LLVM 11.x, 12.x, 13.x, or LLVM 14.x (see [Usage](#usage) below)
 
 ## Usage

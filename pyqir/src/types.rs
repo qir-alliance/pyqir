@@ -3,20 +3,17 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::{context::Context, values::Owner};
-use inkwell::{
-    types::{AnyType, AnyTypeEnum, BasicType, BasicTypeEnum},
-    AddressSpace, LLVMReference,
-};
-use llvm_sys::{core::LLVMGetTypeKind, LLVMTypeKind};
-use pyo3::{conversion::ToPyObject, exceptions::PyValueError, prelude::*};
+use crate::{core::Context, values::Owner};
+#[allow(clippy::wildcard_imports)]
+use llvm_sys::{core::*, prelude::*, LLVMType, LLVMTypeKind};
+use pyo3::{conversion::ToPyObject, prelude::*};
 use qirlib::types;
-use std::{convert::TryFrom, mem::transmute};
+use std::{ffi::CStr, ops::Deref, ptr::NonNull};
 
 /// A type.
 #[pyclass(subclass, unsendable)]
 pub(crate) struct Type {
-    ty: AnyTypeEnum<'static>,
+    ty: NonNull<LLVMType>,
     context: Py<Context>,
 }
 
@@ -30,12 +27,11 @@ impl Type {
     #[staticmethod]
     #[pyo3(text_signature = "(context)")]
     fn void(py: Python, context: Py<Context>) -> Self {
-        let ty = {
-            let context = context.borrow(py);
-            let ty = context.void_type().into();
-            unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
-        };
-        Type { ty, context }
+        let ty = unsafe { LLVMVoidTypeInContext(context.borrow(py).as_ptr()) };
+        Type {
+            ty: NonNull::new(ty).unwrap(),
+            context,
+        }
     }
 
     /// The double type.
@@ -46,12 +42,11 @@ impl Type {
     #[staticmethod]
     #[pyo3(text_signature = "(context)")]
     fn double(py: Python, context: Py<Context>) -> Self {
-        let ty = {
-            let context = context.borrow(py);
-            let ty = context.f64_type().into();
-            unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
-        };
-        Type { ty, context }
+        let ty = unsafe { LLVMDoubleTypeInContext(context.borrow(py).as_ptr()) };
+        Type {
+            ty: NonNull::new(ty).unwrap(),
+            context,
+        }
     }
 
     /// Whether this type is the void type.
@@ -59,7 +54,7 @@ impl Type {
     /// :type: bool
     #[getter]
     fn is_void(&self) -> bool {
-        self.ty.is_void_type()
+        unsafe { LLVMGetTypeKind(self.as_ptr()) == LLVMTypeKind::LLVMVoidTypeKind }
     }
 
     /// Whether this type is the bool type.
@@ -67,40 +62,36 @@ impl Type {
     /// :type: bool
     #[getter]
     fn is_double(&self) -> bool {
-        (unsafe { LLVMGetTypeKind(self.ty.get_ref()) }) == LLVMTypeKind::LLVMDoubleTypeKind
+        unsafe { LLVMGetTypeKind(self.as_ptr()) == LLVMTypeKind::LLVMDoubleTypeKind }
     }
 }
 
 impl Type {
-    pub(crate) unsafe fn from_any(
+    pub(crate) unsafe fn from_raw(
         py: Python,
         context: Py<Context>,
-        ty: AnyTypeEnum,
+        ty: LLVMTypeRef,
     ) -> PyResult<PyObject> {
-        let ty = transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty);
+        let ty = NonNull::new(ty).expect("Type is null.");
         let base = PyClassInitializer::from(Self { ty, context });
-        Ok(match ty {
-            AnyTypeEnum::ArrayType(a) => {
-                Py::new(py, base.add_subclass(ArrayType(a)))?.to_object(py)
+        match LLVMGetTypeKind(ty.as_ptr()) {
+            LLVMTypeKind::LLVMArrayTypeKind => {
+                Ok(Py::new(py, base.add_subclass(ArrayType))?.to_object(py))
             }
-            AnyTypeEnum::FunctionType(f) => {
-                Py::new(py, base.add_subclass(FunctionType(f)))?.to_object(py)
+            LLVMTypeKind::LLVMFunctionTypeKind => {
+                Ok(Py::new(py, base.add_subclass(FunctionType))?.to_object(py))
             }
-            AnyTypeEnum::IntType(i) => Py::new(py, base.add_subclass(IntType(i)))?.to_object(py),
-            AnyTypeEnum::PointerType(p) => {
-                Py::new(py, base.add_subclass(PointerType(p)))?.to_object(py)
+            LLVMTypeKind::LLVMIntegerTypeKind => {
+                Ok(Py::new(py, base.add_subclass(IntType))?.to_object(py))
             }
-            AnyTypeEnum::StructType(s) => {
-                Py::new(py, base.add_subclass(StructType(s)))?.to_object(py)
+            LLVMTypeKind::LLVMPointerTypeKind => {
+                Ok(Py::new(py, base.add_subclass(PointerType))?.to_object(py))
             }
-            AnyTypeEnum::FloatType(_) | AnyTypeEnum::VectorType(_) | AnyTypeEnum::VoidType(_) => {
-                Py::new(py, base)?.to_object(py)
+            LLVMTypeKind::LLVMStructTypeKind => {
+                Ok(Py::new(py, base.add_subclass(StructType))?.to_object(py))
             }
-        })
-    }
-
-    pub(crate) unsafe fn get(&self) -> AnyTypeEnum<'static> {
-        self.ty
+            _ => Ok(Py::new(py, base)?.to_object(py)),
+        }
     }
 
     pub(crate) fn context(&self) -> &Py<Context> {
@@ -108,30 +99,31 @@ impl Type {
     }
 }
 
+impl Deref for Type {
+    type Target = NonNull<LLVMType>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.ty
+    }
+}
+
 /// An integer type.
 ///
 /// :param Context context: The LLVM context.
 /// :param int width: The number of bits in the integer.
-#[pyclass(extends = Type, unsendable)]
+#[pyclass(extends = Type)]
 #[pyo3(text_signature = "(context, width)")]
-pub(crate) struct IntType(inkwell::types::IntType<'static>);
+pub(crate) struct IntType;
 
 #[pymethods]
 impl IntType {
     #[new]
     fn new(py: Python, context: Py<Context>, width: u32) -> (Self, Type) {
-        let ty = {
-            let context = context.borrow(py);
-            let ty = context.custom_width_int_type(width);
-            unsafe {
-                transmute::<inkwell::types::IntType<'_>, inkwell::types::IntType<'static>>(ty)
-            }
-        };
-
+        let ty = unsafe { LLVMIntTypeInContext(context.borrow(py).as_ptr(), width) };
         (
-            Self(ty),
+            Self,
             Type {
-                ty: ty.into(),
+                ty: NonNull::new(ty).unwrap(),
                 context,
             },
         )
@@ -141,8 +133,8 @@ impl IntType {
     ///
     /// :type: int
     #[getter]
-    fn width(&self) -> u32 {
-        self.0.get_bit_width()
+    fn width(slf: PyRef<Self>) -> u32 {
+        unsafe { LLVMGetIntTypeWidth(slf.into_super().as_ptr()) }
     }
 }
 
@@ -150,9 +142,9 @@ impl IntType {
 ///
 /// :param Type ret: The return type.
 /// :param typing.Sequence[Type] params: The parameter types.
-#[pyclass(extends = Type, unsendable)]
+#[pyclass(extends = Type)]
 #[pyo3(text_signature = "(ret, params)")]
-pub(crate) struct FunctionType(inkwell::types::FunctionType<'static>);
+pub(crate) struct FunctionType;
 
 #[pymethods]
 impl FunctionType {
@@ -166,13 +158,20 @@ impl FunctionType {
                 .chain([ret.context.clone_ref(py).into()]),
         )?;
 
-        let ty = function(&ret.ty, params.iter().map(|ty| ty.ty))
-            .ok_or_else(|| PyValueError::new_err("Not a valid function type."))?;
+        let mut params: Vec<_> = params.iter().map(|ty| ty.as_ptr()).collect();
+        let ty = unsafe {
+            LLVMFunctionType(
+                ret.as_ptr(),
+                params.as_mut_ptr(),
+                params.len().try_into().unwrap(),
+                0,
+            )
+        };
 
         Ok((
-            Self(ty),
+            Self,
             Type {
-                ty: ty.into(),
+                ty: NonNull::new(ty).unwrap(),
                 context: ret.context.clone_ref(py),
             },
         ))
@@ -183,12 +182,9 @@ impl FunctionType {
     /// :type: Type
     #[getter]
     fn ret(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
-        let ret = slf.0.get_return_type();
-        let context = slf.into_super().context.clone_ref(py);
-        match ret {
-            None => Ok(Py::new(py, Type::void(py, context))?.to_object(py)),
-            Some(ret) => unsafe { Type::from_any(py, context, basic_to_any(ret)) },
-        }
+        let slf = slf.into_super();
+        let context = slf.context.clone_ref(py);
+        unsafe { Type::from_raw(py, context, LLVMGetReturnType(slf.as_ptr())) }
     }
 
     /// The types of the function parameters.
@@ -196,33 +192,37 @@ impl FunctionType {
     /// :type: typing.List[Type]
     #[getter]
     fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        let params = slf.0.get_param_types();
-        let context = &slf.into_super().context;
-        params
-            .into_iter()
-            .map(|ty| unsafe { Type::from_any(py, context.clone_ref(py), basic_to_any(ty)) })
-            .collect()
-    }
-}
-
-impl FunctionType {
-    pub(crate) unsafe fn get(&self) -> inkwell::types::FunctionType<'static> {
-        self.0
+        let slf = slf.into_super();
+        unsafe {
+            let count = LLVMCountParamTypes(slf.as_ptr()).try_into().unwrap();
+            let mut params = Vec::with_capacity(count);
+            LLVMGetParamTypes(slf.as_ptr(), params.as_mut_ptr());
+            params.set_len(count);
+            params
+                .into_iter()
+                .map(|ty| Type::from_raw(py, slf.context.clone_ref(py), ty))
+                .collect()
+        }
     }
 }
 
 /// A structure type.
-#[pyclass(extends = Type, unsendable)]
-pub(crate) struct StructType(inkwell::types::StructType<'static>);
+#[pyclass(extends = Type)]
+pub(crate) struct StructType;
 
 #[pymethods]
 impl StructType {
     /// The name of the structure or the empty string if the structure is anonymous.
     #[getter]
-    fn name(&self) -> Option<&str> {
-        self.0
-            .get_name()
-            .map(|n| n.to_str().expect("Name is not valid UTF-8."))
+    fn name(slf: PyRef<Self>) -> Option<&str> {
+        unsafe {
+            let name = LLVMGetStructName(slf.into_super().as_ptr());
+            if name.is_null() {
+                None
+            } else {
+                Some(CStr::from_ptr(name).to_str().unwrap())
+            }
+        }
     }
 
     /// The types of the structure fields.
@@ -230,18 +230,25 @@ impl StructType {
     /// :type: typing.List[Type]
     #[getter]
     fn fields(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        let fields = slf.0.get_field_types();
-        let context = &slf.into_super().context;
-        fields
-            .into_iter()
-            .map(|ty| unsafe { Type::from_any(py, context.clone_ref(py), basic_to_any(ty)) })
-            .collect()
+        let slf = slf.into_super();
+        unsafe {
+            let count = LLVMCountStructElementTypes(slf.as_ptr())
+                .try_into()
+                .unwrap();
+            let mut fields = Vec::with_capacity(count);
+            LLVMGetStructElementTypes(slf.as_ptr(), fields.as_mut_ptr());
+            fields.set_len(count);
+            fields
+                .into_iter()
+                .map(|ty| Type::from_raw(py, slf.context.clone_ref(py), ty))
+                .collect()
+        }
     }
 }
 
 /// An array type.
 #[pyclass(extends = Type, unsendable)]
-pub(crate) struct ArrayType(inkwell::types::ArrayType<'static>);
+pub(crate) struct ArrayType;
 
 #[pymethods]
 impl ArrayType {
@@ -250,49 +257,41 @@ impl ArrayType {
     /// :type: Type
     #[getter]
     fn element(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
-        let ty = basic_to_any(slf.0.get_element_type());
-        let context = slf.into_super().context.clone_ref(py);
-        unsafe { Type::from_any(py, context, ty) }
+        let slf = slf.into_super();
+        unsafe {
+            let ty = LLVMGetElementType(slf.as_ptr());
+            Type::from_raw(py, slf.context.clone_ref(py), ty)
+        }
     }
 
     /// The number of elements in the array.
     ///
     /// :type: int
     #[getter]
-    fn count(&self) -> u32 {
-        self.0.len()
+    fn count(slf: PyRef<Self>) -> u32 {
+        unsafe { LLVMGetArrayLength(slf.into_super().as_ptr()) }
     }
 }
 
 /// A pointer type.
 ///
 /// :param Type pointee: The type being pointed to.
-#[pyclass(extends = Type, unsendable)]
+#[pyclass(extends = Type)]
 #[pyo3(text_signature = "(pointee)")]
-pub(crate) struct PointerType(inkwell::types::PointerType<'static>);
+pub(crate) struct PointerType;
 
 #[pymethods]
 impl PointerType {
     #[new]
-    fn new(py: Python, pointee: &Type) -> PyResult<(Self, Type)> {
-        let ty = match pointee.ty {
-            AnyTypeEnum::ArrayType(a) => Ok(a.ptr_type(AddressSpace::Generic)),
-            AnyTypeEnum::FloatType(f) => Ok(f.ptr_type(AddressSpace::Generic)),
-            AnyTypeEnum::FunctionType(f) => Ok(f.ptr_type(AddressSpace::Generic)),
-            AnyTypeEnum::IntType(i) => Ok(i.ptr_type(AddressSpace::Generic)),
-            AnyTypeEnum::PointerType(p) => Ok(p.ptr_type(AddressSpace::Generic)),
-            AnyTypeEnum::StructType(s) => Ok(s.ptr_type(AddressSpace::Generic)),
-            AnyTypeEnum::VectorType(v) => Ok(v.ptr_type(AddressSpace::Generic)),
-            AnyTypeEnum::VoidType(_) => Err(PyValueError::new_err("Pointer to void type.")),
-        }?;
-
-        Ok((
-            Self(ty),
+    fn new(py: Python, pointee: &Type) -> (Self, Type) {
+        let ty = unsafe { LLVMPointerType(pointee.as_ptr(), 0) };
+        (
+            Self,
             Type {
-                ty: ty.into(),
+                ty: NonNull::new(ty).unwrap(),
                 context: pointee.context.clone_ref(py),
             },
-        ))
+        )
     }
 
     /// The type being pointed to.
@@ -300,17 +299,19 @@ impl PointerType {
     /// :type: Type
     #[getter]
     fn pointee(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
-        let ty = slf.0.get_element_type();
-        let context = slf.into_super().context.clone_ref(py);
-        unsafe { Type::from_any(py, context, ty) }
+        let slf = slf.into_super();
+        unsafe {
+            let ty = LLVMGetElementType(slf.as_ptr());
+            Type::from_raw(py, slf.context.clone_ref(py), ty)
+        }
     }
 
     /// The pointer address space.
     ///
     /// :type: int
     #[getter]
-    fn address_space(&self) -> u32 {
-        self.0.get_address_space() as u32
+    fn address_space(slf: PyRef<Self>) -> u32 {
+        unsafe { LLVMGetPointerAddressSpace(slf.into_super().as_ptr()) }
     }
 }
 
@@ -322,12 +323,10 @@ impl PointerType {
 #[pyfunction]
 #[pyo3(text_signature = "(context)")]
 pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
-    let ty = {
-        let context = context.borrow(py);
-        let ty = types::qubit(&context.void_type().get_context()).into();
-        unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
-    };
-    unsafe { Type::from_any(py, context, ty) }
+    unsafe {
+        let ty = types::qubit(context.borrow(py).as_ptr());
+        Type::from_raw(py, context, ty)
+    }
 }
 
 /// Whether the type is the QIR qubit type.
@@ -338,7 +337,7 @@ pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject>
 #[pyfunction]
 #[pyo3(text_signature = "(ty)")]
 pub(crate) fn is_qubit_type(ty: &Type) -> bool {
-    types::is_qubit(ty.ty)
+    unsafe { types::is_qubit(ty.as_ptr()) }
 }
 
 /// The QIR result type.
@@ -349,12 +348,10 @@ pub(crate) fn is_qubit_type(ty: &Type) -> bool {
 #[pyfunction]
 #[pyo3(text_signature = "(context)")]
 pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
-    let ty = {
-        let context = context.borrow(py);
-        let ty = types::result(&context.void_type().get_context()).into();
-        unsafe { transmute::<AnyTypeEnum<'_>, AnyTypeEnum<'static>>(ty) }
-    };
-    unsafe { Type::from_any(py, context, ty) }
+    unsafe {
+        let ty = types::result(context.borrow(py).as_ptr());
+        Type::from_raw(py, context, ty)
+    }
 }
 
 /// Whether the type is the QIR result type.
@@ -365,33 +362,5 @@ pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject
 #[pyfunction]
 #[pyo3(text_signature = "(ty)")]
 pub(crate) fn is_result_type(ty: &Type) -> bool {
-    types::is_result(ty.ty)
-}
-
-pub(crate) fn basic_to_any(ty: BasicTypeEnum) -> AnyTypeEnum {
-    match ty {
-        BasicTypeEnum::ArrayType(a) => a.into(),
-        BasicTypeEnum::FloatType(f) => f.into(),
-        BasicTypeEnum::IntType(i) => i.into(),
-        BasicTypeEnum::PointerType(p) => p.into(),
-        BasicTypeEnum::StructType(s) => s.into(),
-        BasicTypeEnum::VectorType(v) => v.into(),
-    }
-}
-
-pub(crate) fn function<'ctx>(
-    ret: &impl AnyType<'ctx>,
-    params: impl IntoIterator<Item = AnyTypeEnum<'ctx>>,
-) -> Option<inkwell::types::FunctionType<'ctx>> {
-    let params = params
-        .into_iter()
-        .map(|ty| BasicTypeEnum::try_from(ty).map(Into::into).ok())
-        .collect::<Option<Vec<_>>>()?;
-
-    match ret.as_any_type_enum() {
-        AnyTypeEnum::VoidType(void) => Some(void.fn_type(&params, false)),
-        any => BasicTypeEnum::try_from(any)
-            .map(|basic| basic.fn_type(&params, false))
-            .ok(),
-    }
+    unsafe { types::is_result(ty.as_ptr()) }
 }

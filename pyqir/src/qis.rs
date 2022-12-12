@@ -3,12 +3,14 @@
 
 use crate::{
     builder::Builder,
-    values::{ConvertError, Owner, Value},
+    values::{Owner, Value},
 };
-use inkwell::values::FloatValue;
+use llvm_sys::{
+    core::{LLVMConstReal, LLVMDoubleTypeInContext},
+    prelude::*,
+};
 use pyo3::prelude::*;
-use qirlib::qis::BuilderExt;
-use std::convert::TryInto;
+use qirlib::qis;
 
 /// An instruction builder that generates instructions from the basic quantum instruction set.
 ///
@@ -35,10 +37,9 @@ impl BasicQisBuilder {
     fn cx(&self, py: Python, control: &Value, target: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), control.owner(), target.owner()])?;
-        unsafe { builder.get() }.build_cx(
-            unsafe { control.get() }.try_into()?,
-            unsafe { target.get() }.try_into()?,
-        );
+        unsafe {
+            qis::build_cx(builder.as_ptr(), control.as_ptr(), target.as_ptr());
+        }
         Ok(())
     }
 
@@ -51,10 +52,9 @@ impl BasicQisBuilder {
     fn cz(&self, py: Python, control: &Value, target: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), control.owner(), target.owner()])?;
-        unsafe { builder.get() }.build_cz(
-            unsafe { control.get() }.try_into()?,
-            unsafe { target.get() }.try_into()?,
-        );
+        unsafe {
+            qis::build_cz(builder.as_ptr(), control.as_ptr(), target.as_ptr());
+        }
         Ok(())
     }
 
@@ -66,7 +66,9 @@ impl BasicQisBuilder {
     fn h(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
-        unsafe { builder.get() }.build_h(unsafe { qubit.get() }.try_into()?);
+        unsafe {
+            qis::build_h(builder.as_ptr(), qubit.as_ptr());
+        }
         Ok(())
     }
 
@@ -79,10 +81,9 @@ impl BasicQisBuilder {
     fn mz(&self, py: Python, qubit: &Value, result: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner(), result.owner()])?;
-        unsafe { builder.get() }.build_mz(
-            unsafe { qubit.get() }.try_into()?,
-            unsafe { result.get() }.try_into()?,
-        );
+        unsafe {
+            qis::build_mz(builder.as_ptr(), qubit.as_ptr(), result.as_ptr());
+        }
         Ok(())
     }
 
@@ -94,7 +95,9 @@ impl BasicQisBuilder {
     fn reset(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
-        unsafe { builder.get() }.build_reset(unsafe { qubit.get() }.try_into()?);
+        unsafe {
+            qis::build_reset(builder.as_ptr(), qubit.as_ptr());
+        }
         Ok(())
     }
 
@@ -116,11 +119,12 @@ impl BasicQisBuilder {
         let context = builder.owner().context(py);
         let context = context.borrow(py);
         unsafe {
-            builder
-                .get()
-                .build_rx(theta.to_float(&context)?, qubit.get().try_into()?);
+            qis::build_rx(
+                builder.as_ptr(),
+                theta.to_value(context.as_ptr()),
+                qubit.as_ptr(),
+            );
         }
-
         Ok(())
     }
 
@@ -142,11 +146,12 @@ impl BasicQisBuilder {
         let context = builder.owner().context(py);
         let context = context.borrow(py);
         unsafe {
-            builder
-                .get()
-                .build_ry(theta.to_float(&context)?, qubit.get().try_into()?);
+            qis::build_ry(
+                builder.as_ptr(),
+                theta.to_value(context.as_ptr()),
+                qubit.as_ptr(),
+            );
         }
-
         Ok(())
     }
 
@@ -168,11 +173,12 @@ impl BasicQisBuilder {
         let context = builder.owner().context(py);
         let context = context.borrow(py);
         unsafe {
-            builder
-                .get()
-                .build_rz(theta.to_float(&context)?, qubit.get().try_into()?);
+            qis::build_rz(
+                builder.as_ptr(),
+                theta.to_value(context.as_ptr()),
+                qubit.as_ptr(),
+            );
         }
-
         Ok(())
     }
 
@@ -184,7 +190,9 @@ impl BasicQisBuilder {
     fn s(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
-        unsafe { builder.get() }.build_s(unsafe { qubit.get() }.try_into()?);
+        unsafe {
+            qis::build_s(builder.as_ptr(), qubit.as_ptr());
+        }
         Ok(())
     }
 
@@ -196,7 +204,9 @@ impl BasicQisBuilder {
     fn s_adj(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
-        unsafe { builder.get() }.build_s_adj(unsafe { qubit.get() }.try_into()?);
+        unsafe {
+            qis::build_s_adj(builder.as_ptr(), qubit.as_ptr());
+        }
         Ok(())
     }
 
@@ -208,7 +218,9 @@ impl BasicQisBuilder {
     fn t(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
-        unsafe { builder.get() }.build_t(unsafe { qubit.get() }.try_into()?);
+        unsafe {
+            qis::build_t(builder.as_ptr(), qubit.as_ptr());
+        }
         Ok(())
     }
 
@@ -220,7 +232,9 @@ impl BasicQisBuilder {
     fn t_adj(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
-        unsafe { builder.get() }.build_t_adj(unsafe { qubit.get() }.try_into()?);
+        unsafe {
+            qis::build_t_adj(builder.as_ptr(), qubit.as_ptr());
+        }
         Ok(())
     }
 
@@ -232,7 +246,9 @@ impl BasicQisBuilder {
     fn x(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
-        unsafe { builder.get() }.build_x(unsafe { qubit.get() }.try_into()?);
+        unsafe {
+            qis::build_x(builder.as_ptr(), qubit.as_ptr());
+        }
         Ok(())
     }
 
@@ -244,7 +260,9 @@ impl BasicQisBuilder {
     fn y(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
-        unsafe { builder.get() }.build_y(unsafe { qubit.get() }.try_into()?);
+        unsafe {
+            qis::build_y(builder.as_ptr(), qubit.as_ptr());
+        }
         Ok(())
     }
 
@@ -256,7 +274,9 @@ impl BasicQisBuilder {
     fn z(&self, py: Python, qubit: &Value) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), qubit.owner()])?;
-        unsafe { builder.get() }.build_z(unsafe { qubit.get() }.try_into()?);
+        unsafe {
+            qis::build_z(builder.as_ptr(), qubit.as_ptr());
+        }
         Ok(())
     }
 
@@ -282,11 +302,14 @@ impl BasicQisBuilder {
     ) -> PyResult<()> {
         let builder = self.builder.borrow(py);
         Owner::merge(py, [builder.owner(), cond.owner()])?;
-        unsafe { builder.get() }.try_build_if_result(
-            unsafe { cond.get() }.try_into()?,
-            || one.iter().try_for_each(|f| f.call0().map(|_| ())),
-            || zero.iter().try_for_each(|f| f.call0().map(|_| ())),
-        )
+        unsafe {
+            qis::try_build_if_result(
+                builder.as_ptr(),
+                cond.as_ptr(),
+                || one.iter().try_for_each(|f| f.call0().map(|_| ())),
+                || zero.iter().try_for_each(|f| f.call0().map(|_| ())),
+            )
+        }
     }
 }
 
@@ -304,13 +327,10 @@ impl Angle<'_> {
         }
     }
 
-    unsafe fn to_float<'ctx>(
-        &self,
-        context: &'ctx inkwell::context::Context,
-    ) -> Result<FloatValue<'ctx>, ConvertError> {
+    unsafe fn to_value(&self, context: LLVMContextRef) -> LLVMValueRef {
         match self {
-            Angle::Value(v) => v.get().try_into(),
-            &Angle::Constant(c) => Ok(context.f64_type().const_float(c)),
+            Angle::Value(v) => v.as_ptr(),
+            &Angle::Constant(c) => LLVMConstReal(LLVMDoubleTypeInContext(context), c),
         }
     }
 }

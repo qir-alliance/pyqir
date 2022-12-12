@@ -2,6 +2,11 @@
 // Licensed under the MIT License.
 
 #![warn(clippy::all, clippy::pedantic)]
+#![allow(
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::missing_safety_doc
+)]
 
 #[cfg(feature = "llvm11-0")]
 extern crate llvm_sys_110 as llvm_sys;

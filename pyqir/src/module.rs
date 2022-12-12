@@ -3,10 +3,28 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::{context::Context, values::Value};
-use inkwell::memory_buffer::MemoryBuffer;
+use crate::{
+    core::Context,
+    core::{MemoryBuffer, Message},
+    values::Value,
+};
+use core::slice;
+#[allow(clippy::wildcard_imports, deprecated)]
+use llvm_sys::{
+    analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
+    bit_reader::LLVMParseBitcodeInContext,
+    bit_writer::LLVMWriteBitcodeToMemoryBuffer,
+    core::*,
+    ir_reader::LLVMParseIRInContext,
+    LLVMLinkage, LLVMModule,
+};
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
-use std::mem::transmute;
+use std::{
+    ffi::CString,
+    ops::Deref,
+    ptr::{self, NonNull},
+    str,
+};
 
 /// A module is a collection of global values.
 ///
@@ -15,7 +33,7 @@ use std::mem::transmute;
 #[pyclass(unsendable)]
 #[pyo3(text_signature = "(context, str)")]
 pub(crate) struct Module {
-    module: inkwell::module::Module<'static>,
+    module: NonNull<LLVMModule>,
     context: Py<Context>,
 }
 
@@ -23,14 +41,14 @@ pub(crate) struct Module {
 impl Module {
     #[new]
     pub(crate) fn new(py: Python, context: Py<Context>, name: &str) -> Self {
-        let module = {
-            let context = context.borrow(py);
-            let module = context.create_module(name);
-            unsafe {
-                transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
-            }
+        let name = CString::new(name).unwrap();
+        let module = unsafe {
+            LLVMModuleCreateWithNameInContext(name.as_ptr(), context.borrow(py).as_ptr())
         };
-        Self { module, context }
+        Self {
+            module: NonNull::new(module).unwrap(),
+            context,
+        }
     }
 
     /// Creates a module from LLVM IR.
@@ -42,18 +60,27 @@ impl Module {
     #[staticmethod]
     #[pyo3(text_signature = "(context, ir, name=\"\")")]
     fn from_ir(py: Python, context: Py<Context>, ir: &str, name: Option<&str>) -> PyResult<Self> {
-        let buffer =
-            MemoryBuffer::create_from_memory_range(ir.as_bytes(), name.unwrap_or_default());
-        let module = {
-            let context = context.borrow(py);
-            let module = context
-                .create_module_from_ir(buffer)
-                .map_err(|e| PyValueError::new_err(e.to_string()))?;
-            unsafe {
-                transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
-            }
+        let name = CString::new(name.unwrap_or_default()).unwrap();
+
+        // Don't dispose this buffer. LLVMParseIRInContext takes ownership.
+        let buffer = unsafe {
+            LLVMCreateMemoryBufferWithMemoryRange(ir.as_ptr().cast(), ir.len(), name.as_ptr(), 0)
         };
-        Ok(Self { module, context })
+
+        let mut module = ptr::null_mut();
+        let mut error = ptr::null_mut();
+        unsafe {
+            let context_ref = context.borrow(py).as_ptr();
+            if LLVMParseIRInContext(context_ref, buffer, &mut module, &mut error) != 0 {
+                let error = Message::from_raw(error);
+                return Err(PyValueError::new_err(error.to_str().unwrap().to_string()));
+            }
+        }
+
+        Ok(Self {
+            module: NonNull::new(module).unwrap(),
+            context,
+        })
     }
 
     /// Creates a module from LLVM bitcode.
@@ -70,16 +97,33 @@ impl Module {
         bitcode: &[u8],
         name: Option<&str>,
     ) -> PyResult<Self> {
-        let buffer = MemoryBuffer::create_from_memory_range(bitcode, name.unwrap_or_default());
-        let module = {
-            let context = context.borrow(py);
-            let module = inkwell::module::Module::parse_bitcode_from_buffer(&buffer, &**context)
-                .map_err(|e| PyValueError::new_err(e.to_string()))?;
-            unsafe {
-                transmute::<inkwell::module::Module<'_>, inkwell::module::Module<'static>>(module)
-            }
+        let name = CString::new(name.unwrap_or_default()).unwrap();
+        let buffer = unsafe {
+            MemoryBuffer::from_raw(LLVMCreateMemoryBufferWithMemoryRange(
+                bitcode.as_ptr().cast(),
+                bitcode.len(),
+                name.as_ptr(),
+                0,
+            ))
         };
-        Ok(Self { module, context })
+
+        let mut module = ptr::null_mut();
+        let mut error = ptr::null_mut();
+        let context_ref = context.borrow(py).as_ptr();
+
+        unsafe {
+            #[allow(deprecated)]
+            if LLVMParseBitcodeInContext(context_ref, buffer.as_ptr(), &mut module, &mut error) == 0
+            {
+                Ok(Self {
+                    module: NonNull::new(module).unwrap(),
+                    context,
+                })
+            } else {
+                let error = Message::from_raw(error);
+                Err(PyValueError::new_err(error.to_str().unwrap().to_string()))
+            }
+        }
     }
 
     /// The name of the original source file that this module was compiled from.
@@ -87,15 +131,18 @@ impl Module {
     /// :type: str
     #[getter]
     fn source_filename(&self) -> &str {
-        self.module
-            .get_source_file_name()
-            .to_str()
-            .expect("Name is not valid UTF-8.")
+        unsafe {
+            let mut len = 0;
+            let name = LLVMGetSourceFileName(self.as_ptr(), &mut len);
+            str::from_utf8(slice::from_raw_parts(name.cast(), len)).unwrap()
+        }
     }
 
     #[setter]
     fn set_source_filename(&self, value: &str) {
-        self.module.set_source_file_name(value);
+        unsafe {
+            LLVMSetSourceFileName(self.as_ptr(), value.as_ptr().cast(), value.len());
+        }
     }
 
     /// The functions declared in this module.
@@ -103,11 +150,16 @@ impl Module {
     /// :type: typing.List[Function]
     #[getter]
     fn functions(slf: Py<Module>, py: Python) -> PyResult<Vec<PyObject>> {
-        slf.borrow(py)
-            .module
-            .get_functions()
-            .map(|f| unsafe { Value::from_any(py, slf.clone_ref(py).into(), f) })
-            .collect()
+        let module = slf.borrow(py).as_ptr();
+        let mut functions = Vec::new();
+        unsafe {
+            let mut function = LLVMGetFirstFunction(module);
+            while !function.is_null() {
+                functions.push(Value::from_raw(py, slf.clone_ref(py).into(), function)?);
+                function = LLVMGetNextFunction(function);
+            }
+        }
+        Ok(functions)
     }
 
     /// The LLVM bitcode for this module.
@@ -115,7 +167,14 @@ impl Module {
     /// :type: bytes
     #[getter]
     fn bitcode<'py>(&self, py: Python<'py>) -> &'py PyBytes {
-        PyBytes::new(py, self.module.write_bitcode_to_memory().as_slice())
+        let bytes = unsafe {
+            let buffer = MemoryBuffer::from_raw(LLVMWriteBitcodeToMemoryBuffer(self.as_ptr()));
+            slice::from_raw_parts(
+                LLVMGetBufferStart(buffer.as_ptr()).cast(),
+                LLVMGetBufferSize(buffer.as_ptr()),
+            )
+        };
+        PyBytes::new(py, bytes)
     }
 
     /// The LLVM context.
@@ -131,20 +190,44 @@ impl Module {
     /// :returns: An error description if this module is invalid or `None` if this module is valid.
     /// :rtype: typing.Optional[str]
     fn verify(&self) -> Option<String> {
-        self.module.verify().map_err(|e| e.to_string()).err()
+        unsafe {
+            let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
+            let mut error = ptr::null_mut();
+            if LLVMVerifyModule(self.as_ptr(), action, &mut error) == 0 {
+                None
+            } else {
+                let error = Message::from_raw(error);
+                Some(error.to_str().unwrap().to_string())
+            }
+        }
     }
 
     /// Converts this module into an LLVM IR string.
     ///
     /// :rtype: str
     fn __str__(&self) -> String {
-        self.module.to_string()
+        unsafe {
+            Message::from_raw(LLVMPrintModuleToString(self.as_ptr()))
+                .to_str()
+                .unwrap()
+                .to_string()
+        }
     }
 }
 
-impl Module {
-    pub(crate) unsafe fn get(&self) -> &inkwell::module::Module<'static> {
+impl Deref for Module {
+    type Target = NonNull<LLVMModule>;
+
+    fn deref(&self) -> &Self::Target {
         &self.module
+    }
+}
+
+impl Drop for Module {
+    fn drop(&mut self) {
+        unsafe {
+            LLVMDisposeModule(self.module.as_ptr());
+        }
     }
 }
 
@@ -184,20 +267,20 @@ pub(crate) enum Linkage {
     WeakOdr,
 }
 
-impl From<Linkage> for inkwell::module::Linkage {
+impl From<Linkage> for LLVMLinkage {
     fn from(linkage: Linkage) -> Self {
         match linkage {
-            Linkage::Appending => Self::Appending,
-            Linkage::AvailableExternally => Self::AvailableExternally,
-            Linkage::Common => Self::Common,
-            Linkage::External => Self::External,
-            Linkage::ExternalWeak => Self::ExternalWeak,
-            Linkage::Internal => Self::Internal,
-            Linkage::LinkOnceAny => Self::LinkOnceAny,
-            Linkage::LinkOnceOdr => Self::LinkOnceODR,
-            Linkage::Private => Self::Private,
-            Linkage::WeakAny => Self::WeakAny,
-            Linkage::WeakOdr => Self::WeakODR,
+            Linkage::Appending => Self::LLVMAppendingLinkage,
+            Linkage::AvailableExternally => Self::LLVMAvailableExternallyLinkage,
+            Linkage::Common => Self::LLVMCommonLinkage,
+            Linkage::External => Self::LLVMExternalLinkage,
+            Linkage::ExternalWeak => Self::LLVMExternalWeakLinkage,
+            Linkage::Internal => Self::LLVMInternalLinkage,
+            Linkage::LinkOnceAny => Self::LLVMLinkOnceAnyLinkage,
+            Linkage::LinkOnceOdr => Self::LLVMLinkOnceODRLinkage,
+            Linkage::Private => Self::LLVMPrivateLinkage,
+            Linkage::WeakAny => Self::LLVMWeakAnyLinkage,
+            Linkage::WeakOdr => Self::LLVMWeakODRLinkage,
         }
     }
 }
