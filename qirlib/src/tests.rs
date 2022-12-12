@@ -8,7 +8,7 @@ use llvm_sys::{
     analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
     core::*,
     prelude::*,
-    LLVMBuilder, LLVMContext,
+    LLVMBuilder, LLVMContext, LLVMModule,
 };
 use normalize_line_endings::normalized;
 use std::{
@@ -23,6 +23,29 @@ use std::{
 
 const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
 
+pub(crate) struct Builder(NonNull<LLVMBuilder>);
+
+impl Builder {
+    pub(crate) unsafe fn new(builder: NonNull<LLVMBuilder>) -> Self {
+        Self(builder)
+    }
+}
+
+impl Deref for Builder {
+    type Target = NonNull<LLVMBuilder>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Drop for Builder {
+    fn drop(&mut self) {
+        unsafe {
+            LLVMDisposeBuilder(self.0.as_ptr());
+        }
+    }
+}
 pub(crate) struct Context(NonNull<LLVMContext>);
 
 impl Context {
@@ -77,27 +100,25 @@ impl Drop for Message {
     }
 }
 
-pub(crate) struct Builder(NonNull<LLVMBuilder>);
+pub(crate) struct Module(NonNull<LLVMModule>);
 
-impl Builder {
-    pub(crate) unsafe fn new(builder: NonNull<LLVMBuilder>) -> Self {
-        Self(builder)
+impl Module {
+    unsafe fn new(module: NonNull<LLVMModule>) -> Self {
+        Self(module)
     }
 }
 
-impl Deref for Builder {
-    type Target = NonNull<LLVMBuilder>;
+impl Deref for Module {
+    type Target = NonNull<LLVMModule>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl Drop for Builder {
+impl Drop for Module {
     fn drop(&mut self) {
-        unsafe {
-            LLVMDisposeBuilder(self.0.as_ptr());
-        }
+        unsafe { LLVMDisposeModule(self.0.as_ptr()) }
     }
 }
 
@@ -146,28 +167,29 @@ fn build_ir(
     build: impl Fn(LLVMBuilderRef),
 ) -> Result<Message, Message> {
     unsafe {
-        let context = LLVMContextCreate();
-        let module = LLVMModuleCreateWithNameInContext(name.as_ptr(), context);
+        let context = Context::new(NonNull::new(LLVMContextCreate()).unwrap());
+        let module = LLVMModuleCreateWithNameInContext(name.as_ptr(), context.as_ptr());
+        let module = Module::new(NonNull::new(module).unwrap());
         let entry_point = values::entry_point(
-            module,
+            module.as_ptr(),
             cstr!("main"),
             required_num_qubits,
             required_num_results,
         );
 
-        let builder = LLVMCreateBuilderInContext(context);
+        let builder = LLVMCreateBuilderInContext(context.as_ptr());
         let builder = Builder::new(NonNull::new(builder).unwrap());
         LLVMPositionBuilderAtEnd(
             builder.as_ptr(),
-            LLVMAppendBasicBlockInContext(context, entry_point, raw_cstr!("")),
+            LLVMAppendBasicBlockInContext(context.as_ptr(), entry_point, raw_cstr!("")),
         );
         build(builder.as_ptr());
         LLVMBuildRetVoid(builder.as_ptr());
 
         let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
         let mut error = ptr::null_mut();
-        if LLVMVerifyModule(module, action, &mut error) == 0 {
-            let ir = LLVMPrintModuleToString(module);
+        if LLVMVerifyModule(module.as_ptr(), action, &mut error) == 0 {
+            let ir = LLVMPrintModuleToString(module.as_ptr());
             Ok(Message::new(NonNull::new(ir).unwrap()))
         } else {
             Err(Message::new(NonNull::new(error).unwrap()))
