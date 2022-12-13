@@ -1,18 +1,10 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir import (
-    Context,
-    FunctionType,
-    IntType,
-    PointerType,
-    Type,
-    is_qubit_type,
-    is_result_type,
-    qubit_type,
-    result_type,
-)
 import pytest
+
+import pyqir
+from pyqir import Context, FunctionType, IntType, PointerType, Type
 
 
 def test_void() -> None:
@@ -54,15 +46,15 @@ def test_pointer() -> None:
 
 
 def test_void_pointer() -> None:
-    with pytest.raises(ValueError):
-        PointerType(Type.void(Context()))
+    voidp = PointerType(Type.void(Context()))
+    assert voidp.pointee.is_void
 
 
 def test_qubit() -> None:
-    qubit = qubit_type(Context())
-    assert is_qubit_type(qubit)
+    qubit = pyqir.qubit_type(Context())
+    assert pyqir.is_qubit_type(qubit)
 
 
 def test_result() -> None:
-    result = result_type(Context())
-    assert is_result_type(result)
+    result = pyqir.result_type(Context())
+    assert pyqir.is_result_type(result)

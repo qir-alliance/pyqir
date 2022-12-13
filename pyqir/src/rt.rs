@@ -6,8 +6,7 @@ use crate::{
     values::{Owner, Value},
 };
 use pyo3::prelude::*;
-use qirlib::rt::BuilderExt;
-use std::convert::TryInto;
+use qirlib::rt;
 
 /// Inserts a marker in the generated output that indicates the start
 /// of an array and how many array elements it has.
@@ -26,10 +25,9 @@ pub(crate) fn array_record_output(
 ) -> PyResult<()> {
     let builder: PyRef<Builder> = builder.borrow(py);
     Owner::merge(py, [builder.owner(), num_elements.owner(), label.owner()])?;
-    unsafe { builder.get() }.build_array_record_output(
-        unsafe { num_elements.get() }.try_into()?,
-        unsafe { label.get() }.try_into()?,
-    );
+    unsafe {
+        rt::build_array_record_output(builder.as_ptr(), num_elements.as_ptr(), label.as_ptr());
+    }
     Ok(())
 }
 
@@ -49,10 +47,9 @@ pub(crate) fn result_record_output(
 ) -> PyResult<()> {
     let builder = builder.borrow(py);
     Owner::merge(py, [builder.owner(), result.owner(), label.owner()])?;
-    unsafe { builder.get() }.build_result_record_output(
-        unsafe { result.get() }.try_into()?,
-        unsafe { label.get() }.try_into()?,
-    );
+    unsafe {
+        rt::build_result_record_output(builder.as_ptr(), result.as_ptr(), label.as_ptr());
+    }
     Ok(())
 }
 
@@ -67,7 +64,9 @@ pub(crate) fn result_record_output(
 pub(crate) fn initialize(py: Python, builder: Py<Builder>, reserved: &Value) -> PyResult<()> {
     let builder = builder.borrow(py);
     Owner::merge(py, [builder.owner(), reserved.owner()])?;
-    unsafe { builder.get() }.build_initialize(unsafe { reserved.get() }.try_into()?);
+    unsafe {
+        rt::build_initialize(builder.as_ptr(), reserved.as_ptr());
+    }
     Ok(())
 }
 
@@ -88,9 +87,8 @@ pub(crate) fn tuple_record_output(
 ) -> PyResult<()> {
     let builder = builder.borrow(py);
     Owner::merge(py, [builder.owner(), num_elements.owner(), label.owner()])?;
-    unsafe { builder.get() }.build_tuple_record_output(
-        unsafe { num_elements.get() }.try_into()?,
-        unsafe { label.get() }.try_into()?,
-    );
+    unsafe {
+        rt::build_tuple_record_output(builder.as_ptr(), num_elements.as_ptr(), label.as_ptr());
+    }
     Ok(())
 }

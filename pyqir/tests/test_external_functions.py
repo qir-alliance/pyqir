@@ -324,10 +324,11 @@ def test_variable_wrong_angle_type() -> None:
 
     x = mod.builder.call(foo, [])
     assert x is not None
+    qis.rz(x, mod.qubits[0])
     with pytest.raises(
-        BaseException, match=r"^Couldn't convert value to float value\.$"
+        ValueError, match=r"^Call parameter type does not match function signature!"
     ):
-        qis.rz(x, mod.qubits[0])
+        mod.ir()
 
 
 def test_two_variables() -> None:

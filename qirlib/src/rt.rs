@@ -5,11 +5,7 @@ use crate::{
     qis::{builder_module, function_type},
     types,
 };
-use inkwell::{
-    builder::Builder,
-    values::{IntValue, PointerValue},
-    LLVMReference,
-};
+
 use llvm_sys::{
     core::{
         LLVMAddFunction, LLVMGetModuleContext, LLVMGetNamedFunction, LLVMInt64TypeInContext,
@@ -23,52 +19,53 @@ use std::ffi::CString;
 
 use crate::qis::build_call;
 
-pub trait BuilderExt<'ctx> {
-    fn build_array_record_output(&self, num_elements: IntValue, label: PointerValue);
-    fn build_initialize(&self, reserved: PointerValue);
-    fn build_result_record_output(&self, result: PointerValue, label: PointerValue);
-    fn build_tuple_record_output(&self, num_elements: IntValue, label: PointerValue);
+pub unsafe fn build_array_record_output(
+    builder: LLVMBuilderRef,
+    num_elements: LLVMValueRef,
+    label: LLVMValueRef,
+) {
+    build_call(
+        builder,
+        array_record_output(builder_module(builder)),
+        &mut [num_elements, label],
+    );
 }
 
-impl<'ctx> BuilderExt<'ctx> for Builder<'ctx> {
-    fn build_array_record_output(&self, num_elements: IntValue, label: PointerValue) {
-        unsafe {
-            build_call(
-                self.get_ref(),
-                array_record_output(builder_module(self.get_ref())),
-                &mut [num_elements.get_ref(), label.get_ref()],
-            );
-        }
+pub unsafe fn build_initialize(builder: LLVMBuilderRef, reserved: LLVMValueRef) {
+    unsafe {
+        build_call(
+            builder,
+            initialize(builder_module(builder)),
+            &mut [reserved],
+        );
     }
+}
 
-    fn build_initialize(&self, reserved: PointerValue) {
-        unsafe {
-            build_call(
-                self.get_ref(),
-                initialize(builder_module(self.get_ref())),
-                &mut [reserved.get_ref()],
-            );
-        }
+pub unsafe fn build_result_record_output(
+    builder: LLVMBuilderRef,
+    result: LLVMValueRef,
+    label: LLVMValueRef,
+) {
+    unsafe {
+        build_call(
+            builder,
+            result_record_output(builder_module(builder)),
+            &mut [result, label],
+        );
     }
+}
 
-    fn build_result_record_output(&self, result: PointerValue, label: PointerValue) {
-        unsafe {
-            build_call(
-                self.get_ref(),
-                result_record_output(builder_module(self.get_ref())),
-                &mut [result.get_ref(), label.get_ref()],
-            );
-        }
-    }
-
-    fn build_tuple_record_output(&self, num_elements: IntValue, label: PointerValue) {
-        unsafe {
-            build_call(
-                self.get_ref(),
-                tuple_record_output(builder_module(self.get_ref())),
-                &mut [num_elements.get_ref(), label.get_ref()],
-            );
-        }
+pub unsafe fn build_tuple_record_output(
+    builder: LLVMBuilderRef,
+    num_elements: LLVMValueRef,
+    label: LLVMValueRef,
+) {
+    unsafe {
+        build_call(
+            builder,
+            tuple_record_output(builder_module(builder)),
+            &mut [num_elements, label],
+        );
     }
 }
 
@@ -91,7 +88,7 @@ unsafe fn initialize(module: LLVMModuleRef) -> LLVMValueRef {
 
 unsafe fn result_record_output(module: LLVMModuleRef) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
-    let param_type = types::result_unchecked(context);
+    let param_type = types::result(context);
     let name = "result_record_output";
     record_output(module, name, param_type)
 }
@@ -130,55 +127,75 @@ unsafe fn declare_bare(module: LLVMModuleRef, name: &str, ty: LLVMTypeRef) -> LL
 
 #[cfg(test)]
 mod tests {
+    use std::ptr::NonNull;
+
+    use llvm_sys::{
+        core::{
+            LLVMBasicBlockAsValue, LLVMConstInt, LLVMConstPointerNull, LLVMGetInsertBlock,
+            LLVMGetTypeContext, LLVMTypeOf,
+        },
+        LLVMContext,
+    };
+
     use super::*;
     use crate::{tests::assert_reference_ir, values::result};
-    #[test]
-    fn array_record_output() -> Result<(), String> {
-        assert_reference_ir("rt/array_record_output", 0, 0, |builder| {
-            let context = builder.get_insert_block().unwrap().get_context();
-            let value = context.i64_type().const_int(0, false);
-            let null = context
-                .custom_width_int_type(8)
-                .ptr_type(inkwell::AddressSpace::Generic)
-                .const_null();
-            builder.build_array_record_output(value, null);
-        })
+
+    unsafe fn builder_context(builder: LLVMBuilderRef) -> Option<NonNull<LLVMContext>> {
+        let block = NonNull::new(LLVMGetInsertBlock(builder))?;
+        NonNull::new(LLVMGetTypeContext(LLVMTypeOf(LLVMBasicBlockAsValue(
+            block.as_ptr(),
+        ))))
     }
 
     #[test]
-    fn initialize() -> Result<(), String> {
-        assert_reference_ir("rt/initialize", 0, 0, |builder| {
-            let context = builder.get_insert_block().unwrap().get_context();
-            let null = context
-                .custom_width_int_type(8)
-                .ptr_type(inkwell::AddressSpace::Generic)
-                .const_null();
-            builder.build_initialize(null);
-        })
+    fn array_record_output() {
+        assert_reference_ir("rt/array_record_output", 0, 0, |builder| unsafe {
+            let context = builder_context(builder).unwrap().as_ptr();
+            let i64_ty = LLVMInt64TypeInContext(context);
+
+            let value = LLVMConstInt(i64_ty, 0, 0);
+
+            let i8_ty = LLVMInt8TypeInContext(context);
+            let i8_ptr_ty = LLVMPointerType(i8_ty, 0);
+            let i8_null_ptr = LLVMConstPointerNull(i8_ptr_ty);
+
+            build_array_record_output(builder, value, i8_null_ptr);
+        });
     }
 
     #[test]
-    fn result_record_output() -> Result<(), String> {
-        assert_reference_ir("rt/result_record_output", 0, 1, |builder| {
-            let context = builder.get_insert_block().unwrap().get_context();
-            let null = context
-                .custom_width_int_type(8)
-                .ptr_type(inkwell::AddressSpace::Generic)
-                .const_null();
-            builder.build_result_record_output(result(&context, 0), null);
-        })
+    fn initialize() {
+        assert_reference_ir("rt/initialize", 0, 0, |builder| unsafe {
+            let context = builder_context(builder).unwrap().as_ptr();
+            let i8_ty = LLVMInt8TypeInContext(context);
+            let i8_ptr_ty = LLVMPointerType(i8_ty, 0);
+            let i8_null_ptr = LLVMConstPointerNull(i8_ptr_ty);
+            build_initialize(builder, i8_null_ptr);
+        });
     }
 
     #[test]
-    fn tuple_record_output() -> Result<(), String> {
-        assert_reference_ir("rt/tuple_record_output", 0, 0, |builder| {
-            let context = builder.get_insert_block().unwrap().get_context();
-            let value = context.i64_type().const_int(0, false);
-            let null = context
-                .custom_width_int_type(8)
-                .ptr_type(inkwell::AddressSpace::Generic)
-                .const_null();
-            builder.build_tuple_record_output(value, null);
-        })
+    fn result_record_output() {
+        assert_reference_ir("rt/result_record_output", 0, 1, |builder| unsafe {
+            let context = builder_context(builder).unwrap().as_ptr();
+            let i8_ty = LLVMInt8TypeInContext(context);
+            let i8_ptr_ty = LLVMPointerType(i8_ty, 0);
+            let i8_null_ptr = LLVMConstPointerNull(i8_ptr_ty);
+            build_result_record_output(builder, result(context, 0), i8_null_ptr);
+        });
+    }
+
+    #[test]
+    fn tuple_record_output() {
+        assert_reference_ir("rt/tuple_record_output", 0, 0, |builder| unsafe {
+            let context = builder_context(builder).unwrap().as_ptr();
+            let i64_ty = LLVMInt64TypeInContext(context);
+
+            let value = LLVMConstInt(i64_ty, 0, 0);
+            let i8_ty = LLVMInt8TypeInContext(context);
+            let i8_ptr_ty = LLVMPointerType(i8_ty, 0);
+            let i8_null_ptr = LLVMConstPointerNull(i8_ptr_ty);
+            build_tuple_record_output(builder, value, i8_null_ptr);
+        });
     }
 }

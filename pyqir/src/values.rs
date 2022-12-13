@@ -4,27 +4,16 @@
 #![allow(clippy::used_underscore_binding)]
 
 use crate::{
-    context::Context,
+    core::Context,
+    core::Message,
     instructions::Instruction,
     module::{Linkage, Module},
     types::{FunctionType, Type},
 };
-use inkwell::{
-    attributes::AttributeLoc,
-    types::AnyTypeEnum,
-    values::{
-        AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, FloatValue, FunctionValue,
-        GlobalValue, InstructionValue, IntValue, PointerValue,
-    },
-    LLVMReference,
-};
-use libc::c_char;
+#[allow(clippy::wildcard_imports)]
 use llvm_sys::{
-    core::{
-        LLVMBasicBlockAsValue, LLVMDisposeMessage, LLVMGetValueName2, LLVMIsConstant,
-        LLVMPrintValueToString,
-    },
-    prelude::*,
+    core::*, prelude::*, LLVMAttributeFunctionIndex, LLVMAttributeIndex, LLVMAttributeReturnIndex,
+    LLVMBasicBlock, LLVMTypeKind, LLVMValue, LLVMValueKind,
 };
 use pyo3::{
     conversion::ToPyObject,
@@ -36,18 +25,17 @@ use pyo3::{
 use qirlib::values;
 use std::{
     borrow::Borrow,
-    convert::{Into, TryFrom, TryInto},
-    ffi::CStr,
-    fmt::{self, Display, Formatter},
-    mem::transmute,
+    convert::{Into, TryInto},
+    ffi::CString,
     ops::Deref,
-    slice,
+    ptr::NonNull,
+    slice, str,
 };
 
 /// A value.
 #[pyclass(subclass, unsendable)]
 pub(crate) struct Value {
-    value: AnyValue<'static>,
+    value: NonNull<LLVMValue>,
     owner: Owner,
 }
 
@@ -58,55 +46,63 @@ impl Value {
     /// :type: Type
     #[getter]
     fn r#type(&self, py: Python) -> PyResult<PyObject> {
-        unsafe { Type::from_any(py, self.owner.context(py), self.value.ty()) }
+        unsafe { Type::from_raw(py, self.owner.context(py), LLVMTypeOf(self.as_ptr())) }
     }
 
     /// The name of this value or the empty string if this value is anonymous.
     #[getter]
     fn name(&self) -> &str {
-        self.value
-            .name()
-            .to_str()
-            .expect("Name is not valid UTF-8.")
+        let mut len = 0;
+        unsafe {
+            let name = LLVMGetValueName2(self.as_ptr(), &mut len).cast();
+            str::from_utf8(slice::from_raw_parts(name, len)).unwrap()
+        }
     }
 
     fn __str__(&self) -> String {
-        self.value.to_string()
+        unsafe {
+            Message::from_raw(LLVMPrintValueToString(self.as_ptr()))
+                .to_str()
+                .unwrap()
+                .to_string()
+        }
     }
 }
 
 impl Value {
-    pub(crate) unsafe fn new(owner: Owner, value: AnyValue) -> PyClassInitializer<Self> {
-        let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
-        PyClassInitializer::from(Self { value, owner })
+    pub(crate) unsafe fn new(owner: Owner, value: NonNull<LLVMValue>) -> Self {
+        Self { value, owner }
     }
 
-    pub(crate) unsafe fn from_any<'ctx>(
+    pub(crate) unsafe fn from_raw(
         py: Python,
         owner: Owner,
-        value: impl Into<AnyValue<'ctx>>,
+        value: LLVMValueRef,
     ) -> PyResult<PyObject> {
-        let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value.into());
-        #[allow(clippy::same_functions_in_if_condition)]
-        if let Ok(inst) = value.try_into() {
-            Instruction::from_inst(py, owner, inst)
-        } else if let Ok(block) = value.try_into() {
-            let base = PyClassInitializer::from(Self { value, owner });
-            let block = base.add_subclass(BasicBlock(block));
-            Ok(Py::new(py, block)?.to_object(py))
-        } else if value.is_const() {
-            Constant::from_any(py, owner, value)
-        } else {
-            Ok(Py::new(py, Self { value, owner })?.to_object(py))
+        match LLVMGetValueKind(value) {
+            LLVMValueKind::LLVMInstructionValueKind => Instruction::from_raw(py, owner, value),
+            LLVMValueKind::LLVMBasicBlockValueKind => {
+                let block = BasicBlock::from_raw(owner, LLVMValueAsBasicBlock(value));
+                Ok(Py::new(py, block)?.to_object(py))
+            }
+            _ if LLVMIsConstant(value) != 0 => Constant::from_raw(py, owner, value),
+            _ => {
+                let value = NonNull::new(value).expect("Value is null.");
+                Ok(Py::new(py, Self { value, owner })?.to_object(py))
+            }
         }
-    }
-
-    pub(crate) unsafe fn get(&self) -> AnyValue<'static> {
-        self.value
     }
 
     pub(crate) fn owner(&self) -> &Owner {
         &self.owner
+    }
+}
+
+impl Deref for Value {
+    type Target = NonNull<LLVMValue>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
     }
 }
 
@@ -203,7 +199,7 @@ impl From<Py<Module>> for Owner {
 /// :param typing.Optional[BasicBlock] before: The block to insert this block before.
 #[pyclass(extends = Value, unsendable)]
 #[pyo3(text_signature = "(context, name, parent=None, before=None)")]
-pub(crate) struct BasicBlock(inkwell::basic_block::BasicBlock<'static>);
+pub(crate) struct BasicBlock(NonNull<LLVMBasicBlock>);
 
 #[pymethods]
 impl BasicBlock {
@@ -215,13 +211,12 @@ impl BasicBlock {
         parent: Option<PyRef<Function>>,
         before: Option<PyRef<BasicBlock>>,
     ) -> PyResult<PyClassInitializer<Self>> {
-        let parent_value = parent.as_ref().map(|f| f.0);
-        let parent = parent.map(PyRef::into_super);
+        let parent = parent.map(|p| p.into_super().into_super());
         let owner = Owner::merge(
             py,
             [
                 Some(&context.clone_ref(py).into()),
-                parent.as_ref().map(|f| &f.as_ref().owner),
+                parent.as_ref().map(|f| &f.owner),
                 before.as_ref().map(|b| &b.as_ref().owner),
             ]
             .into_iter()
@@ -230,25 +225,30 @@ impl BasicBlock {
 
         let block = {
             let context = context.borrow(py);
-            let block = match (parent_value, before) {
+            let name = CString::new(name).unwrap();
+            match (parent, before) {
                 (None, None) => Err(PyValueError::new_err("Can't create block without parent.")),
-                (Some(parent), None) => Ok(context.append_basic_block(parent, name)),
-                (Some(parent), Some(before)) if before.0.get_parent() != Some(parent) => Err(
-                    PyValueError::new_err("Insert before block isn't in parent function."),
-                ),
-                (_, Some(before)) => Ok(context.prepend_basic_block(before.0, name)),
-            }?;
-
-            unsafe {
-                transmute::<
-                    inkwell::basic_block::BasicBlock<'_>,
-                    inkwell::basic_block::BasicBlock<'static>,
-                >(block)
+                (Some(parent), None) => Ok(unsafe {
+                    LLVMAppendBasicBlockInContext(context.as_ptr(), parent.as_ptr(), name.as_ptr())
+                }),
+                (Some(parent), Some(before))
+                    if unsafe { LLVMGetBasicBlockParent(before.as_ptr()) != parent.as_ptr() } =>
+                {
+                    Err(PyValueError::new_err(
+                        "Insert before block isn't in parent function.",
+                    ))
+                }
+                (_, Some(before)) => Ok(unsafe {
+                    LLVMInsertBasicBlockInContext(context.as_ptr(), before.as_ptr(), name.as_ptr())
+                }),
             }
-        };
+        }?;
 
-        let value = block.into();
-        Ok(PyClassInitializer::from(Value { value, owner }).add_subclass(Self(block)))
+        Ok(PyClassInitializer::from(Value {
+            value: NonNull::new(unsafe { LLVMBasicBlockAsValue(block) }).unwrap(),
+            owner,
+        })
+        .add_subclass(Self(NonNull::new(block).unwrap())))
     }
 
     /// The instructions in this basic block.
@@ -257,10 +257,13 @@ impl BasicBlock {
     #[getter]
     fn instructions(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let mut insts = Vec::new();
-        let mut inst = slf.0.get_first_instruction();
-        while let Some(i) = inst {
-            insts.push(unsafe { Instruction::from_inst(py, slf.as_ref().owner.clone_ref(py), i) }?);
-            inst = i.get_next_instruction();
+        unsafe {
+            let mut inst = LLVMGetFirstInstruction(slf.as_ptr());
+            while !inst.is_null() {
+                let owner = slf.as_ref().owner.clone_ref(py);
+                insts.push(Instruction::from_raw(py, owner, inst)?);
+                inst = LLVMGetNextInstruction(inst);
+            }
         }
         Ok(insts)
     }
@@ -270,19 +273,34 @@ impl BasicBlock {
     /// :type: typing.Optional[Instruction]
     #[getter]
     fn terminator(slf: PyRef<Self>, py: Python) -> PyResult<Option<PyObject>> {
-        match slf.0.get_terminator() {
-            Some(terminator) => {
+        unsafe {
+            let term = LLVMGetBasicBlockTerminator(slf.as_ptr());
+            if term.is_null() {
+                Ok(None)
+            } else {
                 let owner = slf.into_super().owner.clone_ref(py);
-                unsafe { Instruction::from_inst(py, owner, terminator) }.map(Some)
+                Instruction::from_raw(py, owner, term).map(Some)
             }
-            None => Ok(None),
         }
     }
 }
 
 impl BasicBlock {
-    pub(crate) unsafe fn get(&self) -> inkwell::basic_block::BasicBlock<'static> {
-        self.0
+    pub(crate) unsafe fn from_raw(
+        owner: Owner,
+        block: LLVMBasicBlockRef,
+    ) -> PyClassInitializer<Self> {
+        let block = NonNull::new(block).expect("Block is null.");
+        let value = NonNull::new(LLVMBasicBlockAsValue(block.as_ptr())).expect("Value is null.");
+        PyClassInitializer::from(Value { value, owner }).add_subclass(BasicBlock(block))
+    }
+}
+
+impl Deref for BasicBlock {
+    type Target = NonNull<LLVMBasicBlock>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -300,18 +318,8 @@ impl Constant {
     #[staticmethod]
     #[pyo3(text_signature = "(ty)")]
     fn null(py: Python, ty: &Type) -> PyResult<PyObject> {
-        let value: AnyValueEnum = match unsafe { ty.get() } {
-            AnyTypeEnum::ArrayType(a) => Ok(a.const_zero().into()),
-            AnyTypeEnum::FloatType(f) => Ok(f.const_zero().into()),
-            AnyTypeEnum::IntType(i) => Ok(i.const_zero().into()),
-            AnyTypeEnum::PointerType(p) => Ok(p.const_zero().into()),
-            AnyTypeEnum::StructType(s) => Ok(s.const_zero().into()),
-            AnyTypeEnum::VectorType(v) => Ok(v.const_zero().into()),
-            AnyTypeEnum::FunctionType(_) | AnyTypeEnum::VoidType(_) => {
-                Err(PyValueError::new_err("Can't create null for this type."))
-            }
-        }?;
-        unsafe { Value::from_any(py, ty.context().clone_ref(py).into(), value) }
+        let context = ty.context().clone_ref(py);
+        unsafe { Value::from_raw(py, context.into(), LLVMConstNull(ty.as_ptr())) }
     }
 
     /// Whether this value is the null value for its type.
@@ -319,29 +327,29 @@ impl Constant {
     /// :type: bool
     #[getter]
     fn is_null(slf: PyRef<Self>) -> bool {
-        slf.into_super().value.is_null()
+        unsafe { LLVMIsNull(slf.into_super().as_ptr()) != 0 }
     }
 }
 
 impl Constant {
-    unsafe fn from_any(py: Python, owner: Owner, value: AnyValue) -> PyResult<PyObject> {
-        if value.is_const() {
-            let value = transmute::<AnyValue<'_>, AnyValue<'static>>(value);
+    unsafe fn from_raw(py: Python, owner: Owner, value: LLVMValueRef) -> PyResult<PyObject> {
+        let value = NonNull::new(value).expect("Value is null.");
+        if LLVMIsConstant(value.as_ptr()) == 0 {
+            Err(PyValueError::new_err("Value is not constant."))
+        } else {
             let base = PyClassInitializer::from(Value { value, owner }).add_subclass(Constant);
-            match value.try_into() {
-                Ok(AnyValueEnum::IntValue(_)) => {
+            match LLVMGetValueKind(value.as_ptr()) {
+                LLVMValueKind::LLVMConstantIntValueKind => {
                     Ok(Py::new(py, base.add_subclass(IntConstant))?.to_object(py))
                 }
-                Ok(AnyValueEnum::FloatValue(_)) => {
+                LLVMValueKind::LLVMConstantFPValueKind => {
                     Ok(Py::new(py, base.add_subclass(FloatConstant))?.to_object(py))
                 }
-                Ok(AnyValueEnum::FunctionValue(f)) => {
-                    Ok(Py::new(py, base.add_subclass(Function(f)))?.to_object(py))
+                LLVMValueKind::LLVMFunctionValueKind => {
+                    Ok(Py::new(py, base.add_subclass(Function))?.to_object(py))
                 }
                 _ => Ok(Py::new(py, base)?.to_object(py)),
             }
-        } else {
-            Err(PyValueError::new_err("Value is not constant."))
         }
     }
 }
@@ -357,8 +365,7 @@ impl IntConstant {
     /// :type: int
     #[getter]
     fn value(slf: PyRef<Self>) -> u64 {
-        let int: IntValue = slf.into_super().into_super().value.try_into().unwrap();
-        int.get_zero_extended_constant().unwrap()
+        unsafe { LLVMConstIntGetZExtValue(slf.into_super().into_super().as_ptr()) }
     }
 }
 
@@ -373,8 +380,7 @@ impl FloatConstant {
     /// :type: float
     #[getter]
     fn value(slf: PyRef<Self>) -> f64 {
-        let float: FloatValue = slf.into_super().into_super().value.try_into().unwrap();
-        float.get_constant().unwrap().0
+        unsafe { LLVMConstRealGetDouble(slf.into_super().into_super().as_ptr(), &mut 0) }
     }
 }
 
@@ -384,8 +390,8 @@ impl FloatConstant {
 /// :param Linkage linkage: The linkage kind.
 /// :param str name: The function name.
 /// :param Module module: The parent module.
-#[pyclass(extends = Constant, unsendable)]
-pub(crate) struct Function(FunctionValue<'static>);
+#[pyclass(extends = Constant)]
+pub(crate) struct Function;
 
 #[pymethods]
 impl Function {
@@ -405,15 +411,29 @@ impl Function {
             ],
         )?;
 
-        let value = unsafe { module.borrow(py).get() }.add_function(
-            name,
-            unsafe { ty.get() },
-            Some(linkage.into()),
-        );
+        let name = CString::new(name).unwrap();
+        unsafe {
+            let value = NonNull::new(LLVMAddFunction(
+                module.borrow(py).as_ptr(),
+                name.as_ptr(),
+                ty.into_super().as_ptr(),
+            ))
+            .expect("Function is null.");
+            LLVMSetLinkage(value.as_ptr(), linkage.into());
 
-        Ok(unsafe { Value::new(owner, value.into()) }
-            .add_subclass(Constant)
-            .add_subclass(Self(value)))
+            Ok(PyClassInitializer::from(Value { value, owner })
+                .add_subclass(Constant)
+                .add_subclass(Self))
+        }
+    }
+
+    #[getter]
+    fn r#type(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
+        let slf = slf.into_super().into_super();
+        unsafe {
+            let ty = LLVMGetElementType(LLVMTypeOf(slf.as_ptr()));
+            Type::from_raw(py, slf.owner().context(py), ty)
+        }
     }
 
     /// The parameters to this function.
@@ -421,12 +441,17 @@ impl Function {
     /// :type: typing.List[Value]
     #[getter]
     fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        let params = slf.0.get_params();
-        let owner = &slf.into_super().into_super().owner;
-        params
-            .into_iter()
-            .map(|p| unsafe { Value::from_any(py, owner.clone_ref(py), p) })
-            .collect()
+        let slf = slf.into_super().into_super();
+        unsafe {
+            let count = LLVMCountParams(slf.as_ptr()).try_into().unwrap();
+            let mut params = Vec::with_capacity(count);
+            LLVMGetParams(slf.as_ptr(), params.as_mut_ptr());
+            params.set_len(count);
+            params
+                .into_iter()
+                .map(|p| Value::from_raw(py, slf.owner.clone_ref(py), p))
+                .collect()
+        }
     }
 
     /// The basic blocks in this function.
@@ -434,13 +459,17 @@ impl Function {
     /// :type: typing.List[BasicBlock]
     #[getter]
     fn basic_blocks(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        let function = slf.0;
-        let owner = &slf.into_super().into_super().owner;
-        function
-            .get_basic_blocks()
-            .into_iter()
-            .map(|b| unsafe { Value::from_any(py, owner.clone_ref(py), b) })
-            .collect()
+        let slf = slf.into_super().into_super();
+        unsafe {
+            let count = LLVMCountBasicBlocks(slf.as_ptr()).try_into().unwrap();
+            let mut blocks = Vec::with_capacity(count);
+            LLVMGetBasicBlocks(slf.as_ptr(), blocks.as_mut_ptr());
+            blocks.set_len(count);
+            blocks
+                .into_iter()
+                .map(|b| Value::from_raw(py, slf.owner.clone_ref(py), LLVMBasicBlockAsValue(b)))
+                .collect()
+        }
     }
 
     /// The attributes for this function.
@@ -450,15 +479,9 @@ impl Function {
     }
 }
 
-impl Function {
-    pub(crate) unsafe fn get(&self) -> FunctionValue<'static> {
-        self.0
-    }
-}
-
 /// An attribute.
 #[pyclass(unsendable)]
-pub(crate) struct Attribute(pub(crate) inkwell::attributes::Attribute);
+pub(crate) struct Attribute(LLVMAttributeRef);
 
 #[pymethods]
 impl Attribute {
@@ -467,15 +490,15 @@ impl Attribute {
     /// :type: typing.Optional[str]
     #[getter]
     fn string_value(&self) -> Option<&str> {
-        if self.0.is_string() {
-            Some(
-                self.0
-                    .get_string_value()
-                    .to_str()
-                    .expect("Value is not valid UTF-8."),
-            )
-        } else {
-            None
+        unsafe {
+            if LLVMIsStringAttribute(self.0) == 0 {
+                None
+            } else {
+                let mut len = 0;
+                let value = LLVMGetStringAttributeValue(self.0, &mut len).cast();
+                let value = slice::from_raw_parts(value, len.try_into().unwrap());
+                Some(str::from_utf8(value).unwrap())
+            }
         }
     }
 }
@@ -494,7 +517,7 @@ impl AttributeList {
     fn param(&self, py: Python, n: u32) -> AttributeSet {
         AttributeSet {
             function: self.0.clone_ref(py),
-            index: AttributeLoc::Param(n),
+            index: n + 1, // Parameter indices start from one.
         }
     }
 
@@ -505,7 +528,7 @@ impl AttributeList {
     fn ret(&self, py: Python) -> AttributeSet {
         AttributeSet {
             function: self.0.clone_ref(py),
-            index: AttributeLoc::Return,
+            index: LLVMAttributeReturnIndex,
         }
     }
 
@@ -516,7 +539,7 @@ impl AttributeList {
     fn func(&self, py: Python) -> AttributeSet {
         AttributeSet {
             function: self.0.clone_ref(py),
-            index: AttributeLoc::Function,
+            index: LLVMAttributeFunctionIndex,
         }
     }
 }
@@ -525,7 +548,7 @@ impl AttributeList {
 #[pyclass]
 pub(crate) struct AttributeSet {
     function: Py<Function>,
-    index: AttributeLoc,
+    index: LLVMAttributeIndex,
 }
 
 #[pymethods]
@@ -536,9 +559,7 @@ impl AttributeSet {
     /// :returns: True if the group has an attribute with the given kind.
     /// :rtype: bool
     fn __contains__(&self, py: Python, item: &str) -> bool {
-        unsafe { self.function.borrow(py).get() }
-            .get_string_attribute(self.index, item)
-            .is_some()
+        self.__getitem__(py, item).is_ok()
     }
 
     /// Gets an attribute based on its kind.
@@ -547,280 +568,22 @@ impl AttributeSet {
     /// :returns: The attribute.
     /// :rtype: Attribute
     fn __getitem__(&self, py: Python, key: &str) -> PyResult<Attribute> {
-        unsafe { self.function.borrow(py).get() }
-            .get_string_attribute(self.index, key)
-            .map(Attribute)
-            .ok_or_else(|| PyKeyError::new_err(key.to_owned()))
-    }
-}
-
-#[derive(Clone, Copy)]
-pub(crate) enum AnyValue<'ctx> {
-    Any(AnyValueEnum<'ctx>),
-    BasicBlock(inkwell::basic_block::BasicBlock<'ctx>),
-}
-
-impl<'ctx> AnyValue<'ctx> {
-    fn ty(&self) -> AnyTypeEnum<'ctx> {
-        match self {
-            Self::Any(AnyValueEnum::ArrayValue(a)) => a.get_type().into(),
-            Self::Any(AnyValueEnum::IntValue(i)) => i.get_type().into(),
-            Self::Any(AnyValueEnum::FloatValue(f)) => f.get_type().into(),
-            Self::Any(AnyValueEnum::PhiValue(p)) => p.as_instruction().get_type(),
-            Self::Any(AnyValueEnum::FunctionValue(f)) => f.get_type().into(),
-            Self::Any(AnyValueEnum::PointerValue(p)) => p.get_type().into(),
-            Self::Any(AnyValueEnum::StructValue(s)) => s.get_type().into(),
-            Self::Any(AnyValueEnum::VectorValue(v)) => v.get_type().into(),
-            Self::Any(AnyValueEnum::InstructionValue(i)) => i.get_type(),
-            Self::Any(AnyValueEnum::MetadataValue(m)) => {
-                inkwell::values::AnyValue::as_any_value_enum(m).get_type()
-            }
-            Self::BasicBlock(b) => b.get_context().void_type().into(),
-        }
-    }
-
-    fn name(&self) -> &CStr {
-        let mut len = 0;
-        let name = unsafe { LLVMGetValueName2(self.get_ref(), &mut len) };
-        let name = unsafe { slice::from_raw_parts(name.cast(), len + 1) };
-        CStr::from_bytes_with_nul(name).expect("Name is not a valid C string.")
-    }
-
-    fn is_const(&self) -> bool {
-        unsafe { LLVMIsConstant(self.get_ref()) != 0 }
-    }
-
-    fn is_null(&self) -> bool {
-        match self {
-            Self::Any(AnyValueEnum::PointerValue(p)) => p.is_null(),
-            Self::Any(_) | Self::BasicBlock(_) => false,
-        }
-    }
-}
-
-impl<'ctx> Display for AnyValue<'ctx> {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self {
-            Self::Any(any) => {
-                let message = inkwell::values::AnyValue::print_to_string(any);
-                f.write_str(message.to_str().map_err(|_| fmt::Error)?)
-            }
-            Self::BasicBlock(block) => {
-                let value = unsafe { LLVMBasicBlockAsValue(block.get_ref()) };
-                let message = unsafe { Message(LLVMPrintValueToString(value)) };
-                f.write_str(message.to_str().map_err(|_| fmt::Error)?)
-            }
-        }
-    }
-}
-
-impl LLVMReference<LLVMValueRef> for AnyValue<'_> {
-    unsafe fn get_ref(&self) -> LLVMValueRef {
-        match self {
-            Self::Any(any) => any.get_ref(),
-            Self::BasicBlock(block) => LLVMBasicBlockAsValue(block.get_ref()),
-        }
-    }
-}
-
-impl<'ctx> From<AnyValueEnum<'ctx>> for AnyValue<'ctx> {
-    fn from(any: AnyValueEnum<'ctx>) -> Self {
-        Self::Any(any)
-    }
-}
-
-impl<'ctx> From<BasicValueEnum<'ctx>> for AnyValue<'ctx> {
-    fn from(basic: BasicValueEnum<'ctx>) -> Self {
-        Self::Any(basic.into())
-    }
-}
-
-impl<'ctx> From<IntValue<'ctx>> for AnyValue<'ctx> {
-    fn from(int: IntValue<'ctx>) -> Self {
-        Self::Any(int.into())
-    }
-}
-
-impl<'ctx> From<FloatValue<'ctx>> for AnyValue<'ctx> {
-    fn from(float: FloatValue<'ctx>) -> Self {
-        Self::Any(float.into())
-    }
-}
-
-impl<'ctx> From<FunctionValue<'ctx>> for AnyValue<'ctx> {
-    fn from(function: FunctionValue<'ctx>) -> Self {
-        Self::Any(function.into())
-    }
-}
-
-impl<'ctx> From<PointerValue<'ctx>> for AnyValue<'ctx> {
-    fn from(pointer: PointerValue<'ctx>) -> Self {
-        Self::Any(pointer.into())
-    }
-}
-
-impl<'ctx> From<GlobalValue<'ctx>> for AnyValue<'ctx> {
-    fn from(global: GlobalValue<'ctx>) -> Self {
-        Self::Any(global.as_pointer_value().into())
-    }
-}
-
-impl<'ctx> From<InstructionValue<'ctx>> for AnyValue<'ctx> {
-    fn from(instruction: InstructionValue<'ctx>) -> Self {
-        Self::Any(instruction.into())
-    }
-}
-
-impl<'ctx> From<inkwell::basic_block::BasicBlock<'ctx>> for AnyValue<'ctx> {
-    fn from(block: inkwell::basic_block::BasicBlock<'ctx>) -> Self {
-        Self::BasicBlock(block)
-    }
-}
-
-impl<'ctx> TryFrom<AnyValue<'ctx>> for AnyValueEnum<'ctx> {
-    type Error = ConvertError;
-
-    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
-        match value {
-            AnyValue::Any(a) => Ok(a),
-            AnyValue::BasicBlock(_) => Err(ConvertError("value excluding basic blocks")),
-        }
-    }
-}
-
-impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicValueEnum<'ctx> {
-    type Error = ConvertError;
-
-    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
-        match value {
-            AnyValue::Any(AnyValueEnum::ArrayValue(a)) => Some(a.into()),
-            AnyValue::Any(AnyValueEnum::IntValue(i)) => Some(i.into()),
-            AnyValue::Any(AnyValueEnum::FloatValue(f)) => Some(f.into()),
-            AnyValue::Any(AnyValueEnum::PointerValue(p)) => Some(p.into()),
-            AnyValue::Any(AnyValueEnum::StructValue(s)) => Some(s.into()),
-            AnyValue::Any(AnyValueEnum::VectorValue(v)) => Some(v.into()),
-            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i
-                .try_into()
-                .map(BasicValueEnum::IntValue)
-                .or_else(|()| i.try_into().map(BasicValueEnum::FloatValue))
-                .or_else(|()| i.try_into().map(BasicValueEnum::PointerValue))
-                .ok(),
-            AnyValue::Any(
-                AnyValueEnum::PhiValue(_)
-                | AnyValueEnum::FunctionValue(_)
-                | AnyValueEnum::MetadataValue(_),
+        let function = self.function.borrow(py).into_super().into_super();
+        let kind = CString::new(key).unwrap();
+        let attr = unsafe {
+            LLVMGetStringAttributeAtIndex(
+                function.as_ptr(),
+                self.index,
+                kind.as_ptr(),
+                key.len().try_into().unwrap(),
             )
-            | AnyValue::BasicBlock(_) => None,
+        };
+
+        if attr.is_null() {
+            Err(PyKeyError::new_err(key.to_owned()))
+        } else {
+            Ok(Attribute(attr))
         }
-        .ok_or(ConvertError("basic value"))
-    }
-}
-
-impl<'ctx> TryFrom<AnyValue<'ctx>> for BasicMetadataValueEnum<'ctx> {
-    type Error = ConvertError;
-
-    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
-        match value {
-            AnyValue::Any(AnyValueEnum::MetadataValue(m)) => Ok(m.into()),
-            _ => BasicValueEnum::try_from(value)
-                .map(BasicMetadataValueEnum::from)
-                .map_err(|_| ConvertError("argument value")),
-        }
-    }
-}
-
-impl<'ctx> TryFrom<AnyValue<'ctx>> for IntValue<'ctx> {
-    type Error = ConvertError;
-
-    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
-        match value {
-            AnyValue::Any(AnyValueEnum::IntValue(i)) => Some(i),
-            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i.try_into().ok(),
-            _ => None,
-        }
-        .ok_or(ConvertError("integer value"))
-    }
-}
-
-impl<'ctx> TryFrom<AnyValue<'ctx>> for FloatValue<'ctx> {
-    type Error = ConvertError;
-
-    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
-        match value {
-            AnyValue::Any(AnyValueEnum::FloatValue(f)) => Some(f),
-            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i.try_into().ok(),
-            _ => None,
-        }
-        .ok_or(ConvertError("float value"))
-    }
-}
-
-impl<'ctx> TryFrom<AnyValue<'ctx>> for PointerValue<'ctx> {
-    type Error = ConvertError;
-
-    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
-        match value {
-            AnyValue::Any(AnyValueEnum::PointerValue(p)) => Some(p),
-            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => i.try_into().ok(),
-            _ => None,
-        }
-        .ok_or(ConvertError("pointer value"))
-    }
-}
-
-impl<'ctx> TryFrom<AnyValue<'ctx>> for InstructionValue<'ctx> {
-    type Error = ConvertError;
-
-    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
-        match value {
-            AnyValue::Any(AnyValueEnum::ArrayValue(a)) => a.as_instruction(),
-            AnyValue::Any(AnyValueEnum::IntValue(i)) => i.as_instruction(),
-            AnyValue::Any(AnyValueEnum::FloatValue(f)) => f.as_instruction(),
-            AnyValue::Any(AnyValueEnum::PhiValue(p)) => Some(p.as_instruction()),
-            AnyValue::Any(AnyValueEnum::PointerValue(p)) => p.as_instruction(),
-            AnyValue::Any(AnyValueEnum::StructValue(s)) => s.as_instruction(),
-            AnyValue::Any(AnyValueEnum::VectorValue(v)) => v.as_instruction(),
-            AnyValue::Any(AnyValueEnum::InstructionValue(i)) => Some(i),
-            AnyValue::Any(AnyValueEnum::FunctionValue(_) | AnyValueEnum::MetadataValue(_))
-            | AnyValue::BasicBlock(_) => None,
-        }
-        .ok_or(ConvertError("instruction value"))
-    }
-}
-
-impl<'ctx> TryFrom<AnyValue<'ctx>> for inkwell::basic_block::BasicBlock<'ctx> {
-    type Error = ConvertError;
-
-    fn try_from(value: AnyValue<'ctx>) -> Result<Self, Self::Error> {
-        match value {
-            AnyValue::Any(_) => Err(ConvertError("basic block")),
-            AnyValue::BasicBlock(b) => Ok(b),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub(crate) struct ConvertError(&'static str);
-
-impl From<ConvertError> for PyErr {
-    fn from(error: ConvertError) -> Self {
-        PyValueError::new_err(format!("Couldn't convert value to {}.", error.0))
-    }
-}
-
-struct Message(*mut c_char);
-
-impl Deref for Message {
-    type Target = CStr;
-
-    fn deref(&self) -> &Self::Target {
-        unsafe { CStr::from_ptr(self.0) }
-    }
-}
-
-impl Drop for Message {
-    fn drop(&mut self) {
-        unsafe { LLVMDisposeMessage(self.0) }
     }
 }
 
@@ -832,13 +595,15 @@ pub(crate) enum Literal<'py> {
 }
 
 impl Literal<'_> {
-    pub(crate) fn to_value(&self, ty: AnyTypeEnum<'static>) -> PyResult<AnyValue> {
-        match (ty, self) {
-            (AnyTypeEnum::IntType(ty), &Self::Bool(b)) => Ok(ty.const_int(b.into(), false).into()),
-            (AnyTypeEnum::IntType(ty), &Self::Int(i)) => {
-                Ok(ty.const_int(i.extract()?, false).into())
+    pub(crate) unsafe fn to_value(&self, ty: LLVMTypeRef) -> PyResult<LLVMValueRef> {
+        match (LLVMGetTypeKind(ty), self) {
+            (LLVMTypeKind::LLVMIntegerTypeKind, &Self::Bool(b)) => {
+                Ok(LLVMConstInt(ty, b.into(), 0))
             }
-            (AnyTypeEnum::FloatType(ty), &Self::Float(f)) => Ok(ty.const_float(f).into()),
+            (LLVMTypeKind::LLVMIntegerTypeKind, &Self::Int(i)) => {
+                Ok(LLVMConstInt(ty, i.extract()?, 0))
+            }
+            (LLVMTypeKind::LLVMDoubleTypeKind, &Self::Float(f)) => Ok(LLVMConstReal(ty, f)),
             _ => Err(PyTypeError::new_err(
                 "Can't convert Python value into this type.",
             )),
@@ -856,7 +621,7 @@ impl Literal<'_> {
 #[pyo3(text_signature = "(ty, value)")]
 pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObject> {
     let owner = ty.context().clone_ref(py).into();
-    unsafe { Value::from_any(py, owner, value.to_value(ty.get())?) }
+    unsafe { Value::from_raw(py, owner, value.to_value(ty.as_ptr())?) }
 }
 
 /// Creates a static qubit value.
@@ -868,12 +633,10 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObjec
 #[pyfunction]
 #[pyo3(text_signature = "(context, id)")]
 pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
-    let value = {
-        let context = context.borrow(py);
-        let value = values::qubit(&context.void_type().get_context(), id);
-        unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
-    };
-    unsafe { Value::from_any(py, Owner::Context(context), value) }
+    unsafe {
+        let value = values::qubit(context.borrow(py).as_ptr(), id);
+        Value::from_raw(py, context.into(), value)
+    }
 }
 
 /// If the value is a static qubit ID, extracts it.
@@ -884,7 +647,7 @@ pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObj
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
-    values::qubit_id(unsafe { value.get() }.try_into().ok()?)
+    unsafe { values::qubit_id(value.as_ptr()) }
 }
 
 /// Creates a static result value.
@@ -896,12 +659,10 @@ pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
 #[pyfunction]
 #[pyo3(text_signature = "(context, id)")]
 pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
-    let value = {
-        let context = context.borrow(py);
-        let value = values::result(&context.void_type().get_context(), id);
-        unsafe { transmute::<PointerValue<'_>, PointerValue<'static>>(value) }
-    };
-    unsafe { Value::from_any(py, Owner::Context(context), value) }
+    unsafe {
+        let value = values::result(context.borrow(py).as_ptr(), id);
+        Value::from_raw(py, context.into(), value)
+    }
 }
 
 /// If the value is a static result ID, extracts it.
@@ -912,7 +673,7 @@ pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyOb
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn result_id(value: &Value) -> Option<u64> {
-    values::result_id(unsafe { value.get() }.try_into().ok()?)
+    unsafe { values::result_id(value.as_ptr()) }
 }
 
 /// Creates an entry point.
@@ -932,13 +693,16 @@ pub(crate) fn entry_point(
     required_num_qubits: u64,
     required_num_results: u64,
 ) -> PyResult<PyObject> {
-    let entry_point = values::entry_point(
-        unsafe { module.borrow(py).get() },
-        name,
-        required_num_qubits,
-        required_num_results,
-    );
-    unsafe { Value::from_any(py, Owner::Module(module), entry_point) }
+    let name = CString::new(name).unwrap();
+    unsafe {
+        let entry_point = values::entry_point(
+            module.borrow(py).as_ptr(),
+            name.as_c_str(),
+            required_num_qubits,
+            required_num_results,
+        );
+        Value::from_raw(py, module.into(), entry_point)
+    }
 }
 
 /// Whether the function is an entry point.
@@ -948,8 +712,8 @@ pub(crate) fn entry_point(
 /// :rtype: bool
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
-pub(crate) fn is_entry_point(function: &Function) -> bool {
-    values::is_entry_point(unsafe { function.get() })
+pub(crate) fn is_entry_point(function: PyRef<Function>) -> bool {
+    unsafe { values::is_entry_point(function.into_super().into_super().as_ptr()) }
 }
 
 /// Whether the function is interop-friendly.
@@ -959,8 +723,8 @@ pub(crate) fn is_entry_point(function: &Function) -> bool {
 /// :rtype: bool
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
-pub(crate) fn is_interop_friendly(function: &Function) -> bool {
-    values::is_interop_friendly(unsafe { function.get() })
+pub(crate) fn is_interop_friendly(function: PyRef<Function>) -> bool {
+    unsafe { values::is_interop_friendly(function.into_super().into_super().as_ptr()) }
 }
 
 /// If the function declares a required number of qubits, extracts it.
@@ -970,8 +734,8 @@ pub(crate) fn is_interop_friendly(function: &Function) -> bool {
 /// :rtype: typing.Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
-pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
-    values::required_num_qubits(unsafe { function.get() })
+pub(crate) fn required_num_qubits(function: PyRef<Function>) -> Option<u64> {
+    unsafe { values::required_num_qubits(function.into_super().into_super().as_ptr()) }
 }
 
 /// If the function declares a required number of results, extracts it.
@@ -981,8 +745,8 @@ pub(crate) fn required_num_qubits(function: &Function) -> Option<u64> {
 /// :rtype: Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
-pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
-    values::required_num_results(unsafe { function.get() })
+pub(crate) fn required_num_results(function: PyRef<Function>) -> Option<u64> {
+    unsafe { values::required_num_results(function.into_super().into_super().as_ptr()) }
 }
 
 /// Creates a global null-terminated byte string constant in a module.
@@ -994,8 +758,11 @@ pub(crate) fn required_num_results(function: &Function) -> Option<u64> {
 #[pyfunction]
 #[pyo3(text_signature = "(module, value)")]
 pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> PyResult<PyObject> {
-    let string = values::global_string(unsafe { module.get() }, value);
-    unsafe { Value::from_any(py, module.context().clone_ref(py).into(), string) }
+    let context = module.context().clone_ref(py);
+    unsafe {
+        let string = values::global_string(module.as_ptr(), value);
+        Value::from_raw(py, context.into(), string)
+    }
 }
 
 /// If the value is a pointer to a constant byte string, extracts it.
@@ -1005,7 +772,7 @@ pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> P
 /// :rtype: typing.Optional[bytes]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
-pub(crate) fn extract_byte_string<'p>(py: Python<'p>, value: &Value) -> Option<&'p PyBytes> {
-    let string = values::extract_string(unsafe { value.get() }.try_into().ok()?)?;
-    Some(PyBytes::new(py, string))
+pub(crate) fn extract_byte_string<'py>(py: Python<'py>, value: &Value) -> Option<&'py PyBytes> {
+    let string = unsafe { values::extract_string(value.as_ptr())? };
+    Some(PyBytes::new(py, &string))
 }

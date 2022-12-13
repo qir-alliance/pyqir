@@ -2,186 +2,204 @@
 // Licensed under the MIT License.
 
 use crate::types;
+use const_str::raw_cstr;
 use core::slice;
-use inkwell::{
-    attributes::AttributeLoc,
-    context::ContextRef,
-    module::{Linkage, Module},
-    types::{AnyTypeEnum, PointerType},
-    values::{AnyValueEnum, FunctionValue, PointerValue},
-    LLVMReference,
-};
+#[allow(clippy::wildcard_imports)]
 use llvm_sys::{
-    core::{
-        LLVMConstIntGetZExtValue, LLVMGetAsString, LLVMGetConstOpcode, LLVMGetInitializer,
-        LLVMGetOperand, LLVMIsAConstantDataSequential, LLVMIsAConstantExpr,
-    },
-    LLVMOpcode,
+    core::*, prelude::*, LLVMAttributeFunctionIndex, LLVMAttributeIndex, LLVMLinkage,
+    LLVMOpaqueAttributeRef, LLVMOpcode, LLVMTypeKind, LLVMValueKind,
 };
-use std::convert::TryFrom;
+use std::{convert::TryFrom, ffi::CStr, ptr::NonNull, str};
 
-#[must_use]
-pub fn qubit<'ctx>(context: &ContextRef<'ctx>, id: u64) -> PointerValue<'ctx> {
-    context
-        .i64_type()
-        .const_int(id, false)
-        .const_to_pointer(types::qubit(context))
+pub unsafe fn qubit(context: LLVMContextRef, id: u64) -> LLVMValueRef {
+    let i64 = LLVMInt64TypeInContext(context);
+    let value = LLVMConstInt(i64, id, 0);
+    LLVMConstIntToPtr(value, types::qubit(context))
 }
 
-#[must_use]
-pub fn qubit_id(value: AnyValueEnum) -> Option<u64> {
-    if types::is_qubit(value.get_type()) {
+pub unsafe fn qubit_id(value: LLVMValueRef) -> Option<u64> {
+    if types::is_qubit(LLVMTypeOf(value)) {
         pointer_to_int(value)
     } else {
         None
     }
 }
 
-#[must_use]
-pub fn result<'ctx>(context: &ContextRef<'ctx>, id: u64) -> PointerValue<'ctx> {
-    context
-        .i64_type()
-        .const_int(id, false)
-        .const_to_pointer(types::result(context))
+pub unsafe fn result(context: LLVMContextRef, id: u64) -> LLVMValueRef {
+    let i64 = LLVMInt64TypeInContext(context);
+    let value = LLVMConstInt(i64, id, 0);
+    LLVMConstIntToPtr(value, types::result(context))
 }
 
-#[must_use]
-pub fn result_id(value: AnyValueEnum) -> Option<u64> {
-    if types::is_result(value.get_type()) {
+pub unsafe fn result_id(value: LLVMValueRef) -> Option<u64> {
+    if types::is_result(LLVMTypeOf(value)) {
         pointer_to_int(value)
     } else {
         None
     }
 }
 
-pub fn entry_point<'ctx>(
-    module: &Module<'ctx>,
-    name: &str,
+pub unsafe fn entry_point(
+    module: LLVMModuleRef,
+    name: &CStr,
     required_num_qubits: u64,
     required_num_results: u64,
-) -> FunctionValue<'ctx> {
-    let context = module.get_context();
-    let ty = context.void_type().fn_type(&[], false);
-    let entry_point = module.add_function(name, ty, None);
-    entry_point.add_attribute(
-        AttributeLoc::Function,
-        context.create_string_attribute("EntryPoint", ""),
+) -> LLVMValueRef {
+    let context = LLVMGetModuleContext(module);
+    let void = LLVMVoidTypeInContext(context);
+    let ty = LLVMFunctionType(void, [].as_mut_ptr(), 0, 0);
+    let function = LLVMAddFunction(module, name.as_ptr(), ty);
+
+    add_string_attribute(function, b"EntryPoint", b"");
+    add_string_attribute(
+        function,
+        b"requiredQubits",
+        required_num_qubits.to_string().as_bytes(),
     );
-    add_num_attribute(entry_point, "requiredQubits", required_num_qubits);
-    add_num_attribute(entry_point, "requiredResults", required_num_results);
-    entry_point
-}
+    add_string_attribute(
+        function,
+        b"requiredResults",
+        required_num_results.to_string().as_bytes(),
+    );
 
-#[must_use]
-pub fn is_entry_point(function: FunctionValue) -> bool {
     function
-        .get_string_attribute(AttributeLoc::Function, "EntryPoint")
-        .is_some()
-        || function
-            .get_string_attribute(AttributeLoc::Function, "entry_point")
-            .is_some()
 }
 
-#[must_use]
-pub fn is_interop_friendly(function: FunctionValue) -> bool {
-    function
-        .get_string_attribute(AttributeLoc::Function, "InteropFriendly")
-        .is_some()
+pub unsafe fn is_entry_point(function: LLVMValueRef) -> bool {
+    LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind
+        && (get_string_attribute(function, LLVMAttributeFunctionIndex, b"EntryPoint").is_some()
+            || get_string_attribute(function, LLVMAttributeFunctionIndex, b"entry_point").is_some())
 }
 
-#[must_use]
-pub fn required_num_qubits(function: FunctionValue) -> Option<u64> {
-    if let Some(attribute) = function.get_string_attribute(AttributeLoc::Function, "requiredQubits")
-    {
-        attribute.get_string_value().to_str().ok()?.parse().ok()
+pub unsafe fn is_irreversible(function: LLVMValueRef) -> bool {
+    LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind
+        && get_string_attribute(function, LLVMAttributeFunctionIndex, b"irreversible").is_some()
+}
+
+pub unsafe fn is_interop_friendly(function: LLVMValueRef) -> bool {
+    LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind
+        && get_string_attribute(function, LLVMAttributeFunctionIndex, b"InteropFriendly").is_some()
+}
+
+pub unsafe fn required_num_qubits(function: LLVMValueRef) -> Option<u64> {
+    if LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind {
+        let required_qubits =
+            get_string_attribute(function, LLVMAttributeFunctionIndex, b"requiredQubits")?;
+        let mut len = 0;
+        let value = LLVMGetStringAttributeValue(required_qubits.as_ptr(), &mut len);
+        let value = slice::from_raw_parts(value.cast(), len.try_into().unwrap());
+        str::from_utf8(value).ok()?.parse().ok()
     } else {
-        let attribute =
-            function.get_string_attribute(AttributeLoc::Function, "required_num_qubits")?;
-        attribute.get_string_value().to_str().ok()?.parse().ok()
+        None
     }
 }
 
-#[must_use]
-pub fn required_num_results(function: FunctionValue) -> Option<u64> {
-    if let Some(attribute) =
-        function.get_string_attribute(AttributeLoc::Function, "requiredResults")
-    {
-        attribute.get_string_value().to_str().ok()?.parse().ok()
+pub unsafe fn required_num_results(function: LLVMValueRef) -> Option<u64> {
+    if LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind {
+        let required_qubits =
+            get_string_attribute(function, LLVMAttributeFunctionIndex, b"requiredResults")?;
+        let mut len = 0;
+        let value = LLVMGetStringAttributeValue(required_qubits.as_ptr(), &mut len);
+        let value = slice::from_raw_parts(value.cast(), len.try_into().unwrap());
+        str::from_utf8(value).ok()?.parse().ok()
     } else {
-        let attribute =
-            function.get_string_attribute(AttributeLoc::Function, "required_num_results")?;
-        attribute.get_string_value().to_str().ok()?.parse().ok()
+        None
     }
 }
 
-#[must_use]
-pub fn is_irreversible(function: FunctionValue) -> bool {
-    function
-        .get_string_attribute(AttributeLoc::Function, "irreversible")
-        .is_some()
+pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef {
+    let context = LLVMGetModuleContext(module);
+    let string = LLVMConstStringInContext(
+        context,
+        value.as_ptr().cast(),
+        value.len().try_into().unwrap(),
+        0,
+    );
+
+    let len = LLVMGetArrayLength(LLVMTypeOf(string));
+    let ty = LLVMArrayType(LLVMInt8TypeInContext(context), len);
+    let global = LLVMAddGlobal(module, ty, raw_cstr!(""));
+    LLVMSetLinkage(global, LLVMLinkage::LLVMInternalLinkage);
+    LLVMSetGlobalConstant(global, 1);
+    LLVMSetInitializer(global, string);
+
+    let zero = LLVMConstNull(LLVMInt32TypeInContext(context));
+    let mut indices = [zero, zero];
+    LLVMConstGEP(
+        global,
+        indices.as_mut_ptr(),
+        indices.len().try_into().unwrap(),
+    )
 }
 
-pub fn global_string<'ctx>(module: &Module<'ctx>, value: &[u8]) -> PointerValue<'ctx> {
-    let context = module.get_context();
-    let string = context.const_string(value, true);
-    let size = string.get_type().get_size();
-    let global = module.add_global(context.i8_type().array_type(size), None, "");
-    global.set_linkage(Linkage::Internal);
-    global.set_constant(true);
-    global.set_initializer(&string);
-    let zero = context.i32_type().const_zero();
-    unsafe { global.as_pointer_value().const_gep(&[zero, zero]) }
-}
+pub unsafe fn extract_string(value: LLVMValueRef) -> Option<Vec<u8>> {
+    if !is_byte_string(LLVMTypeOf(value)) {
+        return None;
+    }
 
-#[must_use]
-#[allow(clippy::missing_panics_doc)]
-pub fn extract_string(value: AnyValueEnum) -> Option<&[u8]> {
-    let pointer = match value {
-        AnyValueEnum::PointerValue(p) if is_byte_string(p.get_type()) => Some(p),
-        _ => None,
-    }?;
-
-    let expr = unsafe { LLVMIsAConstantExpr(pointer.get_ref()) };
-    let opcode = unsafe { LLVMGetConstOpcode(expr) };
+    let expr = LLVMIsAConstantExpr(value);
+    let opcode = LLVMGetConstOpcode(expr);
     if opcode != LLVMOpcode::LLVMGetElementPtr {
         return None;
     }
 
-    let element = unsafe { LLVMGetOperand(expr, 0) };
-    let offset = unsafe { LLVMConstIntGetZExtValue(LLVMGetOperand(expr, 1)) };
+    let element = LLVMGetOperand(expr, 0);
+    let offset = LLVMConstIntGetZExtValue(LLVMGetOperand(expr, 1));
     let offset = usize::try_from(offset).expect("Pointer offset larger than usize.");
-    let init = unsafe { LLVMIsAConstantDataSequential(LLVMGetInitializer(element)) };
+    let init = LLVMIsAConstantDataSequential(LLVMGetInitializer(element));
     if init.is_null() {
         return None;
     }
 
     let mut len = 0;
-    let data = unsafe { LLVMGetAsString(init, &mut len) };
-    let data = unsafe { slice::from_raw_parts(data.cast(), len) };
-    Some(&data[offset..])
+    let data = LLVMGetAsString(init, &mut len);
+    let data = slice::from_raw_parts(data.cast(), len);
+    Some(data[offset..].to_vec())
 }
 
-fn add_num_attribute(function: FunctionValue, key: &str, value: u64) {
-    let context = function.get_type().get_context();
-    let attribute = context.create_string_attribute(key, &value.to_string());
-    function.add_attribute(AttributeLoc::Function, attribute);
+unsafe fn add_string_attribute(function: LLVMValueRef, kind: &[u8], value: &[u8]) {
+    let context = LLVMGetTypeContext(LLVMTypeOf(function));
+    let attr = LLVMCreateStringAttribute(
+        context,
+        kind.as_ptr().cast(),
+        kind.len().try_into().unwrap(),
+        value.as_ptr().cast(),
+        value.len().try_into().unwrap(),
+    );
+    LLVMAddAttributeAtIndex(function, LLVMAttributeFunctionIndex, attr);
 }
 
-fn pointer_to_int(value: AnyValueEnum) -> Option<u64> {
-    match value {
-        AnyValueEnum::PointerValue(p) => {
-            let context = p.get_type().get_context();
-            p.const_to_int(context.i64_type())
-                .get_zero_extended_constant()
-        }
-        _ => None,
+unsafe fn get_string_attribute(
+    function: LLVMValueRef,
+    index: LLVMAttributeIndex,
+    kind: &[u8],
+) -> Option<NonNull<LLVMOpaqueAttributeRef>> {
+    NonNull::new(LLVMGetStringAttributeAtIndex(
+        function,
+        index,
+        kind.as_ptr().cast(),
+        kind.len().try_into().unwrap(),
+    ))
+}
+
+unsafe fn pointer_to_int(value: LLVMValueRef) -> Option<u64> {
+    let ty = LLVMTypeOf(value);
+    if LLVMGetTypeKind(ty) == LLVMTypeKind::LLVMPointerTypeKind && LLVMIsConstant(value) != 0 {
+        let context = LLVMGetTypeContext(ty);
+        let int = LLVMConstPtrToInt(value, LLVMInt64TypeInContext(context));
+        Some(LLVMConstIntGetZExtValue(int))
+    } else {
+        None
     }
 }
 
-fn is_byte_string(ty: PointerType) -> bool {
-    match ty.get_element_type() {
-        AnyTypeEnum::IntType(i) => i.get_bit_width() == 8,
-        _ => false,
+unsafe fn is_byte_string(ty: LLVMTypeRef) -> bool {
+    if LLVMGetTypeKind(ty) == LLVMTypeKind::LLVMPointerTypeKind {
+        let pointee = LLVMGetElementType(ty);
+        LLVMGetTypeKind(pointee) == LLVMTypeKind::LLVMIntegerTypeKind
+            && LLVMGetIntTypeWidth(pointee) == 8
+    } else {
+        false
     }
 }
 
@@ -190,22 +208,22 @@ mod tests {
     use crate::tests::assert_reference_ir;
 
     #[test]
-    fn zero_required_qubits_results() -> Result<(), String> {
-        assert_reference_ir("module/zero_required_qubits_results", 0, 0, |_| ())
+    fn zero_required_qubits_results() {
+        assert_reference_ir("module/zero_required_qubits_results", 0, 0, |_| ());
     }
 
     #[test]
-    fn one_required_qubit() -> Result<(), String> {
-        assert_reference_ir("module/one_required_qubit", 1, 0, |_| ())
+    fn one_required_qubit() {
+        assert_reference_ir("module/one_required_qubit", 1, 0, |_| ());
     }
 
     #[test]
-    fn one_required_result() -> Result<(), String> {
-        assert_reference_ir("module/one_required_result", 0, 1, |_| ())
+    fn one_required_result() {
+        assert_reference_ir("module/one_required_result", 0, 1, |_| ());
     }
 
     #[test]
-    fn many_required_qubits_results() -> Result<(), String> {
-        assert_reference_ir("module/many_required_qubits_results", 5, 7, |_| ())
+    fn many_required_qubits_results() {
+        assert_reference_ir("module/many_required_qubits_results", 5, 7, |_| ());
     }
 }

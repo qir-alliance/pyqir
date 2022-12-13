@@ -22,8 +22,8 @@ extern "C" {
     pub fn LLVMRustAddModuleFlag(
         M: LLVMModuleRef,
         Behavior: LLVMRustModFlagBehavior,
-        Key: *const ::libc::c_char,
-        KeyLen: ::libc::size_t,
+        Key: *const std::ffi::c_char,
+        KeyLen: std::ffi::c_uint,
         Val: LLVMMetadataRef,
     );
 }
