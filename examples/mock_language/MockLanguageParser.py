@@ -1,4 +1,4 @@
-# Generated from MockLanguage.g4 by ANTLR 4.10.1
+# Generated from MockLanguage.g4 by ANTLR 4.11.1
 # encoding: utf-8
 from antlr4 import *
 from io import StringIO
@@ -52,7 +52,7 @@ class MockLanguageParser ( Parser ):
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
-        self.checkVersion("4.10.1")
+        self.checkVersion("4.11.1")
         self._interp = ParserATNSimulator(self, self.atn, self.decisionsToDFA, self.sharedContextCache)
         self._predicates = None
 
@@ -102,7 +102,7 @@ class MockLanguageParser ( Parser ):
             self.state = 7
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << MockLanguageParser.T__0) | (1 << MockLanguageParser.T__1) | (1 << MockLanguageParser.T__2) | (1 << MockLanguageParser.T__3))) != 0):
+            while ((_la) & ~0x3f) == 0 and ((1 << _la) & 30) != 0:
                 self.state = 4
                 localctx.instructions = self.instruction()
                 self.state = 9
@@ -230,7 +230,7 @@ class MockLanguageParser ( Parser ):
             self.state = 21
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [MockLanguageParser.T__0]:
+            if token in [1]:
                 localctx = MockLanguageParser.XGateContext(self, localctx)
                 self.enterOuterAlt(localctx, 1)
                 self.state = 12
@@ -238,7 +238,7 @@ class MockLanguageParser ( Parser ):
                 self.state = 13
                 localctx.target = self.match(MockLanguageParser.QubitId)
                 pass
-            elif token in [MockLanguageParser.T__1]:
+            elif token in [2]:
                 localctx = MockLanguageParser.HGateContext(self, localctx)
                 self.enterOuterAlt(localctx, 2)
                 self.state = 14
@@ -246,7 +246,7 @@ class MockLanguageParser ( Parser ):
                 self.state = 15
                 localctx.target = self.match(MockLanguageParser.QubitId)
                 pass
-            elif token in [MockLanguageParser.T__2]:
+            elif token in [3]:
                 localctx = MockLanguageParser.CNOTGateContext(self, localctx)
                 self.enterOuterAlt(localctx, 3)
                 self.state = 16
@@ -256,7 +256,7 @@ class MockLanguageParser ( Parser ):
                 self.state = 18
                 localctx.target = self.match(MockLanguageParser.QubitId)
                 pass
-            elif token in [MockLanguageParser.T__3]:
+            elif token in [4]:
                 localctx = MockLanguageParser.MzGateContext(self, localctx)
                 self.enterOuterAlt(localctx, 4)
                 self.state = 19
