@@ -3,7 +3,8 @@
 
 import pyqir
 
-mod = pyqir.SimpleModule("dynamic_allocation", num_qubits=0, num_results=0)
+mod = pyqir.SimpleModule("dynamic_allocation", num_qubits=0, num_results=0, dynamic_qubit_management=True, dynamic_result_management=True)
+
 qubit_type = pyqir.qubit_type(mod.context)
 result_type = pyqir.result_type(mod.context)
 
@@ -30,6 +31,7 @@ m = mod.add_external_function(
 
 # Instead of mod.qubits[i], use __quantum__rt__qubit_allocate.
 qubit_return = mod.builder.call(qubit_allocate, [])
+
 assert qubit_return is not None
 qubit = qubit_return
 

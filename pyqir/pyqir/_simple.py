@@ -32,6 +32,7 @@ class SimpleModule:
         num_qubits: int,
         num_results: int,
         context: Optional[Context] = None,
+        **kwargs
     ) -> None:
         """
         Initializes a simple module.
@@ -61,13 +62,15 @@ class SimpleModule:
         self._module.add_value_flag(
             ModuleFlagBehavior.MAX, "qir_minor_version", pyqir.const(i32, 0)
         )
+        dynamic_qubit_management = bool(kwargs.get("dynamic_qubit_management", False))
         self._module.add_value_flag(
-            ModuleFlagBehavior.ERROR, "dynamic_qubit_management", pyqir.const(i1, False)
+            ModuleFlagBehavior.ERROR, "dynamic_qubit_management", pyqir.const(i1, dynamic_qubit_management)
         )
+        dynamic_result_management = bool(kwargs.get("dynamic_result_management", False))
         self._module.add_value_flag(
             ModuleFlagBehavior.ERROR,
             "dynamic_result_management",
-            pyqir.const(i1, False),
+            pyqir.const(i1, dynamic_result_management),
         )
 
     @property

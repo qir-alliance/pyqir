@@ -305,24 +305,16 @@ task run-examples {
         Assert ($head -eq "; ModuleID = 'dynamic_allocation'") "dynamic_allocation.py doesn't print expected module ID."
 
         & $Python bernstein_vazirani.py | Tee-Object -Variable bz_output
-        $bz_first_lines = @($bz_output | Select-Object -first 5)
-        $bz_expected = @(
-            "# output from GateLogger",
-            "qubits[6]",
-            "out[6]",
-            "x qubit[5]",
-            "h qubit[0]"
-        )
+        $bz_first_lines = @($bz_output | Select-Object -first 1)
+        $bz_expected = "['x(5)', 'h(0)', 'h(1)', 'h(2)', 'h(3)', 'h(4)', 'h(5)', 'cnot(1, 5)', 'cnot(3, 5)', 'cnot(4, 5)', 'h(0)', 'h(1)', 'h(2)', 'h(3)', 'h(4)', 'z(0, 0)', 'z(1, 1)', 'z(2, 2)', 'z(3, 3)', 'z(4, 4)']"
+        
         Assert (@(Compare-Object $bz_first_lines $bz_expected).Length -eq 0) "Expected $bz_expected found $bz_first_lines"
 
         & $Python teleport.py | Tee-Object -Variable teleport_output
-        $teleport_first_lines = @($teleport_output | Select-Object -first 5)
+        $teleport_first_lines = @($teleport_output | Select-Object -first 2)
         $teleport_expected = @(
-            "# Evaluating both results as 0's",
-            "qubits[3]",
-            "out[3]",
-            "h qubit[2]",
-            "cx qubit[2], qubit[1]"
+            "; ModuleID = 'teleport'",
+            "source_filename = `"teleport`""
         )
         Assert (@(Compare-Object $teleport_first_lines $teleport_expected).Length -eq 0) "Expected $teleport_expected found $teleport_first_lines"
     }

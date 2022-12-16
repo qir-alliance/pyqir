@@ -234,25 +234,13 @@ impl Builder {
                 .map(|(arg, ty)| arg.to_value(ty).map_err(Into::into))
                 .collect::<PyResult<Vec<_>>>()?;
 
-            let value = if cfg!(feature = "llvm14-0") {
-                let fn_ty = LLVMGetCalledFunctionType(callee.as_ptr());
-                LLVMBuildCall2(
-                    self.as_ptr(),
-                    fn_ty,
-                    callee.as_ptr(),
-                    args.as_mut_ptr(),
-                    args.len().try_into().unwrap(),
-                    raw_cstr!(""),
-                )
-            } else {
-                LLVMBuildCall(
+            let value = LLVMBuildCall(
                     self.as_ptr(),
                     callee.as_ptr(),
                     args.as_mut_ptr(),
                     args.len().try_into().unwrap(),
                     raw_cstr!(""),
-                )
-            };
+                );
 
             Value::from_raw(py, owner, value)
         }
