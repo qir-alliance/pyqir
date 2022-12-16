@@ -260,7 +260,7 @@ unsafe fn mz(module: LLVMModuleRef) -> LLVMValueRef {
     let function = declare(module, "mz", Functor::Body, ty);
     let attr_name = "writeonly";
     let kind_id = LLVMGetEnumAttributeKindForName(attr_name.as_ptr().cast::<i8>(), attr_name.len());
-    let attr = LLVMCreateTypeAttribute(context, kind_id, result_type);
+    let attr = LLVMCreateEnumAttribute(context, kind_id, 0);
     let result_param_index = 2; // indices are 1 based.
     LLVMAddAttributeAtIndex(function, result_param_index, attr);
 

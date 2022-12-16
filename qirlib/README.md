@@ -90,7 +90,7 @@ source and package it
     - `llvm11-0`: `llvmorg-11.1.0`
     - `llvm12-0`: `llvmorg-12.0.1`
     - `llvm13-0`: `llvmorg-13.0.1`
-    - `llvm14-0`: `llvmorg-14.0.3`
+    - `llvm14-0`: `llvmorg-14.0.6`
 - `QIRLIB_LLVM_PKG_NAME`
   - Optional name of package to be downloaded/created.
 - `LLVM_SYS_*_PREFIX`

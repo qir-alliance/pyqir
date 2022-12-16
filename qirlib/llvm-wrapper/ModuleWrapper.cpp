@@ -24,13 +24,13 @@ enum LLVMRustModFlagBehavior {
     Append = 5,
     AppendUnique = 6,
     Max = 7,
-#if LLVM_VERSION_GE(14, 0)
+#if LLVM_VERSION_GE(15, 0)
     Min = 8,
 #endif
 
     // Markers:
     ModFlagBehaviorFirstVal = Error,
-#if LLVM_VERSION_GE(14, 0)
+#if LLVM_VERSION_GE(15, 0)
     ModFlagBehaviorLastVal = Min
 #else
     ModFlagBehaviorLastVal = Max
@@ -55,7 +55,7 @@ map_to_llvmRustModFlagBehavior(LLVMRustModFlagBehavior Behavior) {
     return llvm::Module::ModFlagBehavior::AppendUnique;
   case LLVMRustModFlagBehavior::Max:
     return llvm::Module::ModFlagBehavior::Max;
-#if LLVM_VERSION_GE(14, 0)
+#if LLVM_VERSION_GE(15, 0)
   case LLVMRustModFlagBehavior::Min:
     return llvm::Module::ModFlagBehavior::Min;
 #endif

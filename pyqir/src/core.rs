@@ -6,13 +6,13 @@
 #[allow(deprecated)]
 use llvm_sys::{
     core::{
-        LLVMContextCreate, LLVMContextDispose, LLVMDisposeMemoryBuffer, LLVMDisposeMessage,
-        LLVMMDStringInContext,
+        LLVMContextDispose, LLVMDisposeMemoryBuffer, LLVMDisposeMessage, LLVMMDStringInContext,
     },
     prelude::*,
     LLVMContext, LLVMMemoryBuffer,
 };
 use pyo3::prelude::*;
+use qirlib::llvm_wrapper::LLVMRustContextCreate;
 use std::{
     ffi::{c_char, CStr, CString},
     ops::Deref,
@@ -30,7 +30,7 @@ pub(crate) struct Context(NonNull<LLVMContext>);
 impl Context {
     #[new]
     pub(crate) fn new() -> Self {
-        Self(NonNull::new(unsafe { LLVMContextCreate() }).unwrap())
+        Self(NonNull::new(unsafe { LLVMRustContextCreate(0) }).unwrap())
     }
 
     /// Creates a metadata string

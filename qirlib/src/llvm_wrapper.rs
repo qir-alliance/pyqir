@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use llvm_sys::prelude::{LLVMMetadataRef, LLVMModuleRef};
+use llvm_sys::prelude::{LLVMContextRef, LLVMMetadataRef, LLVMModuleRef};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -17,6 +17,8 @@ pub enum LLVMRustModFlagBehavior {
     Min = 8,
 }
 
+pub type LLVMBool = std::ffi::c_int;
+
 extern "C" {
     /// Add a module-level flag to the module-level flags metadata if it doesn't already exist.
     pub fn LLVMRustAddModuleFlag(
@@ -26,4 +28,5 @@ extern "C" {
         KeyLen: std::ffi::c_uint,
         Val: LLVMMetadataRef,
     );
+    pub fn LLVMRustContextCreate(OpaquePointers: LLVMBool) -> LLVMContextRef;
 }

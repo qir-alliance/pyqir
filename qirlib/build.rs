@@ -97,6 +97,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo:rerun-if-changed=external.rs");
     println!("cargo:rerun-if-changed=target.c");
     println!("cargo:rerun-if-changed=llvm-wrapper/LLVMWrapper.h");
+    println!("cargo:rerun-if-changed=llvm-wrapper/ContextWrapper.cpp");
     println!("cargo:rerun-if-changed=llvm-wrapper/ModuleWrapper.cpp");
 
     // Download vars passed to cmake
@@ -267,10 +268,11 @@ fn compile_llvm_wrapper() -> Result<(), Box<dyn Error>> {
         }
         cfg.flag(flag);
     }
-    cfg.file("llvm-wrapper/ModuleWrapper.cpp")
-        .cpp(true)
+    cfg.cpp(true)
         .cpp_link_stdlib(None)
         .static_crt(true)
+        .file("llvm-wrapper/ContextWrapper.cpp")
+        .file("llvm-wrapper/ModuleWrapper.cpp")
         .compile("llvm-wrapper");
     Ok(())
 }
