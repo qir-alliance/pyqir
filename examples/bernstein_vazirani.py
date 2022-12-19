@@ -58,9 +58,21 @@ def create_bernstein_vazirani() -> SimpleModule:
 
     return module
 
+def removeprefix(self: str, prefix: str) -> str:
+    if self.startswith(prefix):
+        return self[len(prefix):]
+    else:
+        return self[:]
+
+def removesuffix(self: str, suffix: str) -> str:
+    if suffix and self.endswith(suffix):
+        return self[:-len(suffix)]
+    else:
+        return self[:]
+
 # Convert a QIS operation to a simple string representation
 def gate_inst_to_str(inst) -> str:
-    raw = inst.callee.name.removeprefix("__quantum__qis__").removesuffix("__body")
+    raw = removesuffix(removeprefix(inst.callee.name, "__quantum__qis__"), "__body")
     args = []
     for arg in inst.args:
         if is_qubit_type(arg.type):
