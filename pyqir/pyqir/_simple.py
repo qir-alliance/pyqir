@@ -41,6 +41,18 @@ class SimpleModule:
         :param num_qubits: The number of statically allocated qubits.
         :param num_results: The number of statically allocated results.
         :param context: The LLVM context.
+        :param \**kwargs:
+            See below
+
+        :Keyword Arguments:
+            * *qir_major_version* (``int``) --
+            QIR major specification version being targeted, default `1`
+            * *qir_minor_version* (``int``) --
+            QIR minor specification version being targeted, default `0`
+            * *dynamic_qubit_management* (``bool``) --
+            Whether this module uses dynamic qubit allocation, default `False`
+            * *dynamic_result_management* (``bool``) --
+            Whether this module uses dynamic result allocation, default `False`
         """
 
         if context is None:
@@ -56,18 +68,28 @@ class SimpleModule:
 
         i1 = pyqir.IntType(context, 1)
         i32 = pyqir.IntType(context, 32)
+
+        qir_major_version = int(kwargs.get("qir_major_version", 1))
         self._module.add_value_flag(
-            ModuleFlagBehavior.ERROR, "qir_major_version", pyqir.const(i32, 1)
+            ModuleFlagBehavior.ERROR,
+            "qir_major_version",
+            pyqir.const(i32, qir_major_version),
         )
+
+        qir_minor_version = int(kwargs.get("qir_minor_version", 0))
         self._module.add_value_flag(
-            ModuleFlagBehavior.MAX, "qir_minor_version", pyqir.const(i32, 0)
+            ModuleFlagBehavior.MAX,
+            "qir_minor_version",
+            pyqir.const(i32, qir_minor_version),
         )
+
         dynamic_qubit_management = bool(kwargs.get("dynamic_qubit_management", False))
         self._module.add_value_flag(
             ModuleFlagBehavior.ERROR,
             "dynamic_qubit_management",
             pyqir.const(i1, dynamic_qubit_management),
         )
+
         dynamic_result_management = bool(kwargs.get("dynamic_result_management", False))
         self._module.add_value_flag(
             ModuleFlagBehavior.ERROR,
