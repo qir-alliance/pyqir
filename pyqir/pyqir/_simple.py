@@ -64,7 +64,9 @@ class SimpleModule:
         )
         dynamic_qubit_management = bool(kwargs.get("dynamic_qubit_management", False))
         self._module.add_value_flag(
-            ModuleFlagBehavior.ERROR, "dynamic_qubit_management", pyqir.const(i1, dynamic_qubit_management)
+            ModuleFlagBehavior.ERROR,
+            "dynamic_qubit_management",
+            pyqir.const(i1, dynamic_qubit_management),
         )
         dynamic_result_management = bool(kwargs.get("dynamic_result_management", False))
         self._module.add_value_flag(

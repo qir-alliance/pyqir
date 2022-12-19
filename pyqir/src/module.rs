@@ -392,7 +392,7 @@ impl From<LLVMRustModFlagBehavior> for ModuleFlagBehavior {
             LLVMRustModFlagBehavior::Max => ModuleFlagBehavior::Max,
             #[cfg(any(feature = "llvm15-0"))]
             LLVMRustModFlagBehavior::Min => ModuleFlagBehavior::Min,
-            _ => panic!("Unsupported enum value.")
+            _ => panic!("Unsupported enum value."),
         }
     }
 }

@@ -235,12 +235,12 @@ impl Builder {
                 .collect::<PyResult<Vec<_>>>()?;
 
             let value = LLVMBuildCall(
-                    self.as_ptr(),
-                    callee.as_ptr(),
-                    args.as_mut_ptr(),
-                    args.len().try_into().unwrap(),
-                    raw_cstr!(""),
-                );
+                self.as_ptr(),
+                callee.as_ptr(),
+                args.as_mut_ptr(),
+                args.len().try_into().unwrap(),
+                raw_cstr!(""),
+            );
 
             Value::from_raw(py, owner, value)
         }
