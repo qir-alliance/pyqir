@@ -305,8 +305,8 @@ task run-examples {
         Assert ($head -eq "; ModuleID = 'dynamic_allocation'") "dynamic_allocation.py doesn't print expected module ID."
 
         & $Python bernstein_vazirani.py | Tee-Object -Variable bz_output
-        $bz_first_lines = @($bz_output | Select-Object -first 1)
-        $bz_expected = "['x(5)', 'h(0)', 'h(1)', 'h(2)', 'h(3)', 'h(4)', 'h(5)', 'cnot(1, 5)', 'cnot(3, 5)', 'cnot(4, 5)', 'h(0)', 'h(1)', 'h(2)', 'h(3)', 'h(4)', 'z(0, 0)', 'z(1, 1)', 'z(2, 2)', 'z(3, 3)', 'z(4, 4)']"
+        $bz_first_lines = $bz_output -join ", "
+        $bz_expected = "x(5), h(0), h(1), h(2), h(3), h(4), h(5), cnot(1, 5), cnot(3, 5), cnot(4, 5), h(0), h(1), h(2), h(3), h(4), mz(0, 0), mz(1, 1), mz(2, 2), mz(3, 3), mz(4, 4)"
         
         Assert (@(Compare-Object $bz_first_lines $bz_expected).Length -eq 0) "Expected $bz_expected found $bz_first_lines"
 
