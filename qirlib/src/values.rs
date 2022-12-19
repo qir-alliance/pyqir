@@ -125,6 +125,7 @@ pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef
 
     let zero = LLVMConstNull(LLVMInt32TypeInContext(context));
     let mut indices = [zero, zero];
+    #[allow(deprecated)]
     LLVMConstGEP(
         global,
         indices.as_mut_ptr(),

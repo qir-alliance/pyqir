@@ -191,6 +191,7 @@ pub(crate) unsafe fn build_call(
     function: LLVMValueRef,
     args: &mut [LLVMValueRef],
 ) -> LLVMValueRef {
+    #[allow(deprecated)]
     LLVMBuildCall(
         builder,
         function,
