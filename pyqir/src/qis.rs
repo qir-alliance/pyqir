@@ -21,11 +21,75 @@ pub(crate) struct BasicQisBuilder {
     builder: Py<Builder>,
 }
 
+/// Inserts a barrier instruction
+///
+/// :rtype: None
+#[pyfunction]
+#[pyo3(text_signature = "(builder)")]
+#[allow(clippy::needless_pass_by_value)]
+pub(crate) fn barrier(py: Python, builder: Py<Builder>) {
+    let builder = builder.borrow(py);
+    unsafe {
+        qis::build_barrier(builder.as_ptr());
+    }
+}
+
+/// Inserts a swap gate
+///
+/// :param Value qubit1: The first qubit to apply the gate to.
+/// :param Value qubit2: The second qubit to apply the gate to.
+/// :rtype: None
+#[pyfunction]
+#[pyo3(text_signature = "(builder, qubit1, qubit2)")]
+#[allow(clippy::needless_pass_by_value)]
+pub(crate) fn swap(
+    py: Python,
+    builder: Py<Builder>,
+    qubit1: &Value,
+    qubit2: &Value,
+) -> PyResult<()> {
+    let builder = builder.borrow(py);
+    Owner::merge(py, [builder.owner(), qubit1.owner(), qubit2.owner()])?;
+    unsafe {
+        qis::build_swap(builder.as_ptr(), qubit1.as_ptr(), qubit2.as_ptr());
+    }
+    Ok(())
+}
+
 #[pymethods]
 impl BasicQisBuilder {
     #[new]
     fn new(builder: Py<Builder>) -> Self {
         BasicQisBuilder { builder }
+    }
+
+    /// Inserts Toffoli or doubly-controlled :math:`X` gate.
+    ///
+    /// :param Value control1: The first control qubit.
+    /// :param Value control2: The second control qubit.
+    /// :param Value target: The target qubit.
+    /// :rtype: None
+    #[pyo3(text_signature = "(self, control1, control2, target)")]
+    fn ccx(&self, py: Python, control1: &Value, control2: &Value, target: &Value) -> PyResult<()> {
+        let builder = self.builder.borrow(py);
+        Owner::merge(
+            py,
+            [
+                builder.owner(),
+                control1.owner(),
+                control2.owner(),
+                target.owner(),
+            ],
+        )?;
+        unsafe {
+            qis::build_ccx(
+                builder.as_ptr(),
+                control1.as_ptr(),
+                control2.as_ptr(),
+                target.as_ptr(),
+            );
+        }
+        Ok(())
     }
 
     /// Inserts a controlled Pauli :math:`X` gate.

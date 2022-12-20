@@ -106,6 +106,16 @@ class BasicQisBuilder:
         :param builder: The underlying builder used to build QIS instructions.
         """
         ...
+    def ccx(self, control1: Value, control2: Value, target: Value) -> None:
+        """
+        Inserts Toffoli or doubly-controlled :math:`X` gate.
+
+        :param Value control1: The first control qubit.
+        :param Value control2: The second control qubit.
+        :param Value target: The target qubit.
+        :rtype: None
+        """
+        ...
     def cx(self, control: Value, target: Value) -> None:
         """
         Inserts a controlled Pauli :math:`X` gate.

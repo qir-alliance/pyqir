@@ -21,6 +21,8 @@ extern crate llvm_sys_140 as llvm_sys;
 pub mod builder;
 #[cfg(not(feature = "no-llvm-linking"))]
 pub mod qis;
+#[cfg(not(feature = "no-llvm-linking"))]
+pub mod rt;
 #[cfg(all(test, not(feature = "no-llvm-linking")))]
 mod tests;
 #[cfg(not(feature = "no-llvm-linking"))]
