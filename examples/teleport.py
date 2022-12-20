@@ -2,8 +2,6 @@
 # Licensed under the MIT License.
 
 from pyqir import BasicQisBuilder, SimpleModule, Value
-from pyqir.evaluator import GateLogger, NonadaptiveEvaluator
-import tempfile
 from typing import List
 
 
@@ -31,28 +29,9 @@ def teleport(qis: BasicQisBuilder, qubits: List[Value], results: List[Value]) ->
     qis.if_result(results[1], one=lambda: qis.x(target))
 
 
-def eval(path: str, results: List[bool]) -> None:
-    logger = GateLogger()
-    NonadaptiveEvaluator().eval(path, logger, None, results)
-    logger.print()
-
-
 module = SimpleModule("teleport", num_qubits=3, num_results=2)
 qis = BasicQisBuilder(module.builder)
 teleport(qis, module.qubits, module.results)
 
-with tempfile.NamedTemporaryFile(suffix=".ll") as teleport_ll:
-    teleport_ll.write(module.ir().encode("utf-8"))
-    teleport_ll.flush()
-
-    print("# Evaluating both results as 0's", flush=True)
-    eval(teleport_ll.name, [False, False])
-
-    print("# Evaluating first result as 0, second as 1", flush=True)
-    eval(teleport_ll.name, [False, True])
-
-    print("# Evaluating first result as 1, second as 0", flush=True)
-    eval(teleport_ll.name, [True, False])
-
-    print("# Evaluating both results as 1's", flush=True)
-    eval(teleport_ll.name, [True, True])
+if __name__ == "__main__":
+    print(module.ir())

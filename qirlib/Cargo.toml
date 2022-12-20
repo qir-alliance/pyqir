@@ -13,7 +13,6 @@ rust-version = "1.64"
 [dependencies]
 bitvec = "1.0"
 const-str = "0.5"
-inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", default-features = false, features = ["internal-getters"] }
 lazy_static = "1.4"
 llvm-sys-110 = { package = "llvm-sys", version = "110.0", optional = true }
 llvm-sys-120 = { package = "llvm-sys", version = "120.2", optional = true }
@@ -35,30 +34,30 @@ lazy_static = "1.4"
 name = "qirlib"
 
 [features]
-llvm11-0 = ["inkwell/llvm11-0", "llvm-sys-110"]
-llvm12-0 = ["inkwell/llvm12-0", "llvm-sys-120"]
-llvm13-0 = ["inkwell/llvm13-0", "llvm-sys-130"]
-llvm14-0 = ["inkwell/llvm14-0", "llvm-sys-140"]
+llvm11-0 = ["llvm-sys-110"]
+llvm12-0 = ["llvm-sys-120"]
+llvm13-0 = ["llvm-sys-130"]
+llvm14-0 = ["llvm-sys-140"]
 
-# default to use llvm-sys/inkwell for llvm linking
+# default to use llvm-sys for llvm linking
 default = ["external-llvm-linking"]
 external-llvm-linking = []
 
 # disable linking for local installation or packaging
 # no-llvm-linking is marker used in the cfg checks
-llvm11-0-no-llvm-linking = ["llvm11-0", "no-llvm-linking", "llvm-sys-110/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
-llvm12-0-no-llvm-linking = ["llvm12-0", "no-llvm-linking", "llvm-sys-120/disable-alltargets-init", "inkwell/llvm12-0-no-llvm-linking"]
-llvm13-0-no-llvm-linking = ["llvm13-0", "no-llvm-linking", "llvm-sys-130/disable-alltargets-init", "inkwell/llvm13-0-no-llvm-linking"]
-llvm14-0-no-llvm-linking = ["llvm14-0", "no-llvm-linking", "llvm-sys-140/disable-alltargets-init", "inkwell/llvm14-0-no-llvm-linking"]
+llvm11-0-no-llvm-linking = ["llvm11-0", "no-llvm-linking", "llvm-sys-110/disable-alltargets-init", "llvm-sys-110/no-llvm-linking"]
+llvm12-0-no-llvm-linking = ["llvm12-0", "no-llvm-linking", "llvm-sys-120/disable-alltargets-init", "llvm-sys-120/no-llvm-linking"]
+llvm13-0-no-llvm-linking = ["llvm13-0", "no-llvm-linking", "llvm-sys-130/disable-alltargets-init", "llvm-sys-130/no-llvm-linking"]
+llvm14-0-no-llvm-linking = ["llvm14-0", "no-llvm-linking", "llvm-sys-140/disable-alltargets-init", "llvm-sys-140/no-llvm-linking"]
 
 no-llvm-linking = []
 
 # let qirlib do the llvm linking
 # qirlib-llvm-linking is marker used in the cfg checks
-llvm11-0-qirlib-llvm-linking = ["llvm11-0", "qirlib-llvm-linking", "llvm-sys-110/disable-alltargets-init", "inkwell/llvm11-0-no-llvm-linking"]
-llvm12-0-qirlib-llvm-linking = ["llvm12-0", "qirlib-llvm-linking", "llvm-sys-120/disable-alltargets-init", "inkwell/llvm12-0-no-llvm-linking"]
-llvm13-0-qirlib-llvm-linking = ["llvm13-0", "qirlib-llvm-linking", "llvm-sys-130/disable-alltargets-init", "inkwell/llvm13-0-no-llvm-linking"]
-llvm14-0-qirlib-llvm-linking = ["llvm14-0", "qirlib-llvm-linking", "llvm-sys-140/disable-alltargets-init", "inkwell/llvm14-0-no-llvm-linking"]
+llvm11-0-qirlib-llvm-linking = ["llvm11-0", "qirlib-llvm-linking", "llvm-sys-110/disable-alltargets-init", "llvm-sys-110/no-llvm-linking"]
+llvm12-0-qirlib-llvm-linking = ["llvm12-0", "qirlib-llvm-linking", "llvm-sys-120/disable-alltargets-init", "llvm-sys-120/no-llvm-linking"]
+llvm13-0-qirlib-llvm-linking = ["llvm13-0", "qirlib-llvm-linking", "llvm-sys-130/disable-alltargets-init", "llvm-sys-130/no-llvm-linking"]
+llvm14-0-qirlib-llvm-linking = ["llvm14-0", "qirlib-llvm-linking", "llvm-sys-140/disable-alltargets-init", "llvm-sys-140/no-llvm-linking"]
 
 qirlib-llvm-linking = []
 

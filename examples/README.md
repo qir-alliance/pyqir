@@ -43,14 +43,11 @@ to a text file:
 python mock_to_qir.py bernstein_vazirani.txt 7 >> bernstein_vazirani_output.txt
 ```
 
-## Evaluating Bernstein-Vazirani
+## Parsing QIR gate instructions
 
-This example shows how to log the executed gate sequence for a quantum program
-compiled to [LLVM bitcode](https://www.llvm.org/docs/BitCodeFormat.html).
-It consists of a [Python program](bernstein_vazirani.py) that loads the
-[compiled bitcode](bernstein_vazirani.bc) and then uses the
-`NonadaptiveEvaluator`, and a `GateLogger` to print out a simple log of the
-quantum gates applied during execution.
+This example shows how to build a [Python program](bernstein_vazirani.py),
+get its `bitcode`, load into another `Module`, analyze the `QIR`, and
+finally print out a simple log of the quantum gates applied during execution.
 
 The example can be run using python:
 
@@ -99,15 +96,7 @@ Here, we transform a Qiskit circuit without using the Qiskit package.
 
 ## Teleport
 
-This example shows how to log the executed gate sequence leveraging a supplied
-result stream. The `NonadaptiveEvaluator`'s `eval` call accepts a list of
-boolean result values representing the QIS measure results simulated while
-evaluating the compiled quantum program. It consists of a
-[Python program](teleport.py) which generates QIR using PyQIR and then uses the
-`NonadaptiveEvaluator`, and a `GateLogger` to print out a log of the quantum
-gates applied during execution leveraging the supplied result stream. The
-example shows the output with all possible measurement combinations for the
-circuit.
+Genarates a quantum teleportation example and prints out the generated QIR.
 
 The example can be run using python:
 

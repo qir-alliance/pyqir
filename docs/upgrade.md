@@ -1,6 +1,12 @@
-# Upgrading to PyQIR 0.7
+# Upgrading PyQIR
 
-## Packages
+## PyQIR 0.8
+
+PyQIR 0.7 was the last version of PyQIR to support QIR evaluation. Simulation of QIR is now available via the [`qir-runner`](https://github.com/qir-alliance/qir-runner) sparse simulator.
+
+## PyQIR 0.7
+
+### Packages
 
 PyQIR 0.6 was the last version of PyQIR to use three packages (`pyqir-evaluator`, `pyqir-generator`, and `pyqir-parser`) and a metapackage (`pyqir`).
 PyQIR 0.7 instead uses only a single package (`pyqir`) that has the functionality of all previous packages.
