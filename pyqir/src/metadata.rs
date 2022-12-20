@@ -4,11 +4,19 @@
 #![allow(clippy::used_underscore_binding)]
 
 use crate::{core::Message, types::Type, values::Owner};
-use llvm_sys::debuginfo::{LLVMGetMetadataKind, LLVMMetadataKind};
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{core::*, prelude::*, LLVMValue};
+use llvm_sys::{
+    debuginfo::{LLVMGetMetadataKind, LLVMMetadataKind},
+    LLVMValueKind,
+};
 use pyo3::{conversion::ToPyObject, exceptions::PyValueError, prelude::*};
-use std::{ops::Deref, ptr::NonNull, slice, str};
+use qirlib::llvm_wrapper::{LLVMRustExtractMDConstant, LLVMRustIsAMDConstant};
+use std::{
+    ops::Deref,
+    ptr::{null_mut, NonNull},
+    slice, str,
+};
 
 /// A metadata value or node.
 #[pyclass(subclass, unsendable)]
@@ -62,7 +70,10 @@ impl Metadata {
             LLVMMetadataKind::LLVMMDStringMetadataKind => {
                 MetadataString::from_raw(py, owner, value)
             }
-            _ => {
+            LLVMMetadataKind::LLVMConstantAsMetadataMetadataKind => {
+                MetadataConstant::from_raw(py, owner, value)
+            }
+            kind => {
                 let value = NonNull::new(value).expect("Value is null.");
                 Ok(Py::new(py, Self { value, owner })?.to_object(py))
             }
@@ -82,7 +93,7 @@ impl Deref for Metadata {
     }
 }
 
-/// A constant value.
+/// A string value.
 #[pyclass(extends = Metadata, subclass)]
 pub(crate) struct MetadataString;
 
@@ -119,5 +130,61 @@ impl MetadataString {
                 PyClassInitializer::from(Metadata { value, owner }).add_subclass(MetadataString);
             Ok(Py::new(py, base)?.to_object(py))
         }
+    }
+}
+
+/// A constant value.
+#[pyclass(extends = Metadata, subclass)]
+pub(crate) struct MetadataConstant;
+
+#[pymethods]
+impl MetadataConstant {
+    /// Whether this metadata constant is the null value for its type.
+    ///
+    /// :type: bool
+    #[getter]
+    fn is_null(slf: PyRef<Self>) -> bool {
+        unsafe { LLVMIsNull(slf.into_super().as_ptr()) != 0 }
+    }
+}
+
+impl MetadataConstant {
+    unsafe fn from_raw(py: Python, owner: Owner, value: LLVMValueRef) -> PyResult<PyObject> {
+        let value = NonNull::new(value).expect("Value is null.");
+
+        if LLVMRustIsAMDConstant(value.as_ptr()) == std::ptr::null_mut() {
+            println!("Value is not constant.");
+            Err(PyValueError::new_err("Value is not constant."))
+        } else {
+            let base =
+                PyClassInitializer::from(Metadata { value, owner }).add_subclass(MetadataConstant);
+            let constant = LLVMRustExtractMDConstant(value.as_ptr());
+            if constant == null_mut() {
+                println!("Could not extract constant.");
+                return Err(PyValueError::new_err("Could not extract constant."));
+            }
+            match LLVMGetValueKind(constant) {
+                LLVMValueKind::LLVMConstantIntValueKind => {
+                    Ok(Py::new(py, base.add_subclass(MetadataIntConstant))?.to_object(py))
+                }
+                _ => Ok(Py::new(py, base)?.to_object(py)),
+            }
+        }
+    }
+}
+
+/// A constant integer value.
+#[pyclass(extends = MetadataConstant)]
+pub(crate) struct MetadataIntConstant;
+
+#[pymethods]
+impl MetadataIntConstant {
+    /// The value.
+    ///
+    /// :type: int
+    #[getter]
+    fn value(slf: PyRef<Self>) -> u64 {
+        let value = unsafe { LLVMRustExtractMDConstant(slf.into_super().into_super().as_ptr()) };
+        unsafe { LLVMConstIntGetZExtValue(value) }
     }
 }

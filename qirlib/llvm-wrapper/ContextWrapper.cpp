@@ -11,18 +11,15 @@
 #define QIR_SHARED_API
 #endif
 
-#ifdef __cplusplus
+using namespace llvm;
+
 extern "C"
 {
-#endif
-
-QIR_SHARED_API LLVMContextRef LLVMRustContextCreate(LLVMBool OpaquePointers) {
-  auto C = new llvm::LLVMContext();
-  // In LLVM 15+ we uncomment this next line
-  //C->setOpaquePointers(OpaquePointers);
-  return llvm::wrap(C);
-}
-
-#ifdef __cplusplus
+    QIR_SHARED_API LLVMContextRef LLVMRustContextCreate(LLVMBool OpaquePointers)
+    {
+        auto C = new LLVMContext();
+        // In LLVM 15+ we uncomment this next line
+        // C->setOpaquePointers(OpaquePointers);
+        return wrap(C);
+    }
 } // extern "C"
-#endif

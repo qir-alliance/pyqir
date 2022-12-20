@@ -3,11 +3,10 @@
 
 #![allow(clippy::used_underscore_binding)]
 
+use llvm_sys::core::{LLVMMDStringInContext2, LLVMMetadataAsValue};
 #[allow(deprecated)]
 use llvm_sys::{
-    core::{
-        LLVMContextDispose, LLVMDisposeMemoryBuffer, LLVMDisposeMessage, LLVMMDStringInContext,
-    },
+    core::{LLVMContextDispose, LLVMDisposeMemoryBuffer, LLVMDisposeMessage},
     prelude::*,
     LLVMContext, LLVMMemoryBuffer,
 };
@@ -41,17 +40,12 @@ impl Context {
     fn create_metadata_string(slf: Py<Context>, py: Python, string: &str) -> PyResult<PyObject> {
         let owner = slf.clone_ref(py).into();
         let c_string = CString::new(string).unwrap();
-
+        let context = slf.borrow(py).as_ptr();
         let md = unsafe {
-            #[allow(deprecated)]
-            LLVMMDStringInContext(
-                slf.borrow(py).as_ptr(),
-                c_string.as_ptr(),
-                string.len().try_into().unwrap(),
-            )
+            LLVMMDStringInContext2(context, c_string.as_ptr(), string.len().try_into().unwrap())
         };
-
-        unsafe { Metadata::from_raw(py, owner, md) }
+        let value = unsafe { LLVMMetadataAsValue(context, md) };
+        unsafe { Metadata::from_raw(py, owner, value) }
     }
 }
 

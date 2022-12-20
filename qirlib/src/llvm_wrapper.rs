@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use llvm_sys::prelude::{LLVMContextRef, LLVMMetadataRef, LLVMModuleRef};
+use llvm_sys::prelude::{LLVMContextRef, LLVMMetadataRef, LLVMModuleRef, LLVMValueRef};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -29,4 +29,6 @@ extern "C" {
         Val: LLVMMetadataRef,
     );
     pub fn LLVMRustContextCreate(OpaquePointers: LLVMBool) -> LLVMContextRef;
+    pub fn LLVMRustIsAMDConstant(Val: LLVMValueRef) -> LLVMValueRef;
+    pub fn LLVMRustExtractMDConstant(Val: LLVMValueRef) -> LLVMValueRef;
 }

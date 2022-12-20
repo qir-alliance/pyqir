@@ -11,12 +11,12 @@
 #define QIR_SHARED_API
 #endif
 
-#ifdef __cplusplus
+using namespace llvm;
+
 extern "C"
 {
-#endif
-
-enum LLVMRustModFlagBehavior {
+  enum LLVMRustModFlagBehavior
+  {
     Error = 1,
     Warning = 2,
     Require = 3,
@@ -29,7 +29,7 @@ enum LLVMRustModFlagBehavior {
 #endif
 
     // Markers:
-    ModFlagBehaviorFirstVal = Error,
+    ModFlagBehaviorFirstVal = LLVMRustModFlagBehavior::Error,
 #if LLVM_VERSION_GE(15, 0)
     ModFlagBehaviorLastVal = Min
 #else
@@ -37,39 +37,39 @@ enum LLVMRustModFlagBehavior {
 #endif
   };
 
-
-static llvm::Module::ModFlagBehavior
-map_to_llvmRustModFlagBehavior(LLVMRustModFlagBehavior Behavior) {
-  switch (Behavior) {
-  case LLVMRustModFlagBehavior::Error:
-    return llvm::Module::ModFlagBehavior::Error;
-  case LLVMRustModFlagBehavior::Warning:
-    return llvm::Module::ModFlagBehavior::Warning;
-  case LLVMRustModFlagBehavior::Require:
-    return llvm::Module::ModFlagBehavior::Require;
-  case LLVMRustModFlagBehavior::Override:
-    return llvm::Module::ModFlagBehavior::Override;
-  case LLVMRustModFlagBehavior::Append:
-    return llvm::Module::ModFlagBehavior::Append;
-  case LLVMRustModFlagBehavior::AppendUnique:
-    return llvm::Module::ModFlagBehavior::AppendUnique;
-  case LLVMRustModFlagBehavior::Max:
-    return llvm::Module::ModFlagBehavior::Max;
+  static llvm::Module::ModFlagBehavior
+  map_to_llvmRustModFlagBehavior(LLVMRustModFlagBehavior Behavior)
+  {
+    switch (Behavior)
+    {
+    case LLVMRustModFlagBehavior::Error:
+      return llvm::Module::ModFlagBehavior::Error;
+    case LLVMRustModFlagBehavior::Warning:
+      return llvm::Module::ModFlagBehavior::Warning;
+    case LLVMRustModFlagBehavior::Require:
+      return llvm::Module::ModFlagBehavior::Require;
+    case LLVMRustModFlagBehavior::Override:
+      return llvm::Module::ModFlagBehavior::Override;
+    case LLVMRustModFlagBehavior::Append:
+      return llvm::Module::ModFlagBehavior::Append;
+    case LLVMRustModFlagBehavior::AppendUnique:
+      return llvm::Module::ModFlagBehavior::AppendUnique;
+    case LLVMRustModFlagBehavior::Max:
+      return llvm::Module::ModFlagBehavior::Max;
 #if LLVM_VERSION_GE(15, 0)
-  case LLVMRustModFlagBehavior::Min:
-    return llvm::Module::ModFlagBehavior::Min;
+    case LLVMRustModFlagBehavior::Min:
+      return llvm::Module::ModFlagBehavior::Min;
 #endif
+    }
+    llvm_unreachable("Unknown LLVMRustModFlagBehavior");
   }
-  llvm_unreachable("Unknown LLVMRustModFlagBehavior");
-}
 
-QIR_SHARED_API void LLVMRustAddModuleFlag(LLVMModuleRef M, LLVMRustModFlagBehavior Behavior,
-                       const char *Key, size_t KeyLen,
-                       LLVMMetadataRef Val) {
+  QIR_SHARED_API void LLVMRustAddModuleFlag(LLVMModuleRef M, LLVMRustModFlagBehavior Behavior,
+                                            const char *Key, size_t KeyLen,
+                                            LLVMMetadataRef Val)
+  {
 
-  llvm::unwrap(M)->addModuleFlag(map_to_llvmRustModFlagBehavior(Behavior), {Key, KeyLen}, llvm::unwrap(Val));
-}
+    llvm::unwrap(M)->addModuleFlag(map_to_llvmRustModFlagBehavior(Behavior), {Key, KeyLen}, llvm::unwrap(Val));
+  }
 
-#ifdef __cplusplus
 } // extern "C"
-#endif
