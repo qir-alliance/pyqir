@@ -420,6 +420,14 @@ class Context:
     def __init__(self) -> None:
         """Initializes a context."""
         ...
+    def create_metadata_string(self, string: str) -> Value:
+        """
+        Creates a metadata string
+
+        :param string: the value of the metadata string to create
+        :returns: metadata string value of the supplied string
+        """
+        ...
 
 class FCmp(Instruction):
     """A floating-point comparison instruction."""
@@ -645,6 +653,42 @@ class Module:
     def context(self) -> Context:
         """The LLVM context."""
         ...
+    def add_metadata_flag(
+        self, behavior: ModuleFlagBehavior, id: str, value: Value
+    ) -> None:
+        """
+        Adds a metadata flag to the llvm.module.flags metadata
+
+        See https://llvm.org/docs/LangRef.html#module-flags-metadata
+
+        :param behavior: flag specifying the behavior when two (or more) modules are merged together
+        :param id: metadata string that is a unique ID for the metadata.
+        :param metadata: metadata value of the flag
+        """
+        ...
+    def add_value_flag(
+        self, behavior: ModuleFlagBehavior, id: str, value: Value
+    ) -> None:
+        """
+        Adds a value flag to the llvm.module.flags metadata
+
+        See https://llvm.org/docs/LangRef.html#module-flags-metadata
+
+        :param behavior: flag specifying the behavior when two (or more) modules are merged together
+        :param id: metadata string that is a unique ID for the metadata.
+        :param value: value of the flag
+        """
+        ...
+    def get_flag(self, id: str) -> Optional[Value]:
+        """
+        Gets the flag value from the llvm.module.flags metadata for a given id
+
+        See https://llvm.org/docs/LangRef.html#module-flags-metadata
+
+        :param id: metadata string that is a unique ID for the metadata.
+        :returns: value of the flag if found, otherwise None
+        """
+        ...
     def verify(self) -> Optional[str]:
         """
         Verifies that this module is valid.
@@ -655,6 +699,18 @@ class Module:
     def __str__(self) -> str:
         """Converts this module into an LLVM IR string."""
         ...
+
+class ModuleFlagBehavior(Enum):
+    """Module flag behavior choices"""
+
+    ERROR: ModuleFlagBehavior
+    WARNING: ModuleFlagBehavior
+    REQUIRE: ModuleFlagBehavior
+    OVERRIDE: ModuleFlagBehavior
+    APPEND: ModuleFlagBehavior
+    APPEND_UNIQUE: ModuleFlagBehavior
+    MAX: ModuleFlagBehavior
+    # MIN: ModuleFlagBehavior
 
 class Opcode(Enum):
     """An instruction opcode."""
@@ -835,7 +891,12 @@ def const(ty: Type, value: Union[bool, int, float]) -> Constant:
     ...
 
 def entry_point(
-    module: Module, name: str, required_num_qubits: int, required_num_results: int
+    module: Module,
+    name: str,
+    required_num_qubits: int,
+    required_num_results: int,
+    qir_profiles: str = "custom",
+    output_labeling_schema: str = "custom",
 ) -> Function:
     """
     Creates an entry point.
@@ -843,7 +904,9 @@ def entry_point(
     :param module: The parent module.
     :param name: The entry point name.
     :param required_num_qubits: The number of qubits required by the entry point.
-    :param required_num_results: The number of results required by the entry point.
+    :param required_num_results: The maximal number of measurement results that need to be stored while executing the entry point function
+    :param qir_profiles: Value identifying the profile the entry point has been compiled for. Use base_profile when QIR is compliant.
+    :param output_labeling_schema: An arbitrary string value that identifies the schema used by a compiler frontend that produced the IR to label the recorded output
     :returns: An entry point.
     """
     ...

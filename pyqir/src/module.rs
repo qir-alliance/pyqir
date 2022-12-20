@@ -19,6 +19,7 @@ use llvm_sys::{
     LLVMLinkage, LLVMModule,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
+use qirlib::llvm_wrapper::{LLVMRustAddModuleFlag, LLVMRustModFlagBehavior};
 use std::{
     ffi::CString,
     ops::Deref,
@@ -183,6 +184,80 @@ impl Module {
         &self.context
     }
 
+    /// Adds a metadata flag to the llvm.module.flags metadata
+    ///
+    /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
+    ///
+    /// :param behavior: flag specifying the behavior when two (or more) modules are merged together
+    /// :param id: metadata string that is a unique ID for the metadata.
+    /// :param metadata: metadata value of the flag
+    #[pyo3(text_signature = "(behavior, id, metadata)")]
+    pub(crate) fn add_metadata_flag(
+        &self,
+        behavior: ModuleFlagBehavior,
+        id: &str,
+        metadata: &Value,
+    ) {
+        let md = unsafe { LLVMValueAsMetadata(metadata.as_ptr()) };
+
+        unsafe {
+            LLVMRustAddModuleFlag(
+                self.module.as_ptr(),
+                behavior
+                    .try_into()
+                    .expect("Could not convert behavior for the current version of LLVM"),
+                id.as_ptr() as *mut std::ffi::c_char,
+                id.len().try_into().unwrap(),
+                md,
+            );
+        }
+    }
+
+    /// Adds a value flag to the llvm.module.flags metadata
+    ///
+    /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
+    ///
+    /// :param behavior: flag specifying the behavior when two (or more) modules are merged together
+    /// :param id: metadata string that is a unique ID for the metadata.
+    /// :param value: value of the flag
+    #[pyo3(text_signature = "(behavior, id, flag)")]
+    pub(crate) fn add_value_flag(&self, behavior: ModuleFlagBehavior, id: &str, flag: &Value) {
+        let md = unsafe { LLVMValueAsMetadata(flag.as_ptr()) };
+
+        unsafe {
+            LLVMRustAddModuleFlag(
+                self.module.as_ptr(),
+                behavior
+                    .try_into()
+                    .expect("Could not convert behavior for the current version of LLVM"),
+                id.as_ptr() as *mut std::ffi::c_char,
+                id.len().try_into().unwrap(),
+                md,
+            );
+        }
+    }
+
+    /// Gets the flag value from the llvm.module.flags metadata for a given id
+    ///
+    /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
+    ///
+    /// :param id: metadata string that is a unique ID for the metadata.
+    /// :returns: value of the flag if found, otherwise None
+    #[pyo3(text_signature = "(id)")]
+    pub(crate) fn get_flag(slf: Py<Module>, py: Python, id: &str) -> Option<PyObject> {
+        let module = slf.borrow(py).module.as_ptr();
+        let flag = unsafe { LLVMGetModuleFlag(module, id.as_ptr().cast(), id.len()) };
+
+        if flag.is_null() {
+            return None;
+        }
+        let flag_value = unsafe { LLVMMetadataAsValue(LLVMGetModuleContext(module), flag) };
+
+        let owner = slf.into();
+        let value = unsafe { Value::from_raw(py, owner, flag_value) };
+        value.ok()
+    }
+
     /// Verifies that this module is valid.
     ///
     /// :returns: An error description if this module is invalid or `None` if this module is valid.
@@ -279,6 +354,60 @@ impl From<Linkage> for LLVMLinkage {
             Linkage::Private => Self::LLVMPrivateLinkage,
             Linkage::WeakAny => Self::LLVMWeakAnyLinkage,
             Linkage::WeakOdr => Self::LLVMWeakODRLinkage,
+        }
+    }
+}
+
+/// Module flag behavior choices
+#[pyclass]
+#[derive(Clone)]
+pub(crate) enum ModuleFlagBehavior {
+    #[pyo3(name = "ERROR")]
+    Error,
+    #[pyo3(name = "WARNING")]
+    Warning,
+    #[pyo3(name = "REQUIRE")]
+    Require,
+    #[pyo3(name = "OVERRIDE")]
+    Override,
+    #[pyo3(name = "APPEND")]
+    Append,
+    #[pyo3(name = "APPEND_UNIQUE")]
+    AppendUnique,
+    #[pyo3(name = "MAX")]
+    Max,
+    #[pyo3(name = "MIN")]
+    Min,
+}
+
+impl From<LLVMRustModFlagBehavior> for ModuleFlagBehavior {
+    fn from(flag: LLVMRustModFlagBehavior) -> Self {
+        match flag {
+            LLVMRustModFlagBehavior::Error => ModuleFlagBehavior::Error,
+            LLVMRustModFlagBehavior::Warning => ModuleFlagBehavior::Warning,
+            LLVMRustModFlagBehavior::Require => ModuleFlagBehavior::Require,
+            LLVMRustModFlagBehavior::Override => ModuleFlagBehavior::Override,
+            LLVMRustModFlagBehavior::Append => ModuleFlagBehavior::Append,
+            LLVMRustModFlagBehavior::AppendUnique => ModuleFlagBehavior::AppendUnique,
+            LLVMRustModFlagBehavior::Max => ModuleFlagBehavior::Max,
+            #[cfg(any(feature = "llvm15-0"))]
+            LLVMRustModFlagBehavior::Min => ModuleFlagBehavior::Min,
+            _ => panic!("Unsupported enum value."),
+        }
+    }
+}
+
+impl From<ModuleFlagBehavior> for LLVMRustModFlagBehavior {
+    fn from(flag: ModuleFlagBehavior) -> Self {
+        match flag {
+            ModuleFlagBehavior::Error => LLVMRustModFlagBehavior::Error,
+            ModuleFlagBehavior::Warning => LLVMRustModFlagBehavior::Warning,
+            ModuleFlagBehavior::Require => LLVMRustModFlagBehavior::Require,
+            ModuleFlagBehavior::Override => LLVMRustModFlagBehavior::Override,
+            ModuleFlagBehavior::Append => LLVMRustModFlagBehavior::Append,
+            ModuleFlagBehavior::AppendUnique => LLVMRustModFlagBehavior::AppendUnique,
+            ModuleFlagBehavior::Max => LLVMRustModFlagBehavior::Max,
+            ModuleFlagBehavior::Min => todo!("Min is not supported on LLVM < 14"),
         }
     }
 }

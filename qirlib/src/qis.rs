@@ -6,6 +6,7 @@ use crate::{
     types,
 };
 use const_str::raw_cstr;
+use llvm_sys::LLVMAttributeFunctionIndex;
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{core::*, prelude::*, LLVMLinkage};
 use std::{ffi::CString, ptr::NonNull};
@@ -203,11 +204,33 @@ unsafe fn rotation_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
 
 unsafe fn mz(module: LLVMModuleRef) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
+    let result_type = types::result(context);
     let ty = function_type(
         LLVMVoidTypeInContext(context),
-        &mut [types::qubit(context), types::result(context)],
+        &mut [types::qubit(context), result_type],
     );
-    declare(module, "mz", Functor::Body, ty)
+    let function = declare(module, "mz", Functor::Body, ty);
+    let attr_name = "writeonly";
+    let kind_id = LLVMGetEnumAttributeKindForName(attr_name.as_ptr().cast::<i8>(), attr_name.len());
+    let attr = LLVMCreateEnumAttribute(context, kind_id, 0);
+    let result_param_index = 2; // indices are 1 based.
+    LLVMAddAttributeAtIndex(function, result_param_index, attr);
+
+    add_irreversible_attr(context, function);
+    function
+}
+
+#[allow(clippy::cast_possible_truncation)]
+unsafe fn add_irreversible_attr(context: LLVMContextRef, function: LLVMValueRef) {
+    let irreversable = "irreversible";
+    let irreversable_attr = LLVMCreateStringAttribute(
+        context,
+        irreversable.as_ptr().cast::<i8>(),
+        irreversable.len() as u32,
+        "".as_ptr().cast::<i8>(),
+        0,
+    );
+    LLVMAddAttributeAtIndex(function, LLVMAttributeFunctionIndex, irreversable_attr);
 }
 
 unsafe fn read_result(module: LLVMModuleRef) -> LLVMValueRef {

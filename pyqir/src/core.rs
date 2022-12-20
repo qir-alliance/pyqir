@@ -1,17 +1,25 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#![allow(clippy::used_underscore_binding)]
+
+#[allow(deprecated)]
 use llvm_sys::{
-    core::{LLVMContextCreate, LLVMContextDispose, LLVMDisposeMemoryBuffer, LLVMDisposeMessage},
+    core::{
+        LLVMContextDispose, LLVMDisposeMemoryBuffer, LLVMDisposeMessage, LLVMMDStringInContext,
+    },
     prelude::*,
     LLVMContext, LLVMMemoryBuffer,
 };
 use pyo3::prelude::*;
+use qirlib::llvm_wrapper::LLVMRustContextCreate;
 use std::{
-    ffi::{c_char, CStr},
+    ffi::{c_char, CStr, CString},
     ops::Deref,
     ptr::NonNull,
 };
+
+use crate::values::Value;
 
 /// The context owns global state needed by most LLVM objects.
 #[pyclass(unsendable)]
@@ -22,7 +30,28 @@ pub(crate) struct Context(NonNull<LLVMContext>);
 impl Context {
     #[new]
     pub(crate) fn new() -> Self {
-        Self(NonNull::new(unsafe { LLVMContextCreate() }).unwrap())
+        Self(NonNull::new(unsafe { LLVMRustContextCreate(0) }).unwrap())
+    }
+
+    /// Creates a metadata string
+    ///
+    /// :param string: the value of the metadata string to create
+    /// :returns: metadata string value of the supplied string
+    #[pyo3(text_signature = "(string)")]
+    fn create_metadata_string(slf: Py<Context>, py: Python, string: &str) -> PyResult<PyObject> {
+        let owner = slf.clone_ref(py).into();
+        let c_string = CString::new(string).unwrap();
+
+        let md = unsafe {
+            #[allow(deprecated)]
+            LLVMMDStringInContext(
+                slf.borrow(py).as_ptr(),
+                c_string.as_ptr(),
+                string.len().try_into().unwrap(),
+            )
+        };
+
+        unsafe { Value::from_raw(py, owner, md) }
     }
 }
 

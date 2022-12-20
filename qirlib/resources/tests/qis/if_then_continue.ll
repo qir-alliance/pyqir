@@ -21,7 +21,7 @@ continue:                                         ; preds = %else, %then
   ret void
 }
 
-declare void @__quantum__qis__mz__body(%Qubit*, %Result*)
+declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly) #1
 
 declare i1 @__quantum__qis__read_result__body(%Result*)
 
@@ -30,3 +30,4 @@ declare void @__quantum__qis__x__body(%Qubit*)
 declare void @__quantum__qis__h__body(%Qubit*)
 
 attributes #0 = { "EntryPoint" "requiredQubits"="1" "requiredResults"="1" }
+attributes #1 = { "irreversible" }

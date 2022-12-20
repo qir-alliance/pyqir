@@ -66,7 +66,7 @@ declare void @__quantum__qis__h__body(%Qubit*)
 
 declare void @__quantum__qis__cnot__body(%Qubit*, %Qubit*)
 
-declare void @__quantum__qis__mz__body(%Qubit*, %Result*)
+declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly)
 
 attributes #0 = { "EntryPoint" "requiredQubits"="2" "requiredResults"="2" }
 ```

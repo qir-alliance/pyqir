@@ -7,7 +7,7 @@ use crate::{
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    module::{Linkage, Module},
+    module::{Linkage, Module, ModuleFlagBehavior},
     qis::BasicQisBuilder,
     types::{
         is_qubit_type, is_result_type, qubit_type, result_type, ArrayType, FunctionType, IntType,
@@ -46,6 +46,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<IntType>()?;
     m.add_class::<Linkage>()?;
     m.add_class::<Module>()?;
+    m.add_class::<ModuleFlagBehavior>()?;
     m.add_class::<Opcode>()?;
     m.add_class::<Phi>()?;
     m.add_class::<PointerType>()?;
