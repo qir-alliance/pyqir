@@ -987,6 +987,8 @@ def result_type(context: Context) -> Type:
     """
     ...
 
+# Runtime
+
 def array_record_output(builder: Builder, num_elements: Value, label: Value) -> None:
     """
     Inserts a marker in the generated output that indicates the start
@@ -1026,5 +1028,27 @@ def tuple_record_output(builder: Builder, num_elements: Value, label: Value) -> 
     :param Builder builder: The IR Builder used to create the instructions
     :param Value num_elements: How many tuple elements the tuple has
     :param str label: A string label for the tuple. Depending on the output schema, the label is included in the output or omitted.
+    """
+    ...
+
+# QIS
+
+def barrier(builder: Builder) -> None:
+    """
+    Inserts a barrier instruction
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :rtype: None
+    """
+    ...
+
+def swap(builder: Builder, qubit1: Value, qubit2: Value) -> None:
+    """
+    Inserts a swap gate
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param Value qubit1: The first qubit to apply the gate to.
+    :param Value qubit2: The second qubit to apply the gate to.
+    :rtype: None
     """
     ...

@@ -22,10 +22,10 @@ use crate::{
         IntConstant, Value,
     },
 };
-use pyo3::{prelude::*, types::PyDict, wrap_pymodule};
+use pyo3::prelude::*;
 
 #[pymodule]
-fn _native(py: Python, m: &PyModule) -> PyResult<()> {
+fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<ArrayType>()?;
     m.add_class::<Attribute>()?;
     m.add_class::<AttributeList>()?;
@@ -72,22 +72,15 @@ fn _native(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(result_type, m)?)?;
     m.add_function(wrap_pyfunction!(result, m)?)?;
 
-    m.add_wrapped(wrap_pymodule!(_qis))?;
-    let sys = PyModule::import(py, "sys")?;
-    let sys_modules: &PyDict = sys.getattr("modules")?.downcast()?;
-    sys_modules.set_item("pyqir.qis._native", m.getattr("_qis")?)?;
+    // qis
+    m.add_function(wrap_pyfunction!(barrier, m)?)?;
+    m.add_function(wrap_pyfunction!(swap, m)?)?;
 
+    // rt
     m.add_function(wrap_pyfunction!(array_record_output, m)?)?;
     m.add_function(wrap_pyfunction!(initialize, m)?)?;
     m.add_function(wrap_pyfunction!(result_record_output, m)?)?;
     m.add_function(wrap_pyfunction!(tuple_record_output, m)?)?;
 
-    Ok(())
-}
-
-#[pymodule]
-fn _qis(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(barrier, m)?)?;
-    m.add_function(wrap_pyfunction!(swap, m)?)?;
     Ok(())
 }

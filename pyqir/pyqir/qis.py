@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.qis._native import (
+from pyqir._native import (
     barrier,
     swap,
 )
