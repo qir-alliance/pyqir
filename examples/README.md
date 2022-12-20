@@ -45,9 +45,12 @@ python mock_to_qir.py bernstein_vazirani.txt 7 >> bernstein_vazirani_output.txt
 
 ## Evaluating Bernstein-Vazirani
 
-This example shows how to build a [Python program](bernstein_vazirani.py),
-get its `bitcode`, load into another `Module`, analyze the `QIR`, and
-finally print out a simple log of the quantum gates applied during execution.
+This example shows how to log the executed gate sequence for a quantum program
+compiled to [LLVM bitcode](https://www.llvm.org/docs/BitCodeFormat.html).
+It consists of a [Python program](bernstein_vazirani.py) that loads the
+[compiled bitcode](bernstein_vazirani.bc) and then uses the
+`NonadaptiveEvaluator`, and a `GateLogger` to print out a simple log of the
+quantum gates applied during execution.
 
 The example can be run using python:
 

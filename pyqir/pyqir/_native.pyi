@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 from enum import Enum
+from pyqir.evaluator import GateSet
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 class ArrayType(Type):
@@ -753,6 +754,15 @@ class PointerType(Type):
     def address_space(self) -> int:
         """The pointer address space."""
         ...
+
+class PyNonadaptiveJit:
+    def eval(
+        self,
+        file_path: str,
+        gateset: GateSet,
+        entry_point: Optional[str],
+        result_stream: Optional[List[bool]],
+    ) -> None: ...
 
 class StructType(Type):
     """A structure type."""
