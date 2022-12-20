@@ -10,7 +10,6 @@ use crate::{
     },
 };
 
-use const_str::raw_cstr;
 use llvm_sys::LLVMAttributeFunctionIndex;
 
 #[allow(clippy::wildcard_imports)]

@@ -8,4 +8,4 @@ define void @main() #0 {
 
 declare void @__quantum__rt__tuple_record_output(i64, i8*)
 
-attributes #0 = { "EntryPoint" "requiredQubits"="0" "requiredResults"="0" }
+attributes #0 = { "EntryPoint" "output_labeling_schema" "qir_profiles"="custom" "requiredQubits"="0" "requiredResults"="0" }

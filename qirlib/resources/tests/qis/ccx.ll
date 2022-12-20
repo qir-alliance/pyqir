@@ -10,4 +10,4 @@ define void @main() #0 {
 
 declare void @__quantum__qis__ccx__body(%Qubit*, %Qubit*, %Qubit*)
 
-attributes #0 = { "EntryPoint" "requiredQubits"="3" "requiredResults"="0" }
+attributes #0 = { "EntryPoint" "output_labeling_schema" "qir_profiles"="custom" "requiredQubits"="3" "requiredResults"="0" }

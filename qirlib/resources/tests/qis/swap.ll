@@ -10,4 +10,4 @@ define void @main() #0 {
 
 declare void @__quantum__qis__swap__body(%Qubit*, %Qubit*)
 
-attributes #0 = { "EntryPoint" "requiredQubits"="2" "requiredResults"="0" }
+attributes #0 = { "EntryPoint" "output_labeling_schema" "qir_profiles"="custom" "requiredQubits"="2" "requiredResults"="0" }
