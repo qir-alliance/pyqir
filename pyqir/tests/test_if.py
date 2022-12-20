@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import os
+from typing import Callable
 
 import pytest
 from pathlib import Path
@@ -9,8 +10,6 @@ from pathlib import Path
 import pyqir
 from pyqir import (
     BasicQisBuilder,
-    Builder,
-    Constant,
     Context,
     Function,
     FunctionType,
@@ -48,8 +47,11 @@ def test_empty_blocks() -> None:
     assert ir == expected
 
 
+Action = Callable[[BasicQisBuilder, SimpleModule], Callable[[], None]]
+
+
 def test_empty_false_block() -> None:
-    block = lambda qis, module: (lambda: qis.x(module.qubits[0]))
+    block: Action = lambda qis, module: (lambda: qis.x(module.qubits[0]))
 
     context = Context()
     module = SimpleModule("test_if", 1, 1, context=context)
@@ -75,7 +77,7 @@ def test_empty_false_block() -> None:
 
 
 def test_empty_true_block() -> None:
-    block = lambda qis, module: (lambda: qis.x(module.qubits[0]))
+    block: Action = lambda qis, module: (lambda: qis.x(module.qubits[0]))
 
     context = Context()
     module = SimpleModule("test_if", 1, 1, context=context)
@@ -99,10 +101,10 @@ def test_empty_true_block() -> None:
 
 
 def test_nested_blocks() -> None:
-    xblock = lambda qis, module: (lambda: qis.x(module.qubits[0]))
-    yblock = lambda qis, module: (lambda: qis.y(module.qubits[0]))
-    zblock = lambda qis, module: (lambda: qis.z(module.qubits[0]))
-    tblock = lambda qis, module: (lambda: qis.t(module.qubits[0]))
+    xblock: Action = lambda qis, module: (lambda: qis.x(module.qubits[0]))
+    yblock: Action = lambda qis, module: (lambda: qis.y(module.qubits[0]))
+    zblock: Action = lambda qis, module: (lambda: qis.z(module.qubits[0]))
+    tblock: Action = lambda qis, module: (lambda: qis.t(module.qubits[0]))
 
     context = Context()
     module = SimpleModule("test_if", 1, 3, context=context)
