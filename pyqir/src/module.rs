@@ -6,6 +6,7 @@
 use crate::{
     core::Context,
     core::{MemoryBuffer, Message},
+    metadata::Metadata,
     values::Value,
 };
 use core::slice;
@@ -196,7 +197,7 @@ impl Module {
         &self,
         behavior: ModuleFlagBehavior,
         id: &str,
-        metadata: &Value,
+        metadata: &Metadata,
     ) {
         let md = unsafe { LLVMValueAsMetadata(metadata.as_ptr()) };
 
@@ -254,7 +255,7 @@ impl Module {
         let flag_value = unsafe { LLVMMetadataAsValue(LLVMGetModuleContext(module), flag) };
 
         let owner = slf.into();
-        let value = unsafe { Value::from_raw(py, owner, flag_value) };
+        let value = unsafe { Metadata::from_raw(py, owner, flag_value) };
         value.ok()
     }
 

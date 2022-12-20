@@ -420,7 +420,7 @@ class Context:
     def __init__(self) -> None:
         """Initializes a context."""
         ...
-    def create_metadata_string(self, string: str) -> Value:
+    def create_metadata_string(self, string: str) -> Metadata:
         """
         Creates a metadata string
 
@@ -866,6 +866,18 @@ class Type:
     @property
     def is_double(self) -> bool:
         """Whether this type is the bool type."""
+        ...
+
+class Metadata:
+    """A metadata value."""
+
+    @property
+    def type(self) -> Type:
+        """The type of this value."""
+        ...
+    @property
+    def name(self) -> str:
+        """The name of this value or the empty string if this value is anonymous."""
         ...
 
 class Value:

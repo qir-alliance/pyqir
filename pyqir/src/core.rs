@@ -19,7 +19,7 @@ use std::{
     ptr::NonNull,
 };
 
-use crate::values::Value;
+use crate::metadata::Metadata;
 
 /// The context owns global state needed by most LLVM objects.
 #[pyclass(unsendable)]
@@ -51,7 +51,7 @@ impl Context {
             )
         };
 
-        unsafe { Value::from_raw(py, owner, md) }
+        unsafe { Metadata::from_raw(py, owner, md) }
     }
 }
 

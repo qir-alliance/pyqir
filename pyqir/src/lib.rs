@@ -16,6 +16,7 @@ extern crate llvm_sys_140 as llvm_sys;
 mod builder;
 mod core;
 mod instructions;
+mod metadata;
 mod module;
 mod python;
 mod qis;
