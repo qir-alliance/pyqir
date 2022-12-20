@@ -77,10 +77,10 @@ fn _native(py: Python, m: &PyModule) -> PyResult<()> {
     let sys_modules: &PyDict = sys.getattr("modules")?.downcast()?;
     sys_modules.set_item("pyqir.qis._native", m.getattr("_qis")?)?;
 
-    m.add_wrapped(wrap_pymodule!(_rt))?;
-    let sys = PyModule::import(py, "sys")?;
-    let sys_modules: &PyDict = sys.getattr("modules")?.downcast()?;
-    sys_modules.set_item("pyqir.rt._native", m.getattr("_rt")?)?;
+    m.add_function(wrap_pyfunction!(array_record_output, m)?)?;
+    m.add_function(wrap_pyfunction!(initialize, m)?)?;
+    m.add_function(wrap_pyfunction!(result_record_output, m)?)?;
+    m.add_function(wrap_pyfunction!(tuple_record_output, m)?)?;
 
     Ok(())
 }
@@ -89,14 +89,5 @@ fn _native(py: Python, m: &PyModule) -> PyResult<()> {
 fn _qis(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(barrier, m)?)?;
     m.add_function(wrap_pyfunction!(swap, m)?)?;
-    Ok(())
-}
-
-#[pymodule]
-fn _rt(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(array_record_output, m)?)?;
-    m.add_function(wrap_pyfunction!(initialize, m)?)?;
-    m.add_function(wrap_pyfunction!(result_record_output, m)?)?;
-    m.add_function(wrap_pyfunction!(tuple_record_output, m)?)?;
     Ok(())
 }

@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir.rt._native import (
+from pyqir._native import (
     array_record_output,
     initialize,
     result_record_output,
