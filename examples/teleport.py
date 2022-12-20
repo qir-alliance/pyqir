@@ -29,7 +29,6 @@ def teleport(qis: BasicQisBuilder, qubits: List[Value], results: List[Value]) ->
     qis.if_result(results[1], one=lambda: qis.x(target))
 
 
-
 module = SimpleModule("teleport", num_qubits=3, num_results=2)
 qis = BasicQisBuilder(module.builder)
 teleport(qis, module.qubits, module.results)

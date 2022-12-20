@@ -58,17 +58,20 @@ def create_bernstein_vazirani() -> SimpleModule:
 
     return module
 
+
 def removeprefix(self: str, prefix: str) -> str:
     if self.startswith(prefix):
-        return self[len(prefix):]
+        return self[len(prefix) :]
     else:
         return self[:]
 
+
 def removesuffix(self: str, suffix: str) -> str:
     if suffix and self.endswith(suffix):
-        return self[:-len(suffix)]
+        return self[: -len(suffix)]
     else:
         return self[:]
+
 
 # Convert a QIS operation to a simple string representation
 def gate_inst_to_str(inst) -> str:
@@ -84,6 +87,7 @@ def gate_inst_to_str(inst) -> str:
     arg_str = ", ".join(args)
     call = f"{raw}({arg_str})"
     return call
+
 
 # We can get the bitcode from the simple module
 bitcode = create_bernstein_vazirani().bitcode()
