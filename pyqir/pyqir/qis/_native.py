@@ -3,6 +3,7 @@
 
 from pyqir import Builder, Value
 
+
 def barrier(builder: Builder) -> None:
     """
     Inserts a barrier instruction
@@ -11,6 +12,7 @@ def barrier(builder: Builder) -> None:
     :rtype: None
     """
     ...
+
 
 def swap(builder: Builder, qubit1: Value, qubit2: Value) -> None:
     """

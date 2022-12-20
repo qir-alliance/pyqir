@@ -3,6 +3,7 @@
 
 from pyqir import Builder, Value
 
+
 def array_record_output(builder: Builder, num_elements: Value, label: Value) -> None:
     """
     Inserts a marker in the generated output that indicates the start
@@ -14,6 +15,7 @@ def array_record_output(builder: Builder, num_elements: Value, label: Value) -> 
     """
     ...
 
+
 def initialize(builder: Builder, reserved: Value) -> None:
     """
     Initializes the execution environment. Sets all qubits to a zero-state
@@ -24,6 +26,7 @@ def initialize(builder: Builder, reserved: Value) -> None:
     """
     ...
 
+
 def result_record_output(builder: Builder, result: Value, label: Value) -> None:
     """
     Adds a measurement result to the generated output.
@@ -33,6 +36,7 @@ def result_record_output(builder: Builder, result: Value, label: Value) -> None:
     :param str label: A string label for the result value. Depending on the output schema, the label is included in the output or omitted.
     """
     ...
+
 
 def tuple_record_output(builder: Builder, num_elements: Value, label: Value) -> None:
     """
