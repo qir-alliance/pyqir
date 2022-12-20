@@ -331,9 +331,7 @@ mod tests {
     #[test]
     fn barrier() {
         assert_reference_ir("qis/barrier", 0, 0, |builder| unsafe {
-            build_barrier(
-                builder,
-            );
+            build_barrier(builder);
         });
     }
 
