@@ -74,7 +74,7 @@ def removesuffix(self: str, suffix: str) -> str:
 
 
 # Convert a QIS operation to a simple string representation
-def gate_inst_to_str(inst) -> str:
+def gate_inst_to_str(inst: Call) -> str:
     raw = removesuffix(removeprefix(inst.callee.name, "__quantum__qis__"), "__body")
     args = []
     for arg in inst.args:
