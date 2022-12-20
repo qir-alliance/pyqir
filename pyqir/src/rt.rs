@@ -75,7 +75,7 @@ pub(crate) fn initialize(py: Python, builder: Py<Builder>, data: &Value) -> PyRe
 ///
 /// :param Builder builder: The IR Builder used to create the instructions
 /// :param Value num_elements: How many tuple elements the tuple has
-/// :param str label: A string label for the tuple. Depending on the output schema, the label is included in the output or omitted.
+/// :param Value label: A string label for the tuple. Depending on the output schema, the label is included in the output or omitted.
 #[pyfunction]
 #[pyo3(text_signature = "(builder, num_elements, label)")]
 #[allow(clippy::needless_pass_by_value)]
