@@ -420,7 +420,7 @@ class Context:
     def __init__(self) -> None:
         """Initializes a context."""
         ...
-    def create_metadata_string(self, string: str) -> Metadata:
+    def create_metadata_string(self, string: str) -> MetadataString:
         """
         Creates a metadata string
 
@@ -679,7 +679,7 @@ class Module:
         :param value: value of the flag
         """
         ...
-    def get_flag(self, id: str) -> Optional[Value]:
+    def get_flag(self, id: str) -> Optional[Metadata]:
         """
         Gets the flag value from the llvm.module.flags metadata for a given id
 
@@ -878,6 +878,16 @@ class Metadata:
     @property
     def name(self) -> str:
         """The name of this value or the empty string if this value is anonymous."""
+        ...
+
+class MetadataString(Metadata):
+    @property
+    def is_null(self) -> bool:
+        """Whether this metadata string is the null value for its type."""
+        ...
+    @property
+    def value(self) -> str:
+        """The underlying metadata string value."""
         ...
 
 class Value:
