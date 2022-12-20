@@ -1,23 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{
-    qis::{builder_module, function_type},
-    types,
-};
+use crate::llvm_utils::*;
+use crate::types;
 
 use llvm_sys::{
     core::{
-        LLVMAddFunction, LLVMGetModuleContext, LLVMGetNamedFunction, LLVMInt64TypeInContext,
-        LLVMInt8TypeInContext, LLVMPointerType, LLVMSetLinkage, LLVMVoidTypeInContext,
+        LLVMGetModuleContext, LLVMInt64TypeInContext, LLVMInt8TypeInContext, LLVMPointerType,
+        LLVMVoidTypeInContext,
     },
     prelude::*,
-    LLVMLinkage,
 };
-
-use std::ffi::CString;
-
-use crate::qis::build_call;
 
 pub unsafe fn build_array_record_output(
     builder: LLVMBuilderRef,
@@ -31,13 +24,9 @@ pub unsafe fn build_array_record_output(
     );
 }
 
-pub unsafe fn build_initialize(builder: LLVMBuilderRef, reserved: LLVMValueRef) {
+pub unsafe fn build_initialize(builder: LLVMBuilderRef, data: LLVMValueRef) {
     unsafe {
-        build_call(
-            builder,
-            initialize(builder_module(builder)),
-            &mut [reserved],
-        );
+        build_call(builder, initialize(builder_module(builder)), &mut [data]);
     }
 }
 
@@ -78,12 +67,11 @@ unsafe fn array_record_output(module: LLVMModuleRef) -> LLVMValueRef {
 
 unsafe fn initialize(module: LLVMModuleRef) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
-    let name = "initialize";
     let i8type = LLVMInt8TypeInContext(context);
     let i8p = LLVMPointerType(i8type, 0);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [i8p]);
-    let name = format!("__quantum__rt__{name}");
-    declare_bare(module, &name, ty)
+    let name = "__quantum__rt__initialize";
+    declare_bare(module, name, ty)
 }
 
 unsafe fn result_record_output(module: LLVMModuleRef) -> LLVMValueRef {
@@ -111,18 +99,6 @@ unsafe fn record_output(
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [param_type, i8p]);
     let name = format!("__quantum__rt__{name}");
     declare_bare(module, &name, ty)
-}
-
-unsafe fn declare_bare(module: LLVMModuleRef, name: &str, ty: LLVMTypeRef) -> LLVMValueRef {
-    let name = CString::new(name).unwrap();
-    let function = LLVMGetNamedFunction(module, name.as_ptr().cast());
-    if function.is_null() {
-        let function = LLVMAddFunction(module, name.as_ptr().cast(), ty);
-        LLVMSetLinkage(function, LLVMLinkage::LLVMExternalLinkage);
-        function
-    } else {
-        function
-    }
 }
 
 #[cfg(test)]

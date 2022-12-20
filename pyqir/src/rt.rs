@@ -57,15 +57,15 @@ pub(crate) fn result_record_output(
 /// if they are not dynamically managed.
 ///
 /// :param Builder builder: The IR Builder used to create the instructions
-/// :param Value reserved: Reserved. For base profile QIR, a const null i8* Value should be passed.
+/// :param Value data: For base profile QIR, a const null i8* Value should be passed.
 #[pyfunction]
-#[pyo3(text_signature = "(builder, reserved)")]
+#[pyo3(text_signature = "(builder, data)")]
 #[allow(clippy::needless_pass_by_value)]
-pub(crate) fn initialize(py: Python, builder: Py<Builder>, reserved: &Value) -> PyResult<()> {
+pub(crate) fn initialize(py: Python, builder: Py<Builder>, data: &Value) -> PyResult<()> {
     let builder = builder.borrow(py);
-    Owner::merge(py, [builder.owner(), reserved.owner()])?;
+    Owner::merge(py, [builder.owner(), data.owner()])?;
     unsafe {
-        rt::build_initialize(builder.as_ptr(), reserved.as_ptr());
+        rt::build_initialize(builder.as_ptr(), data.as_ptr());
     }
     Ok(())
 }

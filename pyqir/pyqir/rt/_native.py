@@ -16,13 +16,13 @@ def array_record_output(builder: Builder, num_elements: Value, label: Value) -> 
     ...
 
 
-def initialize(builder: Builder, reserved: Value) -> None:
+def initialize(builder: Builder, data: Value) -> None:
     """
     Initializes the execution environment. Sets all qubits to a zero-state
     if they are not dynamically managed.
 
     :param Builder builder: The IR Builder used to create the instructions
-    :param Value reserved: Reserved. For base profile QIR, a const null i8* Value should be passed.
+    :param Value data: For base profile QIR, a const null i8* Value should be passed.
     """
     ...
 

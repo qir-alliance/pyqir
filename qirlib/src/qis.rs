@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use crate::llvm_utils::*;
 use crate::{
     builder::{build_if, try_build_if},
     types,
 };
-use const_str::raw_cstr;
+
 #[allow(clippy::wildcard_imports)]
-use llvm_sys::{core::*, prelude::*, LLVMLinkage};
-use std::{ffi::CString, ptr::NonNull};
+use llvm_sys::{core::*, prelude::*};
 
 pub unsafe fn build_barrier(builder: LLVMBuilderRef) {
     build_call(
@@ -175,79 +175,8 @@ pub unsafe fn try_build_if_result<E>(
     try_build_if(builder, bool_cond, build_one, build_zero)
 }
 
-#[derive(Clone, Copy)]
-enum Functor {
-    Body,
-    Adjoint,
-}
-
 unsafe fn build_read_result(builder: LLVMBuilderRef, result: LLVMValueRef) -> LLVMValueRef {
     build_call(builder, read_result(builder_module(builder)), &mut [result])
-}
-
-pub(crate) unsafe fn build_call(
-    builder: LLVMBuilderRef,
-    function: LLVMValueRef,
-    args: &mut [LLVMValueRef],
-) -> LLVMValueRef {
-    #[allow(deprecated)]
-    LLVMBuildCall(
-        builder,
-        function,
-        args.as_mut_ptr(),
-        args.len().try_into().unwrap(),
-        raw_cstr!(""),
-    )
-}
-
-pub(crate) unsafe fn builder_module(builder: LLVMBuilderRef) -> LLVMModuleRef {
-    NonNull::new(LLVMGetInsertBlock(builder))
-        .and_then(|b| NonNull::new(LLVMGetBasicBlockParent(b.as_ptr())))
-        .and_then(|v| NonNull::new(LLVMGetGlobalParent(v.as_ptr())))
-        .expect("The builder's position has not been set.")
-        .as_ptr()
-}
-
-unsafe fn no_param(module: LLVMModuleRef, name: &str, functor: Functor) -> LLVMValueRef {
-    let context = LLVMGetModuleContext(module);
-    let ty = function_type(LLVMVoidTypeInContext(context), &mut []);
-    declare(module, name, functor, ty)
-}
-
-unsafe fn simple_gate(module: LLVMModuleRef, name: &str, functor: Functor) -> LLVMValueRef {
-    let context = LLVMGetModuleContext(module);
-    let ty = function_type(LLVMVoidTypeInContext(context), &mut [types::qubit(context)]);
-    declare(module, name, functor, ty)
-}
-
-unsafe fn two_qubit_gate(module: LLVMModuleRef, name: &str, functor: Functor) -> LLVMValueRef {
-    let context = LLVMGetModuleContext(module);
-    let qubit = types::qubit(context);
-    let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit]);
-    declare(module, name, functor, ty)
-}
-
-unsafe fn controlled_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
-    let context = LLVMGetModuleContext(module);
-    let qubit = types::qubit(context);
-    let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit]);
-    declare(module, name, Functor::Body, ty)
-}
-
-unsafe fn doubly_controlled_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
-    let context = LLVMGetModuleContext(module);
-    let qubit = types::qubit(context);
-    let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit, qubit]);
-    declare(module, name, Functor::Body, ty)
-}
-
-unsafe fn rotation_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
-    let context = LLVMGetModuleContext(module);
-    let ty = function_type(
-        LLVMVoidTypeInContext(context),
-        &mut [LLVMDoubleTypeInContext(context), types::qubit(context)],
-    );
-    declare(module, name, Functor::Body, ty)
 }
 
 unsafe fn mz(module: LLVMModuleRef) -> LLVMValueRef {
@@ -268,39 +197,10 @@ unsafe fn read_result(module: LLVMModuleRef) -> LLVMValueRef {
     declare(module, "read_result", Functor::Body, ty)
 }
 
-unsafe fn declare(
-    module: LLVMModuleRef,
-    name: &str,
-    functor: Functor,
-    ty: LLVMTypeRef,
-) -> LLVMValueRef {
-    let suffix = match functor {
-        Functor::Body => "body",
-        Functor::Adjoint => "adj",
-    };
-    let name = CString::new(format!("__quantum__qis__{name}__{suffix}"))
-        .expect("Could not create QIS declaration from name/suffix");
-    let function = LLVMGetNamedFunction(module, name.as_ptr());
-    if function.is_null() {
-        let function = LLVMAddFunction(module, name.as_ptr(), ty);
-        LLVMSetLinkage(function, LLVMLinkage::LLVMExternalLinkage);
-        function
-    } else {
-        function
-    }
-}
-
-pub(crate) unsafe fn function_type(ret: LLVMTypeRef, params: &mut [LLVMTypeRef]) -> LLVMTypeRef {
-    LLVMFunctionType(
-        ret,
-        params.as_mut_ptr(),
-        params.len().try_into().unwrap(),
-        0,
-    )
-}
-
 #[cfg(test)]
 mod tests {
+    use std::ptr::NonNull;
+
     use super::*;
     use crate::{
         tests::{assert_reference_ir, Builder, Context},
