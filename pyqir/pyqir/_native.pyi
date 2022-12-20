@@ -96,156 +96,6 @@ class BasicBlock(Value):
         """The terminating instruction of this basic block if there is one."""
         ...
 
-class BasicQisBuilder:
-    """An instruction builder that generates instructions from the basic quantum instruction set."""
-
-    def __init__(self, builder: Builder) -> None:
-        """
-        Initializes a basic QIS builder.
-
-        :param builder: The underlying builder used to build QIS instructions.
-        """
-        ...
-    def ccx(self, control1: Value, control2: Value, target: Value) -> None:
-        """
-        Inserts Toffoli or doubly-controlled :math:`X` gate.
-
-        :param Value control1: The first control qubit.
-        :param Value control2: The second control qubit.
-        :param Value target: The target qubit.
-        :rtype: None
-        """
-        ...
-    def cx(self, control: Value, target: Value) -> None:
-        """
-        Inserts a controlled Pauli :math:`X` gate.
-
-        :param control: The control qubit.
-        :param target: The target qubit.
-        """
-        ...
-    def cz(self, control: Value, target: Value) -> None:
-        """
-        Inserts a controlled Pauli :math:`Z` gate.
-
-        :param control: The control qubit.
-        :param target: The target qubit.
-        """
-        ...
-    def h(self, qubit: Value) -> None:
-        """
-        Inserts a Hadamard gate.
-
-        :param qubit: The target qubit.
-        """
-        ...
-    def mz(self, qubit: Value, result: Value) -> None:
-        """
-        Inserts a Z-basis measurement operation.
-
-        :param qubit: The qubit to measure.
-        :param result: A result where the measurement result will be written to.
-        """
-        ...
-    def reset(self, qubit: Value) -> None:
-        """
-        Inserts a reset operation.
-
-        :param qubit: The qubit to reset.
-        """
-        ...
-    def rx(self, theta: Union[Value, float], qubit: Value) -> None:
-        """
-        Inserts a rotation gate about the :math:`x` axis.
-
-        :param theta: The angle to rotate by.
-        :param qubit: The qubit to rotate.
-        """
-        ...
-    def ry(self, theta: Union[Value, float], qubit: Value) -> None:
-        """
-        Inserts a rotation gate about the :math:`y` axis.
-
-        :param theta: The angle to rotate by.
-        :param qubit: The qubit to rotate.
-        """
-        ...
-    def rz(self, theta: Union[Value, float], qubit: Value) -> None:
-        """
-        Inserts a rotation gate about the :math:`z` axis.
-
-        :param theta: The angle to rotate by.
-        :param qubit: The qubit to rotate.
-        """
-        ...
-    def s(self, qubit: Value) -> None:
-        """
-        Inserts an :math:`S` gate.
-
-        :param qubit: The target qubit.
-        """
-        ...
-    def s_adj(self, qubit: Value) -> None:
-        """
-        Inserts an adjoint :math:`S` gate.
-
-        :param qubit: The target qubit.
-        """
-        ...
-    def t(self, qubit: Value) -> None:
-        """
-        Inserts a :math:`T` gate.
-
-        :param qubit: The target qubit.
-        """
-        ...
-    def t_adj(self, qubit: Value) -> None:
-        """
-        Inserts an adjoint :math:`T` gate.
-
-        :param qubit: The target qubit.
-        """
-        ...
-    def x(self, qubit: Value) -> None:
-        """
-        Inserts a Pauli :math:`X` gate.
-
-        :param qubit: The target qubit.
-        """
-        ...
-    def y(self, qubit: Value) -> None:
-        """
-        Inserts a Pauli :math:`Y` gate.
-
-        :param qubit: The target qubit.
-        """
-        ...
-    def z(self, qubit: Value) -> None:
-        """
-        Inserts a Pauli :math:`Z` gate.
-
-        :param qubit: The target qubit.
-        """
-        ...
-    def if_result(
-        self,
-        cond: Value,
-        one: Callable[[], None] = ...,
-        zero: Callable[[], None] = ...,
-    ) -> None:
-        """
-        Inserts a branch conditioned on a measurement result.
-
-        Instructions inserted when ``one`` is called will be inserted into the one branch.
-        Instructions inserted when ``zero`` is called will be inserted into the zero branch. The one
-        and zero callables should use this module's builder to build instructions.
-
-        :param cond: The result condition to branch on.
-        :param one: A callable that inserts instructions for the branch where the result is one.
-        :param zero: A callable that inserts instructions for the branch where the result is zero.
-        """
-        ...
-
 class Builder:
     """An instruction builder."""
 
@@ -1050,5 +900,178 @@ def swap(builder: Builder, qubit1: Value, qubit2: Value) -> None:
     :param Value qubit1: The first qubit to apply the gate to.
     :param Value qubit2: The second qubit to apply the gate to.
     :rtype: None
+    """
+    ...
+
+def ccx(builder: Builder, control1: Value, control2: Value, target: Value) -> None:
+    """
+    Inserts Toffoli or doubly-controlled :math:`X` gate.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param Value control1: The first control qubit.
+    :param Value control2: The second control qubit.
+    :param Value target: The target qubit.
+    :rtype: None
+    """
+    ...
+
+def cx(builder: Builder, control: Value, target: Value) -> None:
+    """
+    Inserts a controlled Pauli :math:`X` gate.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param control: The control qubit.
+    :param target: The target qubit.
+    """
+    ...
+
+def cz(builder: Builder, control: Value, target: Value) -> None:
+    """
+    Inserts a controlled Pauli :math:`Z` gate.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param control: The control qubit.
+    :param target: The target qubit.
+    """
+    ...
+
+def h(builder: Builder, qubit: Value) -> None:
+    """
+    Inserts a Hadamard gate.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param qubit: The target qubit.
+    """
+    ...
+
+def mz(builder: Builder, qubit: Value, result: Value) -> None:
+    """
+    Inserts a Z-basis measurement operation.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param qubit: The qubit to measure.
+    :param result: A result where the measurement result will be written to.
+    """
+    ...
+
+def reset(builder: Builder, qubit: Value) -> None:
+    """
+    Inserts a reset operation.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param qubit: The qubit to reset.
+    """
+    ...
+
+def rx(builder: Builder, theta: Union[Value, float], qubit: Value) -> None:
+    """
+    Inserts a rotation gate about the :math:`x` axis.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param theta: The angle to rotate by.
+    :param qubit: The qubit to rotate.
+    """
+    ...
+
+def ry(builder: Builder, theta: Union[Value, float], qubit: Value) -> None:
+    """
+    Inserts a rotation gate about the :math:`y` axis.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param theta: The angle to rotate by.
+    :param qubit: The qubit to rotate.
+    """
+    ...
+
+def rz(builder: Builder, theta: Union[Value, float], qubit: Value) -> None:
+    """
+    Inserts a rotation gate about the :math:`z` axis.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param theta: The angle to rotate by.
+    :param qubit: The qubit to rotate.
+    """
+    ...
+
+def s(builder: Builder, qubit: Value) -> None:
+    """
+    Inserts an :math:`S` gate.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param qubit: The target qubit.
+    """
+    ...
+
+def s_adj(builder: Builder, qubit: Value) -> None:
+    """
+    Inserts an adjoint :math:`S` gate.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param qubit: The target qubit.
+    """
+    ...
+
+def t(builder: Builder, qubit: Value) -> None:
+    """
+    Inserts a :math:`T` gate.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param qubit: The target qubit.
+    """
+    ...
+
+def t_adj(builder: Builder, qubit: Value) -> None:
+    """
+    Inserts an adjoint :math:`T` gate.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param qubit: The target qubit.
+    """
+    ...
+
+def x(builder: Builder, qubit: Value) -> None:
+    """
+    Inserts a Pauli :math:`X` gate.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param qubit: The target qubit.
+    """
+    ...
+
+def y(builder: Builder, qubit: Value) -> None:
+    """
+    Inserts a Pauli :math:`Y` gate.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param qubit: The target qubit.
+    """
+    ...
+
+def z(builder: Builder, qubit: Value) -> None:
+    """
+    Inserts a Pauli :math:`Z` gate.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param qubit: The target qubit.
+    """
+    ...
+
+def if_result(
+    builder: Builder,
+    cond: Value,
+    one: Optional[Callable[[], None]] = ...,
+    zero: Optional[Callable[[], None]] = ...,
+) -> None:
+    """
+    Inserts a branch conditioned on a measurement result.
+
+    Instructions inserted when ``one`` is called will be inserted into the one branch.
+    Instructions inserted when ``zero`` is called will be inserted into the zero branch. The one
+    and zero callables should use this module's builder to build instructions.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param cond: The result condition to branch on.
+    :param one: A callable that inserts instructions for the branch where the result is one.
+    :param zero: A callable that inserts instructions for the branch where the result is zero.
     """
     ...
