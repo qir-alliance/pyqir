@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::llvm_utils::*;
+use crate::utils::*;
 use crate::{
     builder::{build_if, try_build_if},
     types,

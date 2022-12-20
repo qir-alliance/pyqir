@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::llvm_utils::*;
 use crate::types;
+use crate::utils::*;
 
 use llvm_sys::{
     core::{
