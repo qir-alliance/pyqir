@@ -51,16 +51,16 @@ def test_two_qubit_gates(
 @pytest.mark.parametrize(
     "name, get_gate",
     [
-        ("ccx", lambda qis: qis.ccx),
+        ("ccx", lambda: pyqir.qis.ccx),
     ],
 )
 def test_three_qubit_gates(
     name: str,
-    get_gate: Callable[[BasicQisBuilder], Callable[[Value, Value, Value], None]],
+    get_gate: Callable[[], Callable[[Builder, Value, Value, Value], None]],
 ) -> None:
     mod = SimpleModule("test_three_qubit_gates", 3, 0)
     basic = BasicQisBuilder(mod.builder)
-    get_gate(basic)(mod.qubits[0], mod.qubits[1], mod.qubits[2])
+    get_gate()(mod.builder, mod.qubits[0], mod.qubits[1], mod.qubits[2])
     call = f"call void @__quantum__qis__{name}__body(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*), %Qubit* inttoptr (i64 2 to %Qubit*))"
     assert call in mod.ir()
 
