@@ -58,7 +58,7 @@ impl Metadata {
                 Ok(Py::new(py, MetadataString::from_raw(owner, value)?)?.to_object(py))
             }
             LLVMMetadataKind::LLVMConstantAsMetadataMetadataKind => {
-                MetadataConstant::from_raw(py, owner, value)
+                ConstantAsMetadata::from_raw(py, owner, value)
             }
             _ => {
                 let value = NonNull::new(value).expect("Value is null.");
@@ -133,9 +133,9 @@ impl MetadataString {
 
 /// A metadata constant value.
 #[pyclass(extends = Metadata, subclass)]
-pub(crate) struct MetadataConstant;
+pub(crate) struct ConstantAsMetadata;
 
-impl MetadataConstant {
+impl ConstantAsMetadata {
     unsafe fn from_raw(py: Python, owner: Owner, value: LLVMValueRef) -> PyResult<PyObject> {
         let value = NonNull::new(value).expect("Value is null.");
 
@@ -166,7 +166,7 @@ impl MetadataConstant {
 }
 
 /// A metadata constant integer value.
-#[pyclass(extends = MetadataConstant)]
+#[pyclass(extends = ConstantAsMetadata)]
 pub(crate) struct MetadataIntConstant;
 
 #[pymethods]
