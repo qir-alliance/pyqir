@@ -15,16 +15,6 @@ using namespace llvm;
 
 extern "C"
 {
-    QIR_SHARED_API LLVMMetadataRef LLVMValueAsMetadata(LLVMValueRef Val)
-    {
-        auto *V = unwrap(Val);
-        if (auto *C = dyn_cast<Constant>(V))
-            return wrap(ConstantAsMetadata::get(C));
-        if (auto *MAV = dyn_cast<MetadataAsValue>(V))
-            return wrap(MAV->getMetadata());
-        return wrap(ValueAsMetadata::get(V));
-    }
-
     QIR_SHARED_API LLVMValueRef LLVMRustIsAMDConstant(LLVMValueRef Val)
     {
         if (auto *MD = dyn_cast_or_null<MetadataAsValue>(unwrap(Val)))
