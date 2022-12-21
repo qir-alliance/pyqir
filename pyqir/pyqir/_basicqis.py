@@ -146,8 +146,8 @@ class BasicQisBuilder:
     def if_result(
         self,
         cond: Value,
-        one: Optional[Callable[[], None]] = None,
-        zero: Optional[Callable[[], None]] = None,
+        one: Callable[[], None] = lambda: None,
+        zero: Callable[[], None] = lambda: None,
     ) -> None:
         """
         Inserts a branch conditioned on a measurement result.

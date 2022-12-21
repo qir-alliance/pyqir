@@ -1059,8 +1059,8 @@ def z(builder: Builder, qubit: Value) -> None:
 def if_result(
     builder: Builder,
     cond: Value,
-    one: Optional[Callable[[], None]] = ...,
-    zero: Optional[Callable[[], None]] = ...,
+    one: Callable[[], None] = ...,
+    zero: Callable[[], None] = ...,
 ) -> None:
     """
     Inserts a branch conditioned on a measurement result.
