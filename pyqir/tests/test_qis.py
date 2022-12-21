@@ -13,6 +13,22 @@ from pyqir import BasicQisBuilder, Builder, Context, SimpleModule, Type, Value
 @pytest.mark.parametrize(
     "name, get_gate",
     [
+        ("barrier", lambda: pyqir.qis.barrier),
+    ],
+)
+def test_zero_param_gates(
+    name: str,
+    get_gate: Callable[[], Callable[[Builder], None]],
+) -> None:
+    mod = SimpleModule("test_zero_param_gates", 0, 0)
+    get_gate()(mod.builder)
+    call = f"call void @__quantum__qis__{name}__body()"
+    assert call in mod.ir()
+
+
+@pytest.mark.parametrize(
+    "name, get_gate",
+    [
         ("h", lambda qis: qis.h),
         ("reset", lambda qis: qis.reset),
         ("s", lambda qis: qis.s),
