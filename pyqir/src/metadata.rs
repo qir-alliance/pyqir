@@ -32,24 +32,6 @@ pub(crate) struct Metadata {
 
 #[pymethods]
 impl Metadata {
-    /// The type of this value.
-    ///
-    /// :type: Type
-    #[getter]
-    fn r#type(&self, py: Python) -> PyResult<PyObject> {
-        unsafe { Type::from_raw(py, self.owner.context(py), LLVMTypeOf(self.as_ptr())) }
-    }
-
-    /// The name of this value or the empty string if this value is anonymous.
-    #[getter]
-    fn name(&self) -> &str {
-        let mut len = 0;
-        unsafe {
-            let name = LLVMGetValueName2(self.as_ptr(), &mut len).cast();
-            str::from_utf8(slice::from_raw_parts(name, len)).unwrap()
-        }
-    }
-
     fn __str__(&self) -> String {
         unsafe {
             Message::from_raw(LLVMPrintValueToString(self.as_ptr()))
