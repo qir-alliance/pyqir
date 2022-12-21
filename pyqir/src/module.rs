@@ -7,7 +7,7 @@ use crate::{
     core::Context,
     core::{MemoryBuffer, Message},
     metadata::Metadata,
-    values::Value,
+    values::{Owner, Value},
 };
 use core::slice;
 #[allow(clippy::wildcard_imports, deprecated)]
@@ -195,12 +195,19 @@ impl Module {
     #[pyo3(text_signature = "(behavior, id, metadata)")]
     pub(crate) fn add_metadata_flag(
         &self,
+        py: Python,
         behavior: ModuleFlagBehavior,
         id: &str,
         metadata: &Metadata,
-    ) {
+    ) -> PyResult<()> {
         let md = unsafe { LLVMValueAsMetadata(metadata.as_ptr()) };
-
+        let _ = Owner::merge(
+            py,
+            [
+                Owner::Context(self.context().clone_ref(py)),
+                metadata.owner().clone_ref(py),
+            ],
+        )?;
         unsafe {
             LLVMRustAddModuleFlag(
                 self.module.as_ptr(),
@@ -212,6 +219,7 @@ impl Module {
                 md,
             );
         }
+        Ok(())
     }
 
     /// Adds a value flag to the llvm.module.flags metadata
@@ -222,9 +230,21 @@ impl Module {
     /// :param id: metadata string that is a unique ID for the metadata.
     /// :param value: value of the flag
     #[pyo3(text_signature = "(behavior, id, flag)")]
-    pub(crate) fn add_value_flag(&self, behavior: ModuleFlagBehavior, id: &str, flag: &Value) {
+    pub(crate) fn add_value_flag(
+        &self,
+        py: Python,
+        behavior: ModuleFlagBehavior,
+        id: &str,
+        flag: &Value,
+    ) -> PyResult<()> {
         let md = unsafe { LLVMValueAsMetadata(flag.as_ptr()) };
-
+        let _ = Owner::merge(
+            py,
+            [
+                Owner::Context(self.context().clone_ref(py)),
+                flag.owner().clone_ref(py),
+            ],
+        )?;
         unsafe {
             LLVMRustAddModuleFlag(
                 self.module.as_ptr(),
@@ -236,6 +256,7 @@ impl Module {
                 md,
             );
         }
+        Ok(())
     }
 
     /// Gets the flag value from the llvm.module.flags metadata for a given id

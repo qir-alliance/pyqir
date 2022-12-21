@@ -6,6 +6,7 @@ from pyqir import (
     IntType,
     ModuleFlagBehavior,
 )
+import pytest
 
 
 def test_getting_non_existing_metadata_returns_none() -> None:
@@ -70,3 +71,18 @@ def test_metadata_string_value_metadata_can_retrieved() -> None:
     assert isinstance(flag, pyqir.MetadataString)
     assert expected == str(flag)
     assert flag.value == source
+
+
+def test_add_metadata_flag_raises_with_wrong_ownership() -> None:
+    mod = pyqir.Module(pyqir.Context(), "")
+    md = pyqir.MetadataString(pyqir.Context(), "value")
+    with pytest.raises(ValueError):
+        mod.add_metadata_flag(ModuleFlagBehavior.ERROR, "", md)
+
+
+def test_add_value_flag_raises_with_wrong_ownership() -> None:
+    i32 = IntType(pyqir.Context(), 32)
+    value = pyqir.const(i32, 42)
+    mod = pyqir.Module(pyqir.Context(), "")
+    with pytest.raises(ValueError):
+        mod.add_value_flag(ModuleFlagBehavior.ERROR, "", value)
