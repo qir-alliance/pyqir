@@ -892,9 +892,13 @@ class MetadataString(Metadata):
         """The underlying metadata string value."""
         ...
 
-class MetadataConstant(Metadata): ...
+class MetadataConstant(Metadata):
+    """A metadata constant value."""
+    ...
 
 class MetadataIntConstant(MetadataConstant):
+    """A metadata constant integer value."""
+
     @property
     def value(self) -> int:
         """The underlying metadata int value."""

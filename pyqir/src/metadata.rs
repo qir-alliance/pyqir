@@ -149,20 +149,9 @@ impl MetadataString {
     }
 }
 
-/// A constant value.
+/// A metadata constant value.
 #[pyclass(extends = Metadata, subclass)]
 pub(crate) struct MetadataConstant;
-
-#[pymethods]
-impl MetadataConstant {
-    /// Whether this metadata constant is the null value for its type.
-    ///
-    /// :type: bool
-    #[getter]
-    fn is_null(slf: PyRef<Self>) -> bool {
-        unsafe { LLVMIsNull(slf.into_super().as_ptr()) != 0 }
-    }
-}
 
 impl MetadataConstant {
     unsafe fn from_raw(py: Python, owner: Owner, value: LLVMValueRef) -> PyResult<PyObject> {
@@ -194,7 +183,7 @@ impl MetadataConstant {
     }
 }
 
-/// A constant integer value.
+/// A metadata constant integer value.
 #[pyclass(extends = MetadataConstant)]
 pub(crate) struct MetadataIntConstant;
 
