@@ -377,8 +377,6 @@ pub(crate) enum ModuleFlagBehavior {
     AppendUnique,
     #[pyo3(name = "MAX")]
     Max,
-    #[pyo3(name = "MIN")]
-    Min,
 }
 
 impl From<LLVMRustModFlagBehavior> for ModuleFlagBehavior {
@@ -407,7 +405,6 @@ impl From<ModuleFlagBehavior> for LLVMRustModFlagBehavior {
             ModuleFlagBehavior::Append => LLVMRustModFlagBehavior::Append,
             ModuleFlagBehavior::AppendUnique => LLVMRustModFlagBehavior::AppendUnique,
             ModuleFlagBehavior::Max => LLVMRustModFlagBehavior::Max,
-            ModuleFlagBehavior::Min => unimplemented!("Min is not supported on LLVM < 15"),
         }
     }
 }
