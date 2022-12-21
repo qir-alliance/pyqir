@@ -33,7 +33,7 @@ use std::{
 /// :param Context context: The LLVM context.
 /// :param str name: The module name.
 #[pyclass(unsendable)]
-#[pyo3(text_signature = "(context, str)")]
+#[pyo3(text_signature = "(context, name)")]
 pub(crate) struct Module {
     module: NonNull<LLVMModule>,
     context: Py<Context>,
@@ -189,9 +189,9 @@ impl Module {
     ///
     /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
     ///
-    /// :param behavior: flag specifying the behavior when two (or more) modules are merged together
-    /// :param id: metadata string that is a unique ID for the metadata.
-    /// :param metadata: metadata value of the flag
+    /// :param ModuleFlagBehavior behavior: flag specifying the behavior when two (or more) modules are merged together
+    /// :param str id: metadata string that is a unique ID for the metadata.
+    /// :param Metadata metadata: metadata value of the flag
     #[pyo3(text_signature = "(behavior, id, metadata)")]
     pub(crate) fn add_metadata_flag(
         &self,
@@ -226,9 +226,9 @@ impl Module {
     ///
     /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
     ///
-    /// :param behavior: flag specifying the behavior when two (or more) modules are merged together
-    /// :param id: metadata string that is a unique ID for the metadata.
-    /// :param value: value of the flag
+    /// :param ModuleFlagBehavior behavior: flag specifying the behavior when two (or more) modules are merged together
+    /// :param str id: metadata string that is a unique ID for the metadata.
+    /// :param Value value: value of the flag
     #[pyo3(text_signature = "(behavior, id, flag)")]
     pub(crate) fn add_value_flag(
         &self,
@@ -263,7 +263,7 @@ impl Module {
     ///
     /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
     ///
-    /// :param id: metadata string that is a unique ID for the metadata.
+    /// :param str id: metadata string that is a unique ID for the metadata.
     /// :returns: value of the flag if found, otherwise None
     #[pyo3(text_signature = "(id)")]
     pub(crate) fn get_flag(slf: Py<Module>, py: Python, id: &str) -> Option<PyObject> {
