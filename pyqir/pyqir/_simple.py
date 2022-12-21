@@ -34,8 +34,8 @@ class SimpleModule:
         context: Optional[Context] = None,
         qir_major: int = 1,
         qir_minor: int = 0,
-        dynamic_qubits = False,
-        dynamic_results = False,
+        dynamic_qubits=False,
+        dynamic_results=False,
     ) -> None:
         """
         Initializes a simple module.

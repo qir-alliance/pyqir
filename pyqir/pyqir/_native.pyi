@@ -420,14 +420,6 @@ class Context:
     def __init__(self) -> None:
         """Initializes a context."""
         ...
-    def create_metadata_string(self, string: str) -> MetadataString:
-        """
-        Creates a metadata string
-
-        :param string: the value of the metadata string to create
-        :returns: metadata string value of the supplied string
-        """
-        ...
 
 class FCmp(Instruction):
     """A floating-point comparison instruction."""
@@ -881,6 +873,16 @@ class Metadata:
         ...
 
 class MetadataString(Metadata):
+    """A metadata string"""
+
+    def __init__(self, context: Context, string: str) -> None:
+        """
+        Creates a metadata string
+
+        :param context: The LLVM context.
+        :param string: the value of the metadata string to create
+        """
+        ...
     @property
     def is_null(self) -> bool:
         """Whether this metadata string is the null value for its type."""
@@ -890,8 +892,7 @@ class MetadataString(Metadata):
         """The underlying metadata string value."""
         ...
 
-class MetadataConstant(Metadata):
-    ...
+class MetadataConstant(Metadata): ...
 
 class MetadataIntConstant(MetadataConstant):
     @property

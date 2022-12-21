@@ -61,14 +61,12 @@ def test_metadata_string_value_metadata_can_retrieved() -> None:
     source = "md string"
     id = "md_id"
     expected = f'!"{source}"'
-    mds = context.create_metadata_string(source)
+    mds = pyqir.MetadataString(context, source)
     mod = pyqir.Module(context, "test")
 
     mod.add_metadata_flag(ModuleFlagBehavior.ERROR, id, mds)
     flag = mod.get_flag(id)
     assert flag is not None
     assert isinstance(flag, pyqir.MetadataString)
-    assert flag.is_null == False
     assert expected == str(flag)
     assert flag.value == source
-
