@@ -107,8 +107,7 @@ Within each project folder, the build can be run specifically for that project.
 For any of these commands, the LLVM version must be added via features. For `maturin`,
 they must be added to the `cargo-extra-args` option.
 
-- `<features>` is a placeholder for `--features (llvm11-0 | llvm12-0 | llvm13-0)`
-- `qirlib` can be compiled with `llvm14-0`
+- `<features>` is a placeholder for `--features (llvm11-0 | llvm12-0 | llvm13-0 | llvm14-0)`
 
 Build commands:
 
