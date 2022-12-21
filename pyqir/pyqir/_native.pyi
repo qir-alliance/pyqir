@@ -646,7 +646,7 @@ class Module:
         """The LLVM context."""
         ...
     def add_metadata_flag(
-        self, behavior: ModuleFlagBehavior, id: str, value: Value
+        self, behavior: ModuleFlagBehavior, id: str, value: Metadata
     ) -> None:
         """
         Adds a metadata flag to the llvm.module.flags metadata
