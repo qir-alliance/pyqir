@@ -53,7 +53,7 @@ declare void @__quantum__qis__z__body(%Qubit*)
 
 declare void @__quantum__qis__t__body(%Qubit*)
 
-attributes #0 = { "EntryPoint" "requiredQubits"="1" "requiredResults"="3" }
+attributes #0 = { "EntryPoint" "output_labeling_schema" "qir_profiles"="custom" "requiredQubits"="1" "requiredResults"="3" }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 

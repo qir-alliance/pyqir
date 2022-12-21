@@ -11,5 +11,5 @@ define void @main() #0 {
 
 declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly) #1
 
-attributes #0 = { "EntryPoint" "requiredQubits"="1" "requiredResults"="1" }
+attributes #0 = { "EntryPoint" "output_labeling_schema" "qir_profiles"="custom" "requiredQubits"="1" "requiredResults"="1" }
 attributes #1 = { "irreversible" }

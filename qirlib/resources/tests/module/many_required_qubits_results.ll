@@ -5,4 +5,4 @@ define void @main() #0 {
   ret void
 }
 
-attributes #0 = { "EntryPoint" "requiredQubits"="5" "requiredResults"="7" }
+attributes #0 = { "EntryPoint" "output_labeling_schema" "qir_profiles"="custom" "requiredQubits"="5" "requiredResults"="7" }

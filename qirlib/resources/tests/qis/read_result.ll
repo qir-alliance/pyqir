@@ -10,4 +10,4 @@ define void @main() #0 {
 
 declare i1 @__quantum__qis__read_result__body(%Result*)
 
-attributes #0 = { "EntryPoint" "requiredQubits"="1" "requiredResults"="1" }
+attributes #0 = { "EntryPoint" "output_labeling_schema" "qir_profiles"="custom" "requiredQubits"="1" "requiredResults"="1" }

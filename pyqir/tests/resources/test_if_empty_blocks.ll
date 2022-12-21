@@ -20,7 +20,7 @@ continue:                                         ; preds = %else, %then
 
 declare i1 @__quantum__qis__read_result__body(%Result*)
 
-attributes #0 = { "EntryPoint" "requiredQubits"="0" "requiredResults"="1" }
+attributes #0 = { "EntryPoint" "output_labeling_schema" "qir_profiles"="custom" "requiredQubits"="0" "requiredResults"="1" }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 

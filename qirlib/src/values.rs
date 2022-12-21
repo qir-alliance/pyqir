@@ -44,6 +44,8 @@ pub unsafe fn entry_point(
     name: &CStr,
     required_num_qubits: u64,
     required_num_results: u64,
+    qir_profiles: &str,
+    output_labeling_schema: &str,
 ) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let void = LLVMVoidTypeInContext(context);
@@ -60,6 +62,14 @@ pub unsafe fn entry_point(
         function,
         b"requiredResults",
         required_num_results.to_string().as_bytes(),
+    );
+
+    add_string_attribute(function, b"qir_profiles", qir_profiles.as_bytes());
+
+    add_string_attribute(
+        function,
+        b"output_labeling_schema",
+        output_labeling_schema.as_bytes(),
     );
 
     function

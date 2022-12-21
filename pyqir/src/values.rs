@@ -682,16 +682,22 @@ pub(crate) fn result_id(value: &Value) -> Option<u64> {
 /// :param str name: The entry point name.
 /// :param int required_num_qubits: The number of qubits required by the entry point.
 /// :param int required_num_results: The number of results required by the entry point.
+/// :param str qir_profiles: Value identifying the profile the entry point has been compiled for. Use base_profile when QIR is compliant.
+/// :param str output_labeling_schema: An arbitrary string value that identifies the schema used by a compiler frontend that produced the IR to label the recorded output
 /// :returns: An entry point.
 /// :rtype: Function
 #[pyfunction]
-#[pyo3(text_signature = "(module, name, required_num_qubits, required_num_results)")]
+#[pyo3(
+    text_signature = "(module, name, required_num_qubits, required_num_results, qir_profiles, output_labeling_schema)"
+)]
 pub(crate) fn entry_point(
     py: Python,
     module: Py<Module>,
     name: &str,
     required_num_qubits: u64,
     required_num_results: u64,
+    qir_profiles: Option<&str>,
+    output_labeling_schema: Option<&str>,
 ) -> PyResult<PyObject> {
     let name = CString::new(name).unwrap();
     unsafe {
@@ -700,6 +706,8 @@ pub(crate) fn entry_point(
             name.as_c_str(),
             required_num_qubits,
             required_num_results,
+            qir_profiles.unwrap_or("custom"),
+            output_labeling_schema.unwrap_or(""),
         );
         Value::from_raw(py, module.into(), entry_point)
     }
