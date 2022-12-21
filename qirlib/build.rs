@@ -143,7 +143,7 @@ fn download_llvm() -> Result<(), Box<dyn Error>> {
 
     let build_dir = get_build_dir()?;
 
-    let mut config = Config::new(&build_dir);
+    let mut config = Config::new(build_dir);
     config
         .generator("Ninja")
         .no_build_target(true)
@@ -172,7 +172,7 @@ fn get_llvm_compile_target() -> String {
 
 fn compile_llvm() -> Result<(), Box<dyn Error>> {
     let build_dir = get_build_dir()?;
-    let mut config = Config::new(&build_dir);
+    let mut config = Config::new(build_dir);
 
     config
         .generator("Ninja")
@@ -215,7 +215,7 @@ fn package_llvm() -> Result<(), Box<dyn Error>> {
 fn get_build_dir() -> Result<PathBuf, Box<dyn Error>> {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR")?;
     let build_dir = PathBuf::from(manifest_dir.as_str());
-    let normalized_build_dir = fs::canonicalize(&build_dir)?;
+    let normalized_build_dir = fs::canonicalize(build_dir)?;
     println!(
         "llvm build files dir: {}",
         normalized_build_dir.to_str().unwrap()

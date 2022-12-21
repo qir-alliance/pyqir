@@ -4,11 +4,35 @@
 use crate::{
     builder::{build_if, try_build_if},
     types,
+    utils::{
+        build_call, builder_module, controlled_gate, declare_qis, doubly_controlled_gate,
+        function_type, no_param, rotation_gate, simple_gate, two_qubit_gate, Functor,
+    },
 };
-use const_str::raw_cstr;
+
 #[allow(clippy::wildcard_imports)]
-use llvm_sys::{core::*, prelude::*, LLVMLinkage};
-use std::{ffi::CString, ptr::NonNull};
+use llvm_sys::{core::*, prelude::*};
+
+pub unsafe fn build_barrier(builder: LLVMBuilderRef) {
+    build_call(
+        builder,
+        no_param(builder_module(builder), "barrier", Functor::Body),
+        &mut [],
+    );
+}
+
+pub unsafe fn build_ccx(
+    builder: LLVMBuilderRef,
+    control1: LLVMValueRef,
+    control2: LLVMValueRef,
+    qubit: LLVMValueRef,
+) {
+    build_call(
+        builder,
+        doubly_controlled_gate(builder_module(builder), "ccx"),
+        &mut [control1, control2, qubit],
+    );
+}
 
 pub unsafe fn build_cx(builder: LLVMBuilderRef, control: LLVMValueRef, qubit: LLVMValueRef) {
     build_call(
@@ -47,6 +71,14 @@ pub unsafe fn build_s_adj(builder: LLVMBuilderRef, qubit: LLVMValueRef) {
         builder,
         simple_gate(builder_module(builder), "s", Functor::Adjoint),
         &mut [qubit],
+    );
+}
+
+pub unsafe fn build_swap(builder: LLVMBuilderRef, qubit1: LLVMValueRef, qubit2: LLVMValueRef) {
+    build_call(
+        builder,
+        two_qubit_gate(builder_module(builder), "swap", Functor::Body),
+        &mut [qubit1, qubit2],
     );
 }
 
@@ -146,59 +178,8 @@ pub unsafe fn try_build_if_result<E>(
     try_build_if(builder, bool_cond, build_one, build_zero)
 }
 
-#[derive(Clone, Copy)]
-enum Functor {
-    Body,
-    Adjoint,
-}
-
 unsafe fn build_read_result(builder: LLVMBuilderRef, result: LLVMValueRef) -> LLVMValueRef {
     build_call(builder, read_result(builder_module(builder)), &mut [result])
-}
-
-unsafe fn build_call(
-    builder: LLVMBuilderRef,
-    function: LLVMValueRef,
-    args: &mut [LLVMValueRef],
-) -> LLVMValueRef {
-    #[allow(deprecated)]
-    LLVMBuildCall(
-        builder,
-        function,
-        args.as_mut_ptr(),
-        args.len().try_into().unwrap(),
-        raw_cstr!(""),
-    )
-}
-
-unsafe fn builder_module(builder: LLVMBuilderRef) -> LLVMModuleRef {
-    NonNull::new(LLVMGetInsertBlock(builder))
-        .and_then(|b| NonNull::new(LLVMGetBasicBlockParent(b.as_ptr())))
-        .and_then(|v| NonNull::new(LLVMGetGlobalParent(v.as_ptr())))
-        .expect("The builder's position has not been set.")
-        .as_ptr()
-}
-
-unsafe fn simple_gate(module: LLVMModuleRef, name: &str, functor: Functor) -> LLVMValueRef {
-    let context = LLVMGetModuleContext(module);
-    let ty = function_type(LLVMVoidTypeInContext(context), &mut [types::qubit(context)]);
-    declare(module, name, functor, ty)
-}
-
-unsafe fn controlled_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
-    let context = LLVMGetModuleContext(module);
-    let qubit = types::qubit(context);
-    let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit]);
-    declare(module, name, Functor::Body, ty)
-}
-
-unsafe fn rotation_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
-    let context = LLVMGetModuleContext(module);
-    let ty = function_type(
-        LLVMVoidTypeInContext(context),
-        &mut [LLVMDoubleTypeInContext(context), types::qubit(context)],
-    );
-    declare(module, name, Functor::Body, ty)
 }
 
 unsafe fn mz(module: LLVMModuleRef) -> LLVMValueRef {
@@ -207,7 +188,7 @@ unsafe fn mz(module: LLVMModuleRef) -> LLVMValueRef {
         LLVMVoidTypeInContext(context),
         &mut [types::qubit(context), types::result(context)],
     );
-    declare(module, "mz", Functor::Body, ty)
+    declare_qis(module, "mz", Functor::Body, ty)
 }
 
 unsafe fn read_result(module: LLVMModuleRef) -> LLVMValueRef {
@@ -216,41 +197,13 @@ unsafe fn read_result(module: LLVMModuleRef) -> LLVMValueRef {
         LLVMInt1TypeInContext(context),
         &mut [types::result(context)],
     );
-    declare(module, "read_result", Functor::Body, ty)
-}
-
-unsafe fn declare(
-    module: LLVMModuleRef,
-    name: &str,
-    functor: Functor,
-    ty: LLVMTypeRef,
-) -> LLVMValueRef {
-    let suffix = match functor {
-        Functor::Body => "body",
-        Functor::Adjoint => "adj",
-    };
-    let name = CString::new(format!("__quantum__qis__{}__{}", name, suffix)).unwrap();
-    let function = LLVMGetNamedFunction(module, name.as_ptr());
-    if function.is_null() {
-        let function = LLVMAddFunction(module, name.as_ptr(), ty);
-        LLVMSetLinkage(function, LLVMLinkage::LLVMExternalLinkage);
-        function
-    } else {
-        function
-    }
-}
-
-unsafe fn function_type(ret: LLVMTypeRef, params: &mut [LLVMTypeRef]) -> LLVMTypeRef {
-    LLVMFunctionType(
-        ret,
-        params.as_mut_ptr(),
-        params.len().try_into().unwrap(),
-        0,
-    )
+    declare_qis(module, "read_result", Functor::Body, ty)
 }
 
 #[cfg(test)]
 mod tests {
+    use std::ptr::NonNull;
+
     use super::*;
     use crate::{
         tests::{assert_reference_ir, Builder, Context},
@@ -276,6 +229,26 @@ mod tests {
             let builder = Builder::new(&context);
             build_x(builder.as_ptr(), qubit(context.as_ptr(), 0));
         }
+    }
+
+    #[test]
+    fn barrier() {
+        assert_reference_ir("qis/barrier", 0, 0, |builder| unsafe {
+            build_barrier(builder);
+        });
+    }
+
+    #[test]
+    fn ccx() {
+        assert_reference_ir("qis/ccx", 3, 0, |builder| unsafe {
+            let context = builder_context(builder).unwrap().as_ptr();
+            build_ccx(
+                builder,
+                qubit(context, 0),
+                qubit(context, 1),
+                qubit(context, 2),
+            );
+        });
     }
 
     #[test]
@@ -406,6 +379,14 @@ mod tests {
         assert_reference_ir("qis/read_result", 1, 1, |builder| unsafe {
             let context = builder_context(builder).unwrap().as_ptr();
             build_read_result(builder, result(context, 0));
+        });
+    }
+
+    #[test]
+    fn swap() {
+        assert_reference_ir("qis/swap", 2, 0, |builder| unsafe {
+            let context = builder_context(builder).unwrap().as_ptr();
+            build_swap(builder, qubit(context, 0), qubit(context, 1));
         });
     }
 
