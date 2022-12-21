@@ -8,10 +8,10 @@ use crate::{
     values::Owner,
 };
 #[allow(clippy::wildcard_imports)]
-use llvm_sys::{core::*, prelude::*, LLVMValue};
+use llvm_sys::{core::*, prelude::*};
 use llvm_sys::{
     debuginfo::{LLVMGetMetadataKind, LLVMMetadataKind},
-    LLVMValueKind,
+    LLVMOpaqueMetadata, LLVMValueKind,
 };
 use pyo3::{conversion::ToPyObject, exceptions::PyValueError, prelude::*};
 use qirlib::llvm_wrapper::{LLVMRustExtractMDConstant, LLVMRustIsAMDConstant};
@@ -20,15 +20,17 @@ use std::{ffi::CString, ops::Deref, ptr::NonNull, slice, str};
 /// A metadata value or node.
 #[pyclass(subclass, unsendable)]
 pub(crate) struct Metadata {
-    value: NonNull<LLVMValue>,
+    value: NonNull<LLVMOpaqueMetadata>,
     owner: Owner,
 }
 
 #[pymethods]
 impl Metadata {
-    fn __str__(&self) -> String {
+    fn __str__(&self, py: Python) -> String {
         unsafe {
-            Message::from_raw(LLVMPrintValueToString(self.as_ptr()))
+            let context = self.owner.context(py).borrow(py).as_ptr();
+            let value = LLVMMetadataAsValue(context, self.as_ptr());
+            Message::from_raw(LLVMPrintValueToString(value))
                 .to_str()
                 .unwrap()
                 .to_string()
@@ -43,15 +45,16 @@ impl Metadata {
         value: LLVMValueRef,
     ) -> PyResult<PyObject> {
         let md = LLVMValueAsMetadata(value);
+
         match LLVMGetMetadataKind(md) {
             LLVMMetadataKind::LLVMMDStringMetadataKind => {
-                Ok(Py::new(py, MetadataString::from_raw(owner, value)?)?.to_object(py))
+                Ok(Py::new(py, MetadataString::from_raw(py, owner, md)?)?.to_object(py))
             }
             LLVMMetadataKind::LLVMConstantAsMetadataMetadataKind => {
-                ConstantAsMetadata::from_raw(py, owner, value)
+                ConstantAsMetadata::from_raw(py, owner, md)
             }
             _ => {
-                let value = NonNull::new(value).expect("Value is null.");
+                let value = NonNull::new(md).expect("Value is null.");
                 Ok(Py::new(py, Self { value, owner })?.to_object(py))
             }
         }
@@ -63,7 +66,7 @@ impl Metadata {
 }
 
 impl Deref for Metadata {
-    type Target = NonNull<LLVMValue>;
+    type Target = NonNull<LLVMOpaqueMetadata>;
 
     fn deref(&self) -> &Self::Target {
         &self.value
@@ -91,27 +94,37 @@ impl MetadataString {
         let c_string = CString::new(string).unwrap();
         let context = context.borrow(py).as_ptr();
         let md = unsafe { LLVMMDStringInContext2(context, c_string.as_ptr(), string.len()) };
-        let value = unsafe { LLVMMetadataAsValue(context, md) };
-        unsafe { MetadataString::from_raw(owner, value) }
+        unsafe { MetadataString::from_raw(py, owner, md) }
     }
 
     /// The underlying metadata string value.
     ///
     /// :type: str
     #[getter]
-    fn value(slf: PyRef<Self>) -> &str {
+    fn value(slf: PyRef<Self>, py: Python) -> String {
         let mut len = 0;
         unsafe {
-            let mds = LLVMGetMDString(slf.into_super().as_ptr(), &mut len);
-            str::from_utf8(slice::from_raw_parts(mds.cast(), len as usize)).unwrap()
+            let slf = slf.into_super();
+            let context = slf.owner.context(py).borrow(py).as_ptr();
+            let value = LLVMMetadataAsValue(context, slf.as_ptr());
+            let mds = LLVMGetMDString(value, &mut len);
+            str::from_utf8(slice::from_raw_parts(mds.cast(), len as usize))
+                .unwrap()
+                .to_string()
         }
     }
 }
 
 impl MetadataString {
-    unsafe fn from_raw(owner: Owner, value: LLVMValueRef) -> PyResult<PyClassInitializer<Self>> {
+    unsafe fn from_raw(
+        py: Python,
+        owner: Owner,
+        value: LLVMMetadataRef,
+    ) -> PyResult<PyClassInitializer<Self>> {
         let value = NonNull::new(value).expect("Value is null.");
-        if LLVMIsAMDString(value.as_ptr()) == value.as_ptr() {
+        let context = owner.context(py).borrow(py).as_ptr();
+        let valueref = LLVMMetadataAsValue(context, value.as_ptr());
+        if LLVMIsAMDString(valueref) == valueref {
             Ok(PyClassInitializer::from(Metadata { value, owner }).add_subclass(MetadataString))
         } else {
             Err(PyValueError::new_err("Value is not a metadata string."))
@@ -124,14 +137,15 @@ impl MetadataString {
 pub(crate) struct ConstantAsMetadata;
 
 impl ConstantAsMetadata {
-    unsafe fn from_raw(py: Python, owner: Owner, value: LLVMValueRef) -> PyResult<PyObject> {
+    unsafe fn from_raw(py: Python, owner: Owner, value: LLVMMetadataRef) -> PyResult<PyObject> {
         let value = NonNull::new(value).expect("Value is null.");
-
-        if LLVMRustIsAMDConstant(value.as_ptr()).is_null() {
+        let context = owner.context(py).borrow(py).as_ptr();
+        let valueref = LLVMMetadataAsValue(context, value.as_ptr());
+        if LLVMRustIsAMDConstant(valueref).is_null() {
             println!("Value is not constant.");
             Err(PyValueError::new_err("Value is not constant."))
         } else {
-            let constant = LLVMRustExtractMDConstant(value.as_ptr());
+            let constant = LLVMRustExtractMDConstant(valueref);
             if constant.is_null() {
                 println!("Could not extract constant.");
                 return Err(PyValueError::new_err("Could not extract constant."));
@@ -160,8 +174,11 @@ impl ConstantIntAsMetadata {
     ///
     /// :type: int
     #[getter]
-    fn value(slf: PyRef<Self>) -> u64 {
-        let value = unsafe { LLVMRustExtractMDConstant(slf.into_super().into_super().as_ptr()) };
+    fn value(slf: PyRef<Self>, py: Python) -> u64 {
+        let slf = slf.into_super().into_super();
+        let context = slf.owner.context(py).borrow(py).as_ptr();
+        let valueref = unsafe { LLVMMetadataAsValue(context, slf.as_ptr()) };
+        let value = unsafe { LLVMRustExtractMDConstant(valueref) };
         unsafe { LLVMConstIntGetZExtValue(value) }
     }
 }

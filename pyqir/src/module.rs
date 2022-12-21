@@ -200,7 +200,6 @@ impl Module {
         id: &str,
         metadata: &Metadata,
     ) -> PyResult<()> {
-        let md = unsafe { LLVMValueAsMetadata(metadata.as_ptr()) };
         let _ = Owner::merge(
             py,
             [
@@ -216,7 +215,7 @@ impl Module {
                     .expect("Could not convert behavior for the current version of LLVM"),
                 id.as_ptr() as *mut std::ffi::c_char,
                 id.len().try_into().unwrap(),
-                md,
+                metadata.as_ptr(),
             );
         }
         Ok(())
