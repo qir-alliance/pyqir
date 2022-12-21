@@ -894,6 +894,7 @@ class MetadataString(Metadata):
 
 class MetadataConstant(Metadata):
     """A metadata constant value."""
+
     ...
 
 class MetadataIntConstant(MetadataConstant):
