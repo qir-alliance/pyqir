@@ -152,7 +152,7 @@ impl ConstantAsMetadata {
                 LLVMValueKind::LLVMConstantIntValueKind => {
                     let initializer = PyClassInitializer::from(Metadata { value, owner })
                         .add_subclass(Self)
-                        .add_subclass(MetadataIntConstant);
+                        .add_subclass(ConstantIntAsMetadata);
                     Ok(Py::new(py, initializer)?.to_object(py))
                 }
                 _ => {
@@ -167,10 +167,10 @@ impl ConstantAsMetadata {
 
 /// A metadata constant integer value.
 #[pyclass(extends = ConstantAsMetadata)]
-pub(crate) struct MetadataIntConstant;
+pub(crate) struct ConstantIntAsMetadata;
 
 #[pymethods]
-impl MetadataIntConstant {
+impl ConstantIntAsMetadata {
     /// The value.
     ///
     /// :type: int

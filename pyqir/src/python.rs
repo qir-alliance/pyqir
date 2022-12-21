@@ -7,7 +7,7 @@ use crate::{
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    metadata::{ConstantAsMetadata, Metadata, MetadataIntConstant, MetadataString},
+    metadata::{ConstantAsMetadata, ConstantIntAsMetadata, Metadata, MetadataString},
     module::{Linkage, Module, ModuleFlagBehavior},
     qis::BasicQisBuilder,
     types::{
@@ -34,6 +34,8 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Builder>()?;
     m.add_class::<Call>()?;
     m.add_class::<Constant>()?;
+    m.add_class::<ConstantAsMetadata>()?;
+    m.add_class::<ConstantIntAsMetadata>()?;
     m.add_class::<Context>()?;
     m.add_class::<FCmp>()?;
     m.add_class::<FloatConstant>()?;
@@ -47,8 +49,6 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<IntType>()?;
     m.add_class::<Linkage>()?;
     m.add_class::<Metadata>()?;
-    m.add_class::<ConstantAsMetadata>()?;
-    m.add_class::<MetadataIntConstant>()?;
     m.add_class::<MetadataString>()?;
     m.add_class::<Module>()?;
     m.add_class::<ModuleFlagBehavior>()?;

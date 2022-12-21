@@ -897,7 +897,7 @@ class ConstantAsMetadata(Metadata):
 
     ...
 
-class MetadataIntConstant(ConstantAsMetadata):
+class ConstantIntAsMetadata(ConstantAsMetadata):
     """A metadata constant integer value."""
 
     @property
