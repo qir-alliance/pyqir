@@ -39,7 +39,7 @@ pub(crate) unsafe fn builder_module(builder: LLVMBuilderRef) -> LLVMModuleRef {
 pub(crate) unsafe fn no_param(module: LLVMModuleRef, name: &str, functor: Functor) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut []);
-    declare(module, name, functor, ty)
+    declare_qis(module, name, functor, ty)
 }
 
 pub(crate) unsafe fn simple_gate(
@@ -49,7 +49,7 @@ pub(crate) unsafe fn simple_gate(
 ) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [types::qubit(context)]);
-    declare(module, name, functor, ty)
+    declare_qis(module, name, functor, ty)
 }
 
 pub(crate) unsafe fn two_qubit_gate(
@@ -60,21 +60,21 @@ pub(crate) unsafe fn two_qubit_gate(
     let context = LLVMGetModuleContext(module);
     let qubit = types::qubit(context);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit]);
-    declare(module, name, functor, ty)
+    declare_qis(module, name, functor, ty)
 }
 
 pub(crate) unsafe fn controlled_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let qubit = types::qubit(context);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit]);
-    declare(module, name, Functor::Body, ty)
+    declare_qis(module, name, Functor::Body, ty)
 }
 
 pub(crate) unsafe fn doubly_controlled_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let qubit = types::qubit(context);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit, qubit]);
-    declare(module, name, Functor::Body, ty)
+    declare_qis(module, name, Functor::Body, ty)
 }
 
 pub(crate) unsafe fn rotation_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
@@ -83,7 +83,7 @@ pub(crate) unsafe fn rotation_gate(module: LLVMModuleRef, name: &str) -> LLVMVal
         LLVMVoidTypeInContext(context),
         &mut [LLVMDoubleTypeInContext(context), types::qubit(context)],
     );
-    declare(module, name, Functor::Body, ty)
+    declare_qis(module, name, Functor::Body, ty)
 }
 
 pub(crate) unsafe fn function_type(ret: LLVMTypeRef, params: &mut [LLVMTypeRef]) -> LLVMTypeRef {
@@ -95,7 +95,7 @@ pub(crate) unsafe fn function_type(ret: LLVMTypeRef, params: &mut [LLVMTypeRef])
     )
 }
 
-pub(crate) unsafe fn declare(
+pub(crate) unsafe fn declare_qis(
     module: LLVMModuleRef,
     name: &str,
     functor: Functor,
@@ -106,10 +106,10 @@ pub(crate) unsafe fn declare(
         Functor::Adjoint => "adj",
     };
     let name = format!("__quantum__qis__{name}__{suffix}");
-    declare_bare(module, name.as_str(), ty)
+    declare_external_function(module, name.as_str(), ty)
 }
 
-pub(crate) unsafe fn declare_bare(
+pub(crate) unsafe fn declare_external_function(
     module: LLVMModuleRef,
     name: &str,
     ty: LLVMTypeRef,

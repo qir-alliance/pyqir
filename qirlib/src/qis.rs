@@ -185,7 +185,7 @@ unsafe fn mz(module: LLVMModuleRef) -> LLVMValueRef {
         LLVMVoidTypeInContext(context),
         &mut [types::qubit(context), types::result(context)],
     );
-    declare(module, "mz", Functor::Body, ty)
+    declare_qis(module, "mz", Functor::Body, ty)
 }
 
 unsafe fn read_result(module: LLVMModuleRef) -> LLVMValueRef {
@@ -194,7 +194,7 @@ unsafe fn read_result(module: LLVMModuleRef) -> LLVMValueRef {
         LLVMInt1TypeInContext(context),
         &mut [types::result(context)],
     );
-    declare(module, "read_result", Functor::Body, ty)
+    declare_qis(module, "read_result", Functor::Body, ty)
 }
 
 #[cfg(test)]
