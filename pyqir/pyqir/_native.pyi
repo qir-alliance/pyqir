@@ -846,7 +846,7 @@ def array_record_output(builder: Builder, num_elements: Value, label: Value) -> 
 
     :param Builder builder: The IR Builder used to create the instructions
     :param Value num_elements: How many array elements the array has
-    :param str label: A string label for the array. Depending on the output schema, the label is included in the output or omitted.
+    :param Value label: A string label for the array. Depending on the output schema, the label is included in the output or omitted.
     """
     ...
 
@@ -866,7 +866,7 @@ def result_record_output(builder: Builder, result: Value, label: Value) -> None:
 
     :param Builder builder: The IR Builder used to create the instructions
     :param Value result: A result measurement to record
-    :param str label: A string label for the result value. Depending on the output schema, the label is included in the output or omitted.
+    :param Value label: A string label for the result value. Depending on the output schema, the label is included in the output or omitted.
     """
     ...
 
@@ -877,7 +877,7 @@ def tuple_record_output(builder: Builder, num_elements: Value, label: Value) -> 
 
     :param Builder builder: The IR Builder used to create the instructions
     :param Value num_elements: How many tuple elements the tuple has
-    :param str label: A string label for the tuple. Depending on the output schema, the label is included in the output or omitted.
+    :param Value label: A string label for the tuple. Depending on the output schema, the label is included in the output or omitted.
     """
     ...
 
