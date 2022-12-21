@@ -114,8 +114,8 @@ pub(crate) unsafe fn declare_external_function(
     name: &str,
     ty: LLVMTypeRef,
 ) -> LLVMValueRef {
-    let name = CString::new(name)
-        .expect("Could not create declaration from name containing a null byte");
+    let name =
+        CString::new(name).expect("Could not create declaration from name containing a null byte");
     let function = LLVMGetNamedFunction(module, name.as_ptr().cast());
     if function.is_null() {
         let function = LLVMAddFunction(module, name.as_ptr().cast(), ty);
