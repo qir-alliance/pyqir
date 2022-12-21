@@ -20,5 +20,6 @@ mod metadata;
 mod module;
 mod python;
 mod qis;
+mod rt;
 mod types;
 mod values;

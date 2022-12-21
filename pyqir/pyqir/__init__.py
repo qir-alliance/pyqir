@@ -7,7 +7,6 @@ from pyqir._native import (
     AttributeList,
     AttributeSet,
     BasicBlock,
-    BasicQisBuilder,
     Builder,
     Call,
     Constant,
@@ -54,6 +53,7 @@ from pyqir._native import (
     result_type,
 )
 from pyqir._simple import SimpleModule
+from pyqir._basicqis import BasicQisBuilder
 
 __all__ = [
     "ArrayType",
