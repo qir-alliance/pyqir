@@ -1,10 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::utils::*;
 use crate::{
     builder::{build_if, try_build_if},
     types,
+    utils::{
+        build_call, builder_module, controlled_gate, declare_qis, doubly_controlled_gate,
+        function_type, no_param, rotation_gate, simple_gate, two_qubit_gate, Functor,
+    },
 };
 
 #[allow(clippy::wildcard_imports)]

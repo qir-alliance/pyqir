@@ -19,7 +19,7 @@ use qirlib::qis;
 #[pyfunction]
 #[pyo3(text_signature = "(builder)")]
 #[allow(clippy::needless_pass_by_value)]
-pub(crate) fn barrier(py: Python, builder: &Builder) {
+pub(crate) fn barrier(builder: &Builder) {
     unsafe {
         qis::build_barrier(builder.as_ptr());
     }

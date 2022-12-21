@@ -8,7 +8,10 @@ use crate::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
     module::{Linkage, Module},
-    qis::*,
+    qis::{
+        barrier, ccx, cx, cz, h, if_result, mz, reset, rx, ry, rz, s, s_adj, swap, t, t_adj, x, y,
+        z,
+    },
     rt::{array_record_output, initialize, result_record_output, tuple_record_output},
     types::{
         is_qubit_type, is_result_type, qubit_type, result_type, ArrayType, FunctionType, IntType,

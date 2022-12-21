@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::types;
-use crate::utils::*;
+use crate::{
+    types,
+    utils::{build_call, builder_module, declare_external_function, function_type},
+};
 
 use llvm_sys::{
     core::{
