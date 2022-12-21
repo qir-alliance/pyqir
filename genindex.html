@@ -153,10 +153,9 @@
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul>
-<li class="toctree-l1"><a class="reference internal" href="upgrade.html">Upgrading to PyQIR 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upgrade.html">Upgrading PyQIR</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api/index.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="api/pyqir.html"><code class="docutils literal notranslate"><span class="pre">pyqir</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/evaluator.html"><code class="docutils literal notranslate"><span class="pre">pyqir.evaluator</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="building.html">Building from Source</a></li>
@@ -302,12 +301,12 @@
 </li>
         <li><a href="api/pyqir.html#pyqir.Opcode.CLEANUP_PAD">CLEANUP_PAD (pyqir.Opcode attribute)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Opcode.CLEANUP_RET">CLEANUP_RET (pyqir.Opcode attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Linkage.COMMON">COMMON (pyqir.Linkage attribute)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Switch.cond">cond (pyqir.Switch attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.const">const() (in module pyqir)</a>
@@ -325,21 +324,9 @@
         <li><a href="api/pyqir.html#pyqir.ArrayType.count">count (pyqir.ArrayType attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.cx">cx() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.cx">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.cx">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.cz">cz() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.cz">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.cz">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
     </ul></td>
   </tr></table>
 </section>
@@ -369,8 +356,6 @@
         <li><a href="api/pyqir.html#pyqir.IntPredicate.EQ">EQ (pyqir.IntPredicate attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Instruction.erase">erase() (pyqir.Instruction method)</a>
-</li>
-        <li><a href="api/evaluator.html#pyqir.evaluator.NonadaptiveEvaluator.eval">eval() (pyqir.evaluator.NonadaptiveEvaluator method)</a>
 </li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
@@ -406,12 +391,6 @@
 </li>
         <li><a href="api/pyqir.html#pyqir.StructType.fields">fields (pyqir.StructType attribute)</a>
 </li>
-        <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.finish">finish() (pyqir.evaluator.GateLogger method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.finish">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
         <li><a href="api/pyqir.html#pyqir.FloatConstant">FloatConstant (class in pyqir)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.FloatPredicate">FloatPredicate (class in pyqir)</a>
@@ -420,10 +399,10 @@
 </li>
         <li><a href="api/pyqir.html#pyqir.Opcode.FNEG">FNEG (pyqir.Opcode attribute)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Opcode.FP_EXT">FP_EXT (pyqir.Opcode attribute)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Opcode.FP_TO_SI">FP_TO_SI (pyqir.Opcode attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Opcode.FP_TO_UI">FP_TO_UI (pyqir.Opcode attribute)</a>
@@ -456,14 +435,10 @@
   <h2>G</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger">GateLogger (class in pyqir.evaluator)</a>
-</li>
-        <li><a href="api/evaluator.html#pyqir.evaluator.GateSet">GateSet (class in pyqir.evaluator)</a>
+        <li><a href="api/pyqir.html#pyqir.Opcode.GET_ELEMENT_PTR">GET_ELEMENT_PTR (pyqir.Opcode attribute)</a>
 </li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="api/pyqir.html#pyqir.Opcode.GET_ELEMENT_PTR">GET_ELEMENT_PTR (pyqir.Opcode attribute)</a>
-</li>
         <li><a href="api/pyqir.html#pyqir.global_byte_string">global_byte_string() (in module pyqir)</a>
 </li>
     </ul></td>
@@ -475,13 +450,7 @@
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.h">h() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.h">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.h">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
     </ul></td>
   </tr></table>
 </section>
@@ -513,15 +482,11 @@
         <li><a href="api/pyqir.html#pyqir.Instruction">Instruction (class in pyqir)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.BasicBlock.instructions">instructions (pyqir.BasicBlock attribute)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.instructions">(pyqir.evaluator.GateLogger attribute)</a>
 </li>
-        </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Opcode.INT_TO_PTR">INT_TO_PTR (pyqir.Opcode attribute)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.IntConstant">IntConstant (class in pyqir)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Linkage.INTERNAL">INTERNAL (pyqir.Linkage attribute)</a>
@@ -580,37 +545,23 @@
   <h2>M</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.m">m() (pyqir.evaluator.GateLogger method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.m">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
         <li>
     module
 
         <ul>
           <li><a href="api/pyqir.html#module-pyqir">pyqir</a>
 </li>
-          <li><a href="api/evaluator.html#module-pyqir.evaluator">pyqir.evaluator</a>
-</li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Module">Module (class in pyqir)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Opcode.MUL">MUL (pyqir.Opcode attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Builder.mul">mul() (pyqir.Builder method)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.mz">mz() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.mz">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.mz">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
     </ul></td>
   </tr></table>
 </section>
@@ -625,17 +576,11 @@
           <li><a href="api/pyqir.html#pyqir.Value.name">(pyqir.Value attribute)</a>
 </li>
         </ul></li>
-        <li><a href="api/pyqir.html#pyqir.IntPredicate.NE">NE (pyqir.IntPredicate attribute)</a>
-</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="api/evaluator.html#pyqir.evaluator.NonadaptiveEvaluator">NonadaptiveEvaluator (class in pyqir.evaluator)</a>
+        <li><a href="api/pyqir.html#pyqir.IntPredicate.NE">NE (pyqir.IntPredicate attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Constant.null">null() (pyqir.Constant static method)</a>
-</li>
-        <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.number_of_qubits">number_of_qubits (pyqir.evaluator.GateLogger attribute)</a>
-</li>
-        <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.number_of_registers">number_of_registers (pyqir.evaluator.GateLogger attribute)</a>
 </li>
     </ul></td>
   </tr></table>
@@ -693,6 +638,8 @@
 </li>
         <li><a href="api/pyqir.html#pyqir.PointerType.pointee">pointee (pyqir.PointerType attribute)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.PointerType">PointerType (class in pyqir)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.FCmp.predicate">predicate (pyqir.FCmp attribute)</a>
@@ -701,10 +648,6 @@
           <li><a href="api/pyqir.html#pyqir.ICmp.predicate">(pyqir.ICmp attribute)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.print">print() (pyqir.evaluator.GateLogger method)</a>
-</li>
         <li><a href="api/pyqir.html#pyqir.Linkage.PRIVATE">PRIVATE (pyqir.Linkage attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Opcode.PTR_TO_INT">PTR_TO_INT (pyqir.Opcode attribute)</a>
@@ -714,13 +657,6 @@
 
         <ul>
           <li><a href="api/pyqir.html#module-pyqir">module</a>
-</li>
-        </ul></li>
-        <li>
-    pyqir.evaluator
-
-        <ul>
-          <li><a href="api/evaluator.html#module-pyqir.evaluator">module</a>
 </li>
         </ul></li>
     </ul></td>
@@ -754,13 +690,7 @@
         <li><a href="api/pyqir.html#pyqir.required_num_results">required_num_results() (in module pyqir)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.reset">reset() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.reset">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.reset">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
         <li><a href="api/pyqir.html#pyqir.result">result() (in module pyqir)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.result_id">result_id() (in module pyqir)</a>
@@ -769,6 +699,8 @@
 </li>
         <li><a href="api/pyqir.html#pyqir.SimpleModule.results">results (pyqir.SimpleModule property)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Opcode.RESUME">RESUME (pyqir.Opcode attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.AttributeList.ret">ret (pyqir.AttributeList attribute)</a>
@@ -777,36 +709,16 @@
           <li><a href="api/pyqir.html#pyqir.FunctionType.ret">(pyqir.FunctionType attribute)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Opcode.RET">RET (pyqir.Opcode attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Builder.ret">ret() (pyqir.Builder method)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.rx">rx() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.rx">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.rx">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.ry">ry() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.ry">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.ry">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.rz">rz() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.rz">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.rz">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
     </ul></td>
   </tr></table>
 </section>
@@ -816,21 +728,9 @@
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.s">s() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.s">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.s">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.s_adj">s_adj() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.s_adj">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.s_adj">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
         <li><a href="api/pyqir.html#pyqir.Opcode.SDIV">SDIV (pyqir.Opcode attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Opcode.SELECT">SELECT (pyqir.Opcode attribute)</a>
@@ -847,12 +747,12 @@
 </li>
         <li><a href="api/pyqir.html#pyqir.Opcode.SHUFFLE_VECTOR">SHUFFLE_VECTOR (pyqir.Opcode attribute)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Opcode.SI_TO_FP">SI_TO_FP (pyqir.Opcode attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.SimpleModule">SimpleModule (class in pyqir)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.IntPredicate.SLE">SLE (pyqir.IntPredicate attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.IntPredicate.SLT">SLT (pyqir.IntPredicate attribute)</a>
@@ -886,27 +786,15 @@
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.t">t() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.t">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.t">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.t_adj">t_adj() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.t_adj">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.t_adj">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.BasicBlock.terminator">terminator (pyqir.BasicBlock attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.FloatPredicate.TRUE">TRUE (pyqir.FloatPredicate attribute)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Opcode.TRUNC">TRUNC (pyqir.Opcode attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Type">Type (class in pyqir)</a>
@@ -1018,13 +906,7 @@
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.x">x() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.x">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.x">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Opcode.XOR">XOR (pyqir.Opcode attribute)</a>
@@ -1040,13 +922,7 @@
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.y">y() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.y">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.y">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
     </ul></td>
   </tr></table>
 </section>
@@ -1056,13 +932,7 @@
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.z">z() (pyqir.BasicQisBuilder method)</a>
-
-        <ul>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateLogger.z">(pyqir.evaluator.GateLogger method)</a>
 </li>
-          <li><a href="api/evaluator.html#pyqir.evaluator.GateSet.z">(pyqir.evaluator.GateSet method)</a>
-</li>
-        </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Opcode.ZEXT">ZEXT (pyqir.Opcode attribute)</a>

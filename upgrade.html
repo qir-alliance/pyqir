@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="API Reference" href="api/index.html" /><link rel="prev" title="PyQIR" href="index.html" />
 
     <!-- Generated with Sphinx 5.3.0 and Furo 2022.12.07 -->
-        <title>Upgrading to PyQIR 0.7 - PyQIR documentation</title>
+        <title>Upgrading PyQIR - PyQIR documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=91d0f0d1c444bdcb17a68e833c7a53903343c195" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -155,10 +155,9 @@
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Upgrading to PyQIR 0.7</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Upgrading PyQIR</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api/index.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="api/pyqir.html"><code class="docutils literal notranslate"><span class="pre">pyqir</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/evaluator.html"><code class="docutils literal notranslate"><span class="pre">pyqir.evaluator</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="building.html">Building from Source</a></li>
@@ -196,14 +195,21 @@
           </label>
         </div>
         <article role="main">
-          <section id="upgrading-to-pyqir-0-7">
-<h1>Upgrading to PyQIR 0.7<a class="headerlink" href="#upgrading-to-pyqir-0-7" title="Permalink to this heading">#</a></h1>
+          <section id="upgrading-pyqir">
+<h1>Upgrading PyQIR<a class="headerlink" href="#upgrading-pyqir" title="Permalink to this heading">#</a></h1>
+<section id="pyqir-0-8">
+<h2>PyQIR 0.8<a class="headerlink" href="#pyqir-0-8" title="Permalink to this heading">#</a></h2>
+<p>PyQIR 0.7 was the last version of PyQIR to support QIR evaluation. Simulation of QIR is now available via the <a class="reference external" href="https://github.com/qir-alliance/qir-runner"><code class="docutils literal notranslate"><span class="pre">qir-runner</span></code></a> sparse simulator.</p>
+</section>
+<section id="pyqir-0-7">
+<h2>PyQIR 0.7<a class="headerlink" href="#pyqir-0-7" title="Permalink to this heading">#</a></h2>
 <section id="packages">
-<h2>Packages<a class="headerlink" href="#packages" title="Permalink to this heading">#</a></h2>
+<h3>Packages<a class="headerlink" href="#packages" title="Permalink to this heading">#</a></h3>
 <p>PyQIR 0.6 was the last version of PyQIR to use three packages (<code class="docutils literal notranslate"><span class="pre">pyqir-evaluator</span></code>, <code class="docutils literal notranslate"><span class="pre">pyqir-generator</span></code>, and <code class="docutils literal notranslate"><span class="pre">pyqir-parser</span></code>) and a metapackage (<code class="docutils literal notranslate"><span class="pre">pyqir</span></code>).
 PyQIR 0.7 instead uses only a single package (<code class="docutils literal notranslate"><span class="pre">pyqir</span></code>) that has the functionality of all previous packages.</p>
 <p>If you imported the <code class="docutils literal notranslate"><span class="pre">pyqir.generator</span></code> or <code class="docutils literal notranslate"><span class="pre">pyqir.parser</span></code> modules, then the same or an equivalent API is available in the <code class="docutils literal notranslate"><span class="pre">pyqir</span></code> module.
 If you imported the <code class="docutils literal notranslate"><span class="pre">pyqir.evaluator</span></code> module, it is still available under the same name with no API changes.</p>
+</section>
 </section>
 <section id="generator">
 <h2>Generator<a class="headerlink" href="#generator" title="Permalink to this heading">#</a></h2>
@@ -398,8 +404,12 @@ You can also compare it with <a class="reference external" href="https://github.
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Upgrading to PyQIR 0.7</a><ul>
+<li><a class="reference internal" href="#">Upgrading PyQIR</a><ul>
+<li><a class="reference internal" href="#pyqir-0-8">PyQIR 0.8</a></li>
+<li><a class="reference internal" href="#pyqir-0-7">PyQIR 0.7</a><ul>
 <li><a class="reference internal" href="#packages">Packages</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#generator">Generator</a><ul>
 <li><a class="reference internal" href="#ir-and-bitcode-conversion">IR and bitcode conversion</a></li>
 <li><a class="reference internal" href="#types">Types</a></li>
