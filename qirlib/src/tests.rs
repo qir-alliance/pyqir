@@ -52,7 +52,7 @@ pub(crate) struct Context(NonNull<LLVMContext>);
 
 impl Context {
     pub(crate) fn new() -> Self {
-        let context = unsafe { crate::context::create(false) };
+        let context = unsafe { LLVMContextCreate() };
         Self(NonNull::new(context).expect("Context is null."))
     }
 }

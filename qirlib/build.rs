@@ -97,7 +97,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo:rerun-if-changed=external.rs");
     println!("cargo:rerun-if-changed=target.c");
     println!("cargo:rerun-if-changed=llvm-wrapper/LLVMWrapper.h");
-    println!("cargo:rerun-if-changed=llvm-wrapper/ContextWrapper.cpp");
     println!("cargo:rerun-if-changed=llvm-wrapper/MetadataWrapper.cpp");
     println!("cargo:rerun-if-changed=llvm-wrapper/ModuleWrapper.cpp");
 
@@ -272,7 +271,6 @@ fn compile_llvm_wrapper() -> Result<(), Box<dyn Error>> {
     cfg.cpp(true)
         .cpp_link_stdlib(None)
         .static_crt(true)
-        .file("llvm-wrapper/ContextWrapper.cpp")
         .file("llvm-wrapper/MetadataWrapper.cpp")
         .file("llvm-wrapper/ModuleWrapper.cpp")
         .compile("llvm-wrapper");

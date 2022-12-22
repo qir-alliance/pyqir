@@ -3,6 +3,7 @@
 
 #![allow(clippy::used_underscore_binding)]
 
+use llvm_sys::core::LLVMContextCreate;
 #[allow(deprecated)]
 use llvm_sys::{
     core::{LLVMContextDispose, LLVMDisposeMemoryBuffer, LLVMDisposeMessage},
@@ -25,7 +26,7 @@ pub(crate) struct Context(NonNull<LLVMContext>);
 impl Context {
     #[new]
     pub(crate) fn new() -> Self {
-        Self(NonNull::new(unsafe { qirlib::context::create(false) }).unwrap())
+        Self(NonNull::new(unsafe { LLVMContextCreate() }).unwrap())
     }
 }
 

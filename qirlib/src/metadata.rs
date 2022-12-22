@@ -3,7 +3,7 @@
 
 use llvm_sys::prelude::LLVMValueRef;
 
-use crate::llvm_wrapper::{LLVMRustExtractMDConstant, LLVMRustIsAMDConstant};
+use crate::llvm_wrapper::LLVMRustExtractMDConstant;
 
 pub unsafe fn extract_constant(value: LLVMValueRef) -> Option<LLVMValueRef> {
     let constant_value = unsafe { LLVMRustExtractMDConstant(value) };
@@ -12,9 +12,4 @@ pub unsafe fn extract_constant(value: LLVMValueRef) -> Option<LLVMValueRef> {
     } else {
         Some(constant_value)
     }
-}
-
-pub unsafe fn is_constant(value: LLVMValueRef) -> bool {
-    let result = unsafe { LLVMRustIsAMDConstant(value) };
-    !result.is_null()
 }

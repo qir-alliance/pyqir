@@ -25,8 +25,6 @@ impl From<LLVMRustModFlagBehavior> for FlagBehavior {
             LLVMRustModFlagBehavior::Append => FlagBehavior::Append,
             LLVMRustModFlagBehavior::AppendUnique => FlagBehavior::AppendUnique,
             LLVMRustModFlagBehavior::Max => FlagBehavior::Max,
-            #[cfg(any(feature = "llvm15-0"))]
-            LLVMRustModFlagBehavior::Min => FlagBehavior::Min,
         }
     }
 }

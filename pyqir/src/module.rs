@@ -7,7 +7,7 @@ use crate::{
     core::Context,
     core::{MemoryBuffer, Message},
     metadata::Metadata,
-    values::{Owner, Value},
+    values::{Constant, Owner, Value},
 };
 use core::slice;
 #[allow(clippy::wildcard_imports, deprecated)]
@@ -203,7 +203,7 @@ impl Module {
         let context = self.context().clone_ref(py);
         let _owner = Owner::merge(py, [Owner::Context(context), flag.owner().clone_ref(py)])?;
         let md = match flag {
-            Flag::Value(v) => unsafe { LLVMValueAsMetadata(v.as_ptr()) },
+            Flag::Constant(v) => unsafe { LLVMValueAsMetadata(v.into_super().as_ptr()) },
             Flag::Metadata(m) => m.as_ptr(),
         };
         unsafe {
@@ -218,6 +218,7 @@ impl Module {
     ///
     /// :param str id: metadata string that is a unique ID for the metadata.
     /// :returns: value of the flag if found, otherwise None
+    /// :rtype: typing.Optional[Metadata]
     #[pyo3(text_signature = "(id)")]
     pub(crate) fn get_flag(slf: Py<Module>, py: Python, id: &str) -> Option<PyObject> {
         let module = slf.borrow(py).module.as_ptr();
@@ -382,14 +383,14 @@ impl From<ModuleFlagBehavior> for FlagBehavior {
 
 #[derive(FromPyObject)]
 pub(crate) enum Flag<'py> {
-    Value(PyRef<'py, Value>),
+    Constant(PyRef<'py, Constant>),
     Metadata(PyRef<'py, Metadata>),
 }
 
 impl Flag<'_> {
     fn owner(&self) -> &Owner {
         match self {
-            Flag::Value(v) => v.owner(),
+            Flag::Constant(v) => v.as_ref().owner(),
             Flag::Metadata(m) => m.owner(),
         }
     }

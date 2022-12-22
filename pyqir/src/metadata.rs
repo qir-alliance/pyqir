@@ -156,10 +156,7 @@ impl ConstantAsMetadata {
         let value = NonNull::new(value).expect("Value is null.");
         let context = owner.context(py).borrow(py).as_ptr();
         let valueref = LLVMMetadataAsValue(context, value.as_ptr());
-        if !qirlib::metadata::is_constant(valueref) {
-            println!("Value is not constant.");
-            Err(PyValueError::new_err("Value is not constant."))
-        } else if qirlib::metadata::extract_constant(valueref).is_some() {
+        if qirlib::metadata::extract_constant(valueref).is_some() {
             let initializer =
                 PyClassInitializer::from(Metadata { value, owner }).add_subclass(Self);
             Ok(Py::new(py, initializer)?.to_object(py))
