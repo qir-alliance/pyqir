@@ -709,14 +709,7 @@ class Type:
 class Metadata:
     """A metadata value."""
 
-    @property
-    def type(self) -> Type:
-        """The type of this value."""
-        ...
-    @property
-    def name(self) -> str:
-        """The name of this value or the empty string if this value is anonymous."""
-        ...
+    ...
 
 class MetadataString(Metadata):
     """A metadata string"""
