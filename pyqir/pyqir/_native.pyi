@@ -515,7 +515,7 @@ class Module:
 
         :param ModuleFlagBehavior behavior: flag specifying the behavior when two (or more) modules are merged together
         :param str id: string that is a unique ID for the metadata.
-        :param Union[Metadata, Value] flag: value of the flag
+        :param Union[Metadata, Constant] flag: value of the flag
         """
         ...
     def get_flag(self, id: str) -> Optional[Metadata]:
