@@ -183,6 +183,26 @@ task install-llvm-from-source -depends configure-sccache -postaction { Write-Cac
     Assert (Test-LlvmConfig $installationDirectory) "install-llvm-from-source failed to install a usable LLVM installation"
 }
 
+task manylinux-install-llvm-from-source -depends build-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
+    # For any of the volumes mapped, if the dir doesn't exist,
+    # docker will create it and it will be owned by root and
+    # the caching/install breaks with permission errors.
+    # New-Item is idempotent so we don't need to check for existence
+    $cacheMount, $cacheEnv = Get-CCacheParams
+    Write-BuildLog "Running container image: $ManylinuxTag"
+    $ioVolume = "${Root}:$ManylinuxRoot"
+    $userName = Get-LinuxContainerUserName
+
+    Invoke-LoggedCommand {
+        docker run --rm `
+            --user $userName `
+            --volume $ioVolume @cacheMount @cacheEnv `
+            --workdir $ManylinuxRoot `
+            $ManylinuxTag `
+            conda run --no-capture-output pwsh build.ps1 -t install-llvm-from-source
+    }
+}
+
 task package-manylinux-llvm -depends build-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
     # For any of the volumes mapped, if the dir doesn't exist,
     # docker will create it and it will be owned by root and

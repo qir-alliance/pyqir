@@ -1,0 +1,67 @@
+name: install-llvm
+description: "Builds and installs LLVM from source using llvm-build"
+
+inputs:
+  version:
+    description: "The version of LLVM to install."
+    required: true
+  os:
+    description: "The OS being built upon."
+    required: true
+  directory:
+    description: "The directory to install LLVM binaries to."
+    required: true
+  target:
+    description: "The build script target."
+    required: true
+  arch:
+    description: "TODO: The OS arch being built for."
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: LLVM install cache
+      id: cache-llvm
+      uses: actions/cache@v3
+      with:
+        path: ${{ inputs.directory }}
+        key: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}-${{ hashFiles('Cargo.lock') }}
+        restore-keys: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}
+
+    - name: Linux - Install build dependencies, ninja
+      run: sudo apt-get install -y ninja-build
+      shell: pwsh
+      if: ${{ (inputs.os == 'ubuntu-20.04') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
+    - name: Windows - Install build dependencies, ninja
+      run: choco install --accept-license -y ninja
+      shell: pwsh
+      if: ${{ (inputs.os == 'windows-2019') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
+    - name: MacOS - Install build dependencies, ninja
+      run: brew install ninja
+      shell: pwsh
+      if: ${{ (inputs.os == 'macos-11') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
+    - name: Windows - Install LLVM 14.0.6
+      run: choco install llvm --version=14.0.6 --allow-downgrade
+      shell: pwsh
+      if: ${{ (inputs.os == 'windows-2019') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
+
+    - name: Configure long paths
+      run: git config --global core.longpaths true
+      shell: pwsh
+      if: ${{ steps.cache-llvm.outputs.cache-hit != 'true' }}
+
+    - name: Configure LLVM Environment
+      run: |
+        Write-Output "QIRLIB_CACHE_DIR=${{ inputs.directory }}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+        Write-Output "LLVM_SYS_${{ inputs.version }}0_PREFIX=${{ inputs.directory }}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+        Write-Output "PYQIR_LLVM_FEATURE_VERSION=llvm${{ inputs.version }}-0" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+      shell: pwsh
+
+    - name: Install LLVM
+      run: |
+        $target_prefix = if(${{ inputs.target }} -eq "manylinux") {"manylinux-"} else {""}
+        ./build.ps1 -t "$($target_prefix)install-llvm-from-source"
+      shell: pwsh
+      working-directory: scripts
+      if: ${{ steps.cache-llvm.outputs.cache-hit != 'true' }}
