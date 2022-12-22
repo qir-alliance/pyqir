@@ -1,22 +1,16 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-
-from typing import List, Optional
-
 import pyqir
 from pyqir import (
     BasicBlock,
     Builder,
-    Constant,
     Context,
     entry_point,
     Function,
-    FunctionType,
     Linkage,
     Module,
     ModuleFlagBehavior,
-    Value,
 )
 
 context = Context()
