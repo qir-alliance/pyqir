@@ -18,7 +18,7 @@ def test_value_metadata_can_added() -> None:
     mod = pyqir.Module(pyqir.Context(), "test")
     i32 = IntType(mod.context, 32)
     value = pyqir.const(i32, 42)
-    mod.add_value_flag(ModuleFlagBehavior.ERROR, "expected", value)
+    mod.add_flag(ModuleFlagBehavior.ERROR, "expected", value)
     ir = str(mod)
     print(ir)
     assert "!llvm.module.flags = !{!0}" in ir
@@ -29,7 +29,7 @@ def test_i32_value_metadata_can_retrieved() -> None:
     mod = pyqir.Module(pyqir.Context(), "test")
     i32 = IntType(mod.context, 32)
     value = pyqir.const(i32, 42)
-    mod.add_value_flag(ModuleFlagBehavior.ERROR, "expected", value)
+    mod.add_flag(ModuleFlagBehavior.ERROR, "expected", value)
     flag = mod.get_flag("expected")
     assert flag is not None
     assert isinstance(flag, pyqir.ConstantIntAsMetadata)
@@ -41,10 +41,10 @@ def test_bool_value_metadata_can_retrieved() -> None:
     mod = pyqir.Module(pyqir.Context(), "test")
     i1 = IntType(mod.context, 1)
     false_value = pyqir.const(i1, False)
-    mod.add_value_flag(ModuleFlagBehavior.ERROR, "id_f", false_value)
+    mod.add_flag(ModuleFlagBehavior.ERROR, "id_f", false_value)
 
     true_value = pyqir.const(i1, True)
-    mod.add_value_flag(ModuleFlagBehavior.ERROR, "id_t", true_value)
+    mod.add_flag(ModuleFlagBehavior.ERROR, "id_t", true_value)
     false_flag = mod.get_flag("id_f")
     assert false_flag is not None
     assert isinstance(false_flag, pyqir.ConstantIntAsMetadata)
@@ -65,7 +65,7 @@ def test_metadata_string_value_metadata_can_retrieved() -> None:
     mds = pyqir.MetadataString(context, source)
     mod = pyqir.Module(context, "test")
 
-    mod.add_metadata_flag(ModuleFlagBehavior.ERROR, id, mds)
+    mod.add_flag(ModuleFlagBehavior.ERROR, id, mds)
     flag = mod.get_flag(id)
     assert flag is not None
     assert isinstance(flag, pyqir.MetadataString)
@@ -77,7 +77,7 @@ def test_add_metadata_flag_raises_with_wrong_ownership() -> None:
     mod = pyqir.Module(pyqir.Context(), "")
     md = pyqir.MetadataString(pyqir.Context(), "value")
     with pytest.raises(ValueError):
-        mod.add_metadata_flag(ModuleFlagBehavior.ERROR, "", md)
+        mod.add_flag(ModuleFlagBehavior.ERROR, "", md)
 
 
 def test_add_value_flag_raises_with_wrong_ownership() -> None:
@@ -85,4 +85,4 @@ def test_add_value_flag_raises_with_wrong_ownership() -> None:
     value = pyqir.const(i32, 42)
     mod = pyqir.Module(pyqir.Context(), "")
     with pytest.raises(ValueError):
-        mod.add_value_flag(ModuleFlagBehavior.ERROR, "", value)
+        mod.add_flag(ModuleFlagBehavior.ERROR, "", value)

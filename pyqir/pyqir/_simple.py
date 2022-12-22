@@ -64,25 +64,25 @@ class SimpleModule:
         i1 = pyqir.IntType(context, 1)
         i32 = pyqir.IntType(context, 32)
 
-        self._module.add_value_flag(
+        self._module.add_flag(
             ModuleFlagBehavior.ERROR,
             "qir_major_version",
             pyqir.const(i32, qir_major),
         )
 
-        self._module.add_value_flag(
+        self._module.add_flag(
             ModuleFlagBehavior.MAX,
             "qir_minor_version",
             pyqir.const(i32, qir_minor),
         )
 
-        self._module.add_value_flag(
+        self._module.add_flag(
             ModuleFlagBehavior.ERROR,
             "dynamic_qubit_management",
             pyqir.const(i1, dynamic_qubits),
         )
 
-        self._module.add_value_flag(
+        self._module.add_flag(
             ModuleFlagBehavior.ERROR,
             "dynamic_result_management",
             pyqir.const(i1, dynamic_results),

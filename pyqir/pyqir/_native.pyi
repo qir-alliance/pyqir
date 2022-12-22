@@ -505,30 +505,17 @@ class Module:
     def context(self) -> Context:
         """The LLVM context."""
         ...
-    def add_metadata_flag(
-        self, behavior: ModuleFlagBehavior, id: str, value: Metadata
+    def add_flag(
+        self, behavior: ModuleFlagBehavior, id: str, flag: Union[Metadata, Value]
     ) -> None:
         """
-        Adds a metadata flag to the llvm.module.flags metadata
+        Adds a flag to the llvm.module.flags metadata
 
         See https://llvm.org/docs/LangRef.html#module-flags-metadata
 
-        :param behavior: flag specifying the behavior when two (or more) modules are merged together
-        :param id: metadata string that is a unique ID for the metadata.
-        :param metadata: metadata value of the flag
-        """
-        ...
-    def add_value_flag(
-        self, behavior: ModuleFlagBehavior, id: str, value: Value
-    ) -> None:
-        """
-        Adds a value flag to the llvm.module.flags metadata
-
-        See https://llvm.org/docs/LangRef.html#module-flags-metadata
-
-        :param behavior: flag specifying the behavior when two (or more) modules are merged together
-        :param id: metadata string that is a unique ID for the metadata.
-        :param value: value of the flag
+        :param ModuleFlagBehavior behavior: flag specifying the behavior when two (or more) modules are merged together
+        :param str id: string that is a unique ID for the metadata.
+        :param Union[Metadata, Value] flag: value of the flag
         """
         ...
     def get_flag(self, id: str) -> Optional[Metadata]:

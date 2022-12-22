@@ -185,74 +185,29 @@ impl Module {
         &self.context
     }
 
-    /// Adds a metadata flag to the llvm.module.flags metadata
+    /// Adds a flag to the llvm.module.flags metadata
     ///
     /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
     ///
     /// :param ModuleFlagBehavior behavior: flag specifying the behavior when two (or more) modules are merged together
-    /// :param str id: metadata string that is a unique ID for the metadata.
-    /// :param Metadata metadata: metadata value of the flag
-    #[pyo3(text_signature = "(behavior, id, metadata)")]
-    pub(crate) fn add_metadata_flag(
-        &self,
-        py: Python,
-        behavior: ModuleFlagBehavior,
-        id: &str,
-        metadata: &Metadata,
-    ) -> PyResult<()> {
-        let _ = Owner::merge(
-            py,
-            [
-                Owner::Context(self.context().clone_ref(py)),
-                metadata.owner().clone_ref(py),
-            ],
-        )?;
-        unsafe {
-            qirlib::module::add_flag(
-                self.module.as_ptr(),
-                behavior
-                    .try_into()
-                    .expect("Could not convert behavior for the current version of LLVM"),
-                id,
-                metadata.as_ptr(),
-            );
-        }
-
-        Ok(())
-    }
-
-    /// Adds a value flag to the llvm.module.flags metadata
-    ///
-    /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
-    ///
-    /// :param ModuleFlagBehavior behavior: flag specifying the behavior when two (or more) modules are merged together
-    /// :param str id: metadata string that is a unique ID for the metadata.
-    /// :param Value value: value of the flag
+    /// :param str id: string that is a unique ID for the metadata.
+    /// :param Union[Metadata, Value] flag: value of the flag
     #[pyo3(text_signature = "(behavior, id, flag)")]
-    pub(crate) fn add_value_flag(
+    pub(crate) fn add_flag(
         &self,
         py: Python,
         behavior: ModuleFlagBehavior,
         id: &str,
-        flag: &Value,
+        flag: Flag,
     ) -> PyResult<()> {
-        let md = unsafe { LLVMValueAsMetadata(flag.as_ptr()) };
-        let _ = Owner::merge(
-            py,
-            [
-                Owner::Context(self.context().clone_ref(py)),
-                flag.owner().clone_ref(py),
-            ],
-        )?;
+        let context = self.context().clone_ref(py);
+        let _ = Owner::merge(py, [Owner::Context(context), flag.owner().clone_ref(py)])?;
+        let md = match flag {
+            Flag::Value(v) => unsafe { LLVMValueAsMetadata(v.as_ptr()) },
+            Flag::Metadata(m) => m.as_ptr(),
+        };
         unsafe {
-            qirlib::module::add_flag(
-                self.module.as_ptr(),
-                behavior
-                    .try_into()
-                    .expect("Could not convert behavior for the current version of LLVM"),
-                id,
-                md,
-            );
+            qirlib::module::add_flag(self.module.as_ptr(), behavior.into(), id, md);
         }
         Ok(())
     }
@@ -424,6 +379,21 @@ impl From<ModuleFlagBehavior> for FlagBehavior {
             ModuleFlagBehavior::Append => FlagBehavior::Append,
             ModuleFlagBehavior::AppendUnique => FlagBehavior::AppendUnique,
             ModuleFlagBehavior::Max => FlagBehavior::Max,
+        }
+    }
+}
+
+#[derive(FromPyObject)]
+pub(crate) enum Flag<'py> {
+    Value(PyRef<'py, Value>),
+    Metadata(PyRef<'py, Metadata>),
+}
+
+impl Flag<'_> {
+    fn owner(&self) -> &Owner {
+        match self {
+            Flag::Value(v) => v.owner(),
+            Flag::Metadata(m) => m.owner(),
         }
     }
 }
