@@ -332,7 +332,11 @@ impl Constant {
 }
 
 impl Constant {
-    unsafe fn from_raw(py: Python, owner: Owner, value: LLVMValueRef) -> PyResult<PyObject> {
+    pub(crate) unsafe fn from_raw(
+        py: Python,
+        owner: Owner,
+        value: LLVMValueRef,
+    ) -> PyResult<PyObject> {
         let value = NonNull::new(value).expect("Value is null.");
         if LLVMIsConstant(value.as_ptr()) == 0 {
             Err(PyValueError::new_err("Value is not constant."))

@@ -32,8 +32,9 @@ def test_i32_value_metadata_can_retrieved() -> None:
     mod.add_flag(ModuleFlagBehavior.ERROR, "expected", value)
     flag = mod.get_flag("expected")
     assert flag is not None
-    assert isinstance(flag, pyqir.ConstantIntAsMetadata)
-    assert flag.value == 42
+    assert isinstance(flag, pyqir.ConstantAsMetadata)
+    assert isinstance(flag.value, pyqir.Constant)
+    assert flag.value.value == 42
     assert str(flag) == "i32 42"
 
 
@@ -47,14 +48,16 @@ def test_bool_value_metadata_can_retrieved() -> None:
     mod.add_flag(ModuleFlagBehavior.ERROR, "id_t", true_value)
     false_flag = mod.get_flag("id_f")
     assert false_flag is not None
-    assert isinstance(false_flag, pyqir.ConstantIntAsMetadata)
+    assert isinstance(false_flag, pyqir.ConstantAsMetadata)
     assert str(false_flag) == "i1 false"
-    assert false_flag.value == False
+    assert isinstance(false_flag.value, pyqir.Constant)
+    assert false_flag.value.value == False
     true_flag = mod.get_flag("id_t")
     assert true_flag is not None
-    assert isinstance(true_flag, pyqir.ConstantIntAsMetadata)
+    assert isinstance(true_flag, pyqir.ConstantAsMetadata)
     assert str(true_flag) == "i1 true"
-    assert true_flag.value == True
+    assert isinstance(true_flag.value, pyqir.Constant)
+    assert true_flag.value.value == True
 
 
 def test_metadata_string_value_metadata_can_retrieved() -> None:

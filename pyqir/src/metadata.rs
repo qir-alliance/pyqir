@@ -5,13 +5,13 @@
 
 use crate::{
     core::{Context, Message},
-    values::Owner,
+    values::{Constant, Owner},
 };
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{core::*, prelude::*};
 use llvm_sys::{
     debuginfo::{LLVMGetMetadataKind, LLVMMetadataKind},
-    LLVMOpaqueMetadata, LLVMValueKind,
+    LLVMOpaqueMetadata,
 };
 use pyo3::{conversion::ToPyObject, exceptions::PyValueError, prelude::*};
 use std::{ffi::CString, ops::Deref, ptr::NonNull, slice, str};
@@ -41,10 +41,8 @@ impl Metadata {
     pub(crate) unsafe fn from_raw(
         py: Python,
         owner: Owner,
-        value: LLVMValueRef,
+        md: LLVMMetadataRef,
     ) -> PyResult<PyObject> {
-        let md = LLVMValueAsMetadata(value);
-
         match LLVMGetMetadataKind(md) {
             LLVMMetadataKind::LLVMMDStringMetadataKind => {
                 Ok(Py::new(py, MetadataString::from_raw(py, owner, md)?)?.to_object(py))
@@ -135,6 +133,24 @@ impl MetadataString {
 #[pyclass(extends = Metadata, subclass)]
 pub(crate) struct ConstantAsMetadata;
 
+#[pymethods]
+impl ConstantAsMetadata {
+    /// The value.
+    ///
+    /// :type: int
+    #[getter]
+    fn value(slf: PyRef<Self>, py: Python) -> Option<PyObject> {
+        let slf = slf.into_super();
+        let context = slf.owner.context(py).borrow(py).as_ptr();
+        let valueref = unsafe { LLVMMetadataAsValue(context, slf.as_ptr()) };
+
+        if let Some(value) = unsafe { qirlib::metadata::extract_constant(valueref) } {
+            return unsafe { Constant::from_raw(py, slf.owner().clone_ref(py), value).ok() };
+        }
+        None
+    }
+}
+
 impl ConstantAsMetadata {
     unsafe fn from_raw(py: Python, owner: Owner, value: LLVMMetadataRef) -> PyResult<PyObject> {
         let value = NonNull::new(value).expect("Value is null.");
@@ -143,39 +159,13 @@ impl ConstantAsMetadata {
         if !qirlib::metadata::is_constant(valueref) {
             println!("Value is not constant.");
             Err(PyValueError::new_err("Value is not constant."))
-        } else if let Some(constant) = qirlib::metadata::extract_constant(valueref) {
-            if LLVMGetValueKind(constant) == LLVMValueKind::LLVMConstantIntValueKind {
-                let initializer = PyClassInitializer::from(Metadata { value, owner })
-                    .add_subclass(Self)
-                    .add_subclass(ConstantIntAsMetadata);
-                Ok(Py::new(py, initializer)?.to_object(py))
-            } else {
-                let initializer =
-                    PyClassInitializer::from(Metadata { value, owner }).add_subclass(Self);
-                Ok(Py::new(py, initializer)?.to_object(py))
-            }
+        } else if qirlib::metadata::extract_constant(valueref).is_some() {
+            let initializer =
+                PyClassInitializer::from(Metadata { value, owner }).add_subclass(Self);
+            Ok(Py::new(py, initializer)?.to_object(py))
         } else {
             println!("Could not extract constant.");
             Err(PyValueError::new_err("Could not extract constant."))
         }
-    }
-}
-
-/// A metadata constant integer value.
-#[pyclass(extends = ConstantAsMetadata)]
-pub(crate) struct ConstantIntAsMetadata;
-
-#[pymethods]
-impl ConstantIntAsMetadata {
-    /// The value.
-    ///
-    /// :type: int
-    #[getter]
-    fn value(slf: PyRef<Self>, py: Python) -> Option<u64> {
-        let slf = slf.into_super().into_super();
-        let context = slf.owner.context(py).borrow(py).as_ptr();
-        let valueref = unsafe { LLVMMetadataAsValue(context, slf.as_ptr()) };
-        unsafe { qirlib::metadata::extract_constant(valueref) }
-            .map(|value| unsafe { LLVMConstIntGetZExtValue(value) })
     }
 }

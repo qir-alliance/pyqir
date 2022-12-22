@@ -226,10 +226,9 @@ impl Module {
         if flag.is_null() {
             return None;
         }
-        let flag_value = unsafe { LLVMMetadataAsValue(LLVMGetModuleContext(module), flag) };
 
         let owner = slf.into();
-        let value = unsafe { Metadata::from_raw(py, owner, flag_value) };
+        let value = unsafe { Metadata::from_raw(py, owner, flag) };
         value.ok()
     }
 
@@ -363,8 +362,6 @@ impl From<FlagBehavior> for ModuleFlagBehavior {
             FlagBehavior::Append => ModuleFlagBehavior::Append,
             FlagBehavior::AppendUnique => ModuleFlagBehavior::AppendUnique,
             FlagBehavior::Max => ModuleFlagBehavior::Max,
-            #[cfg(any(feature = "llvm15-0"))]
-            FlagBehavior::Min => ModuleFlagBehavior::Min,
         }
     }
 }

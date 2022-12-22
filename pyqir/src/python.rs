@@ -7,7 +7,7 @@ use crate::{
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    metadata::{ConstantAsMetadata, ConstantIntAsMetadata, Metadata, MetadataString},
+    metadata::{ConstantAsMetadata, Metadata, MetadataString},
     module::{Linkage, Module, ModuleFlagBehavior},
     qis::{
         barrier, ccx, cx, cz, h, if_result, mz, reset, rx, ry, rz, s, s_adj, swap, t, t_adj, x, y,
@@ -38,7 +38,6 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Call>()?;
     m.add_class::<Constant>()?;
     m.add_class::<ConstantAsMetadata>()?;
-    m.add_class::<ConstantIntAsMetadata>()?;
     m.add_class::<Context>()?;
     m.add_class::<FCmp>()?;
     m.add_class::<FloatConstant>()?;

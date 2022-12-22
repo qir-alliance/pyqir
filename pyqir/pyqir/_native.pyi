@@ -549,7 +549,6 @@ class ModuleFlagBehavior(Enum):
     APPEND: ModuleFlagBehavior
     APPEND_UNIQUE: ModuleFlagBehavior
     MAX: ModuleFlagBehavior
-    # MIN: ModuleFlagBehavior
 
 class Opcode(Enum):
     """An instruction opcode."""
@@ -742,14 +741,9 @@ class MetadataString(Metadata):
 class ConstantAsMetadata(Metadata):
     """A metadata constant value."""
 
-    ...
-
-class ConstantIntAsMetadata(ConstantAsMetadata):
-    """A metadata constant integer value."""
-
     @property
-    def value(self) -> Optional[int]:
-        """The underlying metadata int value."""
+    def value(self) -> Optional[Constant]:
+        """The underlying metadata constant value."""
         ...
 
 class Value:
