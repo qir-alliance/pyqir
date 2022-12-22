@@ -506,7 +506,7 @@ class Module:
         """The LLVM context."""
         ...
     def add_flag(
-        self, behavior: ModuleFlagBehavior, id: str, flag: Union[Metadata, Value]
+        self, behavior: ModuleFlagBehavior, id: str, flag: Union[Metadata, Constant]
     ) -> None:
         """
         Adds a flag to the llvm.module.flags metadata
