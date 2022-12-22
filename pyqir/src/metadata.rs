@@ -156,7 +156,7 @@ impl ConstantAsMetadata {
             }
         } else {
             println!("Could not extract constant.");
-            return Err(PyValueError::new_err("Could not extract constant."));
+            Err(PyValueError::new_err("Could not extract constant."))
         }
     }
 }

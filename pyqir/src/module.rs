@@ -201,7 +201,7 @@ impl Module {
         flag: Flag,
     ) -> PyResult<()> {
         let context = self.context().clone_ref(py);
-        let _ = Owner::merge(py, [Owner::Context(context), flag.owner().clone_ref(py)])?;
+        let _owner = Owner::merge(py, [Owner::Context(context), flag.owner().clone_ref(py)])?;
         let md = match flag {
             Flag::Value(v) => unsafe { LLVMValueAsMetadata(v.as_ptr()) },
             Flag::Metadata(m) => m.as_ptr(),
