@@ -20,7 +20,7 @@ use llvm_sys::{
     LLVMLinkage, LLVMModule,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
-use qirlib::llvm_wrapper::{LLVMRustAddModuleFlag, LLVMRustModFlagBehavior};
+use qirlib::module::FlagBehavior;
 use std::{
     ffi::CString,
     ops::Deref,
@@ -208,16 +208,16 @@ impl Module {
             ],
         )?;
         unsafe {
-            LLVMRustAddModuleFlag(
+            qirlib::module::add_flag(
                 self.module.as_ptr(),
                 behavior
                     .try_into()
                     .expect("Could not convert behavior for the current version of LLVM"),
-                id.as_ptr() as *mut std::ffi::c_char,
-                id.len().try_into().unwrap(),
+                id,
                 metadata.as_ptr(),
             );
         }
+
         Ok(())
     }
 
@@ -245,13 +245,12 @@ impl Module {
             ],
         )?;
         unsafe {
-            LLVMRustAddModuleFlag(
+            qirlib::module::add_flag(
                 self.module.as_ptr(),
                 behavior
                     .try_into()
                     .expect("Could not convert behavior for the current version of LLVM"),
-                id.as_ptr() as *mut std::ffi::c_char,
-                id.len().try_into().unwrap(),
+                id,
                 md,
             );
         }
@@ -399,32 +398,32 @@ pub(crate) enum ModuleFlagBehavior {
     Max,
 }
 
-impl From<LLVMRustModFlagBehavior> for ModuleFlagBehavior {
-    fn from(flag: LLVMRustModFlagBehavior) -> Self {
+impl From<FlagBehavior> for ModuleFlagBehavior {
+    fn from(flag: FlagBehavior) -> Self {
         match flag {
-            LLVMRustModFlagBehavior::Error => ModuleFlagBehavior::Error,
-            LLVMRustModFlagBehavior::Warning => ModuleFlagBehavior::Warning,
-            LLVMRustModFlagBehavior::Require => ModuleFlagBehavior::Require,
-            LLVMRustModFlagBehavior::Override => ModuleFlagBehavior::Override,
-            LLVMRustModFlagBehavior::Append => ModuleFlagBehavior::Append,
-            LLVMRustModFlagBehavior::AppendUnique => ModuleFlagBehavior::AppendUnique,
-            LLVMRustModFlagBehavior::Max => ModuleFlagBehavior::Max,
+            FlagBehavior::Error => ModuleFlagBehavior::Error,
+            FlagBehavior::Warning => ModuleFlagBehavior::Warning,
+            FlagBehavior::Require => ModuleFlagBehavior::Require,
+            FlagBehavior::Override => ModuleFlagBehavior::Override,
+            FlagBehavior::Append => ModuleFlagBehavior::Append,
+            FlagBehavior::AppendUnique => ModuleFlagBehavior::AppendUnique,
+            FlagBehavior::Max => ModuleFlagBehavior::Max,
             #[cfg(any(feature = "llvm15-0"))]
-            LLVMRustModFlagBehavior::Min => ModuleFlagBehavior::Min,
+            FlagBehavior::Min => ModuleFlagBehavior::Min,
         }
     }
 }
 
-impl From<ModuleFlagBehavior> for LLVMRustModFlagBehavior {
+impl From<ModuleFlagBehavior> for FlagBehavior {
     fn from(flag: ModuleFlagBehavior) -> Self {
         match flag {
-            ModuleFlagBehavior::Error => LLVMRustModFlagBehavior::Error,
-            ModuleFlagBehavior::Warning => LLVMRustModFlagBehavior::Warning,
-            ModuleFlagBehavior::Require => LLVMRustModFlagBehavior::Require,
-            ModuleFlagBehavior::Override => LLVMRustModFlagBehavior::Override,
-            ModuleFlagBehavior::Append => LLVMRustModFlagBehavior::Append,
-            ModuleFlagBehavior::AppendUnique => LLVMRustModFlagBehavior::AppendUnique,
-            ModuleFlagBehavior::Max => LLVMRustModFlagBehavior::Max,
+            ModuleFlagBehavior::Error => FlagBehavior::Error,
+            ModuleFlagBehavior::Warning => FlagBehavior::Warning,
+            ModuleFlagBehavior::Require => FlagBehavior::Require,
+            ModuleFlagBehavior::Override => FlagBehavior::Override,
+            ModuleFlagBehavior::Append => FlagBehavior::Append,
+            ModuleFlagBehavior::AppendUnique => FlagBehavior::AppendUnique,
+            ModuleFlagBehavior::Max => FlagBehavior::Max,
         }
     }
 }

@@ -10,7 +10,6 @@ use llvm_sys::{
     LLVMContext, LLVMMemoryBuffer,
 };
 use pyo3::prelude::*;
-use qirlib::llvm_wrapper::LLVMRustContextCreate;
 use std::{
     ffi::{c_char, CStr},
     ops::Deref,
@@ -26,7 +25,7 @@ pub(crate) struct Context(NonNull<LLVMContext>);
 impl Context {
     #[new]
     pub(crate) fn new() -> Self {
-        Self(NonNull::new(unsafe { LLVMRustContextCreate(0) }).unwrap())
+        Self(NonNull::new(unsafe { qirlib::context::create(false) }).unwrap())
     }
 }
 

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{llvm_wrapper::LLVMRustContextCreate, values};
+use crate::values;
 use const_str::{cstr, raw_cstr};
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{
@@ -52,7 +52,7 @@ pub(crate) struct Context(NonNull<LLVMContext>);
 
 impl Context {
     pub(crate) fn new() -> Self {
-        let context = unsafe { LLVMRustContextCreate(0) };
+        let context = unsafe { crate::context::create(false) };
         Self(NonNull::new(context).expect("Context is null."))
     }
 }

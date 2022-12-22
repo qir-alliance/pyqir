@@ -761,7 +761,7 @@ class ConstantIntAsMetadata(ConstantAsMetadata):
     """A metadata constant integer value."""
 
     @property
-    def value(self) -> int:
+    def value(self) -> Optional[int]:
         """The underlying metadata int value."""
         ...
 
