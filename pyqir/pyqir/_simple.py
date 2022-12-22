@@ -32,10 +32,6 @@ class SimpleModule:
         num_qubits: int,
         num_results: int,
         context: Optional[Context] = None,
-        qir_major: int = 1,
-        qir_minor: int = 0,
-        dynamic_qubits: bool = False,
-        dynamic_results: bool = False,
     ) -> None:
         """
         Initializes a simple module.
@@ -44,10 +40,6 @@ class SimpleModule:
         :param str num_qubits: The number of statically allocated qubits.
         :param int num_results: The number of statically allocated results.
         :param Optional[Context] context: The LLVM context.
-        :param int qir_major: QIR major specification version being targeted, default `1`
-        :param int qir_minor: QIR minor specification version being targeted, default `0`
-        :param bool dynamic_qubits: Whether this module uses dynamic qubit allocation, default `False`
-        :param bool dynamic_results: Whether this module uses dynamic result allocation, default `False`
         """
 
         if context is None:
@@ -67,25 +59,25 @@ class SimpleModule:
         self._module.add_flag(
             ModuleFlagBehavior.ERROR,
             "qir_major_version",
-            pyqir.const(i32, qir_major),
+            pyqir.const(i32, 1),
         )
 
         self._module.add_flag(
             ModuleFlagBehavior.MAX,
             "qir_minor_version",
-            pyqir.const(i32, qir_minor),
+            pyqir.const(i32, 0),
         )
 
         self._module.add_flag(
             ModuleFlagBehavior.ERROR,
             "dynamic_qubit_management",
-            pyqir.const(i1, dynamic_qubits),
+            pyqir.const(i1, False),
         )
 
         self._module.add_flag(
             ModuleFlagBehavior.ERROR,
             "dynamic_result_management",
-            pyqir.const(i1, dynamic_results),
+            pyqir.const(i1, False),
         )
 
     @property

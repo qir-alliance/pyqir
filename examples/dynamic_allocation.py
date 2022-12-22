@@ -1,62 +1,126 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-import pyqir
 
-mod = pyqir.SimpleModule(
-    "dynamic_allocation",
-    num_qubits=0,
-    num_results=0,
-    dynamic_qubits=True,
-    dynamic_results=True,
+from typing import List, Optional
+
+import pyqir
+from pyqir import (
+    BasicBlock,
+    Builder,
+    Constant,
+    Context,
+    entry_point,
+    Function,
+    FunctionType,
+    Linkage,
+    Module,
+    ModuleFlagBehavior,
+    Value,
 )
 
+context = Context()
+mod = Module(context, "dynamic_allocation")
+builder = Builder(context)
+
+# Define module flags
+i1 = pyqir.IntType(context, 1)
+i32 = pyqir.IntType(context, 32)
+
+mod.add_flag(
+    ModuleFlagBehavior.ERROR,
+    "qir_major_version",
+    pyqir.const(i32, 1),
+)
+
+mod.add_flag(
+    ModuleFlagBehavior.MAX,
+    "qir_minor_version",
+    pyqir.const(i32, 0),
+)
+
+mod.add_flag(
+    ModuleFlagBehavior.ERROR,
+    "dynamic_qubit_management",
+    pyqir.const(i1, True),
+)
+
+mod.add_flag(
+    ModuleFlagBehavior.ERROR,
+    "dynamic_result_management",
+    pyqir.const(i1, True),
+)
+
+# define external calls and type definitions
 qubit_type = pyqir.qubit_type(mod.context)
 result_type = pyqir.result_type(mod.context)
 
 # PyQIR assumes you want to use static allocation for qubits and results, but
 # you can still use dynamic allocation by manually calling the appropriate
 # runtime functions.
-qubit_allocate = mod.add_external_function(
-    "__quantum__rt__qubit_allocate", pyqir.FunctionType(qubit_type, [])
-)
-qubit_release = mod.add_external_function(
-    "__quantum__rt__qubit_release",
-    pyqir.FunctionType(pyqir.Type.void(mod.context), [qubit_type]),
-)
-result_get_one = mod.add_external_function(
-    "__quantum__rt__result_get_one", pyqir.FunctionType(result_type, [])
-)
-result_equal = mod.add_external_function(
-    "__quantum__rt__result_equal",
-    pyqir.FunctionType(pyqir.IntType(mod.context, 1), [result_type, result_type]),
-)
-m = mod.add_external_function(
-    "__quantum__qis__m__body", pyqir.FunctionType(result_type, [qubit_type])
+qubit_allocate = Function(
+    pyqir.FunctionType(qubit_type, []),
+    Linkage.EXTERNAL,
+    "__quantum__rt__qubit_allocate",
+    mod,
 )
 
-# Instead of mod.qubits[i], use __quantum__rt__qubit_allocate.
-qubit_return = mod.builder.call(qubit_allocate, [])
+qubit_release = Function(
+    pyqir.FunctionType(pyqir.Type.void(mod.context), [qubit_type]),
+    Linkage.EXTERNAL,
+    "__quantum__rt__qubit_release",
+    mod,
+)
+
+result_get_one = Function(
+    pyqir.FunctionType(result_type, []),
+    Linkage.EXTERNAL,
+    "__quantum__rt__result_get_one",
+    mod,
+)
+
+result_equal = Function(
+    pyqir.FunctionType(pyqir.IntType(mod.context, 1), [result_type, result_type]),
+    Linkage.EXTERNAL,
+    "__quantum__rt__result_equal",
+    mod,
+)
+
+m = Function(
+    pyqir.FunctionType(result_type, [qubit_type]),
+    Linkage.EXTERNAL,
+    "__quantum__qis__m__body",
+    mod,
+)
+
+# Create entry point
+num_qubits = 1
+num_results = 1
+entry_point = entry_point(mod, "main", num_qubits, num_results)
+builder.insert_at_end(BasicBlock(context, "entry", entry_point))
+
+# Define entry point body
+qubit_return = builder.call(qubit_allocate, [])
 
 assert qubit_return is not None
 qubit = qubit_return
 
-qis = pyqir.BasicQisBuilder(mod.builder)
+qis = pyqir.BasicQisBuilder(builder)
 qis.h(qubit)
 
 # Instead of qis.mz, use __quantum__qis__m__body.
-result = mod.builder.call(m, [qubit])
+result = builder.call(m, [qubit])
 assert result is not None
 
-# Instead of mod.if_result, use __quantum__rt__result_equal and mod.if_.
-one = mod.builder.call(result_get_one, [])
+# Instead of if_result, use __quantum__rt__result_equal and mod.if_.
+one = builder.call(result_get_one, [])
 assert one is not None
-result_is_one = mod.builder.call(result_equal, [result, one])
+result_is_one = builder.call(result_equal, [result, one])
 assert result_is_one is not None
-mod.builder.if_(result_is_one, lambda: qis.reset(qubit))
+builder.if_(result_is_one, lambda: qis.reset(qubit))
 
 # Be sure to release any allocated qubits when you're done with them.
-mod.builder.call(qubit_release, [qubit])
+builder.call(qubit_release, [qubit])
 
 if __name__ == "__main__":
-    print(mod.ir())
+    print(str(mod))
