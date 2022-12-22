@@ -3,7 +3,13 @@
 
 import pyqir
 
-mod = pyqir.SimpleModule("dynamic_allocation", num_qubits=0, num_results=0, dynamic_qubits=True, dynamic_results=True)
+mod = pyqir.SimpleModule(
+    "dynamic_allocation",
+    num_qubits=0,
+    num_results=0,
+    dynamic_qubits=True,
+    dynamic_results=True,
+)
 
 qubit_type = pyqir.qubit_type(mod.context)
 result_type = pyqir.result_type(mod.context)
