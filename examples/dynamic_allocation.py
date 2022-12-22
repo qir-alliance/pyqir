@@ -6,7 +6,6 @@ from pyqir import (
     BasicBlock,
     Builder,
     Context,
-    entry_point,
     Function,
     Linkage,
     Module,
@@ -46,8 +45,8 @@ mod.add_flag(
 )
 
 # define external calls and type definitions
-qubit_type = pyqir.qubit_type(mod.context)
-result_type = pyqir.result_type(mod.context)
+qubit_type = pyqir.qubit_type(context)
+result_type = pyqir.result_type(context)
 
 # PyQIR assumes you want to use static allocation for qubits and results, but
 # you can still use dynamic allocation by manually calling the appropriate
@@ -60,7 +59,7 @@ qubit_allocate = Function(
 )
 
 qubit_release = Function(
-    pyqir.FunctionType(pyqir.Type.void(mod.context), [qubit_type]),
+    pyqir.FunctionType(pyqir.Type.void(context), [qubit_type]),
     Linkage.EXTERNAL,
     "__quantum__rt__qubit_release",
     mod,
@@ -74,7 +73,7 @@ result_get_one = Function(
 )
 
 result_equal = Function(
-    pyqir.FunctionType(pyqir.IntType(mod.context, 1), [result_type, result_type]),
+    pyqir.FunctionType(pyqir.IntType(context, 1), [result_type, result_type]),
     Linkage.EXTERNAL,
     "__quantum__rt__result_equal",
     mod,
@@ -90,7 +89,7 @@ m = Function(
 # Create entry point
 num_qubits = 1
 num_results = 1
-entry_point = entry_point(mod, "main", num_qubits, num_results)
+entry_point = pyqir.entry_point(mod, "main", num_qubits, num_results)
 builder.insert_at_end(BasicBlock(context, "entry", entry_point))
 
 # Define entry point body

@@ -773,8 +773,8 @@ def entry_point(
     name: str,
     required_num_qubits: int,
     required_num_results: int,
-    qir_profiles: str = "custom",
-    output_labeling_schema: str = "",
+    qir_profiles: Optional[str] = "custom",
+    output_labeling_schema: Optional[str] = "",
 ) -> Function:
     """
     Creates an entry point.
@@ -783,8 +783,8 @@ def entry_point(
     :param str name: The entry point name.
     :param int required_num_qubits: The number of qubits required by the entry point.
     :param int required_num_results: The number of results required by the entry point.
-    :param str qir_profiles: Value identifying the profile the entry point has been compiled for. Use base_profile when QIR is compliant.
-    :param str output_labeling_schema: An arbitrary string value that identifies the schema used by a compiler frontend that produced the IR to label the recorded output
+    :param Optional[str] qir_profiles: Value identifying the profile the entry point has been compiled for. Use base_profile when QIR is compliant.
+    :param Optional[str] output_labeling_schema: An arbitrary string value that identifies the schema used by a compiler frontend that produced the IR to label the recorded output
     :returns: An entry point.
     """
     ...
