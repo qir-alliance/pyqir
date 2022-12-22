@@ -723,10 +723,6 @@ class MetadataString(Metadata):
         """
         ...
     @property
-    def is_null(self) -> bool:
-        """Whether this metadata string is the null value for its type."""
-        ...
-    @property
     def value(self) -> str:
         """The underlying metadata string value."""
         ...
