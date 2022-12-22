@@ -137,7 +137,7 @@ pub(crate) struct ConstantAsMetadata;
 impl ConstantAsMetadata {
     /// The value.
     ///
-    /// :type: int
+    /// :type: Constant
     #[getter]
     fn value(slf: PyRef<Self>, py: Python) -> Option<PyObject> {
         let slf = slf.into_super();
