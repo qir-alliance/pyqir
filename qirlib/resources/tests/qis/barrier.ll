@@ -8,4 +8,4 @@ define void @main() #0 {
 
 declare void @__quantum__qis__barrier__body()
 
-attributes #0 = { "EntryPoint" "output_labeling_schema" "qir_profiles"="custom" "requiredQubits"="0" "requiredResults"="0" }
+attributes #0 = { "entry_point" "num_required_qubits"="0" "num_required_results"="0" "output_labeling_schema" "qir_profiles"="custom" }

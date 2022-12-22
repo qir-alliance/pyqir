@@ -52,15 +52,15 @@ pub unsafe fn entry_point(
     let ty = LLVMFunctionType(void, [].as_mut_ptr(), 0, 0);
     let function = LLVMAddFunction(module, name.as_ptr(), ty);
 
-    add_string_attribute(function, b"EntryPoint", b"");
+    add_string_attribute(function, b"entry_point", b"");
     add_string_attribute(
         function,
-        b"requiredQubits",
+        b"num_required_qubits",
         required_num_qubits.to_string().as_bytes(),
     );
     add_string_attribute(
         function,
-        b"requiredResults",
+        b"num_required_results",
         required_num_results.to_string().as_bytes(),
     );
 
@@ -77,8 +77,8 @@ pub unsafe fn entry_point(
 
 pub unsafe fn is_entry_point(function: LLVMValueRef) -> bool {
     LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind
-        && (get_string_attribute(function, LLVMAttributeFunctionIndex, b"EntryPoint").is_some()
-            || get_string_attribute(function, LLVMAttributeFunctionIndex, b"entry_point").is_some())
+        && (get_string_attribute(function, LLVMAttributeFunctionIndex, b"entry_point").is_some()
+            || get_string_attribute(function, LLVMAttributeFunctionIndex, b"EntryPoint").is_some())
 }
 
 pub unsafe fn is_irreversible(function: LLVMValueRef) -> bool {
