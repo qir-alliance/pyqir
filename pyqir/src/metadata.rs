@@ -139,15 +139,15 @@ impl ConstantAsMetadata {
     ///
     /// :type: Constant
     #[getter]
-    fn value(slf: PyRef<Self>, py: Python) -> Option<PyObject> {
+    fn value(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super();
         let context = slf.owner.context(py).borrow(py).as_ptr();
         let valueref = unsafe { LLVMMetadataAsValue(context, slf.as_ptr()) };
 
         if let Some(value) = unsafe { qirlib::metadata::extract_constant(valueref) } {
-            return unsafe { Constant::from_raw(py, slf.owner().clone_ref(py), value).ok() };
+            return unsafe { Constant::from_raw(py, slf.owner().clone_ref(py), value) };
         }
-        None
+        panic!("Could not extract constant vale from metadata")
     }
 }
 
