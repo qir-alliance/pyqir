@@ -34,20 +34,20 @@ class SimpleModule:
         context: Optional[Context] = None,
         qir_major: int = 1,
         qir_minor: int = 0,
-        dynamic_qubits=False,
-        dynamic_results=False,
+        dynamic_qubits: bool = False,
+        dynamic_results: bool = False,
     ) -> None:
         """
         Initializes a simple module.
 
-        :param name: The name of the module.
-        :param num_qubits: The number of statically allocated qubits.
-        :param num_results: The number of statically allocated results.
-        :param context: The LLVM context.
-        :param qir_major: QIR major specification version being targeted, default `1`
-        :param qir_minor: QIR minor specification version being targeted, default `0`
-        :param dynamic_qubits: Whether this module uses dynamic qubit allocation, default `False`
-        :param dynamic_results: Whether this module uses dynamic result allocation, default `False`
+        :param str name: The name of the module.
+        :param str num_qubits: The number of statically allocated qubits.
+        :param int num_results: The number of statically allocated results.
+        :param Optional[Context] context: The LLVM context.
+        :param int qir_major: QIR major specification version being targeted, default `1`
+        :param int qir_minor: QIR minor specification version being targeted, default `0`
+        :param bool dynamic_qubits: Whether this module uses dynamic qubit allocation, default `False`
+        :param bool dynamic_results: Whether this module uses dynamic result allocation, default `False`
         """
 
         if context is None:
