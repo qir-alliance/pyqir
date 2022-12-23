@@ -161,7 +161,6 @@ impl ConstantAsMetadata {
                 PyClassInitializer::from(Metadata { value, owner }).add_subclass(Self);
             Ok(Py::new(py, initializer)?.to_object(py))
         } else {
-            println!("Could not extract constant.");
             Err(PyValueError::new_err("Could not extract constant."))
         }
     }
