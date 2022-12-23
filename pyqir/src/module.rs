@@ -20,7 +20,7 @@ use llvm_sys::{
     LLVMLinkage, LLVMModule,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
-use qirlib::module::FlagBehavior;
+use qirlib::module::{self, FlagBehavior};
 use std::{
     ffi::CString,
     ops::Deref,
@@ -145,6 +145,46 @@ impl Module {
         unsafe {
             LLVMSetSourceFileName(self.as_ptr(), value.as_ptr().cast(), value.len());
         }
+    }
+
+    #[getter]
+    pub(crate) fn qir_major_version(&self) -> Option<i32> {
+        unsafe { module::qir_major_version(self.as_ptr()) }
+    }
+
+    #[getter]
+    pub(crate) fn qir_minor_version(&self) -> Option<i32> {
+        unsafe { module::qir_minor_version(self.as_ptr()) }
+    }
+
+    #[getter]
+    pub(crate) fn dynamic_qubit_management(&self) -> Option<bool> {
+        unsafe { module::dynamic_qubit_management(self.as_ptr()) }
+    }
+
+    #[getter]
+    pub(crate) fn dynamic_result_management(&self) -> Option<bool> {
+        unsafe { module::dynamic_result_management(self.as_ptr()) }
+    }
+
+    #[setter]
+    pub(crate) fn set_qir_major_version(&self, version: i32) {
+        unsafe { module::set_qir_major_version(self.as_ptr(), version) }
+    }
+
+    #[setter]
+    pub(crate) fn set_qir_minor_version(&self, version: i32) {
+        unsafe { module::set_qir_minor_version(self.as_ptr(), version) }
+    }
+
+    #[setter]
+    pub(crate) fn set_dynamic_qubit_management(&self, version: bool) {
+        unsafe { module::set_dynamic_qubit_management(self.as_ptr(), version) }
+    }
+
+    #[setter]
+    pub(crate) fn set_dynamic_result_management(&self, version: bool) {
+        unsafe { module::set_dynamic_result_management(self.as_ptr(), version) }
     }
 
     /// The functions declared in this module.
