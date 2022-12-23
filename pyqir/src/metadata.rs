@@ -147,7 +147,7 @@ impl ConstantAsMetadata {
         if let Some(value) = unsafe { qirlib::metadata::extract_constant(valueref) } {
             return unsafe { Constant::from_raw(py, slf.owner().clone_ref(py), value) };
         }
-        panic!("Could not extract constant vale from metadata")
+        panic!("Could not extract constant value from metadata")
     }
 }
 
