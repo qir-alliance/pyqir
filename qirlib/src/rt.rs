@@ -27,9 +27,7 @@ pub unsafe fn build_array_record_output(
 }
 
 pub unsafe fn build_initialize(builder: LLVMBuilderRef, data: LLVMValueRef) {
-    unsafe {
-        build_call(builder, initialize(builder_module(builder)), &mut [data]);
-    }
+    build_call(builder, initialize(builder_module(builder)), &mut [data]);
 }
 
 pub unsafe fn build_result_record_output(
@@ -37,13 +35,11 @@ pub unsafe fn build_result_record_output(
     result: LLVMValueRef,
     label: LLVMValueRef,
 ) {
-    unsafe {
-        build_call(
-            builder,
-            result_record_output(builder_module(builder)),
-            &mut [result, label],
-        );
-    }
+    build_call(
+        builder,
+        result_record_output(builder_module(builder)),
+        &mut [result, label],
+    );
 }
 
 pub unsafe fn build_tuple_record_output(
@@ -51,13 +47,11 @@ pub unsafe fn build_tuple_record_output(
     num_elements: LLVMValueRef,
     label: LLVMValueRef,
 ) {
-    unsafe {
-        build_call(
-            builder,
-            tuple_record_output(builder_module(builder)),
-            &mut [num_elements, label],
-        );
-    }
+    build_call(
+        builder,
+        tuple_record_output(builder_module(builder)),
+        &mut [num_elements, label],
+    );
 }
 
 unsafe fn array_record_output(module: LLVMModuleRef) -> LLVMValueRef {
