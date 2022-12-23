@@ -63,5 +63,4 @@ runs:
         $target_prefix = if(${{ inputs.target }} -eq "manylinux") {"manylinux-"} else {""}
         ./build.ps1 -t "$($target_prefix)install-llvm-from-source"
       shell: pwsh
-      working-directory: scripts
       if: ${{ steps.cache-llvm.outputs.cache-hit != 'true' }}
