@@ -26,8 +26,8 @@ runs:
       uses: actions/cache@v3
       with:
         path: ${{ inputs.directory }}
-        key: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}-${{ hashFiles('Cargo.lock') }}
-        restore-keys: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}
+        key: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}-${{ inputs.target }}-${{ hashFiles('Cargo.lock') }}
+        restore-keys: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}-${{ inputs.target }}
 
     - name: Linux - Install build dependencies, ninja
       run: sudo apt-get install -y ninja-build
