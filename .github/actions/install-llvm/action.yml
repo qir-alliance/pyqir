@@ -1,5 +1,5 @@
 name: install-llvm
-description: "Builds and installs LLVM from source using llvm-build"
+description: "Builds and installs LLVM from source using install-llvm-from-source tasks"
 
 inputs:
   version:
