@@ -891,6 +891,24 @@ true and false callables should use this module’s builder to build instruction
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="pyqir.ConstantAsMetadata">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">ConstantAsMetadata</span></span><a class="headerlink" href="#pyqir.ConstantAsMetadata" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.Metadata" title="pyqir.Metadata"><code class="xref py py-class docutils literal notranslate"><span class="pre">Metadata</span></code></a></p>
+<p>A metadata constant value.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.ConstantAsMetadata.value">
+<span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#pyqir.ConstantAsMetadata.value" title="Permalink to this definition">#</a></dt>
+<dd><p>The value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Constant" title="pyqir.Constant">Constant</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="pyqir.Context">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">Context</span></span><a class="headerlink" href="#pyqir.Context" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
@@ -1345,6 +1363,31 @@ list is empty.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="pyqir.Metadata">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">Metadata</span></span><a class="headerlink" href="#pyqir.Metadata" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A metadata value or node.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.MetadataString">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">MetadataString</span></span><a class="headerlink" href="#pyqir.MetadataString" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqir.Metadata" title="pyqir.Metadata"><code class="xref py py-class docutils literal notranslate"><span class="pre">Metadata</span></code></a></p>
+<p>A metadata string</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.MetadataString.value">
+<span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#pyqir.MetadataString.value" title="Permalink to this definition">#</a></dt>
+<dd><p>The underlying metadata string value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="pyqir.Module">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">Module</span></span><a class="headerlink" href="#pyqir.Module" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
@@ -1357,6 +1400,22 @@ list is empty.</p>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.Module.add_flag">
+<span class="sig-name descname"><span class="pre">add_flag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Module.add_flag" title="Permalink to this definition">#</a></dt>
+<dd><p>Adds a flag to the llvm.module.flags metadata</p>
+<p>See <a class="reference external" href="https://llvm.org/docs/LangRef.html#module-flags-metadata">https://llvm.org/docs/LangRef.html#module-flags-metadata</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>behavior</strong> (<a class="reference internal" href="#pyqir.ModuleFlagBehavior" title="pyqir.ModuleFlagBehavior"><em>ModuleFlagBehavior</em></a>) – flag specifying the behavior when two (or more) modules are merged together</p></li>
+<li><p><strong>id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – string that is a unique ID for the metadata.</p></li>
+<li><p><strong>flag</strong> (<em>Union</em><em>[</em><a class="reference internal" href="#pyqir.Metadata" title="pyqir.Metadata"><em>Metadata</em></a><em>, </em><a class="reference internal" href="#pyqir.Value" title="pyqir.Value"><em>Value</em></a><em>]</em>) – value of the flag</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyqir.Module.bitcode">
 <span class="sig-name descname"><span class="pre">bitcode</span></span><a class="headerlink" href="#pyqir.Module.bitcode" title="Permalink to this definition">#</a></dt>
@@ -1430,6 +1489,24 @@ list is empty.</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.Module.get_flag">
+<span class="sig-name descname"><span class="pre">get_flag</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Module.get_flag" title="Permalink to this definition">#</a></dt>
+<dd><p>Gets the flag value from the llvm.module.flags metadata for a given id</p>
+<p>See <a class="reference external" href="https://llvm.org/docs/LangRef.html#module-flags-metadata">https://llvm.org/docs/LangRef.html#module-flags-metadata</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – metadata string that is a unique ID for the metadata.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>value of the flag if found, otherwise None</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.11)"><em>Optional</em></a>[<a class="reference internal" href="#pyqir.Metadata" title="pyqir.Metadata">Metadata</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyqir.Module.source_filename">
 <span class="sig-name descname"><span class="pre">source_filename</span></span><a class="headerlink" href="#pyqir.Module.source_filename" title="Permalink to this definition">#</a></dt>
@@ -1454,6 +1531,48 @@ list is empty.</p>
 </dd>
 </dl>
 </dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyqir.ModuleFlagBehavior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">ModuleFlagBehavior</span></span><a class="headerlink" href="#pyqir.ModuleFlagBehavior" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Module flag behavior choices</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.ModuleFlagBehavior.APPEND">
+<span class="sig-name descname"><span class="pre">APPEND</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">ModuleFlagBehavior.APPEND</span></em><a class="headerlink" href="#pyqir.ModuleFlagBehavior.APPEND" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.ModuleFlagBehavior.APPEND_UNIQUE">
+<span class="sig-name descname"><span class="pre">APPEND_UNIQUE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">ModuleFlagBehavior.APPEND_UNIQUE</span></em><a class="headerlink" href="#pyqir.ModuleFlagBehavior.APPEND_UNIQUE" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.ModuleFlagBehavior.ERROR">
+<span class="sig-name descname"><span class="pre">ERROR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">ModuleFlagBehavior.ERROR</span></em><a class="headerlink" href="#pyqir.ModuleFlagBehavior.ERROR" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.ModuleFlagBehavior.MAX">
+<span class="sig-name descname"><span class="pre">MAX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">ModuleFlagBehavior.MAX</span></em><a class="headerlink" href="#pyqir.ModuleFlagBehavior.MAX" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.ModuleFlagBehavior.OVERRIDE">
+<span class="sig-name descname"><span class="pre">OVERRIDE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">ModuleFlagBehavior.OVERRIDE</span></em><a class="headerlink" href="#pyqir.ModuleFlagBehavior.OVERRIDE" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.ModuleFlagBehavior.REQUIRE">
+<span class="sig-name descname"><span class="pre">REQUIRE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">ModuleFlagBehavior.REQUIRE</span></em><a class="headerlink" href="#pyqir.ModuleFlagBehavior.REQUIRE" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyqir.ModuleFlagBehavior.WARNING">
+<span class="sig-name descname"><span class="pre">WARNING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">ModuleFlagBehavior.WARNING</span></em><a class="headerlink" href="#pyqir.ModuleFlagBehavior.WARNING" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -2102,7 +2221,7 @@ list is empty.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pyqir.entry_point">
-<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">entry_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_num_qubits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_num_results</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.entry_point" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">entry_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_num_qubits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_num_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qir_profiles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_labeling_schema</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.entry_point" title="Permalink to this definition">#</a></dt>
 <dd><p>Creates an entry point.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -2111,6 +2230,8 @@ list is empty.</p>
 <li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – The entry point name.</p></li>
 <li><p><strong>required_num_qubits</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – The number of qubits required by the entry point.</p></li>
 <li><p><strong>required_num_results</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – The number of results required by the entry point.</p></li>
+<li><p><strong>qir_profiles</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – Value identifying the profile the entry point has been compiled for. Use base_profile when QIR is compliant.</p></li>
+<li><p><strong>output_labeling_schema</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – An arbitrary string value that identifies the schema used by a compiler frontend that produced the IR to label the recorded output</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2494,6 +2615,10 @@ list is empty.</p>
 <li><a class="reference internal" href="#pyqir.Constant.null"><code class="docutils literal notranslate"><span class="pre">Constant.null()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#pyqir.ConstantAsMetadata"><code class="docutils literal notranslate"><span class="pre">ConstantAsMetadata</span></code></a><ul>
+<li><a class="reference internal" href="#pyqir.ConstantAsMetadata.value"><code class="docutils literal notranslate"><span class="pre">ConstantAsMetadata.value</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#pyqir.Context"><code class="docutils literal notranslate"><span class="pre">Context</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.FCmp"><code class="docutils literal notranslate"><span class="pre">FCmp</span></code></a><ul>
 <li><a class="reference internal" href="#pyqir.FCmp.predicate"><code class="docutils literal notranslate"><span class="pre">FCmp.predicate</span></code></a></li>
@@ -2580,14 +2705,31 @@ list is empty.</p>
 <li><a class="reference internal" href="#pyqir.Linkage.WEAK_ODR"><code class="docutils literal notranslate"><span class="pre">Linkage.WEAK_ODR</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#pyqir.Metadata"><code class="docutils literal notranslate"><span class="pre">Metadata</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.MetadataString"><code class="docutils literal notranslate"><span class="pre">MetadataString</span></code></a><ul>
+<li><a class="reference internal" href="#pyqir.MetadataString.value"><code class="docutils literal notranslate"><span class="pre">MetadataString.value</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#pyqir.Module"><code class="docutils literal notranslate"><span class="pre">Module</span></code></a><ul>
+<li><a class="reference internal" href="#pyqir.Module.add_flag"><code class="docutils literal notranslate"><span class="pre">Module.add_flag()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Module.bitcode"><code class="docutils literal notranslate"><span class="pre">Module.bitcode</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Module.context"><code class="docutils literal notranslate"><span class="pre">Module.context</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Module.from_bitcode"><code class="docutils literal notranslate"><span class="pre">Module.from_bitcode()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Module.from_ir"><code class="docutils literal notranslate"><span class="pre">Module.from_ir()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Module.functions"><code class="docutils literal notranslate"><span class="pre">Module.functions</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.Module.get_flag"><code class="docutils literal notranslate"><span class="pre">Module.get_flag()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Module.source_filename"><code class="docutils literal notranslate"><span class="pre">Module.source_filename</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Module.verify"><code class="docutils literal notranslate"><span class="pre">Module.verify()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pyqir.ModuleFlagBehavior"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior</span></code></a><ul>
+<li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.APPEND"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.APPEND</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.APPEND_UNIQUE"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.APPEND_UNIQUE</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.ERROR"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.ERROR</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.MAX"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.MAX</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.OVERRIDE"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.OVERRIDE</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.REQUIRE"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.REQUIRE</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.WARNING"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.WARNING</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#pyqir.Opcode"><code class="docutils literal notranslate"><span class="pre">Opcode</span></code></a><ul>
