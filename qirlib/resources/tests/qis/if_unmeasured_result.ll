@@ -26,4 +26,4 @@ declare void @__quantum__qis__x__body(%Qubit*)
 
 declare void @__quantum__qis__h__body(%Qubit*)
 
-attributes #0 = { "EntryPoint" "requiredQubits"="1" "requiredResults"="1" }
+attributes #0 = { "entry_point" "num_required_qubits"="1" "num_required_results"="1" "output_labeling_schema" "qir_profiles"="custom" }

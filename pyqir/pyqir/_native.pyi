@@ -505,6 +505,29 @@ class Module:
     def context(self) -> Context:
         """The LLVM context."""
         ...
+    def add_flag(
+        self, behavior: ModuleFlagBehavior, id: str, flag: Union[Metadata, Constant]
+    ) -> None:
+        """
+        Adds a flag to the llvm.module.flags metadata
+
+        See https://llvm.org/docs/LangRef.html#module-flags-metadata
+
+        :param ModuleFlagBehavior behavior: flag specifying the behavior when two (or more) modules are merged together
+        :param str id: string that is a unique ID for the metadata.
+        :param Union[Metadata, Constant] flag: value of the flag
+        """
+        ...
+    def get_flag(self, id: str) -> Optional[Metadata]:
+        """
+        Gets the flag value from the llvm.module.flags metadata for a given id
+
+        See https://llvm.org/docs/LangRef.html#module-flags-metadata
+
+        :param id: metadata string that is a unique ID for the metadata.
+        :returns: value of the flag if found, otherwise None
+        """
+        ...
     def verify(self) -> Optional[str]:
         """
         Verifies that this module is valid.
@@ -515,6 +538,17 @@ class Module:
     def __str__(self) -> str:
         """Converts this module into an LLVM IR string."""
         ...
+
+class ModuleFlagBehavior(Enum):
+    """Module flag behavior choices"""
+
+    ERROR: ModuleFlagBehavior
+    WARNING: ModuleFlagBehavior
+    REQUIRE: ModuleFlagBehavior
+    OVERRIDE: ModuleFlagBehavior
+    APPEND: ModuleFlagBehavior
+    APPEND_UNIQUE: ModuleFlagBehavior
+    MAX: ModuleFlagBehavior
 
 class Opcode(Enum):
     """An instruction opcode."""
@@ -672,6 +706,35 @@ class Type:
         """Whether this type is the bool type."""
         ...
 
+class Metadata:
+    """A metadata value."""
+
+    ...
+
+class MetadataString(Metadata):
+    """A metadata string"""
+
+    def __init__(self, context: Context, string: str) -> None:
+        """
+        Creates a metadata string
+
+        :param context: The LLVM context.
+        :param string: the value of the metadata string to create
+        """
+        ...
+    @property
+    def value(self) -> str:
+        """The underlying metadata string value."""
+        ...
+
+class ConstantAsMetadata(Metadata):
+    """A metadata constant value."""
+
+    @property
+    def value(self) -> Constant:
+        """The underlying metadata constant value."""
+        ...
+
 class Value:
     """A value."""
 
@@ -695,15 +758,22 @@ def const(ty: Type, value: Union[bool, int, float]) -> Constant:
     ...
 
 def entry_point(
-    module: Module, name: str, required_num_qubits: int, required_num_results: int
+    module: Module,
+    name: str,
+    required_num_qubits: int,
+    required_num_results: int,
+    qir_profiles: Optional[str] = "custom",
+    output_labeling_schema: Optional[str] = "",
 ) -> Function:
     """
     Creates an entry point.
 
-    :param module: The parent module.
-    :param name: The entry point name.
-    :param required_num_qubits: The number of qubits required by the entry point.
-    :param required_num_results: The number of results required by the entry point.
+    :param Module module: The parent module.
+    :param str name: The entry point name.
+    :param int required_num_qubits: The number of qubits required by the entry point.
+    :param int required_num_results: The number of results required by the entry point.
+    :param Optional[str] qir_profiles: Value identifying the profile the entry point has been compiled for. Use base_profile when QIR is compliant.
+    :param Optional[str] output_labeling_schema: An arbitrary string value that identifies the schema used by a compiler frontend that produced the IR to label the recorded output
     :returns: An entry point.
     """
     ...

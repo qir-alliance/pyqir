@@ -44,22 +44,32 @@ pub unsafe fn entry_point(
     name: &CStr,
     required_num_qubits: u64,
     required_num_results: u64,
+    qir_profiles: &str,
+    output_labeling_schema: &str,
 ) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let void = LLVMVoidTypeInContext(context);
     let ty = LLVMFunctionType(void, [].as_mut_ptr(), 0, 0);
     let function = LLVMAddFunction(module, name.as_ptr(), ty);
 
-    add_string_attribute(function, b"EntryPoint", b"");
+    add_string_attribute(function, b"entry_point", b"");
     add_string_attribute(
         function,
-        b"requiredQubits",
+        b"num_required_qubits",
         required_num_qubits.to_string().as_bytes(),
     );
     add_string_attribute(
         function,
-        b"requiredResults",
+        b"num_required_results",
         required_num_results.to_string().as_bytes(),
+    );
+
+    add_string_attribute(function, b"qir_profiles", qir_profiles.as_bytes());
+
+    add_string_attribute(
+        function,
+        b"output_labeling_schema",
+        output_labeling_schema.as_bytes(),
     );
 
     function
@@ -67,7 +77,13 @@ pub unsafe fn entry_point(
 
 pub unsafe fn is_entry_point(function: LLVMValueRef) -> bool {
     LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind
-        && get_string_attribute(function, LLVMAttributeFunctionIndex, b"EntryPoint").is_some()
+        && (get_string_attribute(function, LLVMAttributeFunctionIndex, b"entry_point").is_some()
+            || get_string_attribute(function, LLVMAttributeFunctionIndex, b"EntryPoint").is_some())
+}
+
+pub unsafe fn is_irreversible(function: LLVMValueRef) -> bool {
+    LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind
+        && get_string_attribute(function, LLVMAttributeFunctionIndex, b"irreversible").is_some()
 }
 
 pub unsafe fn is_interop_friendly(function: LLVMValueRef) -> bool {
@@ -78,7 +94,11 @@ pub unsafe fn is_interop_friendly(function: LLVMValueRef) -> bool {
 pub unsafe fn required_num_qubits(function: LLVMValueRef) -> Option<u64> {
     if LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind {
         let required_qubits =
-            get_string_attribute(function, LLVMAttributeFunctionIndex, b"requiredQubits")?;
+            get_string_attribute(function, LLVMAttributeFunctionIndex, b"num_required_qubits")
+                .or_else(|| {
+                    get_string_attribute(function, LLVMAttributeFunctionIndex, b"requiredQubits")
+                })?;
+
         let mut len = 0;
         let value = LLVMGetStringAttributeValue(required_qubits.as_ptr(), &mut len);
         let value = slice::from_raw_parts(value.cast(), len.try_into().unwrap());
@@ -90,10 +110,16 @@ pub unsafe fn required_num_qubits(function: LLVMValueRef) -> Option<u64> {
 
 pub unsafe fn required_num_results(function: LLVMValueRef) -> Option<u64> {
     if LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind {
-        let required_qubits =
-            get_string_attribute(function, LLVMAttributeFunctionIndex, b"requiredResults")?;
+        let required_results = get_string_attribute(
+            function,
+            LLVMAttributeFunctionIndex,
+            b"num_required_results",
+        )
+        .or_else(|| {
+            get_string_attribute(function, LLVMAttributeFunctionIndex, b"requiredResults")
+        })?;
         let mut len = 0;
-        let value = LLVMGetStringAttributeValue(required_qubits.as_ptr(), &mut len);
+        let value = LLVMGetStringAttributeValue(required_results.as_ptr(), &mut len);
         let value = slice::from_raw_parts(value.cast(), len.try_into().unwrap());
         str::from_utf8(value).ok()?.parse().ok()
     } else {

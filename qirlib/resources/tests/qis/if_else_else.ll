@@ -31,10 +31,11 @@ continue3:                                        ; preds = %else2, %then1
   br label %continue
 }
 
-declare void @__quantum__qis__mz__body(%Qubit*, %Result*)
+declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly) #1
 
 declare i1 @__quantum__qis__read_result__body(%Result*)
 
 declare void @__quantum__qis__x__body(%Qubit*)
 
-attributes #0 = { "EntryPoint" "requiredQubits"="1" "requiredResults"="2" }
+attributes #0 = { "entry_point" "num_required_qubits"="1" "num_required_results"="2" "output_labeling_schema" "qir_profiles"="custom" }
+attributes #1 = { "irreversible" }

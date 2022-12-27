@@ -178,6 +178,8 @@ fn build_ir(
             cstr!("main"),
             required_num_qubits,
             required_num_results,
+            "custom",
+            "",
         );
 
         let builder = Builder::new(&context);

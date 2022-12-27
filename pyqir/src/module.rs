@@ -6,7 +6,8 @@
 use crate::{
     core::Context,
     core::{MemoryBuffer, Message},
-    values::Value,
+    metadata::Metadata,
+    values::{Constant, Owner, Value},
 };
 use core::slice;
 #[allow(clippy::wildcard_imports, deprecated)]
@@ -19,6 +20,7 @@ use llvm_sys::{
     LLVMLinkage, LLVMModule,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
+use qirlib::module::FlagBehavior;
 use std::{
     ffi::CString,
     ops::Deref,
@@ -31,7 +33,7 @@ use std::{
 /// :param Context context: The LLVM context.
 /// :param str name: The module name.
 #[pyclass(unsendable)]
-#[pyo3(text_signature = "(context, str)")]
+#[pyo3(text_signature = "(context, name)")]
 pub(crate) struct Module {
     module: NonNull<LLVMModule>,
     context: Py<Context>,
@@ -183,6 +185,54 @@ impl Module {
         &self.context
     }
 
+    /// Adds a flag to the llvm.module.flags metadata
+    ///
+    /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
+    ///
+    /// :param ModuleFlagBehavior behavior: flag specifying the behavior when two (or more) modules are merged together
+    /// :param str id: string that is a unique ID for the metadata.
+    /// :param Union[Metadata, Value] flag: value of the flag
+    #[pyo3(text_signature = "(behavior, id, flag)")]
+    pub(crate) fn add_flag(
+        &self,
+        py: Python,
+        behavior: ModuleFlagBehavior,
+        id: &str,
+        flag: Flag,
+    ) -> PyResult<()> {
+        let context = self.context().clone_ref(py);
+        let _owner = Owner::merge(py, [Owner::Context(context), flag.owner().clone_ref(py)])?;
+        let md = match flag {
+            Flag::Constant(v) => unsafe { LLVMValueAsMetadata(v.into_super().as_ptr()) },
+            Flag::Metadata(m) => m.as_ptr(),
+        };
+        unsafe {
+            qirlib::module::add_flag(self.module.as_ptr(), behavior.into(), id, md);
+        }
+        Ok(())
+    }
+
+    /// Gets the flag value from the llvm.module.flags metadata for a given id
+    ///
+    /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
+    ///
+    /// :param str id: metadata string that is a unique ID for the metadata.
+    /// :returns: value of the flag if found, otherwise None
+    /// :rtype: typing.Optional[Metadata]
+    #[pyo3(text_signature = "(id)")]
+    pub(crate) fn get_flag(slf: Py<Module>, py: Python, id: &str) -> Option<PyObject> {
+        let module = slf.borrow(py).module.as_ptr();
+        let flag = unsafe { LLVMGetModuleFlag(module, id.as_ptr().cast(), id.len()) };
+
+        if flag.is_null() {
+            return None;
+        }
+
+        let owner = slf.into();
+        let value = unsafe { Metadata::from_raw(py, owner, flag) };
+        value.ok()
+    }
+
     /// Verifies that this module is valid.
     ///
     /// :returns: An error description if this module is invalid or `None` if this module is valid.
@@ -279,6 +329,69 @@ impl From<Linkage> for LLVMLinkage {
             Linkage::Private => Self::LLVMPrivateLinkage,
             Linkage::WeakAny => Self::LLVMWeakAnyLinkage,
             Linkage::WeakOdr => Self::LLVMWeakODRLinkage,
+        }
+    }
+}
+
+/// Module flag behavior choices
+#[pyclass]
+#[derive(Clone)]
+pub(crate) enum ModuleFlagBehavior {
+    #[pyo3(name = "ERROR")]
+    Error,
+    #[pyo3(name = "WARNING")]
+    Warning,
+    #[pyo3(name = "REQUIRE")]
+    Require,
+    #[pyo3(name = "OVERRIDE")]
+    Override,
+    #[pyo3(name = "APPEND")]
+    Append,
+    #[pyo3(name = "APPEND_UNIQUE")]
+    AppendUnique,
+    #[pyo3(name = "MAX")]
+    Max,
+}
+
+impl From<FlagBehavior> for ModuleFlagBehavior {
+    fn from(flag: FlagBehavior) -> Self {
+        match flag {
+            FlagBehavior::Error => ModuleFlagBehavior::Error,
+            FlagBehavior::Warning => ModuleFlagBehavior::Warning,
+            FlagBehavior::Require => ModuleFlagBehavior::Require,
+            FlagBehavior::Override => ModuleFlagBehavior::Override,
+            FlagBehavior::Append => ModuleFlagBehavior::Append,
+            FlagBehavior::AppendUnique => ModuleFlagBehavior::AppendUnique,
+            FlagBehavior::Max => ModuleFlagBehavior::Max,
+        }
+    }
+}
+
+impl From<ModuleFlagBehavior> for FlagBehavior {
+    fn from(flag: ModuleFlagBehavior) -> Self {
+        match flag {
+            ModuleFlagBehavior::Error => FlagBehavior::Error,
+            ModuleFlagBehavior::Warning => FlagBehavior::Warning,
+            ModuleFlagBehavior::Require => FlagBehavior::Require,
+            ModuleFlagBehavior::Override => FlagBehavior::Override,
+            ModuleFlagBehavior::Append => FlagBehavior::Append,
+            ModuleFlagBehavior::AppendUnique => FlagBehavior::AppendUnique,
+            ModuleFlagBehavior::Max => FlagBehavior::Max,
+        }
+    }
+}
+
+#[derive(FromPyObject)]
+pub(crate) enum Flag<'py> {
+    Constant(PyRef<'py, Constant>),
+    Metadata(PyRef<'py, Metadata>),
+}
+
+impl Flag<'_> {
+    fn owner(&self) -> &Owner {
+        match self {
+            Flag::Constant(v) => v.as_ref().owner(),
+            Flag::Metadata(m) => m.owner(),
         }
     }
 }

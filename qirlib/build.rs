@@ -96,6 +96,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     // llvm-sys components
     println!("cargo:rerun-if-changed=external.rs");
     println!("cargo:rerun-if-changed=target.c");
+    println!("cargo:rerun-if-changed=llvm-wrapper/LLVMWrapper.h");
+    println!("cargo:rerun-if-changed=llvm-wrapper/MetadataWrapper.cpp");
+    println!("cargo:rerun-if-changed=llvm-wrapper/ModuleWrapper.cpp");
 
     // Download vars passed to cmake
     println!("cargo:rerun-if-env-changed=QIRLIB_DOWNLOAD_LLVM");
@@ -125,11 +128,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("Linking llvm");
         link_llvm();
         let build_dir = get_build_dir()?;
-        compile_target_wrappers(&build_dir);
+        compile_target_wrappers(&build_dir)?;
     } else if cfg!(feature = "external-llvm-linking") {
         println!("LLVM_SYS_{{}}_PREFIX will provide the LLVM linking");
     } else {
         println!("No LLVM linking");
+    }
+    if !cfg!(feature = "no-llvm-linking") {
+        compile_llvm_wrapper()?;
     }
 
     Ok(())
@@ -245,10 +251,30 @@ fn link_llvm() {
     }
 }
 
-fn compile_target_wrappers(build_dir: &Path) {
-    let target_c = build_dir.join("target.c");
+fn compile_target_wrappers(build_dir: &Path) -> Result<(), Box<dyn Error>> {
+    let target_c = build_dir.join("target.c").canonicalize()?;
     env::set_var("CFLAGS", llvm_sys::get_llvm_cflags());
     Build::new().file(target_c).compile("targetwrappers");
+    Ok(())
+}
+
+fn compile_llvm_wrapper() -> Result<(), Box<dyn Error>> {
+    let mut cfg = cc::Build::new();
+    cfg.warnings(false);
+    let cxxflags = llvm_sys::get_llvm_cxxflags();
+    for flag in cxxflags.split_whitespace() {
+        if flag.starts_with("-flto") {
+            continue;
+        }
+        cfg.flag(flag);
+    }
+    cfg.cpp(true)
+        .cpp_link_stdlib(None)
+        .static_crt(true)
+        .file("llvm-wrapper/MetadataWrapper.cpp")
+        .file("llvm-wrapper/ModuleWrapper.cpp")
+        .compile("llvm-wrapper");
+    Ok(())
 }
 
 fn get_package_file_name() -> Result<String, Box<dyn Error>> {
@@ -313,14 +339,30 @@ fn get_llvm_install_dir() -> PathBuf {
 }
 
 fn locate_llvm_config() -> Option<PathBuf> {
-    let dir = get_llvm_install_dir();
-    let prefix = dir.join("bin");
-    let binary_name = llvm_config_name();
-    let binary_path = prefix.join(binary_name);
-    if binary_path.as_path().exists() {
-        Some(binary_path)
+    let major = if cfg!(feature = "llvm11-0") {
+        "11"
+    } else if cfg!(feature = "llvm12-0") {
+        "12"
+    } else if cfg!(feature = "llvm13-0") {
+        "13"
+    } else if cfg!(feature = "llvm14-0") {
+        "14"
     } else {
-        None
+        "unknown"
+    };
+    if let Ok(path) = env::var(format!("DEP_LLVM_{major}_CONFIG_PATH")) {
+        Some(PathBuf::from(path))
+    } else {
+        let dir = get_llvm_install_dir();
+        println!("Looking in {:?}", dir);
+        let prefix = dir.join("bin");
+        let binary_name = llvm_config_name();
+        let binary_path = prefix.join(binary_name);
+        if binary_path.as_path().exists() {
+            Some(binary_path)
+        } else {
+            None
+        }
     }
 }
 

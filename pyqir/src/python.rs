@@ -7,7 +7,8 @@ use crate::{
     instructions::{
         Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
-    module::{Linkage, Module},
+    metadata::{ConstantAsMetadata, Metadata, MetadataString},
+    module::{Linkage, Module, ModuleFlagBehavior},
     qis::{
         barrier, ccx, cx, cz, h, if_result, mz, reset, rx, ry, rz, s, s_adj, swap, t, t_adj, x, y,
         z,
@@ -36,6 +37,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Builder>()?;
     m.add_class::<Call>()?;
     m.add_class::<Constant>()?;
+    m.add_class::<ConstantAsMetadata>()?;
     m.add_class::<Context>()?;
     m.add_class::<FCmp>()?;
     m.add_class::<FloatConstant>()?;
@@ -48,7 +50,10 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<IntPredicate>()?;
     m.add_class::<IntType>()?;
     m.add_class::<Linkage>()?;
+    m.add_class::<Metadata>()?;
+    m.add_class::<MetadataString>()?;
     m.add_class::<Module>()?;
+    m.add_class::<ModuleFlagBehavior>()?;
     m.add_class::<Opcode>()?;
     m.add_class::<Phi>()?;
     m.add_class::<PointerType>()?;
