@@ -300,30 +300,3 @@ function install-llvm {
         }
     }   
 }
-
-function Get-CCacheParams {
-    # only ccache is supported in the container for now.
-    # we would need a way to specify which cache is used to
-    # support both.
-    if (Test-CommandExists ccache) {
-        # we need to map the local cache dir into the
-        # container. If the env var isn't set, ask ccache
-        $cacheDir = ""
-        if (Test-Path env:\CCACHE_DIR) {
-            $cacheDir = $Env:CCACHE_DIR
-        }
-        else {
-            $cacheDir = exec { ccache -k cache_dir }
-        }
-        if (![string]::IsNullOrWhiteSpace($cacheDir)) {
-            New-Item -ItemType Directory -Force $cacheDir | Out-Null
-            
-            $cacheDir = Resolve-Path $cacheDir
-            # mount the cache outside of any runner mappings
-            $cacheMount = @("-v", "${cacheDir}:/ccache")
-            $cacheEnv = @("-e", "CCACHE_DIR=`"/ccache`"")
-            return $cacheMount, $cacheEnv
-        }
-    }
-    return "", ""
-}

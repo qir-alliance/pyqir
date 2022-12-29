@@ -30,7 +30,7 @@ task run-manylinux-container-image -preaction { Write-CacheStats } -postaction {
     # docker will create it and it will be owned by root and
     # the caching/install breaks with permission errors.
     # New-Item is idempotent so we don't need to check for existence
-    $cacheMount, $cacheEnv = Get-CCacheParams
+    $llvmMount = @("-v", "$(Resolve-InstallationDirectory):/tmp/llvm")
     Write-BuildLog "Running container image: $ManylinuxTag"
     $ioVolume = "${Root}:$ManylinuxRoot"
     $userName = Get-LinuxContainerUserName
@@ -38,7 +38,7 @@ task run-manylinux-container-image -preaction { Write-CacheStats } -postaction {
     Invoke-LoggedCommand {
         docker run --rm `
             --user $userName `
-            --volume $ioVolume @cacheMount @cacheEnv `
+            --volume $ioVolume @llvmMount `
             --env QIRLIB_CACHE_DIR=/tmp/llvm `
             --workdir $ManylinuxRoot `
             $ManylinuxTag `
@@ -188,7 +188,7 @@ task manylinux-install-llvm-from-source -depends build-manylinux-container-image
     # docker will create it and it will be owned by root and
     # the caching/install breaks with permission errors.
     # New-Item is idempotent so we don't need to check for existence
-    $cacheMount, $cacheEnv = Get-CCacheParams
+    $llvmMount = @("-v", "$(Resolve-InstallationDirectory):/tmp/llvm")
     Write-BuildLog "Running container image: $ManylinuxTag"
     $ioVolume = "${Root}:$ManylinuxRoot"
     $userName = Get-LinuxContainerUserName
@@ -196,7 +196,7 @@ task manylinux-install-llvm-from-source -depends build-manylinux-container-image
     Invoke-LoggedCommand {
         docker run --rm `
             --user $userName `
-            --volume $ioVolume @cacheMount @cacheEnv `
+            --volume $ioVolume @llvmMount `
             --workdir $ManylinuxRoot `
             $ManylinuxTag `
             conda run --no-capture-output pwsh build.ps1 -t install-llvm-from-source
@@ -208,7 +208,7 @@ task package-manylinux-llvm -depends build-manylinux-container-image -preaction 
     # docker will create it and it will be owned by root and
     # the caching/install breaks with permission errors.
     # New-Item is idempotent so we don't need to check for existence
-    $cacheMount, $cacheEnv = Get-CCacheParams
+    $llvmMount = @("-v", "$(Resolve-InstallationDirectory):/tmp/llvm")
     Write-BuildLog "Running container image: $ManylinuxTag"
     $ioVolume = "${Root}:$ManylinuxRoot"
     $userName = Get-LinuxContainerUserName
@@ -216,7 +216,7 @@ task package-manylinux-llvm -depends build-manylinux-container-image -preaction 
     Invoke-LoggedCommand {
         docker run --rm `
             --user $userName `
-            --volume $ioVolume @cacheMount @cacheEnv `
+            --volume $ioVolume @llvmMount `
             --workdir $ManylinuxRoot `
             --env QIRLIB_PKG_DEST=$ManylinuxRoot/target/manylinux `
             $ManylinuxTag `
