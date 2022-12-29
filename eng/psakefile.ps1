@@ -30,6 +30,9 @@ task run-manylinux-container-image -preaction { Write-CacheStats } -postaction {
     # docker will create it and it will be owned by root and
     # the caching/install breaks with permission errors.
     # New-Item is idempotent so we don't need to check for existence
+    if (!Test-Path($llvmDir)) {
+        New-Item -ItemType Directory -Force $llvmDir | Out-Null
+    }
     $llvmMount = @("-v", "$(Resolve-InstallationDirectory):/tmp/llvm")
     Write-BuildLog "Running container image: $ManylinuxTag"
     $ioVolume = "${Root}:$ManylinuxRoot"
@@ -188,6 +191,9 @@ task manylinux-install-llvm-from-source -depends build-manylinux-container-image
     # docker will create it and it will be owned by root and
     # the caching/install breaks with permission errors.
     # New-Item is idempotent so we don't need to check for existence
+    if (!Test-Path($llvmDir)) {
+        New-Item -ItemType Directory -Force $llvmDir | Out-Null
+    }
     $llvmMount = @("-v", "$(Resolve-InstallationDirectory):/tmp/llvm")
     Write-BuildLog "Running container image: $ManylinuxTag"
     $ioVolume = "${Root}:$ManylinuxRoot"
@@ -208,6 +214,10 @@ task package-manylinux-llvm -depends build-manylinux-container-image -preaction 
     # docker will create it and it will be owned by root and
     # the caching/install breaks with permission errors.
     # New-Item is idempotent so we don't need to check for existence
+    $llvmDir = Resolve-InstallationDirectory
+    if (!Test-Path($llvmDir)) {
+        New-Item -ItemType Directory -Force $llvmDir | Out-Null
+    }
     $llvmMount = @("-v", "$(Resolve-InstallationDirectory):/tmp/llvm")
     Write-BuildLog "Running container image: $ManylinuxTag"
     $ioVolume = "${Root}:$ManylinuxRoot"
