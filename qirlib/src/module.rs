@@ -114,7 +114,7 @@ unsafe fn get_u64_flag(module: LLVMModuleRef, id: &str) -> Option<u64> {
 
 unsafe fn get_i1_flag(module: LLVMModuleRef, id: &str) -> Option<bool> {
     if let Some(value) = get_u64_flag(module, id) {
-        return Some(value == 0);
+        return Some(value != 0);
     }
     None
 }

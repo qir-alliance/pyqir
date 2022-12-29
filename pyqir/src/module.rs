@@ -168,23 +168,51 @@ impl Module {
     }
 
     #[setter]
-    pub(crate) fn set_qir_major_version(&self, version: i32) {
-        unsafe { module::set_qir_major_version(self.as_ptr(), version) }
+    pub(crate) fn set_qir_major_version(&self, version: i32) -> PyResult<()> {
+        if let Some(value) = self.qir_major_version() {
+            Err(PyValueError::new_err(format!(
+                "qir_major_version is already set to {value}"
+            )))
+        } else {
+            unsafe { module::set_qir_major_version(self.as_ptr(), version) };
+            Ok(())
+        }
     }
 
     #[setter]
-    pub(crate) fn set_qir_minor_version(&self, version: i32) {
-        unsafe { module::set_qir_minor_version(self.as_ptr(), version) }
+    pub(crate) fn set_qir_minor_version(&self, version: i32) -> PyResult<()> {
+        if let Some(value) = self.qir_minor_version() {
+            Err(PyValueError::new_err(format!(
+                "qir_minor_version is already set to {value}"
+            )))
+        } else {
+            unsafe { module::set_qir_minor_version(self.as_ptr(), version) };
+            Ok(())
+        }
     }
 
     #[setter]
-    pub(crate) fn set_dynamic_qubit_management(&self, version: bool) {
-        unsafe { module::set_dynamic_qubit_management(self.as_ptr(), version) }
+    pub(crate) fn set_dynamic_qubit_management(&self, version: bool) -> PyResult<()> {
+        if let Some(value) = self.dynamic_qubit_management() {
+            Err(PyValueError::new_err(format!(
+                "dynamic_qubit_management is already set to {value}"
+            )))
+        } else {
+            unsafe { module::set_dynamic_qubit_management(self.as_ptr(), version) };
+            Ok(())
+        }
     }
 
     #[setter]
-    pub(crate) fn set_dynamic_result_management(&self, version: bool) {
-        unsafe { module::set_dynamic_result_management(self.as_ptr(), version) }
+    pub(crate) fn set_dynamic_result_management(&self, version: bool) -> PyResult<()> {
+        if let Some(value) = self.dynamic_result_management() {
+            Err(PyValueError::new_err(format!(
+                "dynamic_result_management is already set to {value}"
+            )))
+        } else {
+            unsafe { module::set_dynamic_result_management(self.as_ptr(), version) };
+            Ok(())
+        }
     }
 
     /// The functions declared in this module.

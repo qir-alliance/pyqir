@@ -89,3 +89,43 @@ def test_add_value_flag_raises_with_wrong_ownership() -> None:
     mod = pyqir.Module(pyqir.Context(), "")
     with pytest.raises(ValueError):
         mod.add_flag(ModuleFlagBehavior.ERROR, "", value)
+
+
+def test_module_qir_major_version() -> None:
+    mod = pyqir.Module(pyqir.Context(), "")
+    assert mod.qir_major_version is None
+    mod.qir_major_version = 42
+    assert mod.qir_major_version == 42
+    # value can only be set once
+    with pytest.raises(ValueError):
+        mod.qir_major_version = 7
+
+
+def test_module_qir_minor_version() -> None:
+    mod = pyqir.Module(pyqir.Context(), "")
+    assert mod.qir_minor_version is None
+    mod.qir_minor_version = 7
+    assert mod.qir_minor_version == 7
+    # value can only be set once
+    with pytest.raises(ValueError):
+        mod.qir_minor_version = 42
+
+
+def test_module_dynamic_qubit_management() -> None:
+    mod = pyqir.Module(pyqir.Context(), "")
+    assert mod.dynamic_qubit_management is None
+    mod.dynamic_qubit_management = True
+    assert mod.dynamic_qubit_management == True
+    # value can only be set once
+    with pytest.raises(ValueError):
+        mod.dynamic_qubit_management = False
+
+
+def test_module_dynamic_result_management() -> None:
+    mod = pyqir.Module(pyqir.Context(), "")
+    assert mod.dynamic_result_management is None
+    mod.dynamic_result_management = True
+    assert mod.dynamic_result_management == True
+    # value can only be set once
+    with pytest.raises(ValueError):
+        mod.dynamic_result_management = False
