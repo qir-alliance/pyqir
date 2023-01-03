@@ -761,6 +761,80 @@ pub(crate) fn required_num_results(function: PyRef<Function>) -> Option<u64> {
     unsafe { values::required_num_results(function.into_super().into_super().as_ptr()) }
 }
 
+/// Creates a module with required QIR module flag metadata
+///
+/// :param Context context: The parent context.
+/// :param str name: The module name.
+/// :param Optional[int] qir_major_version: The QIR major version this module is built for. Default 1.
+/// :param Optional[int] qir_minor_version: The QIR minor version this module is built for. Default 0.
+/// :param Optional[bool] dynamic_qubit_management: Whether this module supports dynamic qubit management. Default False.
+/// :param Optional[bool] dynamic_result_management: Whether this module supports dynamic result management. Default False.
+/// :rtype: Module
+#[pyfunction]
+#[pyo3(
+    text_signature = "(context, name, qir_major_version, qir_minor_version, dynamic_qubit_management, dynamic_result_management)"
+)]
+pub(crate) fn qir_module(
+    py: Python,
+    context: Py<Context>,
+    name: &str,
+    qir_major_version: Option<i32>,
+    qir_minor_version: Option<i32>,
+    dynamic_qubit_management: Option<bool>,
+    dynamic_result_management: Option<bool>,
+) -> PyResult<PyObject> {
+    let module = crate::module::Module::new(py, context, name);
+    //let py_module = Py::new(py, module)?;
+    let ptr = module.as_ptr();
+    unsafe {
+        qirlib::module::set_qir_major_version(ptr, qir_major_version.unwrap_or(1));
+    }
+    unsafe {
+        qirlib::module::set_qir_minor_version(ptr, qir_minor_version.unwrap_or(0));
+    }
+    unsafe {
+        qirlib::module::set_dynamic_qubit_management(
+            ptr,
+            dynamic_qubit_management.unwrap_or(false),
+        );
+    }
+    unsafe {
+        qirlib::module::set_dynamic_result_management(
+            ptr,
+            dynamic_result_management.unwrap_or(false),
+        );
+    }
+    Ok(Py::new(py, module)?.to_object(py))
+}
+
+/// The QIR major version this module is built for. None if unspecified.
+#[pyfunction]
+#[pyo3(text_signature = "(module)")]
+pub(crate) fn qir_major_version(module: PyRef<Module>) -> Option<i32> {
+    unsafe { qirlib::module::qir_major_version(module.as_ptr()) }
+}
+
+/// The QIR minor version this module is built for. None if unspecified.
+#[pyfunction]
+#[pyo3(text_signature = "(module)")]
+pub(crate) fn qir_minor_version(module: PyRef<Module>) -> Option<i32> {
+    unsafe { qirlib::module::qir_minor_version(module.as_ptr()) }
+}
+
+/// Whether this module supports dynamic qubit management. None if unspecified.
+#[pyfunction]
+#[pyo3(text_signature = "(module)")]
+pub(crate) fn dynamic_qubit_management(module: PyRef<Module>) -> Option<bool> {
+    unsafe { qirlib::module::dynamic_qubit_management(module.as_ptr()) }
+}
+
+/// Whether this module supports dynamic result management. None if unspecified.
+#[pyfunction]
+#[pyo3(text_signature = "(module)")]
+pub(crate) fn dynamic_result_management(module: PyRef<Module>) -> Option<bool> {
+    unsafe { qirlib::module::dynamic_result_management(module.as_ptr()) }
+}
+
 /// Creates a global null-terminated byte string constant in a module.
 ///
 /// :param Module module: The parent module.

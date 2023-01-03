@@ -13,14 +13,15 @@ from pyqir import (
 )
 
 context = Context()
-mod = Module(context, "dynamic_allocation")
+mod = pyqir.qir_module(
+    context,
+    "dynamic_allocation",
+    qir_major_version=1,
+    qir_minor_version=0,
+    dynamic_qubit_management=True,
+    dynamic_result_management=True,
+)
 builder = Builder(context)
-
-# Define module flags
-mod.qir_major_version = 1
-mod.qir_minor_version = 0
-mod.dynamic_qubit_management = True
-mod.dynamic_result_management = True
 
 # define external calls and type definitions
 qubit_type = pyqir.qubit_type(context)

@@ -45,18 +45,20 @@ class SimpleModule:
         if context is None:
             context = Context()
 
-        self._module = Module(context, name)
+        self._module = pyqir.qir_module(
+            context,
+            name,
+            qir_major_version=1,
+            qir_minor_version=0,
+            dynamic_qubit_management=False,
+            dynamic_result_management=False,
+        )
         self._builder = Builder(context)
         self._num_qubits = num_qubits
         self._num_results = num_results
 
         entry_point = pyqir.entry_point(self._module, "main", num_qubits, num_results)
         self._builder.insert_at_end(BasicBlock(context, "entry", entry_point))
-
-        self._module.qir_major_version = 1
-        self._module.qir_minor_version = 0
-        self._module.dynamic_qubit_management = False
-        self._module.dynamic_result_management = False
 
     @property
     def context(self) -> Context:

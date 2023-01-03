@@ -92,40 +92,36 @@ def test_add_value_flag_raises_with_wrong_ownership() -> None:
 
 
 def test_module_qir_major_version() -> None:
-    mod = pyqir.Module(pyqir.Context(), "")
-    assert mod.qir_major_version is None
-    mod.qir_major_version = 42
-    assert mod.qir_major_version == 42
-    # value can only be set once
-    with pytest.raises(ValueError):
-        mod.qir_major_version = 7
+    assert pyqir.qir_major_version(pyqir.Module(pyqir.Context(), "")) is None
+    assert pyqir.qir_major_version(pyqir.qir_module(pyqir.Context(), "")) is 1
+    mod = pyqir.qir_module(pyqir.Context(), "", 42)
+    assert pyqir.qir_major_version(mod) == 42
 
 
 def test_module_qir_minor_version() -> None:
-    mod = pyqir.Module(pyqir.Context(), "")
-    assert mod.qir_minor_version is None
-    mod.qir_minor_version = 7
-    assert mod.qir_minor_version == 7
-    # value can only be set once
-    with pytest.raises(ValueError):
-        mod.qir_minor_version = 42
+    assert pyqir.qir_minor_version(pyqir.Module(pyqir.Context(), "")) is None
+    assert pyqir.qir_minor_version(pyqir.qir_module(pyqir.Context(), "")) is 0
+    mod = pyqir.qir_module(pyqir.Context(), "", 1, 42)
+    assert pyqir.qir_minor_version(mod) == 42
 
 
 def test_module_dynamic_qubit_management() -> None:
-    mod = pyqir.Module(pyqir.Context(), "")
-    assert mod.dynamic_qubit_management is None
-    mod.dynamic_qubit_management = True
-    assert mod.dynamic_qubit_management == True
-    # value can only be set once
-    with pytest.raises(ValueError):
-        mod.dynamic_qubit_management = False
+    assert pyqir.dynamic_qubit_management(pyqir.Module(pyqir.Context(), "")) is None
+    assert (
+        pyqir.dynamic_qubit_management(pyqir.qir_module(pyqir.Context(), "")) is False
+    )
+    mod = pyqir.qir_module(pyqir.Context(), "", dynamic_qubit_management=True)
+    assert pyqir.dynamic_qubit_management(mod) == True
+    mod = pyqir.qir_module(pyqir.Context(), "", dynamic_qubit_management=False)
+    assert pyqir.dynamic_qubit_management(mod) == False
 
 
 def test_module_dynamic_result_management() -> None:
-    mod = pyqir.Module(pyqir.Context(), "")
-    assert mod.dynamic_result_management is None
-    mod.dynamic_result_management = True
-    assert mod.dynamic_result_management == True
-    # value can only be set once
-    with pytest.raises(ValueError):
-        mod.dynamic_result_management = False
+    assert pyqir.dynamic_result_management(pyqir.Module(pyqir.Context(), "")) is None
+    assert (
+        pyqir.dynamic_result_management(pyqir.qir_module(pyqir.Context(), "")) is False
+    )
+    mod = pyqir.qir_module(pyqir.Context(), "", dynamic_result_management=True)
+    assert pyqir.dynamic_result_management(mod) == True
+    mod = pyqir.qir_module(pyqir.Context(), "", dynamic_result_management=False)
+    assert pyqir.dynamic_result_management(mod) == False
