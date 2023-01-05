@@ -22,9 +22,10 @@ RUN curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --profi
 RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME};
 
 WORKDIR /tmp
-RUN echo "${RUST_TOOLCHAIN}" >> /tmp/rust-toolchain.toml; \
+RUN cat <<< $RUST_TOOLCHAIN > ./rust-toolchain.toml; \
+    cat ./rust-toolchain.toml; \
     rustup show; \
-    rm /tmp/rust-toolchain.toml;
+    rm ./rust-toolchain.toml;
 
 RUN rustup --version; \
     cargo --version; \
