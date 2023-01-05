@@ -14,7 +14,6 @@ Properties {
     $VscodeSettingsJson = Join-Path $Root .vscode settings.json
     $DocsRoot = Join-Path $Root docs
     $DocsBuild = Join-Path $DocsRoot _build
-    $RustVersion = "1.64.0"
     $ManylinuxTag = "manylinux2014_x86_64_maturin"
     $ManylinuxRoot = "/io"
     $Python = Resolve-Python
@@ -268,7 +267,6 @@ task build-manylinux-container-image {
             --build-arg USERNAME=$user `
             --build-arg USER_UID=$uid `
             --build-arg USER_GID=$gid `
-            --build-arg RUST_VERSION=$RustVersion `
             --tag $ManylinuxTag `
             -
     }
