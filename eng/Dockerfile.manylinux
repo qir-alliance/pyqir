@@ -6,6 +6,7 @@ FROM quay.io/pypa/manylinux2014_x86_64
 ARG USERNAME=runner
 ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
+ARG RUST_TOOLCHAIN
 
 RUN groupadd --gid ${USER_GID} ${USERNAME}
 RUN useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME}
@@ -20,15 +21,17 @@ ENV RUSTUP_HOME=/usr/local/rustup \
 RUN curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --profile minimal --default-toolchain none -y
 RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME};
 
-WORKDIR /io
-RUN ls -la
-RUN cat *.toml
-RUN chown ${USER_UID}:${USER_GID} /io
+WORKDIR /tmp
+RUN echo "${RUST_TOOLCHAIN}" >> /tmp/rust-toolchain.toml; \
+    rustup show; \
+    rm /tmp/rust-toolchain.toml;
 
-RUN rustup show
 RUN rustup --version; \
     cargo --version; \
     rustc --version;
+
+WORKDIR /io
+RUN chown ${USER_UID}:${USER_GID} /io
 
 USER $USERNAME
 
@@ -56,8 +59,6 @@ RUN curl https://packages.microsoft.com/config/rhel/7/prod.repo | tee /etc/yum.r
 USER $USERNAME
 
 ENV PATH="/usr/local/miniconda3/bin:${PATH}"
-
-ENV PATH="/usr/lib/ccache:${PATH}"
 
 RUN conda init && \
     conda install -y -c conda-forge clang-11 libstdcxx-devel_linux-64 libgcc-devel_linux-64 && \
