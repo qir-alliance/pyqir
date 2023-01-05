@@ -263,7 +263,7 @@ task build-manylinux-container-image {
         $user = Get-LinuxContainerUserName
         $uid = Get-LinuxContainerUserId
         $gid = Get-LinuxContainerGroupId
-        $toolchain = Get-Content -Raw (Join-Path $Root rust-toolchain.toml)
+        $toolchain = cat (Join-Path $Root rust-toolchain.toml -Resolve)
         Get-Content Dockerfile.manylinux | docker build `
             --build-arg USERNAME=$user `
             --build-arg USER_UID=$uid `
