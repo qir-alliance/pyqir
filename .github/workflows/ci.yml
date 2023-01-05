@@ -63,7 +63,6 @@ jobs:
           os: ${{ matrix.config.os }}
           directory: ${{ github.workspace }}/target/llvm
           target: ${{ matrix.config.target }}
-          arch: ${{ matrix.config.arch }}
       - name: Linux - Install build dependencies, ccache, ninja
         run: sudo apt-get install -y ccache ninja-build
         if: ${{ matrix.config.os == 'ubuntu-20.04' }}

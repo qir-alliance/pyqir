@@ -14,9 +14,6 @@ inputs:
   target:
     description: "The build script target."
     required: true
-  arch:
-    description: "TODO: The OS arch being built for."
-    required: true
 
 runs:
   using: composite
