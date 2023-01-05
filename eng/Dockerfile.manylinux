@@ -22,9 +22,7 @@ RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME};
 
 WORKDIR /tmp
 COPY rust-toolchain.toml /tmp/rust-toolchain.toml
-RUN rustup show; \
-    rm ./rust-toolchain.toml;
-
+RUN rustup show;
 RUN rustup --version; \
     cargo --version; \
     rustc --version;
