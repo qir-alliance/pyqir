@@ -19,13 +19,14 @@ ENV RUSTUP_HOME=/usr/local/rustup \
 
 RUN curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --profile minimal -y
 RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME};
+
+WORKDIR /io
+RUN chown ${USER_UID}:${USER_GID} /io
+
 RUN rustup show
 RUN rustup --version; \
     cargo --version; \
     rustc --version;
-
-WORKDIR /io
-RUN chown ${USER_UID}:${USER_GID} /io
 
 USER $USERNAME
 
