@@ -17,7 +17,7 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:${PATH}
 
-RUN curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --profile minimal --default-toolchain none -y
+RUN curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --profile minimal -y
 RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME};
 RUN rustup show
 RUN rustup --version; \
