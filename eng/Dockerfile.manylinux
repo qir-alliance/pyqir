@@ -21,6 +21,8 @@ RUN curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --profi
 RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME};
 
 WORKDIR /io
+RUN ls -la
+RUN cat *.toml
 RUN chown ${USER_UID}:${USER_GID} /io
 
 RUN rustup show
