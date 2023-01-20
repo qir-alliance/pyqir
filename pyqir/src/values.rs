@@ -784,7 +784,6 @@ pub(crate) fn qir_module(
     dynamic_result_management: Option<bool>,
 ) -> PyResult<PyObject> {
     let module = crate::module::Module::new(py, context, name);
-    //let py_module = Py::new(py, module)?;
     let ptr = module.as_ptr();
     unsafe {
         qirlib::module::set_qir_major_version(ptr, qir_major_version.unwrap_or(1));
