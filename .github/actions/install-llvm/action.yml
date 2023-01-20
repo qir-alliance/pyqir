@@ -31,7 +31,9 @@ runs:
       shell: pwsh
       if: ${{ (inputs.os == 'ubuntu-20.04') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
     - name: Windows - Install build dependencies, ninja
-      run: choco install --accept-license -y ninja
+      run: | 
+        choco install --accept-license -y ninja
+        choco uninstall -y llvm
       shell: pwsh
       if: ${{ (inputs.os == 'windows-2019') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
     - name: MacOS - Install build dependencies, ninja
