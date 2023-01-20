@@ -6,6 +6,7 @@ FROM quay.io/pypa/manylinux2014_x86_64
 ARG USERNAME=runner
 ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
+ARG RUST_TOOLCHAIN=1.64.0
 
 RUN groupadd --gid ${USER_GID} ${USERNAME}
 RUN useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME}
@@ -20,9 +21,7 @@ ENV RUSTUP_HOME=/usr/local/rustup \
 RUN curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --profile minimal --default-toolchain none -y
 RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME};
 
-WORKDIR /tmp
-COPY rust-toolchain.toml /tmp/rust-toolchain.toml
-RUN rustup show;
+RUN rustup override set ${RUST_TOOLCHAIN}
 RUN rustup --version; \
     cargo --version; \
     rustc --version;

@@ -238,6 +238,8 @@ task package-llvm {
 
 task build-manylinux-container-image {
     Write-BuildLog "Building container image manylinux-llvm-builder"
+    $RustVersion = (rustc --version) -split " " -match "^(\d+\.)?(\d+\.)?(\*|\d+)$"
+    Write-BuildLog "Found rustc version $RustVersion"
     Invoke-LoggedCommand -workingDirectory (Join-Path $Root eng) {
         $user = Get-LinuxContainerUserName
         $uid = Get-LinuxContainerUserId
@@ -246,6 +248,7 @@ task build-manylinux-container-image {
             --build-arg USERNAME=$user `
             --build-arg USER_UID=$uid `
             --build-arg USER_GID=$gid `
+            --build-arg RUST_TOOLCHAIN=$RustVersion `
             --tag $ManylinuxTag `
             -f Dockerfile.manylinux `
             $Root
