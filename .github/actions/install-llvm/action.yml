@@ -23,7 +23,7 @@ runs:
       uses: actions/cache@v3
       with:
         path: ${{ inputs.directory }}
-        key: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}-${{ inputs.target }}-${{ hashFiles('Cargo.lock') }}
+        key: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}-${{ inputs.target }}
         restore-keys: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}-${{ inputs.target }}
 
     - name: Linux - Install build dependencies, ninja
