@@ -58,7 +58,7 @@ jobs:
         uses: ./.github/actions/rust-toolchain
         with:
           toolchain: 1.64.0
-          components: rustfmt,clippy
+          components: rustfmt clippy
       - name: Install LLVM
         uses: ./.github/actions/install-llvm
         with:
