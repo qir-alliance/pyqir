@@ -55,7 +55,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup rust toolchain
-        run: rustup show
+        uses: ./.github/actions/rust-toolchain
+        with:
+          toolchain: 1.64.0
+          components: rustfmt,clippy
       - name: Install LLVM
         uses: ./.github/actions/install-llvm
         with:
