@@ -25,15 +25,8 @@ task checks -depends cargo-fmt, cargo-clippy, black, mypy
 task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers 
 
 task run-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    # For any of the volumes mapped, if the dir doesn't exist,
-    # docker will create it and it will be owned by root and
-    # the caching/install breaks with permission errors.
-    # New-Item is idempotent so we don't need to check for existence
     $llvmDir = Resolve-InstallationDirectory
-    if (!(Test-Path $llvmDir)) {
-        New-Item -ItemType Directory -Force $llvmDir | Out-Null
-    }
-    $llvmMount = @("-v", "$(Resolve-InstallationDirectory):/tmp/llvm")
+    $llvmMount = @("-v", "$($llvmDir):/tmp/llvm")
     Write-BuildLog "Running container image: $ManylinuxTag"
     $ioVolume = "${Root}:$ManylinuxRoot"
     $userName = Get-LinuxContainerUserName
@@ -187,15 +180,8 @@ task install-llvm-from-source -depends configure-sccache -postaction { Write-Cac
 }
 
 task manylinux-install-llvm-from-source -depends build-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    # For any of the volumes mapped, if the dir doesn't exist,
-    # docker will create it and it will be owned by root and
-    # the caching/install breaks with permission errors.
-    # New-Item is idempotent so we don't need to check for existence
     $llvmDir = Resolve-InstallationDirectory
-    if (!(Test-Path $llvmDir)) {
-        New-Item -ItemType Directory -Force $llvmDir | Out-Null
-    }
-    $llvmMount = @("-v", "$(Resolve-InstallationDirectory):/tmp/llvm")
+    $llvmMount = @("-v", "$($llvmDir):/tmp/llvm")
     Write-BuildLog "Running container image: $ManylinuxTag"
     $ioVolume = "${Root}:$ManylinuxRoot"
     $userName = Get-LinuxContainerUserName
@@ -211,15 +197,8 @@ task manylinux-install-llvm-from-source -depends build-manylinux-container-image
 }
 
 task package-manylinux-llvm -depends build-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    # For any of the volumes mapped, if the dir doesn't exist,
-    # docker will create it and it will be owned by root and
-    # the caching/install breaks with permission errors.
-    # New-Item is idempotent so we don't need to check for existence
     $llvmDir = Resolve-InstallationDirectory
-    if (!(Test-Path $llvmDir)) {
-        New-Item -ItemType Directory -Force $llvmDir | Out-Null
-    }
-    $llvmMount = @("-v", "$(Resolve-InstallationDirectory):/tmp/llvm")
+    $llvmMount = @("-v", "$($llvmDir):/tmp/llvm")
     Write-BuildLog "Running container image: $ManylinuxTag"
     $ioVolume = "${Root}:$ManylinuxRoot"
     $userName = Get-LinuxContainerUserName

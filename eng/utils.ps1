@@ -107,13 +107,17 @@ function Test-LlvmConfig {
 }
 
 function Resolve-InstallationDirectory {
-    if (Test-Path env:\QIRLIB_LLVM_EXTERNAL_DIR) {
-        return $env:QIRLIB_LLVM_EXTERNAL_DIR
+    $result = if (Test-Path env:\QIRLIB_LLVM_EXTERNAL_DIR) {
+        $env:QIRLIB_LLVM_EXTERNAL_DIR
     }
     else {
         $packagePath = Get-DefaultInstallDirectory
-        return $packagePath
+        $packagePath
     }
+    if (!(Test-Path $result)) {
+        New-Item -ItemType Directory -Force $result | Out-Null
+    }
+    return $result
 }
 
 function Get-DefaultInstallDirectory {
@@ -283,7 +287,6 @@ function install-llvm {
     )
 
     $installationDirectory = Resolve-InstallationDirectory
-    New-Item -ItemType Directory -Force $installationDirectory | Out-Null
     $clear_cache_var = $false
     if (!(Test-Path env:\QIRLIB_CACHE_DIR)) {
         $clear_cache_var = $true
