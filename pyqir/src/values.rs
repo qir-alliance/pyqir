@@ -765,10 +765,10 @@ pub(crate) fn required_num_results(function: PyRef<Function>) -> Option<u64> {
 ///
 /// :param Context context: The parent context.
 /// :param str name: The module name.
-/// :param Optional[int] qir_major_version: The QIR major version this module is built for. Default 1.
-/// :param Optional[int] qir_minor_version: The QIR minor version this module is built for. Default 0.
-/// :param Optional[bool] dynamic_qubit_management: Whether this module supports dynamic qubit management. Default False.
-/// :param Optional[bool] dynamic_result_management: Whether this module supports dynamic result management. Default False.
+/// :param int qir_major_version: The QIR major version this module is built for. Default 1.
+/// :param int qir_minor_version: The QIR minor version this module is built for. Default 0.
+/// :param bool dynamic_qubit_management: Whether this module supports dynamic qubit management. Default False.
+/// :param bool dynamic_result_management: Whether this module supports dynamic result management. Default False.
 /// :rtype: Module
 #[pyfunction]
 #[pyo3(
