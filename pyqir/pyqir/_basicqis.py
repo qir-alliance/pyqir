@@ -26,6 +26,16 @@ class BasicQisBuilder:
         """
         qis.cx(self._builder, control, target)
 
+    def ccx(self, control1: Value, control2: Value, target: Value) -> None:
+        """
+        Inserts a double-controlled Pauli :math:`X` gate.
+
+        :param control1: The first control qubit.
+        :param control2: The second control qubit.
+        :param target: The target qubit.
+        """
+        qis.ccx(self._builder, control1, control2, target)
+
     def cz(self, control: Value, target: Value) -> None:
         """
         Inserts a controlled Pauli :math:`Z` gate.
