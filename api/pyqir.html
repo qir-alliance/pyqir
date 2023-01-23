@@ -2220,6 +2220,18 @@ list is empty.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="pyqir.dynamic_qubit_management">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">dynamic_qubit_management</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.dynamic_qubit_management" title="Permalink to this definition">#</a></dt>
+<dd><p>Whether this module supports dynamic qubit management. None if unspecified.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyqir.dynamic_result_management">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">dynamic_result_management</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.dynamic_result_management" title="Permalink to this definition">#</a></dt>
+<dd><p>Whether this module supports dynamic result management. None if unspecified.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="pyqir.entry_point">
 <span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">entry_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_num_qubits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_num_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qir_profiles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_labeling_schema</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.entry_point" title="Permalink to this definition">#</a></dt>
 <dd><p>Creates an entry point.</p>
@@ -2344,6 +2356,39 @@ list is empty.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyqir.qir_major_version">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">qir_major_version</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.qir_major_version" title="Permalink to this definition">#</a></dt>
+<dd><p>The QIR major version this module is built for. None if unspecified.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyqir.qir_minor_version">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">qir_minor_version</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.qir_minor_version" title="Permalink to this definition">#</a></dt>
+<dd><p>The QIR minor version this module is built for. None if unspecified.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyqir.qir_module">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">qir_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qir_major_version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qir_minor_version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamic_qubit_management</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamic_result_management</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.qir_module" title="Permalink to this definition">#</a></dt>
+<dd><p>Creates a module with required QIR module flag metadata</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>context</strong> (<a class="reference internal" href="#pyqir.Context" title="pyqir.Context"><em>Context</em></a>) – The parent context.</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – The module name.</p></li>
+<li><p><strong>qir_major_version</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – The QIR major version this module is built for. Default 1.</p></li>
+<li><p><strong>qir_minor_version</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – The QIR minor version this module is built for. Default 0.</p></li>
+<li><p><strong>dynamic_qubit_management</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – Whether this module supports dynamic qubit management. Default False.</p></li>
+<li><p><strong>dynamic_result_management</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – Whether this module supports dynamic result management. Default False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#pyqir.Module" title="pyqir.Module">Module</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2846,6 +2891,8 @@ list is empty.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#pyqir.const"><code class="docutils literal notranslate"><span class="pre">const()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.dynamic_qubit_management"><code class="docutils literal notranslate"><span class="pre">dynamic_qubit_management()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.dynamic_result_management"><code class="docutils literal notranslate"><span class="pre">dynamic_result_management()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.entry_point"><code class="docutils literal notranslate"><span class="pre">entry_point()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.extract_byte_string"><code class="docutils literal notranslate"><span class="pre">extract_byte_string()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.global_byte_string"><code class="docutils literal notranslate"><span class="pre">global_byte_string()</span></code></a></li>
@@ -2853,6 +2900,9 @@ list is empty.</p>
 <li><a class="reference internal" href="#pyqir.is_interop_friendly"><code class="docutils literal notranslate"><span class="pre">is_interop_friendly()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.is_qubit_type"><code class="docutils literal notranslate"><span class="pre">is_qubit_type()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.is_result_type"><code class="docutils literal notranslate"><span class="pre">is_result_type()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.qir_major_version"><code class="docutils literal notranslate"><span class="pre">qir_major_version()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.qir_minor_version"><code class="docutils literal notranslate"><span class="pre">qir_minor_version()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.qir_module"><code class="docutils literal notranslate"><span class="pre">qir_module()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.qubit"><code class="docutils literal notranslate"><span class="pre">qubit()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.qubit_id"><code class="docutils literal notranslate"><span class="pre">qubit_id()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.qubit_type"><code class="docutils literal notranslate"><span class="pre">qubit_type()</span></code></a></li>
