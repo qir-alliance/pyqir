@@ -89,3 +89,39 @@ def test_add_value_flag_raises_with_wrong_ownership() -> None:
     mod = pyqir.Module(pyqir.Context(), "")
     with pytest.raises(ValueError):
         mod.add_flag(ModuleFlagBehavior.ERROR, "", value)
+
+
+def test_module_qir_major_version() -> None:
+    assert pyqir.qir_major_version(pyqir.Module(pyqir.Context(), "")) is None
+    assert pyqir.qir_major_version(pyqir.qir_module(pyqir.Context(), "")) is 1
+    mod = pyqir.qir_module(pyqir.Context(), "", 42)
+    assert pyqir.qir_major_version(mod) == 42
+
+
+def test_module_qir_minor_version() -> None:
+    assert pyqir.qir_minor_version(pyqir.Module(pyqir.Context(), "")) is None
+    assert pyqir.qir_minor_version(pyqir.qir_module(pyqir.Context(), "")) is 0
+    mod = pyqir.qir_module(pyqir.Context(), "", 1, 42)
+    assert pyqir.qir_minor_version(mod) == 42
+
+
+def test_module_dynamic_qubit_management() -> None:
+    assert pyqir.dynamic_qubit_management(pyqir.Module(pyqir.Context(), "")) is None
+    assert (
+        pyqir.dynamic_qubit_management(pyqir.qir_module(pyqir.Context(), "")) is False
+    )
+    mod = pyqir.qir_module(pyqir.Context(), "", dynamic_qubit_management=True)
+    assert pyqir.dynamic_qubit_management(mod) == True
+    mod = pyqir.qir_module(pyqir.Context(), "", dynamic_qubit_management=False)
+    assert pyqir.dynamic_qubit_management(mod) == False
+
+
+def test_module_dynamic_result_management() -> None:
+    assert pyqir.dynamic_result_management(pyqir.Module(pyqir.Context(), "")) is None
+    assert (
+        pyqir.dynamic_result_management(pyqir.qir_module(pyqir.Context(), "")) is False
+    )
+    mod = pyqir.qir_module(pyqir.Context(), "", dynamic_result_management=True)
+    assert pyqir.dynamic_result_management(mod) == True
+    mod = pyqir.qir_module(pyqir.Context(), "", dynamic_result_management=False)
+    assert pyqir.dynamic_result_management(mod) == False

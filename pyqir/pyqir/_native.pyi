@@ -778,6 +778,44 @@ def entry_point(
     """
     ...
 
+def qir_major_version(module: Module) -> Optional[int]:
+    """The QIR major version this module is built for. None if unspecified."""
+    ...
+
+def qir_minor_version(module: Module) -> Optional[int]:
+    """The QIR minor version this module is built for. None if unspecified."""
+    ...
+
+def dynamic_qubit_management(module: Module) -> Optional[bool]:
+    """Whether this module supports dynamic qubit management. None if unspecified."""
+    ...
+
+def dynamic_result_management(module: Module) -> Optional[bool]:
+    """Whether this module supports dynamic result management. None if unspecified."""
+    ...
+
+def qir_module(
+    context: Context,
+    name: str,
+    qir_major_version: int = 1,
+    qir_minor_version: int = 0,
+    dynamic_qubit_management: bool = False,
+    dynamic_result_management: bool = False,
+) -> Module:
+    """
+    Creates a module with required QIR module flag metadata
+
+    :param Context context: The parent context.
+    :param str name: The module name.
+    :param int qir_major_version: The QIR major version this module is built for. Default 1.
+    :param int qir_minor_version: The QIR minor version this module is built for. Default 0.
+    :param bool dynamic_qubit_management: Whether this module supports dynamic qubit management. Default False.
+    :param bool dynamic_result_management: Whether this module supports dynamic result management. Default False.
+    :returns: A module with the QIR module flags initialized
+    :rtype: Module
+    """
+    ...
+
 def extract_byte_string(value: Value) -> Optional[bytes]:
     """
     If the value is a pointer to a constant byte string, extracts it.
