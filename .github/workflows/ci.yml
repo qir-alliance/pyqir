@@ -13,8 +13,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
   QIRLIB_DOWNLOAD_LLVM: false
-  CCACHE_DIR: ~/.ccache
-  SCCACHE_DIR: C:\sccache
 
 jobs:
   build:
@@ -55,9 +53,19 @@ jobs:
               env: {},
             }
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - name: Setup rust toolchain
+        uses: ./.github/actions/rust-toolchain
         with:
-          submodules: 'recursive'
+          toolchain: 1.64.0
+          components: rustfmt clippy
+      - name: Install LLVM
+        uses: ./.github/actions/install-llvm
+        with:
+          version: "14"
+          os: ${{ matrix.config.os }}
+          directory: ${{ github.workspace }}/target/llvm
+          target: ${{ matrix.config.target }}
       - name: Linux - Install build dependencies, ccache, ninja
         run: sudo apt-get install -y ccache ninja-build
         if: ${{ matrix.config.os == 'ubuntu-20.04' }}
@@ -67,31 +75,6 @@ jobs:
       - name: MacOS - Install build dependencies, ccache, ninja
         run: brew install ccache ninja
         if: ${{ matrix.config.os == 'macos-11' }}
-      - name: Windows - Install LLVM 11.1.0
-        run: choco install llvm --version=11.1.0 --allow-downgrade
-        if: ${{ matrix.config.os == 'windows-2019' }}
-      - name: Get Timestamp
-        id: timestamp
-        run: Write-Host "::set-output name=timestamp::$([DateTime]::UtcNow.ToString('o'))"
-        shell: pwsh
-      - name: CCACHE cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ${{ env.CCACHE_DIR }}
-          key: ${{ matrix.config.os }}-${{ matrix.config.target }}-ccache-${{ steps.timestamp.outputs.timestamp }}
-          restore-keys: |
-              ${{ matrix.config.os }}-${{ matrix.config.target }}-ccache-
-        if: ${{ matrix.config.os != 'windows-2019' }}
-      - name: SCCACHE cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ${{ env.SCCACHE_DIR }}
-          key: ${{ matrix.config.os }}-sccache-${{ steps.timestamp.outputs.timestamp }}
-          restore-keys: |
-              ${{ matrix.config.os }}-sccache-
-        if: ${{ matrix.config.os == 'windows-2019' }}
       - name: "Build ${{ matrix.config.target }}"
         run: ./build.ps1 -t ${{ matrix.config.target }}
         shell: pwsh

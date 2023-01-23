@@ -14,7 +14,6 @@ Properties {
     $VscodeSettingsJson = Join-Path $Root .vscode settings.json
     $DocsRoot = Join-Path $Root docs
     $DocsBuild = Join-Path $DocsRoot _build
-    $RustVersion = "1.64.0"
     $ManylinuxTag = "manylinux2014_x86_64_maturin"
     $ManylinuxRoot = "/io"
     $Python = Resolve-Python
@@ -26,11 +25,8 @@ task checks -depends cargo-fmt, cargo-clippy, black, mypy
 task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers 
 
 task run-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    # For any of the volumes mapped, if the dir doesn't exist,
-    # docker will create it and it will be owned by root and
-    # the caching/install breaks with permission errors.
-    # New-Item is idempotent so we don't need to check for existence
-    $cacheMount, $cacheEnv = Get-CCacheParams
+    $llvmDir = Resolve-InstallationDirectory
+    $llvmMount = @("-v", "$($llvmDir):/tmp/llvm")
     Write-BuildLog "Running container image: $ManylinuxTag"
     $ioVolume = "${Root}:$ManylinuxRoot"
     $userName = Get-LinuxContainerUserName
@@ -38,7 +34,7 @@ task run-manylinux-container-image -preaction { Write-CacheStats } -postaction {
     Invoke-LoggedCommand {
         docker run --rm `
             --user $userName `
-            --volume $ioVolume @cacheMount @cacheEnv `
+            --volume $ioVolume @llvmMount `
             --env QIRLIB_CACHE_DIR=/tmp/llvm `
             --workdir $ManylinuxRoot `
             $ManylinuxTag `
@@ -183,12 +179,9 @@ task install-llvm-from-source -depends configure-sccache -postaction { Write-Cac
     Assert (Test-LlvmConfig $installationDirectory) "install-llvm-from-source failed to install a usable LLVM installation"
 }
 
-task package-manylinux-llvm -depends build-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    # For any of the volumes mapped, if the dir doesn't exist,
-    # docker will create it and it will be owned by root and
-    # the caching/install breaks with permission errors.
-    # New-Item is idempotent so we don't need to check for existence
-    $cacheMount, $cacheEnv = Get-CCacheParams
+task manylinux-install-llvm-from-source -depends build-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
+    $llvmDir = Resolve-InstallationDirectory
+    $llvmMount = @("-v", "$($llvmDir):/tmp/llvm")
     Write-BuildLog "Running container image: $ManylinuxTag"
     $ioVolume = "${Root}:$ManylinuxRoot"
     $userName = Get-LinuxContainerUserName
@@ -196,7 +189,24 @@ task package-manylinux-llvm -depends build-manylinux-container-image -preaction 
     Invoke-LoggedCommand {
         docker run --rm `
             --user $userName `
-            --volume $ioVolume @cacheMount @cacheEnv `
+            --volume $ioVolume @llvmMount `
+            --workdir $ManylinuxRoot `
+            $ManylinuxTag `
+            conda run --no-capture-output pwsh build.ps1 -t install-llvm-from-source
+    }
+}
+
+task package-manylinux-llvm -depends build-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
+    $llvmDir = Resolve-InstallationDirectory
+    $llvmMount = @("-v", "$($llvmDir):/tmp/llvm")
+    Write-BuildLog "Running container image: $ManylinuxTag"
+    $ioVolume = "${Root}:$ManylinuxRoot"
+    $userName = Get-LinuxContainerUserName
+
+    Invoke-LoggedCommand {
+        docker run --rm `
+            --user $userName `
+            --volume $ioVolume @llvmMount `
             --workdir $ManylinuxRoot `
             --env QIRLIB_PKG_DEST=$ManylinuxRoot/target/manylinux `
             $ManylinuxTag `
@@ -228,17 +238,20 @@ task package-llvm {
 
 task build-manylinux-container-image {
     Write-BuildLog "Building container image manylinux-llvm-builder"
+    $RustVersion = (rustc --version) -split " " -match "^(\d+\.)?(\d+\.)?(\*|\d+)$"
+    Write-BuildLog "Found rustc version $RustVersion"
     Invoke-LoggedCommand -workingDirectory (Join-Path $Root eng) {
         $user = Get-LinuxContainerUserName
         $uid = Get-LinuxContainerUserId
         $gid = Get-LinuxContainerGroupId
-        Get-Content Dockerfile.manylinux | docker build `
+        docker build `
             --build-arg USERNAME=$user `
             --build-arg USER_UID=$uid `
             --build-arg USER_GID=$gid `
-            --build-arg RUST_VERSION=$RustVersion `
+            --build-arg RUST_TOOLCHAIN=$RustVersion `
             --tag $ManylinuxTag `
-            -
+            -f Dockerfile.manylinux `
+            $Root
     }
 }
 

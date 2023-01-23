@@ -90,8 +90,8 @@ impl MetadataString {
         let owner = context.clone_ref(py).into();
         let c_string = CString::new(string).unwrap();
         let context = context.borrow(py).as_ptr();
-        let md = unsafe { LLVMMDStringInContext2(context, c_string.as_ptr(), string.len()) };
-        unsafe { MetadataString::from_raw(py, owner, md) }
+        let md = LLVMMDStringInContext2(context, c_string.as_ptr(), string.len());
+        MetadataString::from_raw(py, owner, md)
     }
 
     /// The underlying metadata string value.

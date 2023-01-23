@@ -6,7 +6,7 @@ FROM quay.io/pypa/manylinux2014_x86_64
 ARG USERNAME=runner
 ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
-ARG RUST_VERSION=1.64.0
+ARG RUST_TOOLCHAIN=1.64.0
 
 RUN groupadd --gid ${USER_GID} ${USERNAME}
 RUN useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME}
@@ -16,13 +16,13 @@ RUN chmod 0440 /etc/sudoers.d/${USERNAME}
 
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
-    PATH=/usr/local/cargo/bin:${PATH} \
-    RUST_VERSION=${RUST_VERSION}
+    PATH=/usr/local/cargo/bin:${PATH}
 
-RUN curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --profile minimal --default-toolchain ${RUST_VERSION} -y
+RUN curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --profile minimal --default-toolchain none -y
+RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME};
 
-RUN chmod -R a+w ${RUSTUP_HOME} ${CARGO_HOME}; \
-    rustup --version; \
+RUN rustup override set ${RUST_TOOLCHAIN}
+RUN rustup --version; \
     cargo --version; \
     rustc --version;
 
@@ -55,8 +55,6 @@ RUN curl https://packages.microsoft.com/config/rhel/7/prod.repo | tee /etc/yum.r
 USER $USERNAME
 
 ENV PATH="/usr/local/miniconda3/bin:${PATH}"
-
-ENV PATH="/usr/lib/ccache:${PATH}"
 
 RUN conda init && \
     conda install -y -c conda-forge clang-11 libstdcxx-devel_linux-64 libgcc-devel_linux-64 && \
