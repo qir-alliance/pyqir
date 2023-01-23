@@ -134,13 +134,13 @@ pub unsafe fn add_flag(
     id: &str,
     md: LLVMMetadataRef,
 ) {
-    unsafe {
-        LLVMRustAddModuleFlag(
-            module,
-            behavior.into(),
-            id.as_ptr() as *mut std::ffi::c_char,
-            id.len().try_into().unwrap(),
-            md,
-        );
-    }
+    LLVMRustAddModuleFlag(
+        module,
+        behavior
+            .try_into()
+            .expect("Could not convert behavior for the current version of LLVM"),
+        id.as_ptr() as *mut std::ffi::c_char,
+        id.len().try_into().unwrap(),
+        md,
+    );
 }
