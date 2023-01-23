@@ -120,7 +120,7 @@ unsafe fn get_i1_flag(module: LLVMModuleRef, id: &str) -> Option<bool> {
 }
 
 pub unsafe fn get_flag(module: LLVMModuleRef, id: &str) -> Option<LLVMMetadataRef> {
-    let flag = unsafe { LLVMGetModuleFlag(module, id.as_ptr().cast(), id.len()) };
+    let flag = LLVMGetModuleFlag(module, id.as_ptr().cast(), id.len());
 
     if flag.is_null() {
         return None;
