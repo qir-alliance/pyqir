@@ -435,7 +435,7 @@ dependencies = [
 
 [[package]]
 name = "pyqir"
-version = "0.8.0-alpha.1"
+version = "0.8.0"
 dependencies = [
  "const-str",
  "llvm-sys 110.0.4",
@@ -448,7 +448,7 @@ dependencies = [
 
 [[package]]
 name = "qirlib"
-version = "0.8.0-alpha.1"
+version = "0.8.0"
 dependencies = [
  "bitvec",
  "cc",
