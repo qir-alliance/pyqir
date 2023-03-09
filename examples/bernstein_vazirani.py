@@ -22,6 +22,7 @@ from pyqir import (
     SimpleModule,
 )
 
+
 # Create a simple entry point defining the sequence
 def create_bernstein_vazirani() -> SimpleModule:
     module = SimpleModule("Bernstein-Vazirani", num_qubits=6, num_results=5)
