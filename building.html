@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="pyqir" href="api/pyqir.html" />
 
-    <!-- Generated with Sphinx 5.3.0 and Furo 2022.12.07 -->
+    <!-- Generated with Sphinx 6.1.3 and Furo 2022.12.07 -->
         <title>Building from Source - PyQIR documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=91d0f0d1c444bdcb17a68e833c7a53903343c195" />
@@ -206,7 +206,7 @@
 <li><p><a class="reference external" href="https://www.python.org">Python 3.7+</a></p></li>
 <li><p><a class="reference external" href="https://github.com/powershell/powershell#get-powershell">PowerShell 7+
 (Core)</a></p></li>
-<li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 13.0.1</a> - See <a class="reference internal" href="#installing-llvm"><span class="std std-doc">Installing LLVM</span></a></p></li>
+<li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 13.0.1</a> - See <a class="reference internal" href="#installing-llvm"><span class="std std-ref">Installing LLVM</span></a></p></li>
 <li><p>If compiling LLVM from source:</p>
 <ul>
 <li><p><a class="reference external" href="https://github.com/Kitware/CMake/releases/tag/v3.10.3">CMake 3.10+</a></p></li>
@@ -290,7 +290,7 @@ contains Clang and LLVM.</p></li>
 <section id="installing-llvm">
 <h3>Installing LLVM<a class="headerlink" href="#installing-llvm" title="Permalink to this heading">#</a></h3>
 <p>The build scripts will automatically download an LLVM toolchain which is
-detailed in the <a class="reference internal" href="#development"><span class="std std-doc">Development</span></a> section. The build installs the toolchain to
+detailed in the <a class="reference internal" href="#development"><span class="std std-ref">Development</span></a> section. The build installs the toolchain to
 <code class="docutils literal notranslate"><span class="pre">target/llvm-&lt;version&gt;</span></code>.</p>
 </section>
 </section>
@@ -304,7 +304,7 @@ the solution, run</p>
 <p>This will compile <code class="docutils literal notranslate"><span class="pre">qirlib</span></code> and its dependencies with the appropriate environment
 variables set for their build scripts. After this is run, the build commands
 below can be used instead of <code class="docutils literal notranslate"><span class="pre">build.ps1</span></code>.</p>
-<p>The <a class="reference internal" href="#environment-variables"><span class="std std-doc">Environment Variables</span></a> section details ways to change this behavior.</p>
+<p>The <a class="reference internal" href="#environment-variables"><span class="std std-ref">Environment Variables</span></a> section details ways to change this behavior.</p>
 <p>Within each project folder, the build can be run specifically for that project.</p>
 <p>For any of these commands, the LLVM version must be added via features. For <code class="docutils literal notranslate"><span class="pre">maturin</span></code>,
 they must be added to the <code class="docutils literal notranslate"><span class="pre">cargo-extra-args</span></code> option.</p>
@@ -434,9 +434,6 @@ in the CI environment.</p>
     </aside>
   </div>
 </div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/scripts/furo.js"></script>
