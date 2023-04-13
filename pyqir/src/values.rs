@@ -19,14 +19,17 @@ use pyo3::{
     conversion::ToPyObject,
     exceptions::{PyKeyError, PyTypeError, PyValueError},
     prelude::*,
+    pyclass::CompareOp,
     types::{PyBytes, PyLong},
     PyRef,
 };
 use qirlib::values;
 use std::{
     borrow::Borrow,
+    collections::hash_map::DefaultHasher,
     convert::{Into, TryInto},
     ffi::CString,
+    hash::{Hash, Hasher},
     ops::Deref,
     ptr::NonNull,
     slice, str,
@@ -39,8 +42,38 @@ pub(crate) struct Value {
     owner: Owner,
 }
 
+impl Hash for Value {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let x: LLVMValueRef = self.value.as_ptr();
+        x.hash(state);
+    }
+}
+
+impl std::cmp::Eq for Value {}
+impl std::cmp::PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        self.value.as_ptr() == other.value.as_ptr()
+    }
+}
+
 #[pymethods]
 impl Value {
+    // In order to implement the comparison operators, we have to do
+    // it all in one impl of __richcmp__ for pyo3 to work.
+    fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
+        match op {
+            CompareOp::Eq => self.eq(other).into_py(py),
+            CompareOp::Ne => (!self.eq(other)).into_py(py),
+            _ => py.NotImplemented(),
+        }
+    }
+
+    fn __hash__(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
+    }
+
     /// The type of this value.
     ///
     /// :type: Type
