@@ -133,25 +133,25 @@ def test_hash_and_equality_are_not_stable_across_module_instances() -> None:
 def test_lt_op_not_supported_on_value() -> None:
     (o0, o1) = get_first_instruction_operands()
     with pytest.raises(TypeError):
-        o0 < o1
+        o0 < o1 # type: ignore
 
 
 def test_le_op_not_supported_on_value() -> None:
     (o0, o1) = get_first_instruction_operands()
     with pytest.raises(TypeError):
-        o0 <= o1
+        o0 <= o1 # type: ignore
 
 
 def test_gt_op_not_supported_on_value() -> None:
     (o0, o1) = get_first_instruction_operands()
     with pytest.raises(TypeError):
-        o0 > o1
+        o0 > o1 # type: ignore
 
 
 def test_ge_op_not_supported_on_value() -> None:
     (o0, o1) = get_first_instruction_operands()
     with pytest.raises(TypeError):
-        o0 >= o1
+        o0 >= o1 # type: ignore
 
 
 def test_instruction_equals_instruction_when_from_same_module() -> None:
