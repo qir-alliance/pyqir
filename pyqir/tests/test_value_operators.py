@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from pyqir import (
     Context,
@@ -26,8 +26,8 @@ def get_module() -> Module:
     return mod
 
 
-def get_instructions() -> List[Instruction]:
-    mod: Module = get_module()
+def get_instructions(module: Optional[Module] = None) -> List[Instruction]:
+    mod: Module = module if module else get_module()
     return mod.functions[0].basic_blocks[0].instructions
 
 
@@ -152,3 +152,24 @@ def test_ge_op_not_supported_on_value() -> None:
     (o0, o1) = get_first_instruction_operands()
     with pytest.raises(TypeError):
         o0 >= o1
+
+
+def test_instruction_equals_instruction_when_from_same_module() -> None:
+    mod = get_module()
+    first = get_instructions(mod)[1]
+    second = get_instructions(mod)[1]
+    assert first == second
+
+
+def test_instruction_is_not_same_instruction_when_from_same_module() -> None:
+    mod = get_module()
+    first = get_instructions(mod)[1]
+    second = get_instructions(mod)[1]
+    assert first is not second
+
+
+def test_instruction_hash_is_same_when_from_same_module() -> None:
+    mod = get_module()
+    first = get_instructions(mod)[1]
+    second = get_instructions(mod)[1]
+    assert hash(first) == hash(second)
