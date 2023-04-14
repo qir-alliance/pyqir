@@ -5,8 +5,8 @@ use crate::{
     builder::{build_if, try_build_if},
     types,
     utils::{
-        build_call, builder_module, controlled_gate, declare_qis, doubly_controlled_gate,
-        function_type, no_param, rotation_gate, simple_gate, two_qubit_gate, Functor,
+        build_call, builder_module, controlled_gate, declare_qis, double_param_gate,
+        doubly_controlled_gate, function_type, no_param, simple_gate, two_qubit_gate, Functor,
     },
 };
 
@@ -127,7 +127,7 @@ pub unsafe fn build_z(builder: LLVMBuilderRef, qubit: LLVMValueRef) {
 pub unsafe fn build_rx(builder: LLVMBuilderRef, theta: LLVMValueRef, qubit: LLVMValueRef) {
     build_call(
         builder,
-        rotation_gate(builder_module(builder), "rx"),
+        double_param_gate(builder_module(builder), "rx"),
         &mut [theta, qubit],
     );
 }
@@ -135,7 +135,7 @@ pub unsafe fn build_rx(builder: LLVMBuilderRef, theta: LLVMValueRef, qubit: LLVM
 pub unsafe fn build_ry(builder: LLVMBuilderRef, theta: LLVMValueRef, qubit: LLVMValueRef) {
     build_call(
         builder,
-        rotation_gate(builder_module(builder), "ry"),
+        double_param_gate(builder_module(builder), "ry"),
         &mut [theta, qubit],
     );
 }
@@ -143,7 +143,7 @@ pub unsafe fn build_ry(builder: LLVMBuilderRef, theta: LLVMValueRef, qubit: LLVM
 pub unsafe fn build_rz(builder: LLVMBuilderRef, theta: LLVMValueRef, qubit: LLVMValueRef) {
     build_call(
         builder,
-        rotation_gate(builder_module(builder), "rz"),
+        double_param_gate(builder_module(builder), "rz"),
         &mut [theta, qubit],
     );
 }
