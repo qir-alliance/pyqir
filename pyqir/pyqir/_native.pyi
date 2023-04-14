@@ -1071,6 +1071,15 @@ def reset(builder: Builder, qubit: Value) -> None:
     """
     ...
 
+def delay(builder: Builder, duration: Union[Value, float], qubit: Value) -> None:
+    """
+    Inserts a delay operation.
+
+    :param builder: The underlying builder used to build QIS instructions.
+    :param duration: The duration the qubit needs to wait for.
+    :param qubit: The qubit to make wait.
+    """
+
 def rx(builder: Builder, theta: Union[Value, float], qubit: Value) -> None:
     """
     Inserts a rotation gate about the :math:`x` axis.
