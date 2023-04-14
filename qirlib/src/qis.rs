@@ -156,6 +156,14 @@ pub unsafe fn build_reset(builder: LLVMBuilderRef, qubit: LLVMValueRef) {
     );
 }
 
+pub unsafe fn build_delay(builder: LLVMBuilderRef, theta: LLVMValueRef, qubit: LLVMValueRef) {
+    build_call(
+        builder,
+        double_param_gate(builder_module(builder), "delay"),
+        &mut [theta, qubit],
+    );
+}
+
 pub unsafe fn build_mz(builder: LLVMBuilderRef, qubit: LLVMValueRef, result: LLVMValueRef) {
     build_call(builder, mz(builder_module(builder)), &mut [qubit, result]);
 }
@@ -388,6 +396,15 @@ mod tests {
         assert_reference_ir("qis/reset", 1, 0, |builder| unsafe {
             let context = builder_context(builder).unwrap().as_ptr();
             build_reset(builder, qubit(context, 0));
+        });
+    }
+
+    #[test]
+    fn delay() {
+        assert_reference_ir("qis/delay", 1, 0, |builder| unsafe {
+            let context = builder_context(builder).unwrap().as_ptr();
+            let double = LLVMDoubleTypeInContext(context);
+            build_delay(builder, LLVMConstReal(double, 0.0), qubit(context, 0));
         });
     }
 
