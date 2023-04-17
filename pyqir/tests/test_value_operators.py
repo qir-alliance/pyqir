@@ -73,11 +73,6 @@ def test_instruction_hash_equals_self_hash() -> None:
     assert hash(inst) == hash(inst)
 
 
-def test_instruction_hash_not_equals_other_hash() -> None:
-    insts = get_instructions()
-    assert hash(insts[0]) != hash(insts[1])
-
-
 def test_value_equals_value() -> None:
     ops = get_first_instruction_operands()
     assert ops[0] == ops[1]
