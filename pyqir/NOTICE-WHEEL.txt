@@ -4799,7 +4799,7 @@ limitations under the License.
 
 
 
-qirlib 0.8.0 - SPDX: MIT - MIT License
+qirlib 0.8.1 - SPDX: MIT - MIT License
 https://github.com/qir-alliance/pyqir
 
 /*
@@ -5174,7 +5174,7 @@ SOFTWARE.
 
 
 
-pyqir 0.8.0 - SPDX: MIT - MIT License
+pyqir 0.8.1 - SPDX: MIT - MIT License
 https://github.com/qir-alliance/pyqir
 
 MIT License
