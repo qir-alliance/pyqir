@@ -94,7 +94,7 @@ Here are some tips.
 ### Modules
 
 Use `Module.from_bitcode` or `Module.from_ir` instead of the `QirModule` constructor.
-See [](#ir-and-bitcode-conversion).
+See [IR and bitcode conversion](#ir-and-bitcode-conversion).
 
 ### Entry points and interop-friendly functions
 
