@@ -138,6 +138,21 @@ def test_global_string() -> None:
     assert value.decode("utf-8") == "Hello World!\0"
 
 
+def test_null_i8ptr_string() -> None:
+    llvm_ir = """
+    define void @main() {
+      call void @a(i8* null)
+      ret void
+    }
+    declare void @a(i8*)
+    """
+
+    module = Module.from_ir(Context(), llvm_ir, "module")
+    null_ptr_value = module.functions[0].basic_blocks[0].instructions[0].operands[0]
+    string = extract_byte_string(null_ptr_value)
+    assert string is None
+
+
 def test_parser_zext_support() -> None:
     bitcode = Path("tests/select.bc").read_bytes()
     mod = Module.from_bitcode(Context(), bitcode)
