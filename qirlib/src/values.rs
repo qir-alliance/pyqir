@@ -154,6 +154,10 @@ pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef
 }
 
 pub unsafe fn extract_string(value: LLVMValueRef) -> Option<Vec<u8>> {
+    if LLVMIsNull(value) != 0 {
+        return None;
+    }
+
     if !is_byte_string(LLVMTypeOf(value)) {
         return None;
     }

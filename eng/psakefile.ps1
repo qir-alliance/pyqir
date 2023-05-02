@@ -22,7 +22,7 @@ Properties {
 task default -depends build, run-examples
 task build -depends qirlib, pyqir
 task checks -depends cargo-fmt, cargo-clippy, black, mypy
-task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers 
+task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers
 
 task run-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
     $llvmDir = Resolve-InstallationDirectory
@@ -125,7 +125,7 @@ task check-environment {
     }
 
     Assert ((Test-InVirtualEnvironment) -eq $true) ($env_message -Join ' ')
-    exec { & $Python -m pip install pip~=22.3 }
+    exec { & $Python -m pip install pip~=23.1 }
 }
 
 task init -depends check-environment {
@@ -320,7 +320,7 @@ task run-examples {
         & $Python bernstein_vazirani.py | Tee-Object -Variable bz_output
         $bz_lines = $bz_output -join ", "
         $bz_expected = "x(5), h(0), h(1), h(2), h(3), h(4), h(5), cnot(1, 5), cnot(3, 5), cnot(4, 5), h(0), h(1), h(2), h(3), h(4), mz(0, 0), mz(1, 1), mz(2, 2), mz(3, 3), mz(4, 4)"
-        
+
         Assert (@(Compare-Object $bz_lines $bz_expected).Length -eq 0) "Expected $bz_expected found $bz_lines"
 
         & $Python teleport.py | Tee-Object -Variable teleport_output
