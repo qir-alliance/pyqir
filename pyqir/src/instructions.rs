@@ -6,8 +6,13 @@
 use crate::values::{BasicBlock, Owner, Value};
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{core::*, prelude::*, LLVMIntPredicate, LLVMOpcode, LLVMRealPredicate};
-use pyo3::{conversion::ToPyObject, prelude::*};
-use std::{convert::Into, ptr::NonNull};
+use pyo3::{conversion::ToPyObject, prelude::*, pyclass::CompareOp, PyRef};
+use std::{
+    collections::hash_map::DefaultHasher,
+    convert::Into,
+    hash::{Hash, Hasher},
+    ptr::NonNull,
+};
 
 /// An instruction.
 #[pyclass(extends = Value, subclass)]
@@ -96,6 +101,7 @@ impl Instruction {
 
 /// An instruction opcode.
 #[pyclass]
+#[derive(PartialEq, Hash)]
 pub(crate) enum Opcode {
     #[pyo3(name = "ADD")]
     Add,
@@ -231,6 +237,25 @@ pub(crate) enum Opcode {
     Xor,
     #[pyo3(name = "ZEXT")]
     ZExt,
+}
+
+#[pymethods]
+impl Opcode {
+    // In order to implement the comparison operators, we have to do
+    // it all in one impl of __richcmp__ for pyo3 to work.
+    fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
+        match op {
+            CompareOp::Eq => self.eq(other).into_py(py),
+            CompareOp::Ne => (!self.eq(other)).into_py(py),
+            _ => py.NotImplemented(),
+        }
+    }
+
+    fn __hash__(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
+    }
 }
 
 impl From<LLVMOpcode> for Opcode {
