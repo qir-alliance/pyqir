@@ -6,8 +6,13 @@
 use crate::values::{BasicBlock, Owner, Value};
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{core::*, prelude::*, LLVMIntPredicate, LLVMOpcode, LLVMRealPredicate};
-use pyo3::{conversion::ToPyObject, prelude::*};
-use std::{convert::Into, ptr::NonNull};
+use pyo3::{conversion::ToPyObject, prelude::*, pyclass::CompareOp, PyRef};
+use std::{
+    collections::hash_map::DefaultHasher,
+    convert::Into,
+    hash::{Hash, Hasher},
+    ptr::NonNull,
+};
 
 /// An instruction.
 #[pyclass(extends = Value, subclass)]
@@ -96,6 +101,7 @@ impl Instruction {
 
 /// An instruction opcode.
 #[pyclass]
+#[derive(PartialEq, Hash)]
 pub(crate) enum Opcode {
     #[pyo3(name = "ADD")]
     Add,
