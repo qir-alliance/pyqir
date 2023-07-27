@@ -553,6 +553,26 @@ class ModuleFlagBehavior(Enum):
 class Opcode(Enum):
     """An instruction opcode."""
 
+    @property
+    def type(self) -> Type:
+        """The type of this value."""
+        ...
+    @property
+    def name(self) -> str:
+        """The name of this value or the empty string if this value is anonymous."""
+        ...
+    def __richcmp__(self, other: Value, op: int) -> bool:
+        """
+        Compares this value to another value.
+        Only == and != are supported.
+
+        :param other: The other value.
+        :param op: The comparison operator.
+        :returns: The result of the comparison.
+        """
+        ...
+    def __hash__(self) -> int: ...
+
     ADD: Opcode
     ADDR_SPACE_CAST: Opcode
     ALLOCA: Opcode
