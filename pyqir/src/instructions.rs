@@ -233,6 +233,25 @@ pub(crate) enum Opcode {
     ZExt,
 }
 
+#[pymethods]
+impl Opcode {
+    // In order to implement the comparison operators, we have to do
+    // it all in one impl of __richcmp__ for pyo3 to work.
+    fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
+        match op {
+            CompareOp::Eq => self.eq(other).into_py(py),
+            CompareOp::Ne => (!self.eq(other)).into_py(py),
+            _ => py.NotImplemented(),
+        }
+    }
+
+    fn __hash__(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
+    }
+}
+
 impl From<LLVMOpcode> for Opcode {
     fn from(opcode: LLVMOpcode) -> Self {
         match opcode {
