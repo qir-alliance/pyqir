@@ -300,6 +300,18 @@ class FloatConstant(Constant):
 class FloatPredicate(Enum):
     """A floating-point comparison predicate."""
 
+    def __richcmp__(self, other: Value, op: int) -> bool:
+        """
+        Compares this value to another value.
+        Only == and != are supported.
+
+        :param other: The other value.
+        :param op: The comparison operator.
+        :returns: The result of the comparison.
+        """
+        ...
+    def __hash__(self) -> int: ...
+
     FALSE: FloatPredicate
     OEQ: FloatPredicate
     OGT: FloatPredicate
@@ -413,6 +425,18 @@ class IntConstant(Constant):
 
 class IntPredicate(Enum):
     """An integer comparison predicate."""
+    
+    def __richcmp__(self, other: Value, op: int) -> bool:
+        """
+        Compares this value to another value.
+        Only == and != are supported.
+
+        :param other: The other value.
+        :param op: The comparison operator.
+        :returns: The result of the comparison.
+        """
+        ...
+    def __hash__(self) -> int: ...
 
     EQ: IntPredicate
     NE: IntPredicate
@@ -424,6 +448,7 @@ class IntPredicate(Enum):
     SGE: IntPredicate
     SLT: IntPredicate
     SLE: IntPredicate
+
 
 class IntType(Type):
     """An integer type."""
@@ -443,6 +468,18 @@ class IntType(Type):
 
 class Linkage(Enum):
     """The linkage kind for a global value in a module."""
+    
+    def __richcmp__(self, other: Value, op: int) -> bool:
+        """
+        Compares this value to another value.
+        Only == and != are supported.
+
+        :param other: The other value.
+        :param op: The comparison operator.
+        :returns: The result of the comparison.
+        """
+        ...
+    def __hash__(self) -> int: ...
 
     APPENDING: Linkage
     AVAILABLE_EXTERNALLY: Linkage
@@ -553,14 +590,6 @@ class ModuleFlagBehavior(Enum):
 class Opcode(Enum):
     """An instruction opcode."""
 
-    @property
-    def type(self) -> Type:
-        """The type of this value."""
-        ...
-    @property
-    def name(self) -> str:
-        """The name of this value or the empty string if this value is anonymous."""
-        ...
     def __richcmp__(self, other: Value, op: int) -> bool:
         """
         Compares this value to another value.

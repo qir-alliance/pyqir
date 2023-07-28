@@ -427,6 +427,25 @@ pub(crate) enum IntPredicate {
     Sle,
 }
 
+#[pymethods]
+impl IntPredicate {
+    // In order to implement the comparison operators, we have to do
+    // it all in one impl of __richcmp__ for pyo3 to work.
+    fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
+        match op {
+            CompareOp::Eq => self.eq(other).into_py(py),
+            CompareOp::Ne => (!self.eq(other)).into_py(py),
+            _ => py.NotImplemented(),
+        }
+    }
+
+    fn __hash__(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
+    }
+}
+
 impl From<LLVMIntPredicate> for IntPredicate {
     fn from(pred: LLVMIntPredicate) -> Self {
         match pred {
@@ -512,6 +531,25 @@ pub(crate) enum FloatPredicate {
     Une,
     #[pyo3(name = "TRUE")]
     True,
+}
+
+#[pymethods]
+impl FloatPredicate {
+    // In order to implement the comparison operators, we have to do
+    // it all in one impl of __richcmp__ for pyo3 to work.
+    fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
+        match op {
+            CompareOp::Eq => self.eq(other).into_py(py),
+            CompareOp::Ne => (!self.eq(other)).into_py(py),
+            _ => py.NotImplemented(),
+        }
+    }
+
+    fn __hash__(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
+    }
 }
 
 impl From<LLVMRealPredicate> for FloatPredicate {
