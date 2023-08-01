@@ -403,7 +403,7 @@ impl ICmp {
 
 /// An integer comparison predicate.
 #[pyclass]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Hash)]
 pub(crate) enum IntPredicate {
     #[pyo3(name = "EQ")]
     Eq,
@@ -497,7 +497,7 @@ impl FCmp {
 
 /// A floating-point comparison predicate.
 #[pyclass]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Hash)]
 pub(crate) enum FloatPredicate {
     #[pyo3(name = "FALSE")]
     False,

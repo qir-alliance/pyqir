@@ -19,10 +19,12 @@ use llvm_sys::{
     ir_reader::LLVMParseIRInContext,
     LLVMLinkage, LLVMModule,
 };
-use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
+use pyo3::{exceptions::PyValueError, prelude::*, pyclass::CompareOp, types::PyBytes};
 use qirlib::module::FlagBehavior;
 use std::{
+    collections::hash_map::DefaultHasher,
     ffi::CString,
+    hash::{Hash, Hasher},
     ops::Deref,
     ptr::{self, NonNull},
     str,
@@ -289,7 +291,7 @@ impl PartialEq for Module {
 
 /// The linkage kind for a global value in a module.
 #[pyclass]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Hash)]
 pub(crate) enum Linkage {
     #[pyo3(name = "APPENDING")]
     Appending,
