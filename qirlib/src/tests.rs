@@ -154,8 +154,7 @@ pub(crate) fn assert_reference_ir(
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(&path, actual_ir.to_bytes()).unwrap();
         panic!(
-            "Saved reference IR. Run again without the {} environment variable.",
-            PYQIR_TEST_SAVE_REFERENCES
+            "Saved reference IR. Run again without the {PYQIR_TEST_SAVE_REFERENCES} environment variable.",
         )
     } else {
         let contents = fs::read_to_string(&path).unwrap();
