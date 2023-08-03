@@ -425,7 +425,7 @@ class IntConstant(Constant):
 
 class IntPredicate(Enum):
     """An integer comparison predicate."""
-    
+
     def __richcmp__(self, other: Value, op: int) -> bool:
         """
         Compares this value to another value.
@@ -449,7 +449,6 @@ class IntPredicate(Enum):
     SLT: IntPredicate
     SLE: IntPredicate
 
-
 class IntType(Type):
     """An integer type."""
 
@@ -468,7 +467,7 @@ class IntType(Type):
 
 class Linkage(Enum):
     """The linkage kind for a global value in a module."""
-    
+
     def __richcmp__(self, other: Value, op: int) -> bool:
         """
         Compares this value to another value.
