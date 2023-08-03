@@ -427,6 +427,7 @@ pub(crate) enum IntPredicate {
     Sle,
 }
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
 #[pymethods]
 impl IntPredicate {
     // In order to implement the comparison operators, we have to do
@@ -534,6 +535,7 @@ pub(crate) enum FloatPredicate {
 }
 
 #[pymethods]
+#[allow(clippy::trivially_copy_pass_by_ref)]
 impl FloatPredicate {
     // In order to implement the comparison operators, we have to do
     // it all in one impl of __richcmp__ for pyo3 to work.
