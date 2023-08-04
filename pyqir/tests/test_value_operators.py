@@ -8,6 +8,10 @@ from pyqir import (
     Instruction,
     Module,
     Value,
+    Opcode,
+    Linkage,
+    FloatPredicate,
+    IntPredicate
 )
 import pytest
 
@@ -24,6 +28,10 @@ def get_module() -> Module:
 
     mod = Module.from_ir(Context(), llvm_ir, "module")
     return mod
+
+def get_opcodes(module: Optional[Module] = None) -> List[Opcode]:
+    mod: Module = module if module else get_module()
+    return map(lambda x : x.opcode, mod.functions[0].basic_blocks[0].instructions)
 
 
 def get_instructions(module: Optional[Module] = None) -> List[Instruction]:
@@ -168,3 +176,38 @@ def test_instruction_hash_is_same_when_from_same_module() -> None:
     first = get_instructions(mod)[1]
     second = get_instructions(mod)[1]
     assert hash(first) == hash(second)
+
+
+def test_opcode_equals_opcode() -> None:
+    inst = get_opcodes()[0]
+    assert inst == inst
+
+
+def test_opcode__eq__opcode() -> None:
+    inst = get_opcodes()[0]
+    assert inst.__eq__(inst)
+
+
+def test_opcode_is_self_opcode() -> None:
+    inst = get_opcodes()[0]
+    assert inst is inst
+
+
+def test_opcode_not_equals_opcode() -> None:
+    insts = get_opcodes()
+    assert insts[0] != insts[1]
+
+
+def test_opcode__ne__opcode() -> None:
+    insts = get_opcodes()
+    assert insts[0].__ne__(insts[1])
+
+
+def test_opcode_is_not_other_opcode() -> None:
+    insts = get_opcodes()
+    assert insts[0] is not insts[1]
+
+
+def test_opcode_hash_equals_self_hash() -> None:
+    inst = get_opcodes()[0]
+    assert hash(inst) == hash(inst)
