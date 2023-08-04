@@ -31,7 +31,7 @@ def get_module() -> Module:
 
 def get_opcodes(module: Optional[Module] = None) -> List[Opcode]:
     mod: Module = module if module else get_module()
-    return map(lambda x : x.opcode, mod.functions[0].basic_blocks[0].instructions)
+    return list(map(lambda x : x.opcode, mod.functions[0].basic_blocks[0].instructions))
 
 
 def get_instructions(module: Optional[Module] = None) -> List[Instruction]:
