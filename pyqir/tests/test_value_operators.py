@@ -33,6 +33,9 @@ def get_opcodes(module: Optional[Module] = None) -> List[Opcode]:
     mod: Module = module if module else get_module()
     return list(map(lambda x : x.opcode, mod.functions[0].basic_blocks[0].instructions))
 
+def get_linkages(module: Optional[Module] = None) -> List[Opcode]:
+    # provide some linkages to use in testing
+    return [Linkage.APPENDING, Linkage.AVAILABLE_EXTERNALLY, Linkage.COMMON]
 
 def get_instructions(module: Optional[Module] = None) -> List[Instruction]:
     mod: Module = module if module else get_module()
@@ -179,35 +182,70 @@ def test_instruction_hash_is_same_when_from_same_module() -> None:
 
 
 def test_opcode_equals_opcode() -> None:
-    inst = get_opcodes()[0]
-    assert inst == inst
+    op = get_opcodes()[0]
+    assert op == op
 
 
 def test_opcode__eq__opcode() -> None:
-    inst = get_opcodes()[0]
-    assert inst.__eq__(inst)
+    op = get_opcodes()[0]
+    assert op.__eq__(op)
 
 
 def test_opcode_is_self_opcode() -> None:
-    inst = get_opcodes()[0]
-    assert inst is inst
+    op = get_opcodes()[0]
+    assert op is op
 
 
 def test_opcode_not_equals_opcode() -> None:
-    insts = get_opcodes()
-    assert insts[0] != insts[1]
+    ops = get_opcodes()
+    assert ops[0] != ops[1]
 
 
 def test_opcode__ne__opcode() -> None:
-    insts = get_opcodes()
-    assert insts[0].__ne__(insts[1])
+    ops = get_opcodes()
+    assert ops[0].__ne__(ops[1])
 
 
 def test_opcode_is_not_other_opcode() -> None:
-    insts = get_opcodes()
-    assert insts[0] is not insts[1]
+    ops = get_opcodes()
+    assert ops[0] is not ops[1]
 
 
 def test_opcode_hash_equals_self_hash() -> None:
-    inst = get_opcodes()[0]
-    assert hash(inst) == hash(inst)
+    op = get_opcodes()[0]
+    assert hash(op) == hash(op)
+    
+
+def test_linkage_equals_linkage() -> None:
+    op = get_linkages()[0]
+    assert op == op
+
+
+def test_linkage__eq__linkage() -> None:
+    op = get_linkages()[0]
+    assert op.__eq__(op)
+
+
+def test_linkage_is_self_linkage() -> None:
+    op = get_linkages()[0]
+    assert op is op
+
+
+def test_linkage_not_equals_linkage() -> None:
+    ops = get_linkages()
+    assert ops[0] != ops[1]
+
+
+def test_linkage__ne__linkage() -> None:
+    ops = get_linkages()
+    assert ops[0].__ne__(ops[1])
+
+
+def test_linkage_is_not_other_linkage() -> None:
+    ops = get_linkages()
+    assert ops[0] is not ops[1]
+
+
+def test_linkage_hash_equals_self_hash() -> None:
+    op = get_linkages()[0]
+    assert hash(op) == hash(op)
