@@ -35,7 +35,7 @@ def get_opcodes(module: Optional[Module] = None) -> List[Opcode]:
     return list(map(lambda x: x.opcode, mod.functions[0].basic_blocks[0].instructions))
 
 
-def get_linkages(module: Optional[Module] = None) -> List[Opcode]:
+def get_linkages(module: Optional[Module] = None) -> List[Linkage]:
     # provide some linkages to use in testing
     return [Linkage.APPENDING, Linkage.AVAILABLE_EXTERNALLY, Linkage.COMMON]
 
