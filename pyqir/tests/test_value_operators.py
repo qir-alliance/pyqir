@@ -11,7 +11,7 @@ from pyqir import (
     Opcode,
     Linkage,
     FloatPredicate,
-    IntPredicate
+    IntPredicate,
 )
 import pytest
 
@@ -29,13 +29,16 @@ def get_module() -> Module:
     mod = Module.from_ir(Context(), llvm_ir, "module")
     return mod
 
+
 def get_opcodes(module: Optional[Module] = None) -> List[Opcode]:
     mod: Module = module if module else get_module()
-    return list(map(lambda x : x.opcode, mod.functions[0].basic_blocks[0].instructions))
+    return list(map(lambda x: x.opcode, mod.functions[0].basic_blocks[0].instructions))
+
 
 def get_linkages(module: Optional[Module] = None) -> List[Opcode]:
     # provide some linkages to use in testing
     return [Linkage.APPENDING, Linkage.AVAILABLE_EXTERNALLY, Linkage.COMMON]
+
 
 def get_instructions(module: Optional[Module] = None) -> List[Instruction]:
     mod: Module = module if module else get_module()
@@ -214,7 +217,7 @@ def test_opcode_is_not_other_opcode() -> None:
 def test_opcode_hash_equals_self_hash() -> None:
     op = get_opcodes()[0]
     assert hash(op) == hash(op)
-    
+
 
 def test_linkage_equals_linkage() -> None:
     op = get_linkages()[0]
