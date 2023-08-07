@@ -1,6 +1,6 @@
 [project]
 name = "pyqir"
-version = "0.8.2"
+version = "0.9.0"
 requires-python = ">= 3.7"
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -22,5 +22,8 @@ classifiers = [
 test = ["pytest ~= 7.2.0"]
 
 [build-system]
-requires = ["maturin ~= 0.13.7"]
+requires = ["maturin ~= 1.1.0"]
 build-backend = "maturin"
+
+[tool.maturin]
+module-name = "pyqir._native"
