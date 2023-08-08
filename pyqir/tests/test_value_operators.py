@@ -47,7 +47,7 @@ def get_float_predicates() -> List[FloatPredicate]:
 
 def get_int_predicates() -> List[IntPredicate]:
     # provide some int predicates to use in testing
-    return [IntPredicate.FALSE, IntPredicate.OEQ]
+    return [IntPredicate.EQ, IntPredicate.NE]
 
 
 def get_instructions(module: Optional[Module] = None) -> List[Instruction]:
