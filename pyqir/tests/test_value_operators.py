@@ -35,9 +35,19 @@ def get_opcodes(module: Optional[Module] = None) -> List[Opcode]:
     return list(map(lambda x: x.opcode, mod.functions[0].basic_blocks[0].instructions))
 
 
-def get_linkages(module: Optional[Module] = None) -> List[Linkage]:
+def get_linkages() -> List[Linkage]:
     # provide some linkages to use in testing
-    return [Linkage.APPENDING, Linkage.AVAILABLE_EXTERNALLY, Linkage.COMMON]
+    return [Linkage.INTERNAL, Linkage.AVAILABLE_EXTERNALLY]
+
+
+def get_float_predicates() -> List[FloatPredicate]:
+    # provide some float predicates to use in testing
+    return [FloatPredicate.FALSE, FloatPredicate.OEQ]
+
+
+def get_int_predicates() -> List[IntPredicate]:
+    # provide some int predicates to use in testing
+    return [IntPredicate.FALSE, IntPredicate.OEQ]
 
 
 def get_instructions(module: Optional[Module] = None) -> List[Instruction]:
@@ -220,35 +230,105 @@ def test_opcode_hash_equals_self_hash() -> None:
 
 
 def test_linkage_equals_linkage() -> None:
-    op = get_linkages()[0]
-    assert op == op
+    linkage = get_linkages()[0]
+    assert linkage == linkage
 
 
 def test_linkage__eq__linkage() -> None:
-    op = get_linkages()[0]
-    assert op.__eq__(op)
+    linkage = get_linkages()[0]
+    assert linkage.__eq__(linkage)
 
 
 def test_linkage_is_self_linkage() -> None:
-    op = get_linkages()[0]
-    assert op is op
+    linkage = get_linkages()[0]
+    assert linkage is linkage
 
 
 def test_linkage_not_equals_linkage() -> None:
-    ops = get_linkages()
-    assert ops[0] != ops[1]
+    linkages = get_linkages()
+    assert linkages[0] != linkages[1]
 
 
 def test_linkage__ne__linkage() -> None:
-    ops = get_linkages()
-    assert ops[0].__ne__(ops[1])
+    linkages = get_linkages()
+    assert linkages[0].__ne__(linkages[1])
 
 
 def test_linkage_is_not_other_linkage() -> None:
-    ops = get_linkages()
-    assert ops[0] is not ops[1]
+    linkages = get_linkages()
+    assert linkages[0] is not linkages[1]
 
 
 def test_linkage_hash_equals_self_hash() -> None:
-    op = get_linkages()[0]
-    assert hash(op) == hash(op)
+    linkage = get_linkages()[0]
+    assert hash(linkage) == hash(linkage)
+
+
+def test_float_predicate_equals_float_predicate() -> None:
+    pred = get_float_predicates()[0]
+    assert pred == pred
+
+
+def test_float_predicate__eq__float_predicate() -> None:
+    pred = get_float_predicates()[0]
+    assert pred.__eq__(pred)
+
+
+def test_float_predicate_is_self_float_predicate() -> None:
+    pred = get_float_predicates()[0]
+    assert pred is pred
+
+
+def test_float_predicate_not_equals_float_predicate() -> None:
+    preds = get_float_predicates()
+    assert preds[0] != preds[1]
+
+
+def test_float_predicate__ne__float_predicate() -> None:
+    preds = get_float_predicates()
+    assert preds[0].__ne__(preds[1])
+
+
+def test_float_predicate_is_not_other_float_predicate() -> None:
+    preds = get_float_predicates()
+    assert preds[0] is not preds[1]
+
+
+def test_float_predicate_hash_equals_self_hash() -> None:
+    pred = get_float_predicates()[0]
+    assert hash(pred) == hash(pred)
+
+
+def test_int_predicate_equals_int_predicate() -> None:
+    pred = get_int_predicates()[0]
+    assert pred == pred
+
+
+def test_int_predicate__eq__int_predicate() -> None:
+    pred = get_int_predicates()[0]
+    assert pred.__eq__(pred)
+
+
+def test_int_predicate_is_self_int_predicate() -> None:
+    pred = get_int_predicates()[0]
+    assert pred is pred
+
+
+def test_int_predicate_not_equals_int_predicate() -> None:
+    preds = get_int_predicates()
+    assert preds[0] != preds[1]
+
+
+def test_int_predicate__ne__int_predicate() -> None:
+    preds = get_int_predicates()
+    assert preds[0].__ne__(preds[1])
+
+
+def test_int_predicate_is_not_other_int_predicate() -> None:
+    preds = get_int_predicates()
+    assert preds[0] is not preds[1]
+
+
+def test_int_predicate_hash_equals_self_hash() -> None:
+    pred = get_int_predicates()[0]
+    assert hash(pred) == hash(pred)
