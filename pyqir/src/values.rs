@@ -736,6 +736,7 @@ pub(crate) fn entry_point(
     qir_profiles: Option<&str>,
     output_labeling_schema: Option<&str>,
 ) -> PyResult<PyObject> {
+    todo!("move this into python, instead of rust. Use PR #209 as a template")
     let name = CString::new(name).unwrap();
     unsafe {
         let entry_point = values::entry_point(
