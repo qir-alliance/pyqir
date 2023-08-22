@@ -11,8 +11,8 @@ def entry_point(
     name: str,
     required_num_qubits: int,
     required_num_results: int,
-    qir_profiles: Optional[str],
-    output_labeling_schema: Optional[str],
+    qir_profiles: Optional[str] = None,
+    output_labeling_schema: Optional[str] = None,
 ) -> Function:
     """
     Creates an entry point.
