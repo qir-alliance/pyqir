@@ -1,7 +1,9 @@
 # function
 
 from typing import List, Optional
-from pyqir import Module, Function, Context
+
+import pyqir
+from pyqir import Module, Function, Context, add_string_attribute, Linkage, FunctionType
 
 
 def entry_point(
@@ -24,41 +26,20 @@ def entry_point(
     :returns: An entry point.
     """
     void = pyqir.Type.void(module.context)
-    function = mod.add_external_function(name, pyqir.FunctionType(void, []))
+    function = Function(FunctionType(void, []), Linkage.EXTERNAL, name, module)
+    add_string_attribute(function, b"entry_point", b"")
+    add_string_attribute(
+        function, b"num_required_qubits", str.encode(str(required_num_qubits))
+    )
+    add_string_attribute(
+        function, b"num_required_results", str.encode(str(required_num_results))
+    )
+    add_string_attribute(function, b"qir_profiles", str.encode(qir_profiles or ""))
 
+    add_string_attribute(
+        function,
+        b"output_labeling_schema",
+        str.encode(output_labeling_schema or ""),
+    )
 
-# pub unsafe fn entry_point(
-#     module: LLVMModuleRef,
-#     name: &CStr,
-#     required_num_qubits: u64,
-#     required_num_results: u64,
-#     qir_profiles: &str,
-#     output_labeling_schema: &str,
-# ) -> LLVMValueRef {
-#     let context = LLVMGetModuleContext(module);
-#     let void = LLVMVoidTypeInContext(context);
-#     let ty = LLVMFunctionType(void, [].as_mut_ptr(), 0, 0);
-#     let function = LLVMAddFunction(module, name.as_ptr(), ty);
-
-#     add_string_attribute(function, b"entry_point", b"");
-#     add_string_attribute(
-#         function,
-#         b"num_required_qubits",
-#         required_num_qubits.to_string().as_bytes(),
-#     );
-#     add_string_attribute(
-#         function,
-#         b"num_required_results",
-#         required_num_results.to_string().as_bytes(),
-#     );
-
-#     add_string_attribute(function, b"qir_profiles", qir_profiles.as_bytes());
-
-#     add_string_attribute(
-#         function,
-#         b"output_labeling_schema",
-#         output_labeling_schema.as_bytes(),
-#     );
-
-#     function
-# }
+    return function

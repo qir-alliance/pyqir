@@ -1173,3 +1173,13 @@ def if_result(
     :param zero: A callable that inserts instructions for the branch where the result is zero.
     """
     ...
+
+def add_string_attribute(function: Function, kind: bytes, value: bytes) -> bool:
+    """
+    Adds a string attribute to the given function.
+
+    :param function: The function.
+    :param kind: The attribute kind.
+    :param value: The attribute value.
+    """
+    ...
