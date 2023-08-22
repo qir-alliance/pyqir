@@ -180,6 +180,7 @@ pub unsafe fn extract_string(value: LLVMValueRef) -> Option<Vec<u8>> {
     let data = slice::from_raw_parts(data.cast(), len);
     Some(data[offset..].to_vec())
 }
+
 pub unsafe fn add_string_attribute(function: LLVMValueRef, kind: &[u8], value: &[u8]) {
     let context = LLVMGetTypeContext(LLVMTypeOf(function));
     let attr = LLVMCreateStringAttribute(
