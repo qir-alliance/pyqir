@@ -3,14 +3,18 @@
 
 import pyqir
 
+// CREATE MODULE 
 mod = pyqir.SimpleModule("external_functions", num_qubits=1, num_results=0)
 qis = pyqir.BasicQisBuilder(mod.builder)
 
+// YOU STILL HAVE TO ADD STRING ATTRIBUTE
+// GET VOID TYPE
 void = pyqir.Type.void(mod.context)
 i64 = pyqir.IntType(mod.context, 64)
 
 # Declare an externally linked function named that has no parameters and returns
 # void.
+// CREATE FN TYPE
 my_function = mod.add_external_function("my_function", pyqir.FunctionType(void, []))
 
 # Call the function with no arguments (the empty list).

@@ -38,7 +38,6 @@ pub unsafe fn result_id(value: LLVMValueRef) -> Option<u64> {
         None
     }
 }
-
 pub unsafe fn entry_point(
     module: LLVMModuleRef,
     name: &CStr,
@@ -181,8 +180,7 @@ pub unsafe fn extract_string(value: LLVMValueRef) -> Option<Vec<u8>> {
     let data = slice::from_raw_parts(data.cast(), len);
     Some(data[offset..].to_vec())
 }
-
-unsafe fn add_string_attribute(function: LLVMValueRef, kind: &[u8], value: &[u8]) {
+pub unsafe fn add_string_attribute(function: LLVMValueRef, kind: &[u8], value: &[u8]) {
     let context = LLVMGetTypeContext(LLVMTypeOf(function));
     let attr = LLVMCreateStringAttribute(
         context,
