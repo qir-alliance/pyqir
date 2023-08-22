@@ -57,9 +57,7 @@ class SimpleModule:
         self._num_qubits = num_qubits
         self._num_results = num_results
 
-        entry_point = pyqir.entry_point(
-            self._module, "main", num_qubits, num_results, None, None
-        )
+        entry_point = pyqir.entry_point(self._module, "main", num_qubits, num_results)
         self._builder.insert_at_end(BasicBlock(context, "entry", entry_point))
 
     @property

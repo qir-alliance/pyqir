@@ -11,8 +11,8 @@ def entry_point(
     name: str,
     required_num_qubits: int,
     required_num_results: int,
-    qir_profiles: Optional[str] = None,
-    output_labeling_schema: Optional[str] = None,
+    qir_profiles: str = "custom",
+    output_labeling_schema: str = "",
 ) -> Function:
     """
     Creates an entry point.
@@ -34,12 +34,12 @@ def entry_point(
     add_string_attribute(
         function, b"num_required_results", str.encode(str(required_num_results))
     )
-    add_string_attribute(function, b"qir_profiles", str.encode(qir_profiles or ""))
+    add_string_attribute(function, b"qir_profiles", str.encode(qir_profiles))
 
     add_string_attribute(
         function,
         b"output_labeling_schema",
-        str.encode(output_labeling_schema or ""),
+        str.encode(output_labeling_schema),
     )
 
     return function
