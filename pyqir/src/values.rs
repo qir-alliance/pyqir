@@ -861,10 +861,12 @@ pub(crate) fn extract_byte_string<'py>(py: Python<'py>, value: &Value) -> Option
 #[pyfunction]
 #[pyo3(text_signature = "(function, kind, value)")]
 pub(crate) fn add_string_attribute<'py>(
-    py: Python<'py>,
     function: PyRef<Function>,
     kind: &'py PyBytes,
     value: &'py PyBytes,
-) -> Option<Attribute> {
-    todo!()
+) {
+    let function = function.into_super().into_super().as_ptr();
+    let kind = kind.as_bytes();
+    let value = value.as_bytes();
+    unsafe { values::add_string_attribute(function, kind, value) }
 }
