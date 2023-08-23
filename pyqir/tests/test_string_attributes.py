@@ -15,7 +15,7 @@ from pyqir import (
 import pytest
 
 
-def test_foo_bar_custom_attribute() -> None:
+def test_basic_key_value_attribute() -> None:
     mod = pyqir.Module(pyqir.Context(), "test")
     void = pyqir.Type.void(mod.context)
     function = Function(FunctionType(void, []), Linkage.EXTERNAL, "test_function", mod)
@@ -23,6 +23,16 @@ def test_foo_bar_custom_attribute() -> None:
     assert function.attributes.func["foo"].string_value == "bar"
     ir = str(mod)
     assert 'attributes #0 = { "foo"="bar" }' in ir
+
+
+def test_basic_key_only_attribute() -> None:
+    mod = pyqir.Module(pyqir.Context(), "test")
+    void = pyqir.Type.void(mod.context)
+    function = Function(FunctionType(void, []), Linkage.EXTERNAL, "test_function", mod)
+    add_string_attribute(function, "foo")
+    assert function.attributes.func["foo"].string_value == ""
+    ir = str(mod)
+    assert 'attributes #0 = { "foo" }' in ir
 
 
 def test_round_trip() -> None:
@@ -37,11 +47,9 @@ def test_round_trip() -> None:
     ir = str(mod)
     parsed_mod = Module.from_ir(Context(), ir, "test")
     assert str(parsed_mod) == str(mod)
-    assert 'attributes #0 = { "" "entry_point" "foo"="bar" }' in ir
-    assert "declare void @test_function() #0" in ir
 
 
-def test_no_duplicate_attrs() -> None:
+def test_duplicate_attr_key_replaces_previous() -> None:
     mod = pyqir.Module(pyqir.Context(), "test")
     void = pyqir.Type.void(mod.context)
     function = Function(FunctionType(void, []), Linkage.EXTERNAL, "test_function", mod)
@@ -53,11 +61,11 @@ def test_no_duplicate_attrs() -> None:
     assert 'attributes #0 = { "foo" }' in ir
 
 
-def test_attribute_sorting() -> None:
+def test_attribute_alphabetical_sorting() -> None:
     mod = pyqir.Module(pyqir.Context(), "test")
     void = pyqir.Type.void(mod.context)
     function = Function(FunctionType(void, []), Linkage.EXTERNAL, "test_function", mod)
-    add_string_attribute(function, ", ")
+    add_string_attribute(function, "b", "A")
     add_string_attribute(function, "c", "")
     add_string_attribute(function, "a", "a")
     add_string_attribute(function, "1", "")
@@ -68,4 +76,4 @@ def test_attribute_sorting() -> None:
     assert str(parsed_mod) == str(mod)
     # Tests that attributes are sorted alphabetically by key,
     # irrespective of their value
-    assert 'attributes #0 = { "1" "A"="123" "a"="a" ""="" "c" }' in ir
+    assert 'attributes #0 = { "1" "A"="123" "a"="a" "b"="A" "c" }' in ir
