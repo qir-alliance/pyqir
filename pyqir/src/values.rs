@@ -872,7 +872,7 @@ pub(crate) fn add_string_attribute<'py>(
 ) {
     let function = function.into_super().into_super().as_ptr();
     let key = key.to_string_lossy();
-    let value = value.map(|x| x.to_string_lossy());
+    let value = value.map(PyString::to_string_lossy);
     unsafe {
         values::add_string_attribute(
             function,
@@ -881,6 +881,6 @@ pub(crate) fn add_string_attribute<'py>(
                 Some(ref x) => x.as_bytes(),
                 None => &[],
             },
-        )
+        );
     }
 }
