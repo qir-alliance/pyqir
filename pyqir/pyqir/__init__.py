@@ -95,6 +95,7 @@ __all__ = [
     "Switch",
     "Type",
     "Value",
+    "add_string_attribute",
     "const",
     "dynamic_qubit_management",
     "dynamic_result_management",
