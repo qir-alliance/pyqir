@@ -13,7 +13,7 @@ def entry_point(
     required_num_qubits: int,
     required_num_results: int,
     qir_profiles: str = "custom",
-    output_labeling_schema: str = "",
+    output_labeling_schema: Optional[str] = None,
 ) -> Function:
     """
     Creates an entry point.
@@ -28,19 +28,15 @@ def entry_point(
     """
     void = pyqir.Type.void(module.context)
     function = Function(FunctionType(void, []), Linkage.EXTERNAL, name, module)
-    add_string_attribute(function, b"entry_point", b"")
-    add_string_attribute(
-        function, b"num_required_qubits", str.encode(str(required_num_qubits))
-    )
-    add_string_attribute(
-        function, b"num_required_results", str.encode(str(required_num_results))
-    )
-    add_string_attribute(function, b"qir_profiles", str.encode(qir_profiles))
+    add_string_attribute(function, "entry_point")
+    add_string_attribute(function, "num_required_qubits", str(required_num_qubits))
+    add_string_attribute(function, "num_required_results", str(required_num_results))
+    add_string_attribute(function, "qir_profiles", qir_profiles)
 
     add_string_attribute(
         function,
-        b"output_labeling_schema",
-        str.encode(output_labeling_schema),
+        "output_labeling_schema",
+        output_labeling_schema,
     )
 
     return function

@@ -4,6 +4,7 @@
 from enum import Enum
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
+
 class ArrayType(Type):
     """An array type."""
 
@@ -11,10 +12,12 @@ class ArrayType(Type):
     def element(self) -> Type:
         """The type of the array elements."""
         ...
+
     @property
     def count(self) -> int:
         """The number of elements in the array."""
         ...
+
 
 class Attribute:
     """An attribute."""
@@ -23,6 +26,7 @@ class Attribute:
     def string_value(self) -> Optional[str]:
         """The value of this attribute as a string, or `None` if this is not a string attribute."""
         ...
+
 
 class AttributeList:
     """The attribute list for a function."""
@@ -35,14 +39,17 @@ class AttributeList:
         :returns: The parameter attributes.
         """
         ...
+
     @property
     def ret(self) -> AttributeSet:
         """The attributes for the return type."""
         ...
+
     @property
     def func(self) -> AttributeSet:
         """The attributes for the function itself."""
         ...
+
 
 class AttributeSet:
     """A set of attributes for a specific part of a function."""
@@ -55,6 +62,7 @@ class AttributeSet:
         :returns: True if the group has an attribute with the given kind.
         """
         ...
+
     def __getitem__(self, key: str) -> Attribute:
         """
         Gets an attribute based on its kind.
@@ -63,6 +71,7 @@ class AttributeSet:
         :returns: The attribute.
         """
         ...
+
 
 class BasicBlock(Value):
     """A basic block."""
@@ -87,14 +96,17 @@ class BasicBlock(Value):
         :param before: The block to insert this block before.
         """
         ...
+
     @property
     def instructions(self) -> List[Instruction]:
         """The instructions in this basic block."""
         ...
+
     @property
     def terminator(self) -> Optional[Instruction]:
         """The terminating instruction of this basic block if there is one."""
         ...
+
 
 class Builder:
     """An instruction builder."""
@@ -106,6 +118,7 @@ class Builder:
         :param context: The LLVM context.
         """
         ...
+
     def insert_at_end(self, block: BasicBlock) -> None:
         """
         Tells this builder to insert subsequent instructions at the end of the block.
@@ -113,6 +126,7 @@ class Builder:
         :param block: The block to insert into.
         """
         ...
+
     def and_(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a bitwise logical and instruction.
@@ -122,6 +136,7 @@ class Builder:
         :returns: The result.
         """
         ...
+
     def or_(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a bitwise logical or instruction.
@@ -131,6 +146,7 @@ class Builder:
         :returns: The result.
         """
         ...
+
     def xor(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a bitwise logical exclusive or instruction.
@@ -140,6 +156,7 @@ class Builder:
         :returns: The result.
         """
         ...
+
     def add(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts an addition instruction.
@@ -149,6 +166,7 @@ class Builder:
         :returns: The sum.
         """
         ...
+
     def sub(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a subtraction instruction.
@@ -158,6 +176,7 @@ class Builder:
         :returns: The difference.
         """
         ...
+
     def mul(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a multiplication instruction.
@@ -167,6 +186,7 @@ class Builder:
         :returns: The product.
         """
         ...
+
     def shl(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a shift left instruction.
@@ -176,6 +196,7 @@ class Builder:
         :returns: The result.
         """
         ...
+
     def lshr(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a logical (zero fill) shift right instruction.
@@ -185,6 +206,7 @@ class Builder:
         :returns: The result.
         """
         ...
+
     def icmp(self, pred: IntPredicate, lhs: Value, rhs: Value) -> Value:
         """
         Inserts an integer comparison instruction.
@@ -195,6 +217,7 @@ class Builder:
         :returns: The boolean result.
         """
         ...
+
     def call(
         self,
         callee: Value,
@@ -208,6 +231,7 @@ class Builder:
         :returns: The instruction value.
         """
         ...
+
     def if_(
         self,
         cond: Value,
@@ -228,6 +252,7 @@ class Builder:
             A callable that inserts instructions for the branch where the condition is false.
         """
         ...
+
     def br(self, dest: BasicBlock) -> Instruction:
         """
         Inserts an unconditional branch instruction.
@@ -236,6 +261,7 @@ class Builder:
         :returns: The branch instruction.
         """
         ...
+
     def ret(self, value: Optional[Value]) -> Instruction:
         """
         Inserts a return instruction.
@@ -245,6 +271,7 @@ class Builder:
         """
         ...
 
+
 class Call(Instruction):
     """A call instruction."""
 
@@ -252,10 +279,12 @@ class Call(Instruction):
     def callee(self) -> Value:
         """The value being called."""
         ...
+
     @property
     def args(self) -> List[Value]:
         """The arguments to the call."""
         ...
+
 
 class Constant(Value):
     """A constant value."""
@@ -269,10 +298,12 @@ class Constant(Value):
         :returns: The null or zero constant.
         """
         ...
+
     @property
     def is_null(self) -> bool:
         """Whether this value is the null value for its type."""
         ...
+
 
 class Context:
     """The context owns global state needed by most LLVM objects."""
@@ -280,6 +311,7 @@ class Context:
     def __init__(self) -> None:
         """Initializes a context."""
         ...
+
 
 class FCmp(Instruction):
     """A floating-point comparison instruction."""
@@ -289,6 +321,7 @@ class FCmp(Instruction):
         """The comparison predicate."""
         ...
 
+
 class FloatConstant(Constant):
     """A constant floating-point value."""
 
@@ -296,6 +329,7 @@ class FloatConstant(Constant):
     def value(self) -> float:
         """The value."""
         ...
+
 
 class FloatPredicate(Enum):
     """A floating-point comparison predicate."""
@@ -317,6 +351,7 @@ class FloatPredicate(Enum):
     UNE: FloatPredicate
     TRUE: FloatPredicate
 
+
 class Function(Constant):
     """A function value."""
 
@@ -332,20 +367,26 @@ class Function(Constant):
         :param module: The parent module.
         """
         ...
+
     @property
-    def type(self) -> FunctionType: ...
+    def type(self) -> FunctionType:
+        ...
+
     @property
     def params(self) -> List[Value]:
         """The parameters to this function."""
         ...
+
     @property
     def basic_blocks(self) -> List[BasicBlock]:
         """The basic blocks in this function."""
         ...
+
     @property
     def attributes(self) -> AttributeList:
         """The attributes for this function."""
         ...
+
 
 class FunctionType(Type):
     """A function type."""
@@ -358,14 +399,17 @@ class FunctionType(Type):
         :param params: The parameter types.
         """
         ...
+
     @property
     def ret(self) -> Type:
         """The return type of the function."""
         ...
+
     @property
     def params(self) -> List[Type]:
         """The types of the function parameters."""
         ...
+
 
 class ICmp(Instruction):
     """An integer comparison instruction."""
@@ -375,6 +419,7 @@ class ICmp(Instruction):
         """The comparison predicate."""
         ...
 
+
 class Instruction(Value):
     """An instruction."""
 
@@ -382,10 +427,12 @@ class Instruction(Value):
     def opcode(self) -> Opcode:
         """The instruction opcode."""
         ...
+
     @property
     def operands(self) -> List[Value]:
         """The operands to the instruction."""
         ...
+
     @property
     def successors(self) -> List[BasicBlock]:
         """
@@ -393,6 +440,7 @@ class Instruction(Value):
         list is empty.
         """
         ...
+
     def erase(self) -> None:
         """
         Removes this instruction from its parent basic block, then deletes it from memory.
@@ -401,15 +449,19 @@ class Instruction(Value):
         """
         ...
 
+
 class IntConstant(Constant):
     """A constant integer value."""
 
     @property
-    def type(self) -> IntType: ...
+    def type(self) -> IntType:
+        ...
+
     @property
     def value(self) -> int:
         """The value."""
         ...
+
 
 class IntPredicate(Enum):
     """An integer comparison predicate."""
@@ -425,6 +477,7 @@ class IntPredicate(Enum):
     SLT: IntPredicate
     SLE: IntPredicate
 
+
 class IntType(Type):
     """An integer type."""
 
@@ -436,10 +489,12 @@ class IntType(Type):
         :param width: The number of bits in the integer.
         """
         ...
+
     @property
     def width(self) -> int:
         """The number of bits in the integer."""
         ...
+
 
 class Linkage(Enum):
     """The linkage kind for a global value in a module."""
@@ -456,6 +511,7 @@ class Linkage(Enum):
     WEAK_ANY: Linkage
     WEAK_ODR: Linkage
 
+
 class Module:
     """A module is a collection of global values."""
 
@@ -467,6 +523,7 @@ class Module:
         :param name: The module name.
         """
         ...
+
     @staticmethod
     def from_ir(context: Context, ir: str, name: str = "") -> Module:
         """
@@ -477,6 +534,7 @@ class Module:
         :returns: The module.
         """
         ...
+
     @staticmethod
     def from_bitcode(context: Context, bitcode: bytes, name: str = "") -> Module:
         """
@@ -487,24 +545,31 @@ class Module:
         :returns: The module.
         """
         ...
+
     @property
     def source_filename(self) -> str:
         """The name of the original source file that this module was compiled from."""
         ...
+
     @source_filename.setter
-    def source_filename(self, value: str) -> None: ...
+    def source_filename(self, value: str) -> None:
+        ...
+
     @property
     def functions(self) -> List[Function]:
         """The functions declared in this module."""
         ...
+
     @property
     def bitcode(self) -> bytes:
         """The LLVM bitcode for this module."""
         ...
+
     @property
     def context(self) -> Context:
         """The LLVM context."""
         ...
+
     def add_flag(
         self, behavior: ModuleFlagBehavior, id: str, flag: Union[Metadata, Constant]
     ) -> None:
@@ -518,6 +583,7 @@ class Module:
         :param Union[Metadata, Constant] flag: value of the flag
         """
         ...
+
     def get_flag(self, id: str) -> Optional[Metadata]:
         """
         Gets the flag value from the llvm.module.flags metadata for a given id
@@ -528,6 +594,7 @@ class Module:
         :returns: value of the flag if found, otherwise None
         """
         ...
+
     def verify(self) -> Optional[str]:
         """
         Verifies that this module is valid.
@@ -535,9 +602,11 @@ class Module:
         :returns: An error description if this module is invalid or `None` if this module is valid.
         """
         ...
+
     def __str__(self) -> str:
         """Converts this module into an LLVM IR string."""
         ...
+
 
 class ModuleFlagBehavior(Enum):
     """Module flag behavior choices"""
@@ -549,6 +618,7 @@ class ModuleFlagBehavior(Enum):
     APPEND: ModuleFlagBehavior
     APPEND_UNIQUE: ModuleFlagBehavior
     MAX: ModuleFlagBehavior
+
 
 class Opcode(Enum):
     """An instruction opcode."""
@@ -621,6 +691,7 @@ class Opcode(Enum):
     XOR: Opcode
     ZEXT: Opcode
 
+
 class Phi(Instruction):
     """A phi node instruction."""
 
@@ -628,6 +699,7 @@ class Phi(Instruction):
     def incoming(self) -> List[Tuple[Value, BasicBlock]]:
         """The incoming values and their preceding basic blocks."""
         ...
+
 
 class PointerType(Type):
     """A pointer type."""
@@ -639,14 +711,17 @@ class PointerType(Type):
         :param pointee: The type being pointed to.
         """
         ...
+
     @property
     def pointee(self) -> Type:
         """The type being pointed to."""
         ...
+
     @property
     def address_space(self) -> int:
         """The pointer address space."""
         ...
+
 
 class StructType(Type):
     """A structure type."""
@@ -655,10 +730,12 @@ class StructType(Type):
     def name(self) -> Optional[str]:
         """The name of the structure or the empty string if the structure is anonymous."""
         ...
+
     @property
     def fields(self) -> List[Type]:
         """The types of the structure fields."""
         ...
+
 
 class Switch(Instruction):
     """A switch instruction."""
@@ -667,14 +744,17 @@ class Switch(Instruction):
     def cond(self) -> Value:
         """The condition of the switch."""
         ...
+
     @property
     def default(self) -> BasicBlock:
         """The default successor block if none of the cases match."""
         ...
+
     @property
     def cases(self) -> List[Tuple[IntConstant, BasicBlock]]:
         """The switch cases."""
         ...
+
 
 class Type:
     """A type."""
@@ -688,6 +768,7 @@ class Type:
         :returns: The void type.
         """
         ...
+
     @staticmethod
     def double(context: Context) -> Type:
         """
@@ -697,19 +778,23 @@ class Type:
         :returns: The double type.
         """
         ...
+
     @property
     def is_void(self) -> bool:
         """Whether this type is the void type."""
         ...
+
     @property
     def is_double(self) -> bool:
         """Whether this type is the bool type."""
         ...
 
+
 class Metadata:
     """A metadata value."""
 
     ...
+
 
 class MetadataString(Metadata):
     """A metadata string"""
@@ -722,10 +807,12 @@ class MetadataString(Metadata):
         :param string: the value of the metadata string to create
         """
         ...
+
     @property
     def value(self) -> str:
         """The underlying metadata string value."""
         ...
+
 
 class ConstantAsMetadata(Metadata):
     """A metadata constant value."""
@@ -735,6 +822,7 @@ class ConstantAsMetadata(Metadata):
         """The underlying metadata constant value."""
         ...
 
+
 class Value:
     """A value."""
 
@@ -742,10 +830,12 @@ class Value:
     def type(self) -> Type:
         """The type of this value."""
         ...
+
     @property
     def name(self) -> str:
         """The name of this value or the empty string if this value is anonymous."""
         ...
+
     def __richcmp__(self, other: Value, op: int) -> bool:
         """
         Compares this value to another value.
@@ -756,7 +846,10 @@ class Value:
         :returns: The result of the comparison.
         """
         ...
-    def __hash__(self) -> int: ...
+
+    def __hash__(self) -> int:
+        ...
+
 
 def const(ty: Type, value: Union[bool, int, float]) -> Constant:
     """
@@ -768,21 +861,26 @@ def const(ty: Type, value: Union[bool, int, float]) -> Constant:
     """
     ...
 
+
 def qir_major_version(module: Module) -> Optional[int]:
     """The QIR major version this module is built for. None if unspecified."""
     ...
+
 
 def qir_minor_version(module: Module) -> Optional[int]:
     """The QIR minor version this module is built for. None if unspecified."""
     ...
 
+
 def dynamic_qubit_management(module: Module) -> Optional[bool]:
     """Whether this module supports dynamic qubit management. None if unspecified."""
     ...
 
+
 def dynamic_result_management(module: Module) -> Optional[bool]:
     """Whether this module supports dynamic result management. None if unspecified."""
     ...
+
 
 def qir_module(
     context: Context,
@@ -806,6 +904,7 @@ def qir_module(
     """
     ...
 
+
 def extract_byte_string(value: Value) -> Optional[bytes]:
     """
     If the value is a pointer to a constant byte string, extracts it.
@@ -814,6 +913,7 @@ def extract_byte_string(value: Value) -> Optional[bytes]:
     :returns: The constant byte string.
     """
     ...
+
 
 def global_byte_string(module: Module, value: bytes) -> Constant:
     """
@@ -825,6 +925,7 @@ def global_byte_string(module: Module, value: bytes) -> Constant:
     """
     ...
 
+
 def is_entry_point(function: Function) -> bool:
     """
     Whether the function is an entry point.
@@ -833,6 +934,7 @@ def is_entry_point(function: Function) -> bool:
     :returns: True if the function is an entry point.
     """
     ...
+
 
 def is_interop_friendly(function: Function) -> bool:
     """
@@ -843,6 +945,7 @@ def is_interop_friendly(function: Function) -> bool:
     """
     ...
 
+
 def is_qubit_type(ty: Type) -> bool:
     """
     Whether the type is the QIR qubit type.
@@ -852,6 +955,7 @@ def is_qubit_type(ty: Type) -> bool:
     """
     ...
 
+
 def is_result_type(ty: Type) -> bool:
     """
     Whether the type is the QIR result type.
@@ -860,6 +964,7 @@ def is_result_type(ty: Type) -> bool:
     :returns: True if the type is the QIR result type.
     """
     ...
+
 
 def qubit(context: Context, id: int) -> Constant:
     """
@@ -871,6 +976,7 @@ def qubit(context: Context, id: int) -> Constant:
     """
     ...
 
+
 def qubit_id(value: Value) -> Optional[int]:
     """
     If the value is a static qubit ID, extracts it.
@@ -879,6 +985,7 @@ def qubit_id(value: Value) -> Optional[int]:
     :returns: The static qubit ID.
     """
     ...
+
 
 def qubit_type(context: Context) -> Type:
     """
@@ -889,6 +996,7 @@ def qubit_type(context: Context) -> Type:
     """
     ...
 
+
 def required_num_qubits(function: Function) -> Optional[int]:
     """
     If the function declares a required number of qubits, extracts it.
@@ -898,6 +1006,7 @@ def required_num_qubits(function: Function) -> Optional[int]:
     """
     ...
 
+
 def required_num_results(function: Function) -> Optional[int]:
     """
     If the function declares a required number of results, extracts it.
@@ -906,6 +1015,7 @@ def required_num_results(function: Function) -> Optional[int]:
     :returns: The required number of results.
     """
     ...
+
 
 def result(context: Context, id: int) -> Constant:
     """
@@ -917,6 +1027,7 @@ def result(context: Context, id: int) -> Constant:
     """
     ...
 
+
 def result_id(value: Value) -> Optional[int]:
     """
     If the value is a static result ID, extracts it.
@@ -925,6 +1036,7 @@ def result_id(value: Value) -> Optional[int]:
     :returns: The static result ID.
     """
     ...
+
 
 def result_type(context: Context) -> Type:
     """
@@ -935,7 +1047,9 @@ def result_type(context: Context) -> Type:
     """
     ...
 
+
 # Runtime
+
 
 def array_record_output(builder: Builder, num_elements: Value, label: Value) -> None:
     """
@@ -948,6 +1062,7 @@ def array_record_output(builder: Builder, num_elements: Value, label: Value) -> 
     """
     ...
 
+
 def initialize(builder: Builder, data: Value) -> None:
     """
     Initializes the execution environment. Sets all qubits to a zero-state
@@ -958,6 +1073,7 @@ def initialize(builder: Builder, data: Value) -> None:
     """
     ...
 
+
 def result_record_output(builder: Builder, result: Value, label: Value) -> None:
     """
     Adds a measurement result to the generated output.
@@ -967,6 +1083,7 @@ def result_record_output(builder: Builder, result: Value, label: Value) -> None:
     :param Value label: A string label for the result value. Depending on the output schema, the label is included in the output or omitted.
     """
     ...
+
 
 def tuple_record_output(builder: Builder, num_elements: Value, label: Value) -> None:
     """
@@ -979,7 +1096,9 @@ def tuple_record_output(builder: Builder, num_elements: Value, label: Value) -> 
     """
     ...
 
+
 # QIS
+
 
 def barrier(builder: Builder) -> None:
     """
@@ -989,6 +1108,7 @@ def barrier(builder: Builder) -> None:
     :rtype: None
     """
     ...
+
 
 def swap(builder: Builder, qubit1: Value, qubit2: Value) -> None:
     """
@@ -1000,6 +1120,7 @@ def swap(builder: Builder, qubit1: Value, qubit2: Value) -> None:
     :rtype: None
     """
     ...
+
 
 def ccx(builder: Builder, control1: Value, control2: Value, target: Value) -> None:
     """
@@ -1013,6 +1134,7 @@ def ccx(builder: Builder, control1: Value, control2: Value, target: Value) -> No
     """
     ...
 
+
 def cx(builder: Builder, control: Value, target: Value) -> None:
     """
     Inserts a controlled Pauli :math:`X` gate.
@@ -1022,6 +1144,7 @@ def cx(builder: Builder, control: Value, target: Value) -> None:
     :param target: The target qubit.
     """
     ...
+
 
 def cz(builder: Builder, control: Value, target: Value) -> None:
     """
@@ -1033,6 +1156,7 @@ def cz(builder: Builder, control: Value, target: Value) -> None:
     """
     ...
 
+
 def h(builder: Builder, qubit: Value) -> None:
     """
     Inserts a Hadamard gate.
@@ -1041,6 +1165,7 @@ def h(builder: Builder, qubit: Value) -> None:
     :param qubit: The target qubit.
     """
     ...
+
 
 def mz(builder: Builder, qubit: Value, result: Value) -> None:
     """
@@ -1052,6 +1177,7 @@ def mz(builder: Builder, qubit: Value, result: Value) -> None:
     """
     ...
 
+
 def reset(builder: Builder, qubit: Value) -> None:
     """
     Inserts a reset operation.
@@ -1060,6 +1186,7 @@ def reset(builder: Builder, qubit: Value) -> None:
     :param qubit: The qubit to reset.
     """
     ...
+
 
 def rx(builder: Builder, theta: Union[Value, float], qubit: Value) -> None:
     """
@@ -1071,6 +1198,7 @@ def rx(builder: Builder, theta: Union[Value, float], qubit: Value) -> None:
     """
     ...
 
+
 def ry(builder: Builder, theta: Union[Value, float], qubit: Value) -> None:
     """
     Inserts a rotation gate about the :math:`y` axis.
@@ -1080,6 +1208,7 @@ def ry(builder: Builder, theta: Union[Value, float], qubit: Value) -> None:
     :param qubit: The qubit to rotate.
     """
     ...
+
 
 def rz(builder: Builder, theta: Union[Value, float], qubit: Value) -> None:
     """
@@ -1091,6 +1220,7 @@ def rz(builder: Builder, theta: Union[Value, float], qubit: Value) -> None:
     """
     ...
 
+
 def s(builder: Builder, qubit: Value) -> None:
     """
     Inserts an :math:`S` gate.
@@ -1099,6 +1229,7 @@ def s(builder: Builder, qubit: Value) -> None:
     :param qubit: The target qubit.
     """
     ...
+
 
 def s_adj(builder: Builder, qubit: Value) -> None:
     """
@@ -1109,6 +1240,7 @@ def s_adj(builder: Builder, qubit: Value) -> None:
     """
     ...
 
+
 def t(builder: Builder, qubit: Value) -> None:
     """
     Inserts a :math:`T` gate.
@@ -1117,6 +1249,7 @@ def t(builder: Builder, qubit: Value) -> None:
     :param qubit: The target qubit.
     """
     ...
+
 
 def t_adj(builder: Builder, qubit: Value) -> None:
     """
@@ -1127,6 +1260,7 @@ def t_adj(builder: Builder, qubit: Value) -> None:
     """
     ...
 
+
 def x(builder: Builder, qubit: Value) -> None:
     """
     Inserts a Pauli :math:`X` gate.
@@ -1135,6 +1269,7 @@ def x(builder: Builder, qubit: Value) -> None:
     :param qubit: The target qubit.
     """
     ...
+
 
 def y(builder: Builder, qubit: Value) -> None:
     """
@@ -1145,6 +1280,7 @@ def y(builder: Builder, qubit: Value) -> None:
     """
     ...
 
+
 def z(builder: Builder, qubit: Value) -> None:
     """
     Inserts a Pauli :math:`Z` gate.
@@ -1153,6 +1289,7 @@ def z(builder: Builder, qubit: Value) -> None:
     :param qubit: The target qubit.
     """
     ...
+
 
 def if_result(
     builder: Builder,
@@ -1174,12 +1311,15 @@ def if_result(
     """
     ...
 
-def add_string_attribute(function: Function, kind: bytes, value: bytes) -> bool:
+
+def add_string_attribute(
+    function: Function, kind: str, value: Optional[str] = None
+) -> bool:
     """
     Adds a string attribute to the given function.
 
     :param function: The function.
-    :param kind: The attribute kind.
+    :param key: The attribute key.
     :param value: The attribute value.
     """
     ...

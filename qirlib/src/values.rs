@@ -181,12 +181,12 @@ pub unsafe fn extract_string(value: LLVMValueRef) -> Option<Vec<u8>> {
     Some(data[offset..].to_vec())
 }
 
-pub unsafe fn add_string_attribute(function: LLVMValueRef, kind: &[u8], value: &[u8]) {
+pub unsafe fn add_string_attribute(function: LLVMValueRef, key: &[u8], value: &[u8]) {
     let context = LLVMGetTypeContext(LLVMTypeOf(function));
     let attr = LLVMCreateStringAttribute(
         context,
-        kind.as_ptr().cast(),
-        kind.len().try_into().unwrap(),
+        key.as_ptr().cast(),
+        key.len().try_into().unwrap(),
         value.as_ptr().cast(),
         value.len().try_into().unwrap(),
     );

@@ -20,7 +20,7 @@ use pyo3::{
     exceptions::{PyKeyError, PyTypeError, PyValueError},
     prelude::*,
     pyclass::CompareOp,
-    types::{PyBytes, PyLong},
+    types::{PyBytes, PyLong, PyString},
     PyRef,
 };
 use qirlib::values;
@@ -864,14 +864,23 @@ pub(crate) fn extract_byte_string<'py>(py: Python<'py>, value: &Value) -> Option
 // :param kind: The attribute kind.
 // :param value: The attribute value.
 #[pyfunction]
-#[pyo3(text_signature = "(function, kind, value)")]
+#[pyo3(text_signature = "(function, key, value)")]
 pub(crate) fn add_string_attribute<'py>(
     function: PyRef<Function>,
-    kind: &'py PyBytes,
-    value: &'py PyBytes,
+    key: &'py PyString,
+    value: Option<&'py PyString>,
 ) {
     let function = function.into_super().into_super().as_ptr();
-    let kind = kind.as_bytes();
-    let value = value.as_bytes();
-    unsafe { values::add_string_attribute(function, kind, value) }
+    let key = key.to_string_lossy();
+    let value = value.map(|x| x.to_string_lossy());
+    unsafe {
+        values::add_string_attribute(
+            function,
+            key.as_bytes(),
+            match value {
+                Some(ref x) => x.as_bytes(),
+                None => &[],
+            },
+        )
+    }
 }
