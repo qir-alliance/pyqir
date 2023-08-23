@@ -57,7 +57,7 @@ from pyqir._native import (
     result_type,
 )
 from pyqir._simple import SimpleModule
-from pyqir._entrypoint import entry_point
+from pyqir._entry_point import entry_point
 from pyqir._basicqis import BasicQisBuilder
 
 __all__ = [
