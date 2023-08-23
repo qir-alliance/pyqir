@@ -35,7 +35,7 @@ def test_basic_key_only_attribute() -> None:
     assert 'attributes #0 = { "foo" }' in ir
 
 
-def test_round_trip() -> None:
+def test_round_trip_serialize_parse() -> None:
     mod = pyqir.Module(pyqir.Context(), "test")
     void = pyqir.Type.void(mod.context)
     function = Function(FunctionType(void, []), Linkage.EXTERNAL, "test_function", mod)
