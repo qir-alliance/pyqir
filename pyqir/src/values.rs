@@ -858,6 +858,11 @@ pub(crate) fn extract_byte_string<'py>(py: Python<'py>, value: &Value) -> Option
     Some(PyBytes::new(py, &string))
 }
 
+// Adds a string attribute to the given function.
+
+// :param function: The function.
+// :param kind: The attribute kind.
+// :param value: The attribute value.
 #[pyfunction]
 #[pyo3(text_signature = "(function, kind, value)")]
 pub(crate) fn add_string_attribute<'py>(

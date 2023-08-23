@@ -62,9 +62,9 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Switch>()?;
     m.add_class::<Type>()?;
     m.add_class::<Value>()?;
+    m.add_function(wrap_pyfunction!(add_string_attribute, m)?)?;
     m.add_function(wrap_pyfunction!(dynamic_qubit_management, m)?)?;
     m.add_function(wrap_pyfunction!(dynamic_result_management, m)?)?;
-    m.add_function(wrap_pyfunction!(add_string_attribute, m)?)?;
     m.add_function(wrap_pyfunction!(extract_byte_string, m)?)?;
     m.add_function(wrap_pyfunction!(global_byte_string, m)?)?;
     m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
