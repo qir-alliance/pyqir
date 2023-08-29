@@ -20,7 +20,7 @@ use pyo3::{
     exceptions::{PyKeyError, PyTypeError, PyValueError},
     prelude::*,
     pyclass::CompareOp,
-    types::{PyBytes, PyLong},
+    types::{PyBytes, PyLong, PyString},
     PyRef,
 };
 use qirlib::values;
@@ -713,43 +713,6 @@ pub(crate) fn result_id(value: &Value) -> Option<u64> {
     unsafe { values::result_id(value.as_ptr()) }
 }
 
-/// Creates an entry point.
-///
-/// :param Module module: The parent module.
-/// :param str name: The entry point name.
-/// :param int required_num_qubits: The number of qubits required by the entry point.
-/// :param int required_num_results: The number of results required by the entry point.
-/// :param str qir_profiles: Value identifying the profile the entry point has been compiled for. Use base_profile when QIR is compliant.
-/// :param str output_labeling_schema: An arbitrary string value that identifies the schema used by a compiler frontend that produced the IR to label the recorded output
-/// :returns: An entry point.
-/// :rtype: Function
-#[pyfunction]
-#[pyo3(
-    text_signature = "(module, name, required_num_qubits, required_num_results, qir_profiles, output_labeling_schema)"
-)]
-pub(crate) fn entry_point(
-    py: Python,
-    module: Py<Module>,
-    name: &str,
-    required_num_qubits: u64,
-    required_num_results: u64,
-    qir_profiles: Option<&str>,
-    output_labeling_schema: Option<&str>,
-) -> PyResult<PyObject> {
-    let name = CString::new(name).unwrap();
-    unsafe {
-        let entry_point = values::entry_point(
-            module.borrow(py).as_ptr(),
-            name.as_c_str(),
-            required_num_qubits,
-            required_num_results,
-            qir_profiles.unwrap_or("custom"),
-            output_labeling_schema.unwrap_or(""),
-        );
-        Value::from_raw(py, module.into(), entry_point)
-    }
-}
-
 /// Whether the function is an entry point.
 ///
 /// :param Function function: The function.
@@ -893,4 +856,31 @@ pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> P
 pub(crate) fn extract_byte_string<'py>(py: Python<'py>, value: &Value) -> Option<&'py PyBytes> {
     let string = unsafe { values::extract_string(value.as_ptr())? };
     Some(PyBytes::new(py, &string))
+}
+
+// Adds a string attribute to the given function.
+
+// :param function: The function.
+// :param kind: The attribute kind.
+// :param value: The attribute value.
+#[pyfunction]
+#[pyo3(text_signature = "(function, key, value)")]
+pub(crate) fn add_string_attribute<'py>(
+    function: PyRef<Function>,
+    key: &'py PyString,
+    value: Option<&'py PyString>,
+) {
+    let function = function.into_super().into_super().as_ptr();
+    let key = key.to_string_lossy();
+    let value = value.map(PyString::to_string_lossy);
+    unsafe {
+        values::add_string_attribute(
+            function,
+            key.as_bytes(),
+            match value {
+                Some(ref x) => x.as_bytes(),
+                None => &[],
+            },
+        );
+    }
 }

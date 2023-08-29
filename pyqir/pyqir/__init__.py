@@ -34,10 +34,10 @@ from pyqir._native import (
     Switch,
     Type,
     Value,
+    add_string_attribute,
     const,
     dynamic_qubit_management,
     dynamic_result_management,
-    entry_point,
     extract_byte_string,
     global_byte_string,
     is_entry_point,
@@ -57,6 +57,7 @@ from pyqir._native import (
     result_type,
 )
 from pyqir._simple import SimpleModule
+from pyqir._entry_point import entry_point
 from pyqir._basicqis import BasicQisBuilder
 
 __all__ = [
@@ -94,6 +95,7 @@ __all__ = [
     "Switch",
     "Type",
     "Value",
+    "add_string_attribute",
     "const",
     "dynamic_qubit_management",
     "dynamic_result_management",

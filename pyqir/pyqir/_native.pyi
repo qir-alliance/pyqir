@@ -816,27 +816,6 @@ def const(ty: Type, value: Union[bool, int, float]) -> Constant:
     """
     ...
 
-def entry_point(
-    module: Module,
-    name: str,
-    required_num_qubits: int,
-    required_num_results: int,
-    qir_profiles: Optional[str] = "custom",
-    output_labeling_schema: Optional[str] = "",
-) -> Function:
-    """
-    Creates an entry point.
-
-    :param Module module: The parent module.
-    :param str name: The entry point name.
-    :param int required_num_qubits: The number of qubits required by the entry point.
-    :param int required_num_results: The number of results required by the entry point.
-    :param Optional[str] qir_profiles: Value identifying the profile the entry point has been compiled for. Use base_profile when QIR is compliant.
-    :param Optional[str] output_labeling_schema: An arbitrary string value that identifies the schema used by a compiler frontend that produced the IR to label the recorded output
-    :returns: An entry point.
-    """
-    ...
-
 def qir_major_version(module: Module) -> Optional[int]:
     """The QIR major version this module is built for. None if unspecified."""
     ...
@@ -1240,5 +1219,17 @@ def if_result(
     :param cond: The result condition to branch on.
     :param one: A callable that inserts instructions for the branch where the result is one.
     :param zero: A callable that inserts instructions for the branch where the result is zero.
+    """
+    ...
+
+def add_string_attribute(
+    function: Function, kind: str, value: Optional[str] = None
+) -> bool:
+    """
+    Adds a string attribute to the given function.
+
+    :param function: The function.
+    :param key: The attribute key.
+    :param value: The attribute value.
     """
     ...
