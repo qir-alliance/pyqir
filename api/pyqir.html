@@ -2200,11 +2200,6 @@ list is empty.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pyqir.add_string_attribute">
-<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">add_string_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.add_string_attribute" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="pyqir.const">
 <span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">const</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.const" title="Permalink to this definition">#</a></dt>
 <dd><p>Creates a constant value.</p>
@@ -2238,7 +2233,7 @@ list is empty.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pyqir.entry_point">
-<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">entry_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyqir.Module" title="pyqir.Module"><span class="pre">Module</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_num_qubits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_num_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">qir_profiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'custom'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_labeling_schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pyqir.Function" title="pyqir.Function"><span class="pre">Function</span></a></span></span><a class="headerlink" href="#pyqir.entry_point" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">entry_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_num_qubits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_num_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qir_profiles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_labeling_schema</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.entry_point" title="Permalink to this definition">#</a></dt>
 <dd><p>Creates an entry point.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -2247,12 +2242,15 @@ list is empty.</p>
 <li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – The entry point name.</p></li>
 <li><p><strong>required_num_qubits</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – The number of qubits required by the entry point.</p></li>
 <li><p><strong>required_num_results</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – The number of results required by the entry point.</p></li>
-<li><p><strong>qir_profiles</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>]</em>) – Value identifying the profile the entry point has been compiled for. Use base_profile when QIR is compliant.</p></li>
-<li><p><strong>output_labeling_schema</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>]</em>) – An arbitrary string value that identifies the schema used by a compiler frontend that produced the IR to label the recorded output</p></li>
+<li><p><strong>qir_profiles</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – Value identifying the profile the entry point has been compiled for. Use base_profile when QIR is compliant.</p></li>
+<li><p><strong>output_labeling_schema</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – An arbitrary string value that identifies the schema used by a compiler frontend that produced the IR to label the recorded output</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>An entry point.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Function" title="pyqir.Function">Function</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2892,7 +2890,6 @@ list is empty.</p>
 <li><a class="reference internal" href="#pyqir.Value.type"><code class="docutils literal notranslate"><span class="pre">Value.type</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#pyqir.add_string_attribute"><code class="docutils literal notranslate"><span class="pre">add_string_attribute()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.const"><code class="docutils literal notranslate"><span class="pre">const()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.dynamic_qubit_management"><code class="docutils literal notranslate"><span class="pre">dynamic_qubit_management()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.dynamic_result_management"><code class="docutils literal notranslate"><span class="pre">dynamic_result_management()</span></code></a></li>
