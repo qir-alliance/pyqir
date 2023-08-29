@@ -19,10 +19,12 @@ use llvm_sys::{
     ir_reader::LLVMParseIRInContext,
     LLVMLinkage, LLVMModule,
 };
-use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
+use pyo3::{exceptions::PyValueError, prelude::*, pyclass::CompareOp, types::PyBytes};
 use qirlib::module::FlagBehavior;
 use std::{
+    collections::hash_map::DefaultHasher,
     ffi::CString,
+    hash::{Hash, Hasher},
     ops::Deref,
     ptr::{self, NonNull},
     str,
@@ -289,7 +291,7 @@ impl PartialEq for Module {
 
 /// The linkage kind for a global value in a module.
 #[pyclass]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Hash)]
 pub(crate) enum Linkage {
     #[pyo3(name = "APPENDING")]
     Appending,
@@ -313,6 +315,26 @@ pub(crate) enum Linkage {
     WeakAny,
     #[pyo3(name = "WEAK_ODR")]
     WeakOdr,
+}
+
+#[pymethods]
+#[allow(clippy::trivially_copy_pass_by_ref)]
+impl Linkage {
+    // In order to implement the comparison operators, we have to do
+    // it all in one impl of __richcmp__ for pyo3 to work.
+    fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
+        match op {
+            CompareOp::Eq => self.eq(other).into_py(py),
+            CompareOp::Ne => (!self.eq(other)).into_py(py),
+            _ => py.NotImplemented(),
+        }
+    }
+
+    fn __hash__(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
+    }
 }
 
 impl From<Linkage> for LLVMLinkage {

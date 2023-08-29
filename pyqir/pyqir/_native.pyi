@@ -300,6 +300,18 @@ class FloatConstant(Constant):
 class FloatPredicate(Enum):
     """A floating-point comparison predicate."""
 
+    def __richcmp__(self, other: Value, op: int) -> bool:
+        """
+        Compares this value to another value.
+        Only == and != are supported.
+
+        :param other: The other value.
+        :param op: The comparison operator.
+        :returns: The result of the comparison.
+        """
+        ...
+    def __hash__(self) -> int: ...
+
     FALSE: FloatPredicate
     OEQ: FloatPredicate
     OGT: FloatPredicate
@@ -414,6 +426,18 @@ class IntConstant(Constant):
 class IntPredicate(Enum):
     """An integer comparison predicate."""
 
+    def __richcmp__(self, other: Value, op: int) -> bool:
+        """
+        Compares this value to another value.
+        Only == and != are supported.
+
+        :param other: The other value.
+        :param op: The comparison operator.
+        :returns: The result of the comparison.
+        """
+        ...
+    def __hash__(self) -> int: ...
+
     EQ: IntPredicate
     NE: IntPredicate
     UGT: IntPredicate
@@ -443,6 +467,18 @@ class IntType(Type):
 
 class Linkage(Enum):
     """The linkage kind for a global value in a module."""
+
+    def __richcmp__(self, other: Value, op: int) -> bool:
+        """
+        Compares this value to another value.
+        Only == and != are supported.
+
+        :param other: The other value.
+        :param op: The comparison operator.
+        :returns: The result of the comparison.
+        """
+        ...
+    def __hash__(self) -> int: ...
 
     APPENDING: Linkage
     AVAILABLE_EXTERNALLY: Linkage
@@ -552,6 +588,18 @@ class ModuleFlagBehavior(Enum):
 
 class Opcode(Enum):
     """An instruction opcode."""
+
+    def __richcmp__(self, other: Value, op: int) -> bool:
+        """
+        Compares this value to another value.
+        Only == and != are supported.
+
+        :param other: The other value.
+        :param op: The comparison operator.
+        :returns: The result of the comparison.
+        """
+        ...
+    def __hash__(self) -> int: ...
 
     ADD: Opcode
     ADDR_SPACE_CAST: Opcode
