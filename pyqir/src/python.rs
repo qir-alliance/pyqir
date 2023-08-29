@@ -19,11 +19,11 @@ use crate::{
         PointerType, StructType, Type,
     },
     values::{
-        dynamic_qubit_management, dynamic_result_management, entry_point, extract_byte_string,
-        global_byte_string, is_entry_point, is_interop_friendly, qir_major_version,
-        qir_minor_version, qir_module, qubit, qubit_id, r#const, required_num_qubits,
-        required_num_results, result, result_id, Attribute, AttributeList, AttributeSet,
-        BasicBlock, Constant, FloatConstant, Function, IntConstant, Value,
+        add_string_attribute, dynamic_qubit_management, dynamic_result_management,
+        extract_byte_string, global_byte_string, is_entry_point, is_interop_friendly,
+        qir_major_version, qir_minor_version, qir_module, qubit, qubit_id, r#const,
+        required_num_qubits, required_num_results, result, result_id, Attribute, AttributeList,
+        AttributeSet, BasicBlock, Constant, FloatConstant, Function, IntConstant, Value,
     },
 };
 use pyo3::prelude::*;
@@ -62,9 +62,9 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Switch>()?;
     m.add_class::<Type>()?;
     m.add_class::<Value>()?;
+    m.add_function(wrap_pyfunction!(add_string_attribute, m)?)?;
     m.add_function(wrap_pyfunction!(dynamic_qubit_management, m)?)?;
     m.add_function(wrap_pyfunction!(dynamic_result_management, m)?)?;
-    m.add_function(wrap_pyfunction!(entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(extract_byte_string, m)?)?;
     m.add_function(wrap_pyfunction!(global_byte_string, m)?)?;
     m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
