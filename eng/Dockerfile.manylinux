@@ -8,7 +8,9 @@ ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
 ARG RUST_TOOLCHAIN=1.64.0
 
-RUN groupadd --gid ${USER_GID} ${USERNAME}
+# libcgroup created a new group that conflicts with the agent group id. 
+# To avoid this issue in the future, -o allows for non-unique group ids. 
+RUN groupadd --gid ${USER_GID} -o ${USERNAME}
 RUN useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME}
 RUN yum install -y sudo
 RUN echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME}
@@ -32,12 +34,13 @@ RUN chown ${USER_UID}:${USER_GID} /io
 USER $USERNAME
 
 # Add all supported python versions
-ENV PATH /opt/python/cp37-cp37m/bin:/opt/python/cp38-cp38/bin:/opt/python/cp39-cp39/bin:/opt/python/cp310-cp310/bin:$PATH
+ENV PATH /opt/python/cp37-cp37m/bin:/opt/python/cp38-cp38/bin:/opt/python/cp39-cp39/bin:/opt/python/cp310-cp310/bin:/opt/python/cp311-cp311/bin:$PATH
 
 RUN python3.7 -m pip install --no-cache-dir cffi \
     && python3.8 -m pip install --no-cache-dir cffi \
     && python3.9 -m pip install --no-cache-dir cffi \
-    && python3.10 -m pip install --no-cache-dir cffi
+    && python3.10 -m pip install --no-cache-dir cffi \
+    && python3.11 -m pip install --no-cache-dir cffi
 
 USER root
 
