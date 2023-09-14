@@ -54,12 +54,12 @@ pub unsafe fn entry_point(
     add_string_attribute(function, b"entry_point", b"");
     add_string_attribute(
         function,
-        b"num_required_qubits",
+        b"required_num_qubits",
         required_num_qubits.to_string().as_bytes(),
     );
     add_string_attribute(
         function,
-        b"num_required_results",
+        b"required_num_results",
         required_num_results.to_string().as_bytes(),
     );
 
@@ -93,7 +93,10 @@ pub unsafe fn is_interop_friendly(function: LLVMValueRef) -> bool {
 pub unsafe fn required_num_qubits(function: LLVMValueRef) -> Option<u64> {
     if LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind {
         let required_qubits =
-            get_string_attribute(function, LLVMAttributeFunctionIndex, b"num_required_qubits")
+            get_string_attribute(function, LLVMAttributeFunctionIndex, b"required_num_qubits")
+                .or_else(|| {
+                    get_string_attribute(function, LLVMAttributeFunctionIndex, b"num_required_qubits")
+                })
                 .or_else(|| {
                     get_string_attribute(function, LLVMAttributeFunctionIndex, b"requiredQubits")
                 })?;
@@ -112,8 +115,11 @@ pub unsafe fn required_num_results(function: LLVMValueRef) -> Option<u64> {
         let required_results = get_string_attribute(
             function,
             LLVMAttributeFunctionIndex,
-            b"num_required_results",
+            b"required_num_results",
         )
+        .or_else(|| {
+            get_string_attribute(function, LLVMAttributeFunctionIndex, b"num_required_results")
+        })
         .or_else(|| {
             get_string_attribute(function, LLVMAttributeFunctionIndex, b"requiredResults")
         })?;
