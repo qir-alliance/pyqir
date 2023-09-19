@@ -95,7 +95,11 @@ pub unsafe fn required_num_qubits(function: LLVMValueRef) -> Option<u64> {
         let required_qubits =
             get_string_attribute(function, LLVMAttributeFunctionIndex, b"required_num_qubits")
                 .or_else(|| {
-                    get_string_attribute(function, LLVMAttributeFunctionIndex, b"num_required_qubits")
+                    get_string_attribute(
+                        function,
+                        LLVMAttributeFunctionIndex,
+                        b"num_required_qubits",
+                    )
                 })
                 .or_else(|| {
                     get_string_attribute(function, LLVMAttributeFunctionIndex, b"requiredQubits")
@@ -118,7 +122,11 @@ pub unsafe fn required_num_results(function: LLVMValueRef) -> Option<u64> {
             b"required_num_results",
         )
         .or_else(|| {
-            get_string_attribute(function, LLVMAttributeFunctionIndex, b"num_required_results")
+            get_string_attribute(
+                function,
+                LLVMAttributeFunctionIndex,
+                b"num_required_results",
+            )
         })
         .or_else(|| {
             get_string_attribute(function, LLVMAttributeFunctionIndex, b"requiredResults")
