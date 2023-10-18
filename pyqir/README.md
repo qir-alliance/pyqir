@@ -68,7 +68,7 @@ declare void @__quantum__qis__cnot__body(%Qubit*, %Qubit*)
 
 declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly) #1
 
-attributes #0 = { "entry_point" "num_required_qubits"="2" "num_required_results"="2" "output_labeling_schema" "qir_profiles"="custom" }
+attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="2" "required_num_results"="2" }
 attributes #1 = { "irreversible" }
 
 !llvm.module.flags = !{!0, !1, !2, !3}

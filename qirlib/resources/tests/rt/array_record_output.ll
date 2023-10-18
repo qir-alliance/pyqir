@@ -8,4 +8,4 @@ define void @main() #0 {
 
 declare void @__quantum__rt__array_record_output(i64, i8*)
 
-attributes #0 = { "entry_point" "num_required_qubits"="0" "num_required_results"="0" "output_labeling_schema" "qir_profiles"="custom" }
+attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="0" "required_num_results"="0" }

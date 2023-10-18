@@ -29,8 +29,8 @@ def entry_point(
     void = pyqir.Type.void(module.context)
     function = Function(FunctionType(void, []), Linkage.EXTERNAL, name, module)
     add_string_attribute(function, "entry_point")
-    add_string_attribute(function, "num_required_qubits", str(required_num_qubits))
-    add_string_attribute(function, "num_required_results", str(required_num_results))
+    add_string_attribute(function, "required_num_qubits", str(required_num_qubits))
+    add_string_attribute(function, "required_num_results", str(required_num_results))
     add_string_attribute(function, "qir_profiles", qir_profiles)
 
     add_string_attribute(
