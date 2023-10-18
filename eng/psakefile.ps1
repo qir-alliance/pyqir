@@ -14,33 +14,12 @@ Properties {
     $VscodeSettingsJson = Join-Path $Root .vscode settings.json
     $DocsRoot = Join-Path $Root docs
     $DocsBuild = Join-Path $DocsRoot _build
-    $ManylinuxTag = "manylinux2014_x86_64_maturin"
-    $ManylinuxRoot = "/io"
     $Python = Resolve-Python
 }
 
 task default -depends build, run-examples
 task build -depends qirlib, pyqir
 task checks -depends cargo-fmt, cargo-clippy, black, mypy
-task manylinux -depends build-manylinux-container-image, run-manylinux-container-image, run-examples-in-containers
-
-task run-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    $llvmDir = Resolve-InstallationDirectory
-    $llvmMount = @("-v", "$($llvmDir):/tmp/llvm")
-    Write-BuildLog "Running container image: $ManylinuxTag"
-    $ioVolume = "${Root}:$ManylinuxRoot"
-    $userName = Get-LinuxContainerUserName
-
-    Invoke-LoggedCommand {
-        docker run --rm `
-            --user $userName `
-            --volume $ioVolume @llvmMount `
-            --env QIRLIB_CACHE_DIR=/tmp/llvm `
-            --workdir $ManylinuxRoot `
-            $ManylinuxTag `
-            conda run --no-capture-output pwsh build.ps1 -t default
-    }
-}
 
 task cargo-fmt {
     Invoke-LoggedCommand -workingDirectory $Root -errorMessage "Please run 'cargo fmt --all' before pushing" {
@@ -77,8 +56,11 @@ task qirlib -depends init {
 task pyqir -depends init {
     $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
     Get-Wheels pyqir | Remove-Item
-    Invoke-LoggedCommand { pip --verbose wheel --wheel-dir $Wheels $Pyqir }
+    Invoke-LoggedCommand { & $Python -m pip --verbose wheel --wheel-dir $Wheels $Pyqir }
 
+    if ($IsLinux) {
+        Invoke-LoggedCommand { & $Python -m pip install auditwheel }
+    }
     if (Test-CommandExists auditwheel) {
         $unauditedWheels = Get-Wheels pyqir
         Invoke-LoggedCommand { auditwheel repair --wheel-dir $Wheels $unauditedWheels }
@@ -179,41 +161,6 @@ task install-llvm-from-source -depends configure-sccache -postaction { Write-Cac
     Assert (Test-LlvmConfig $installationDirectory) "install-llvm-from-source failed to install a usable LLVM installation"
 }
 
-task manylinux-install-llvm-from-source -depends build-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    $llvmDir = Resolve-InstallationDirectory
-    $llvmMount = @("-v", "$($llvmDir):/tmp/llvm")
-    Write-BuildLog "Running container image: $ManylinuxTag"
-    $ioVolume = "${Root}:$ManylinuxRoot"
-    $userName = Get-LinuxContainerUserName
-
-    Invoke-LoggedCommand {
-        docker run --rm `
-            --user $userName `
-            --volume $ioVolume @llvmMount `
-            --workdir $ManylinuxRoot `
-            $ManylinuxTag `
-            conda run --no-capture-output pwsh build.ps1 -t install-llvm-from-source
-    }
-}
-
-task package-manylinux-llvm -depends build-manylinux-container-image -preaction { Write-CacheStats } -postaction { Write-CacheStats } {
-    $llvmDir = Resolve-InstallationDirectory
-    $llvmMount = @("-v", "$($llvmDir):/tmp/llvm")
-    Write-BuildLog "Running container image: $ManylinuxTag"
-    $ioVolume = "${Root}:$ManylinuxRoot"
-    $userName = Get-LinuxContainerUserName
-
-    Invoke-LoggedCommand {
-        docker run --rm `
-            --user $userName `
-            --volume $ioVolume @llvmMount `
-            --workdir $ManylinuxRoot `
-            --env QIRLIB_PKG_DEST=$ManylinuxRoot/target/manylinux `
-            $ManylinuxTag `
-            conda run --no-capture-output pwsh build.ps1 -t package-llvm
-    }
-}
-
 task package-llvm {
     if ($IsWindows) {
         Include vcvars.ps1
@@ -236,32 +183,12 @@ task package-llvm {
     }
 }
 
-task build-manylinux-container-image {
-    Write-BuildLog "Building container image manylinux-llvm-builder"
-    $RustVersion = (rustc --version) -split " " -match "^(\d+\.)?(\d+\.)?(\*|\d+)$"
-    Write-BuildLog "Found rustc version $RustVersion"
-    Invoke-LoggedCommand -workingDirectory (Join-Path $Root eng) {
-        $user = Get-LinuxContainerUserName
-        $uid = Get-LinuxContainerUserId
-        $gid = Get-LinuxContainerGroupId
-        docker build `
-            --build-arg USERNAME=$user `
-            --build-arg USER_UID=$uid `
-            --build-arg USER_GID=$gid `
-            --build-arg RUST_TOOLCHAIN=$RustVersion `
-            --tag $ManylinuxTag `
-            -f Dockerfile.manylinux `
-            $Root
-    }
-}
-
-# This is only usable if building for manylinux
 task run-examples-in-containers {
     $user = Get-LinuxContainerUserName
     $uid = Get-LinuxContainerUserId
     $gid = Get-LinuxContainerGroupId
 
-    foreach ($release in @("buster", "bullseye", "focal", "jammy")) {
+    foreach ($release in @("bullseye", "bookworm", "focal", "jammy")) {
         exec -workingDirectory (Join-Path $Root eng) {
             Get-Content Dockerfile.examples | docker build `
                 --build-arg RELEASE=$release `
