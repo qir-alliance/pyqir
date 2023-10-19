@@ -32,12 +32,6 @@ jobs:
           - {
               os: "ubuntu-20.04",
               arch: "amd64",
-              target: "manylinux",
-              env: {},
-            }
-          - {
-              os: "ubuntu-20.04",
-              arch: "amd64",
               target: "default",
               env: {},
             }
@@ -60,6 +54,11 @@ jobs:
         with:
           toolchain: 1.64.0
           components: rustfmt clippy
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
       - name: Install LLVM
         uses: ./.github/actions/install-llvm
         with:
@@ -83,7 +82,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: manylinux-artifacts
-          path: target/wheels/*manylinux_2_17*.whl
+          path: target/wheels/*manylinux_2_*.whl
         if: ${{ matrix.config.os == 'ubuntu-20.04' }}
       - name: Artifacts
         uses: actions/upload-artifact@v2

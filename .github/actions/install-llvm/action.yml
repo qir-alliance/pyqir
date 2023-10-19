@@ -31,7 +31,7 @@ runs:
       shell: pwsh
       if: ${{ (inputs.os == 'ubuntu-20.04') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
     - name: Windows - Install build dependencies, ninja
-      run: | 
+      run: |
         choco install --accept-license -y ninja
         choco uninstall -y llvm
       shell: pwsh
@@ -55,7 +55,6 @@ runs:
 
     - name: Install LLVM
       run: |
-        $target_prefix = if("${{ inputs.target }}" -eq "manylinux") {"manylinux-"} else {""}
-        ./build.ps1 -t "$($target_prefix)install-llvm-from-source"
+        ./build.ps1 -t install-llvm-from-source
       shell: pwsh
       if: ${{ steps.cache-llvm.outputs.cache-hit != 'true' }}
