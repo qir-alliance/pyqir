@@ -93,16 +93,20 @@ pub unsafe fn is_interop_friendly(function: LLVMValueRef) -> bool {
 pub unsafe fn required_num_qubits(function: LLVMValueRef) -> Option<u64> {
     if LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind {
         let required_qubits =
-            get_string_attribute(function, LLVMAttributeFunctionIndex, b"required_num_qubits")
+            get_string_attribute(function, LLVMAttributeFunctionIndex, b"requiredQubits")
+                .or_else(|| {
+                    get_string_attribute(
+                        function,
+                        LLVMAttributeFunctionIndex,
+                        b"required_num_qubits",
+                    )
+                })
                 .or_else(|| {
                     get_string_attribute(
                         function,
                         LLVMAttributeFunctionIndex,
                         b"num_required_qubits",
                     )
-                })
-                .or_else(|| {
-                    get_string_attribute(function, LLVMAttributeFunctionIndex, b"requiredQubits")
                 })?;
 
         let mut len = 0;
@@ -116,21 +120,22 @@ pub unsafe fn required_num_qubits(function: LLVMValueRef) -> Option<u64> {
 
 pub unsafe fn required_num_results(function: LLVMValueRef) -> Option<u64> {
     if LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind {
-        let required_results = get_string_attribute(
-            function,
-            LLVMAttributeFunctionIndex,
-            b"required_num_results",
-        )
-        .or_else(|| {
-            get_string_attribute(
-                function,
-                LLVMAttributeFunctionIndex,
-                b"num_required_results",
-            )
-        })
-        .or_else(|| {
+        let required_results =
             get_string_attribute(function, LLVMAttributeFunctionIndex, b"requiredResults")
-        })?;
+                .or_else(|| {
+                    get_string_attribute(
+                        function,
+                        LLVMAttributeFunctionIndex,
+                        b"required_num_results",
+                    )
+                })
+                .or_else(|| {
+                    get_string_attribute(
+                        function,
+                        LLVMAttributeFunctionIndex,
+                        b"num_required_results",
+                    )
+                })?;
         let mut len = 0;
         let value = LLVMGetStringAttributeValue(required_results.as_ptr(), &mut len);
         let value = slice::from_raw_parts(value.cast(), len.try_into().unwrap());
