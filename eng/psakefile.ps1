@@ -60,7 +60,7 @@ task pyqir -depends init {
     Invoke-LoggedCommand { & $Python -m pip --verbose wheel --wheel-dir $Wheels $Pyqir }
 
     if ($IsLinux) {
-        Invoke-LoggedCommand { & $Python -m pip install auditwheel }
+        Invoke-LoggedCommand { & $Python -m pip install auditwheel patchelf }
     }
     if (Test-CommandExists auditwheel) {
         $unauditedWheels = Get-Wheels pyqir
@@ -70,7 +70,7 @@ task pyqir -depends init {
     }
 
     $packages = Get-Wheels pyqir | ForEach-Object { "$_[test]" }
-    Invoke-LoggedCommand { pip install --force-reinstall $packages }
+    Invoke-LoggedCommand { & $Python -m pip install --force-reinstall $packages }
     Invoke-LoggedCommand -workingDirectory $Pyqir { pytest }
 }
 
