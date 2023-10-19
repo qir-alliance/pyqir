@@ -20,6 +20,11 @@ class Attribute:
     """An attribute."""
 
     @property
+    def string_kind(self) -> str:
+        """The kind of this attribute as a string."""
+        ...
+
+    @property
     def string_value(self) -> Optional[str]:
         """The value of this attribute as a string, or `None` if this is not a string attribute."""
         ...
@@ -44,6 +49,15 @@ class AttributeList:
         """The attributes for the function itself."""
         ...
 
+class AttributeIterator:
+    """An iterator of attributes for a specific part of a function."""
+
+    def __iter__(self) -> object:
+        ...
+
+    def __next__(self) -> Optional[Attribute]:
+        ...
+
 class AttributeSet:
     """A set of attributes for a specific part of a function."""
 
@@ -62,6 +76,9 @@ class AttributeSet:
         :param key: The attribute kind.
         :returns: The attribute.
         """
+        ...
+
+    def __iter__(self) -> AttributeIterator:
         ...
 
 class BasicBlock(Value):

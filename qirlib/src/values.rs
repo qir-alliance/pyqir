@@ -9,7 +9,13 @@ use llvm_sys::{
     core::*, prelude::*, LLVMAttributeFunctionIndex, LLVMAttributeIndex, LLVMLinkage,
     LLVMOpaqueAttributeRef, LLVMOpcode, LLVMTypeKind, LLVMValueKind,
 };
-use std::{convert::TryFrom, ffi::CStr, ptr::NonNull, str};
+use std::{
+    convert::TryFrom,
+    ffi::CStr,
+    mem::{ManuallyDrop, MaybeUninit},
+    ptr::NonNull,
+    str,
+};
 
 pub unsafe fn qubit(context: LLVMContextRef, id: u64) -> LLVMValueRef {
     let i64 = LLVMInt64TypeInContext(context);
@@ -223,6 +229,52 @@ unsafe fn get_string_attribute(
         kind.as_ptr().cast(),
         kind.len().try_into().unwrap(),
     ))
+}
+
+pub unsafe fn get_attribute_count(function: LLVMValueRef, index: LLVMAttributeIndex) -> usize {
+    LLVMGetAttributeCountAtIndex(function, index)
+        .try_into()
+        .expect("Attribute count larger than usize.")
+}
+
+pub unsafe fn get_string_attribute_kind(attr: *mut LLVMOpaqueAttributeRef) -> String {
+    let mut len = 0;
+    let value = LLVMGetStringAttributeKind(attr, &mut len).cast();
+    let value = slice::from_raw_parts(value, len.try_into().unwrap());
+    str::from_utf8(value)
+        .expect("Attribute kind is not valid UTF-8.")
+        .to_string()
+}
+
+pub unsafe fn get_string_attribute_value(attr: *mut LLVMOpaqueAttributeRef) -> Option<String> {
+    if LLVMIsStringAttribute(attr) == 0 {
+        None
+    } else {
+        let mut len = 0;
+        let value = LLVMGetStringAttributeValue(attr, &mut len).cast();
+        let value = slice::from_raw_parts(value, len.try_into().unwrap());
+        Some(
+            str::from_utf8(value)
+                .expect("Attribute kind is not valid UTF-8.")
+                .to_string(),
+        )
+    }
+}
+
+pub unsafe fn get_attributes(
+    function: LLVMValueRef,
+    index: LLVMAttributeIndex,
+) -> Vec<*mut LLVMOpaqueAttributeRef> {
+    let count = get_attribute_count(function, index);
+    let attrs: Vec<MaybeUninit<*mut LLVMOpaqueAttributeRef>> = Vec::with_capacity(count);
+    let mut attrs = ManuallyDrop::new(attrs);
+    for _ in 0..count {
+        attrs.push(MaybeUninit::uninit());
+    }
+
+    LLVMGetAttributesAtIndex(function, index, attrs.as_mut_ptr() as *mut _);
+
+    Vec::from_raw_parts(attrs.as_mut_ptr() as *mut _, attrs.len(), attrs.capacity())
 }
 
 unsafe fn pointer_to_int(value: LLVMValueRef) -> Option<u64> {
