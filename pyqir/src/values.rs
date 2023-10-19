@@ -646,14 +646,13 @@ impl AttributeSet {
 
         unsafe {
             let attrs = qirlib::values::get_attributes(function.as_ptr(), slf.index);
-            let items: Vec<Py<Attribute>> = attrs
+            let items = attrs
                 .into_iter()
-                .map(|a| Py::new(slf.py(), Attribute(a)).expect("msg"))
-                .collect();
+                .map(|a| Py::new(slf.py(), Attribute(a)).expect("msg"));
             Py::new(
                 slf.py(),
                 AttributeIterator {
-                    iter: items.clone().into_iter(),
+                    iter: items.collect::<Vec<Py<Attribute>>>().into_iter(),
                 },
             )
         }
