@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 3.10.0)
 
 # Copy the command line arguments to a cache variable so that they can be used
-# with the inner project. This is needed because the inner project is a
+# with the inner project. This is needed because the inner project
 # needs to use the same configuration and the command line arguments are not
 # passed to the inner project.
 # This also manifests itself in apple silicon systems where the inner project
