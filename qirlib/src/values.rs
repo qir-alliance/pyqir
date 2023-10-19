@@ -332,20 +332,23 @@ mod string_attribute_tests {
 
     use llvm_sys::{
         core::{
-            LLVMAddFunction, LLVMBuildRetVoid, LLVMContextCreate, LLVMCreateBuilderInContext,
-            LLVMModuleCreateWithNameInContext, LLVMVoidTypeInContext,
-            LLVMDisposeModule, LLVMContextDispose
+            LLVMAddFunction, LLVMBuildRetVoid, LLVMContextCreate, LLVMContextDispose,
+            LLVMCreateBuilderInContext, LLVMDisposeModule, LLVMModuleCreateWithNameInContext,
+            LLVMVoidTypeInContext,
         },
-        LLVMAttributeFunctionIndex, LLVMContext, LLVMModule, LLVMValue, LLVMAttributeReturnIndex, LLVMAttributeIndex,
+        LLVMAttributeFunctionIndex, LLVMAttributeIndex, LLVMAttributeReturnIndex, LLVMContext,
+        LLVMModule, LLVMValue,
     };
 
     use crate::values::get_attributes;
 
     use super::{add_string_attribute, get_attribute_count};
 
-    fn with_function_attributes(f: impl Fn(*mut LLVMContext, *mut LLVMModule, *mut LLVMValue)) {
+    fn setup_expect(
+        setup: impl Fn(*mut LLVMContext, *mut LLVMModule, *mut LLVMValue),
+        expect: impl Fn(*mut LLVMValue),
+    ) {
         unsafe {
-            // setup
             let context = LLVMContextCreate();
             let module_name = CString::new("test_module").unwrap();
             let module = LLVMModuleCreateWithNameInContext(module_name.as_ptr(), context);
@@ -355,106 +358,169 @@ mod string_attribute_tests {
                 function_name.as_ptr(),
                 LLVMVoidTypeInContext(context),
             );
-            add_string_attribute(function, b"entry_point", b"");
-            add_string_attribute(function, b"required_num_qubits", b"1");
-            add_string_attribute(function, b"required_num_results", b"2");
-            add_string_attribute(function, b"qir_profiles", b"test");
             let builder = LLVMCreateBuilderInContext(context);
             LLVMBuildRetVoid(builder);
-
-            // assert
-            f(context, module, function);
-
-            // teardown
+            setup(context, module, function);
+            expect(function);
             LLVMDisposeModule(module);
             LLVMContextDispose(context);
-        }
-    }
-    fn with_no_function_attributes(f: impl Fn(*mut LLVMContext, *mut LLVMModule, *mut LLVMValue)) {
-        unsafe {
-            let context = LLVMContextCreate();
-            let module_name = CString::new("test_module").unwrap();
-            let module = LLVMModuleCreateWithNameInContext(module_name.as_ptr(), context);
-            let function_name = CString::new("test_func").unwrap();
-            let function = LLVMAddFunction(
-                module,
-                function_name.as_ptr(),
-                LLVMVoidTypeInContext(context),
-            );
-            let builder = LLVMCreateBuilderInContext(context);
-            LLVMBuildRetVoid(builder);
-            f(context, module, function);
         }
     }
     #[test]
     fn get_attribute_count_works_when_function_attrs_exist() {
         unsafe {
-            with_function_attributes(|_, _, f| {
-                let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
-                assert!(count == 4);
-            });
+            setup_expect(
+                |_, _, function| {
+                    add_string_attribute(function, b"entry_point", b"");
+                    add_string_attribute(function, b"required_num_qubits", b"1");
+                    add_string_attribute(function, b"required_num_results", b"2");
+                    add_string_attribute(function, b"qir_profiles", b"test");
+                },
+                |f| {
+                    let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
+                    assert!(count == 4);
+                },
+            );
+        }
+    }
+    #[test]
+    fn attributes_with_kind_only_have_empty_string_values() {
+        unsafe {
+            setup_expect(
+                |_, _, function| {
+                    add_string_attribute(function, b"entry_point", b"");
+                },
+                |f| {
+                    let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
+                    assert!(count == 1);
+                    let attrs = get_attributes(f, LLVMAttributeFunctionIndex);
+                    for attr in attrs {
+                        if let Some(value) = super::get_string_attribute_value(attr) {
+                            assert_eq!(value, "");
+                        } else {
+                            panic!("Should have a value");
+                        }
+                    }
+                },
+            );
+        }
+    }
+    #[test]
+    fn attributes_with_kind_only_have_key_matching_kind() {
+        unsafe {
+            setup_expect(
+                |_, _, function| {
+                    add_string_attribute(function, b"entry_point", b"");
+                },
+                |f| {
+                    let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
+                    assert!(count == 1);
+                    let attrs = get_attributes(f, LLVMAttributeFunctionIndex);
+                    for attr in attrs {
+                        assert_eq!(super::get_string_attribute_kind(attr), "entry_point");
+                    }
+                },
+            );
+        }
+    }
+    #[test]
+    fn attributes_with_key_and_value_have_matching_kind_and_value() {
+        unsafe {
+            setup_expect(
+                |_, _, function| {
+                    add_string_attribute(function, b"qir_profiles", b"test");
+                },
+                |f| {
+                    let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
+                    assert!(count == 1);
+                    let attrs = get_attributes(f, LLVMAttributeFunctionIndex);
+                    for attr in attrs {
+                        assert_eq!(super::get_string_attribute_kind(attr), "qir_profiles");
+                        assert!(super::get_string_attribute_value(attr).is_some());
+                        assert_eq!(super::get_string_attribute_value(attr).unwrap(), "test");
+                    }
+                },
+            );
         }
     }
     #[test]
     fn get_attribute_count_works_when_function_attrs_dont_exist() {
         unsafe {
-            with_no_function_attributes(|_, _, f| {
-                let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
-                assert!(count == 0);
-            });
+            setup_expect(
+                |_, _, _| {},
+                |f| {
+                    let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
+                    assert!(count == 0);
+                },
+            );
         }
     }
     #[test]
     fn get_attribute_count_works_when_return_attrs_dont_exist() {
         unsafe {
-            with_no_function_attributes(|_, _, f| {
-                let count = get_attribute_count(f, LLVMAttributeReturnIndex);
-                assert!(count == 0);
-            });
+            setup_expect(
+                |_, _, _| {},
+                |f| {
+                    let count = get_attribute_count(f, LLVMAttributeReturnIndex);
+                    assert!(count == 0);
+                },
+            );
         }
     }
     #[test]
     fn get_attribute_count_works_when_param_attrs_dont_exist() {
         unsafe {
-            with_no_function_attributes(|_, _, f| {
-                const INVALID_PARAM_ID: LLVMAttributeIndex = 1;
-                let count = get_attribute_count(f, INVALID_PARAM_ID);
-                assert!(count == 0);
-            });
+            setup_expect(
+                |_, _, _| {},
+                |f| {
+                    const INVALID_PARAM_ID: LLVMAttributeIndex = 1;
+                    let count = get_attribute_count(f, INVALID_PARAM_ID);
+                    assert!(count == 0);
+                },
+            );
         }
     }
     #[test]
     fn iteration_works_when_function_attrs_dont_exist() {
         unsafe {
-            with_no_function_attributes(|_, _, f| {
-                let attrs = get_attributes(f, LLVMAttributeFunctionIndex);
-                for _ in attrs {
-                    panic!("Should not have any attributes")
-                }
-            });
+            setup_expect(
+                |_, _, _| {},
+                |f| {
+                    let attrs = get_attributes(f, LLVMAttributeFunctionIndex);
+                    for _ in attrs {
+                        panic!("Should not have any attributes")
+                    }
+                },
+            );
         }
     }
     #[test]
     fn iteration_works_when_return_attrs_dont_exist() {
         unsafe {
-            with_no_function_attributes(|_, _, f| {
-                let attrs = get_attributes(f, LLVMAttributeReturnIndex);
-                for _ in attrs {
-                    panic!("Should not have any attributes")
-                }
-            });
+            setup_expect(
+                |_, _, _| {},
+                |f| {
+                    let attrs = get_attributes(f, LLVMAttributeReturnIndex);
+                    for _ in attrs {
+                        panic!("Should not have any attributes")
+                    }
+                },
+            );
         }
     }
     #[test]
     fn iteration_works_when_param_attrs_dont_exist() {
         unsafe {
-            with_no_function_attributes(|_, _, f| {
-                const INVALID_PARAM_ID: LLVMAttributeIndex = 1;
-                let attrs = get_attributes(f, INVALID_PARAM_ID);
-                for _ in attrs {
-                    panic!("Should not have any attributes")
-                }
-            });
+            setup_expect(
+                |_, _, _| {},
+                |f| {
+                    const INVALID_PARAM_ID: LLVMAttributeIndex = 1;
+                    let attrs = get_attributes(f, INVALID_PARAM_ID);
+                    for _ in attrs {
+                        panic!("Should not have any attributes")
+                    }
+                },
+            );
         }
     }
 }
