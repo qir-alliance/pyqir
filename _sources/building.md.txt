@@ -152,6 +152,3 @@ be linked into the rest of the build.
 The `build.ps1`, `maturin` builds all generate Python wheels to the
 `target/wheels` folder. The default Python3 installation will be used targeting
 Python ABI 3.7.
-
-The manylinux support uses a Docker image in the build scripts to run the builds
-in the CI environment.
