@@ -45,9 +45,9 @@ def test_round_trip_serialize_parse() -> None:
     function = Function(FunctionType(void, []), Linkage.EXTERNAL, "test_function", mod)
     add_string_attribute(function, "foo", "bar")
     # also test for non-value attributes
-    add_string_attribute(function, "entry_point", "")
+    add_string_attribute(function, "entry_point")
     # test behavior of empty attribute
-    add_string_attribute(function, "", "")
+    add_string_attribute(function, "")
     ir = str(mod)
     parsed_mod = Module.from_ir(Context(), ir, "test")
     assert str(parsed_mod) == str(mod)
@@ -58,7 +58,7 @@ def test_duplicate_attr_key_replaces_previous() -> None:
     void = pyqir.Type.void(mod.context)
     function = Function(FunctionType(void, []), Linkage.EXTERNAL, "test_function", mod)
     add_string_attribute(function, "foo", "bar")
-    add_string_attribute(function, "foo", "")
+    add_string_attribute(function, "foo")
     ir = str(mod)
     # Tests that subsequently added attributes with the same key
     # replace previously added ones
@@ -89,7 +89,7 @@ def test_function_attributes_can_be_iterated_in_alphabetical_order() -> None:
     function = Function(FunctionType(void, []), Linkage.EXTERNAL, "test_function", mod)
     # add them out of order, they will be sorted automatically
     add_string_attribute(function, "required_num_results", "1")
-    add_string_attribute(function, "entry_point", "")
+    add_string_attribute(function, "entry_point")
     add_string_attribute(function, "required_num_qubits", "2")
     attrs: List[Attribute] = list(function.attributes.func)
     assert len(attrs) == 3
