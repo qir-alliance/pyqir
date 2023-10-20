@@ -59,6 +59,7 @@ from pyqir._native import (
 from pyqir._simple import SimpleModule
 from pyqir._entry_point import entry_point
 from pyqir._basicqis import BasicQisBuilder
+from pyqir._constants import ATTR_FUNCTION_INDEX, ATTR_RETURN_INDEX
 
 __all__ = [
     "ArrayType",
@@ -117,4 +118,6 @@ __all__ = [
     "result_id",
     "result_type",
     "result",
+    "ATTR_FUNCTION_INDEX",
+    "ATTR_RETURN_INDEX",
 ]

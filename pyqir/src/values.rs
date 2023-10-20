@@ -23,7 +23,7 @@ use pyo3::{
     types::{PyBytes, PyLong, PyString},
     PyRef,
 };
-use qirlib::values;
+use qirlib::values::{self, get_string_attribute_kind, get_string_attribute_value};
 use std::{
     borrow::Borrow,
     collections::hash_map::DefaultHasher,
@@ -33,6 +33,7 @@ use std::{
     ops::Deref,
     ptr::NonNull,
     slice, str,
+    vec::IntoIter,
 };
 
 /// A value.
@@ -522,21 +523,20 @@ pub(crate) struct Attribute(LLVMAttributeRef);
 
 #[pymethods]
 impl Attribute {
+    /// The id of this attribute as a string.
+    ///
+    /// :type: str
+    #[getter]
+    fn string_kind(&self) -> String {
+        unsafe { get_string_attribute_kind(self.0) }
+    }
+
     /// The value of this attribute as a string, or `None` if this is not a string attribute.
     ///
     /// :type: typing.Optional[str]
     #[getter]
-    fn string_value(&self) -> Option<&str> {
-        unsafe {
-            if LLVMIsStringAttribute(self.0) == 0 {
-                None
-            } else {
-                let mut len = 0;
-                let value = LLVMGetStringAttributeValue(self.0, &mut len).cast();
-                let value = slice::from_raw_parts(value, len.try_into().unwrap());
-                Some(str::from_utf8(value).unwrap())
-            }
-        }
+    fn string_value(&self) -> Option<String> {
+        unsafe { get_string_attribute_value(self.0) }
     }
 }
 
@@ -588,6 +588,24 @@ pub(crate) struct AttributeSet {
     index: LLVMAttributeIndex,
 }
 
+/// An iterator of attributes for a specific part of a function.
+#[pyclass]
+struct AttributeIterator {
+    iter: IntoIter<Py<Attribute>>,
+}
+
+#[pymethods]
+impl AttributeIterator {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+    // Returning `None` from `__next__` indicates that that there are no further items.
+    // and maps to StopIteration
+    fn __next__(mut slf: PyRefMut<'_, Self>) -> Option<Py<Attribute>> {
+        slf.iter.next()
+    }
+}
+
 #[pymethods]
 impl AttributeSet {
     /// Tests if an attribute is a member of the set.
@@ -620,6 +638,23 @@ impl AttributeSet {
             Err(PyKeyError::new_err(key.to_owned()))
         } else {
             Ok(Attribute(attr))
+        }
+    }
+
+    fn __iter__(slf: PyRef<'_, Self>) -> PyResult<Py<AttributeIterator>> {
+        let function = slf.function.borrow(slf.py()).into_super().into_super();
+
+        unsafe {
+            let attrs = qirlib::values::get_attributes(function.as_ptr(), slf.index);
+            let items = attrs
+                .into_iter()
+                .map(|a| Py::new(slf.py(), Attribute(a)).expect("msg"));
+            Py::new(
+                slf.py(),
+                AttributeIterator {
+                    iter: items.collect::<Vec<Py<Attribute>>>().into_iter(),
+                },
+            )
         }
     }
 }
@@ -863,12 +898,14 @@ pub(crate) fn extract_byte_string<'py>(py: Python<'py>, value: &Value) -> Option
 // :param function: The function.
 // :param kind: The attribute kind.
 // :param value: The attribute value.
+// :param index: The optional attribute index, defaults to the function index.
 #[pyfunction]
-#[pyo3(text_signature = "(function, key, value)")]
+#[pyo3(text_signature = "(function, key, value, index)")]
 pub(crate) fn add_string_attribute<'py>(
     function: PyRef<Function>,
     key: &'py PyString,
     value: Option<&'py PyString>,
+    index: Option<u32>,
 ) {
     let function = function.into_super().into_super().as_ptr();
     let key = key.to_string_lossy();
@@ -881,6 +918,7 @@ pub(crate) fn add_string_attribute<'py>(
                 Some(ref x) => x.as_bytes(),
                 None => &[],
             },
+            index.unwrap_or(LLVMAttributeFunctionIndex),
         );
     }
 }

@@ -2,7 +2,16 @@
 # Licensed under the MIT License.
 
 from enum import Enum
-from typing import Callable, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Callable,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 class ArrayType(Type):
     """An array type."""
@@ -19,6 +28,10 @@ class ArrayType(Type):
 class Attribute:
     """An attribute."""
 
+    @property
+    def string_kind(self) -> str:
+        """The kind of this attribute as a string."""
+        ...
     @property
     def string_value(self) -> Optional[str]:
         """The value of this attribute as a string, or `None` if this is not a string attribute."""
@@ -44,7 +57,13 @@ class AttributeList:
         """The attributes for the function itself."""
         ...
 
-class AttributeSet:
+class AttributeIterator(Iterator[Attribute]):
+    """An iterator of attributes for a specific part of a function."""
+
+    def __iter__(self) -> Iterator[Attribute]: ...
+    def __next__(self) -> Attribute: ...
+
+class AttributeSet(Iterable[Attribute]):
     """A set of attributes for a specific part of a function."""
 
     def __contains__(self, item: str) -> bool:
@@ -63,6 +82,7 @@ class AttributeSet:
         :returns: The attribute.
         """
         ...
+    def __iter__(self) -> Iterator[Attribute]: ...
 
 class BasicBlock(Value):
     """A basic block."""
@@ -1223,7 +1243,10 @@ def if_result(
     ...
 
 def add_string_attribute(
-    function: Function, kind: str, value: Optional[str] = None
+    function: Function,
+    kind: str,
+    value: Optional[str] = None,
+    index: Optional[int] = None,
 ) -> bool:
     """
     Adds a string attribute to the given function.
@@ -1231,5 +1254,6 @@ def add_string_attribute(
     :param function: The function.
     :param key: The attribute key.
     :param value: The attribute value.
+    :param index: The optional attribute index, defaults to the function index.
     """
     ...
