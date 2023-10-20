@@ -13,7 +13,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
   QIRLIB_DOWNLOAD_LLVM: false
-  MACOSX_DEPLOYMENT_TARGET: 10.9
 
 jobs:
   build:
@@ -45,7 +44,17 @@ jobs:
               os: "macos-11",
               arch: "amd64",
               target: "default",
-              env: {},
+              env: {
+                MACOSX_DEPLOYMENT_TARGET: 10.9
+              },
+            }
+          - {
+              os: "macos-13-xlarge",
+              arch: "aarch64",
+              target: "default",
+              env: {
+                MACOSX_DEPLOYMENT_TARGET: 11
+              },
             }
     steps:
       - uses: actions/checkout@v3
@@ -75,6 +84,9 @@ jobs:
       - name: MacOS - Install build dependencies, ccache, ninja
         run: brew install ccache ninja
         if: ${{ matrix.config.os == 'macos-11' }}
+      - name: MacOS - Install build dependencies, ccache, ninja
+        run: brew install ccache ninja
+        if: ${{ matrix.config.os == 'macos-13-xlarge' }}
       - name: "Build ${{ matrix.config.target }}"
         run: ./build.ps1 -t ${{ matrix.config.target }}
         shell: pwsh
