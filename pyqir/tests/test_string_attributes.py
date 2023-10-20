@@ -5,8 +5,8 @@ from typing import List
 import pyqir
 from pyqir import (
     Attribute,
-    AttributeFunctionIndex,
-    AttributeReturnIndex,
+    ATTR_FUNCTION_INDEX,
+    ATTR_RETURN_INDEX,
     Builder,
     IntType,
     Module,
@@ -135,7 +135,7 @@ def test_return_attrs_can_be_added_and_read() -> None:
     builder = Builder(mod.context)
     builder.ret(None)
 
-    add_string_attribute(function, "mycustom", "myvalue", AttributeReturnIndex)
+    add_string_attribute(function, "mycustom", "myvalue", ATTR_RETURN_INDEX)
 
     # params have their own AttributeSet
     attrs = list(function.attributes.ret)
@@ -155,7 +155,7 @@ def test_explicit_function_index_attrs_can_be_added_and_read() -> None:
     builder = Builder(mod.context)
     builder.ret(None)
 
-    add_string_attribute(function, "mycustom", "myvalue", AttributeFunctionIndex)
+    add_string_attribute(function, "mycustom", "myvalue", ATTR_FUNCTION_INDEX)
 
     attrs = list(function.attributes.func)
 
