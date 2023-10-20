@@ -898,12 +898,14 @@ pub(crate) fn extract_byte_string<'py>(py: Python<'py>, value: &Value) -> Option
 // :param function: The function.
 // :param kind: The attribute kind.
 // :param value: The attribute value.
+// :param index: The optional attribute index, defaults to the function index.
 #[pyfunction]
-#[pyo3(text_signature = "(function, key, value)")]
+#[pyo3(text_signature = "(function, key, value, index)")]
 pub(crate) fn add_string_attribute<'py>(
     function: PyRef<Function>,
     key: &'py PyString,
     value: Option<&'py PyString>,
+    index: Option<u32>,
 ) {
     let function = function.into_super().into_super().as_ptr();
     let key = key.to_string_lossy();
@@ -916,6 +918,7 @@ pub(crate) fn add_string_attribute<'py>(
                 Some(ref x) => x.as_bytes(),
                 None => &[],
             },
+            index.unwrap_or(LLVMAttributeFunctionIndex),
         );
     }
 }

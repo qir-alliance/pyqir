@@ -174,11 +174,21 @@ function Test-AllowedToDownloadLlvm {
 }
 
 function Test-InCondaEnvironment {
-    (Test-Path env:\CONDA_PREFIX)
+    $found = (Test-Path env:\CONDA_PREFIX)
+    if ($found) {
+        $condaPrefix = $env:CONDA_PREFIX
+        Write-BuildLog "Found conda environment: $condaPrefix"
+    }
+    $found
 }
 
 function Test-InVenvEnvironment {
-    (Test-Path env:\VIRTUAL_ENV)
+    $found = (Test-Path env:\VIRTUAL_ENV)
+    if ($found) {
+        $venv = $env:VIRTUAL_ENV
+        Write-BuildLog "Found venv environment: $venv"
+    }
+    $found
 }
 
 function Test-InVirtualEnvironment {
@@ -301,5 +311,5 @@ function install-llvm {
         if ($clear_cache_var) {
             Remove-Item -Path Env:QIRLIB_CACHE_DIR
         }
-    }   
+    }
 }

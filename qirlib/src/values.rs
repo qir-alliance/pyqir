@@ -57,24 +57,32 @@ pub unsafe fn entry_point(
     let ty = LLVMFunctionType(void, [].as_mut_ptr(), 0, 0);
     let function = LLVMAddFunction(module, name.as_ptr(), ty);
 
-    add_string_attribute(function, b"entry_point", b"");
+    add_string_attribute(function, b"entry_point", b"", LLVMAttributeFunctionIndex);
     add_string_attribute(
         function,
         b"required_num_qubits",
         required_num_qubits.to_string().as_bytes(),
+        LLVMAttributeFunctionIndex,
     );
     add_string_attribute(
         function,
         b"required_num_results",
         required_num_results.to_string().as_bytes(),
+        LLVMAttributeFunctionIndex,
     );
 
-    add_string_attribute(function, b"qir_profiles", qir_profiles.as_bytes());
+    add_string_attribute(
+        function,
+        b"qir_profiles",
+        qir_profiles.as_bytes(),
+        LLVMAttributeFunctionIndex,
+    );
 
     add_string_attribute(
         function,
         b"output_labeling_schema",
         output_labeling_schema.as_bytes(),
+        LLVMAttributeFunctionIndex,
     );
 
     function
@@ -206,7 +214,12 @@ pub unsafe fn extract_string(value: LLVMValueRef) -> Option<Vec<u8>> {
     Some(data[offset..].to_vec())
 }
 
-pub unsafe fn add_string_attribute(function: LLVMValueRef, key: &[u8], value: &[u8]) {
+pub unsafe fn add_string_attribute(
+    function: LLVMValueRef,
+    key: &[u8],
+    value: &[u8],
+    index: LLVMAttributeIndex,
+) {
     let context = LLVMGetTypeContext(LLVMTypeOf(function));
     let attr = LLVMCreateStringAttribute(
         context,
@@ -215,7 +228,7 @@ pub unsafe fn add_string_attribute(function: LLVMValueRef, key: &[u8], value: &[
         value.as_ptr().cast(),
         value.len().try_into().unwrap(),
     );
-    LLVMAddAttributeAtIndex(function, LLVMAttributeFunctionIndex, attr);
+    LLVMAddAttributeAtIndex(function, index, attr);
 }
 
 unsafe fn get_string_attribute(
@@ -371,10 +384,25 @@ mod string_attribute_tests {
         unsafe {
             setup_expect(
                 |_, _, function| {
-                    add_string_attribute(function, b"entry_point", b"");
-                    add_string_attribute(function, b"required_num_qubits", b"1");
-                    add_string_attribute(function, b"required_num_results", b"2");
-                    add_string_attribute(function, b"qir_profiles", b"test");
+                    add_string_attribute(function, b"entry_point", b"", LLVMAttributeFunctionIndex);
+                    add_string_attribute(
+                        function,
+                        b"required_num_qubits",
+                        b"1",
+                        LLVMAttributeFunctionIndex,
+                    );
+                    add_string_attribute(
+                        function,
+                        b"required_num_results",
+                        b"2",
+                        LLVMAttributeFunctionIndex,
+                    );
+                    add_string_attribute(
+                        function,
+                        b"qir_profiles",
+                        b"test",
+                        LLVMAttributeFunctionIndex,
+                    );
                 },
                 |f| {
                     let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
@@ -388,7 +416,7 @@ mod string_attribute_tests {
         unsafe {
             setup_expect(
                 |_, _, function| {
-                    add_string_attribute(function, b"entry_point", b"");
+                    add_string_attribute(function, b"entry_point", b"", LLVMAttributeFunctionIndex);
                 },
                 |f| {
                     let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
@@ -410,7 +438,7 @@ mod string_attribute_tests {
         unsafe {
             setup_expect(
                 |_, _, function| {
-                    add_string_attribute(function, b"entry_point", b"");
+                    add_string_attribute(function, b"entry_point", b"", LLVMAttributeFunctionIndex);
                 },
                 |f| {
                     let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
@@ -428,7 +456,12 @@ mod string_attribute_tests {
         unsafe {
             setup_expect(
                 |_, _, function| {
-                    add_string_attribute(function, b"qir_profiles", b"test");
+                    add_string_attribute(
+                        function,
+                        b"qir_profiles",
+                        b"test",
+                        LLVMAttributeFunctionIndex,
+                    );
                 },
                 |f| {
                     let count = get_attribute_count(f, LLVMAttributeFunctionIndex);

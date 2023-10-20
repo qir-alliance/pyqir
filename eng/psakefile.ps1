@@ -109,7 +109,7 @@ task check-environment {
     }
 
     Assert ((Test-InVirtualEnvironment) -eq $true) ($env_message -Join ' ')
-    exec { & $Python -m pip install pip~=23.1 }
+    exec { & $Python -m pip install pip~=23.3 }
 }
 
 task init -depends check-environment {
