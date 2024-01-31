@@ -20,6 +20,7 @@ class ArrayType(Type):
     def element(self) -> Type:
         """The type of the array elements."""
         ...
+
     @property
     def count(self) -> int:
         """The number of elements in the array."""
@@ -32,6 +33,7 @@ class Attribute:
     def string_kind(self) -> str:
         """The kind of this attribute as a string."""
         ...
+
     @property
     def string_value(self) -> Optional[str]:
         """The value of this attribute as a string, or `None` if this is not a string attribute."""
@@ -48,10 +50,12 @@ class AttributeList:
         :returns: The parameter attributes.
         """
         ...
+
     @property
     def ret(self) -> AttributeSet:
         """The attributes for the return type."""
         ...
+
     @property
     def func(self) -> AttributeSet:
         """The attributes for the function itself."""
@@ -74,6 +78,7 @@ class AttributeSet(Iterable[Attribute]):
         :returns: True if the group has an attribute with the given kind.
         """
         ...
+
     def __getitem__(self, key: str) -> Attribute:
         """
         Gets an attribute based on its kind.
@@ -82,6 +87,7 @@ class AttributeSet(Iterable[Attribute]):
         :returns: The attribute.
         """
         ...
+
     def __iter__(self) -> Iterator[Attribute]: ...
 
 class BasicBlock(Value):
@@ -107,10 +113,12 @@ class BasicBlock(Value):
         :param before: The block to insert this block before.
         """
         ...
+
     @property
     def instructions(self) -> List[Instruction]:
         """The instructions in this basic block."""
         ...
+
     @property
     def terminator(self) -> Optional[Instruction]:
         """The terminating instruction of this basic block if there is one."""
@@ -126,6 +134,7 @@ class Builder:
         :param context: The LLVM context.
         """
         ...
+
     def insert_at_end(self, block: BasicBlock) -> None:
         """
         Tells this builder to insert subsequent instructions at the end of the block.
@@ -133,6 +142,7 @@ class Builder:
         :param block: The block to insert into.
         """
         ...
+
     def and_(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a bitwise logical and instruction.
@@ -142,6 +152,7 @@ class Builder:
         :returns: The result.
         """
         ...
+
     def or_(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a bitwise logical or instruction.
@@ -151,6 +162,7 @@ class Builder:
         :returns: The result.
         """
         ...
+
     def xor(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a bitwise logical exclusive or instruction.
@@ -160,6 +172,7 @@ class Builder:
         :returns: The result.
         """
         ...
+
     def add(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts an addition instruction.
@@ -169,6 +182,7 @@ class Builder:
         :returns: The sum.
         """
         ...
+
     def sub(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a subtraction instruction.
@@ -178,6 +192,7 @@ class Builder:
         :returns: The difference.
         """
         ...
+
     def mul(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a multiplication instruction.
@@ -187,6 +202,7 @@ class Builder:
         :returns: The product.
         """
         ...
+
     def shl(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a shift left instruction.
@@ -196,6 +212,7 @@ class Builder:
         :returns: The result.
         """
         ...
+
     def lshr(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a logical (zero fill) shift right instruction.
@@ -205,6 +222,7 @@ class Builder:
         :returns: The result.
         """
         ...
+
     def icmp(self, pred: IntPredicate, lhs: Value, rhs: Value) -> Value:
         """
         Inserts an integer comparison instruction.
@@ -215,6 +233,7 @@ class Builder:
         :returns: The boolean result.
         """
         ...
+
     def call(
         self,
         callee: Value,
@@ -228,6 +247,7 @@ class Builder:
         :returns: The instruction value.
         """
         ...
+
     def if_(
         self,
         cond: Value,
@@ -248,6 +268,7 @@ class Builder:
             A callable that inserts instructions for the branch where the condition is false.
         """
         ...
+
     def br(self, dest: BasicBlock) -> Instruction:
         """
         Inserts an unconditional branch instruction.
@@ -256,6 +277,7 @@ class Builder:
         :returns: The branch instruction.
         """
         ...
+
     def ret(self, value: Optional[Value]) -> Instruction:
         """
         Inserts a return instruction.
@@ -272,6 +294,7 @@ class Call(Instruction):
     def callee(self) -> Value:
         """The value being called."""
         ...
+
     @property
     def args(self) -> List[Value]:
         """The arguments to the call."""
@@ -289,6 +312,7 @@ class Constant(Value):
         :returns: The null or zero constant.
         """
         ...
+
     @property
     def is_null(self) -> bool:
         """Whether this value is the null value for its type."""
@@ -330,6 +354,7 @@ class FloatPredicate(Enum):
         :returns: The result of the comparison.
         """
         ...
+
     def __hash__(self) -> int: ...
 
     FALSE: FloatPredicate
@@ -364,16 +389,19 @@ class Function(Constant):
         :param module: The parent module.
         """
         ...
+
     @property
     def type(self) -> FunctionType: ...
     @property
     def params(self) -> List[Value]:
         """The parameters to this function."""
         ...
+
     @property
     def basic_blocks(self) -> List[BasicBlock]:
         """The basic blocks in this function."""
         ...
+
     @property
     def attributes(self) -> AttributeList:
         """The attributes for this function."""
@@ -390,10 +418,12 @@ class FunctionType(Type):
         :param params: The parameter types.
         """
         ...
+
     @property
     def ret(self) -> Type:
         """The return type of the function."""
         ...
+
     @property
     def params(self) -> List[Type]:
         """The types of the function parameters."""
@@ -414,10 +444,12 @@ class Instruction(Value):
     def opcode(self) -> Opcode:
         """The instruction opcode."""
         ...
+
     @property
     def operands(self) -> List[Value]:
         """The operands to the instruction."""
         ...
+
     @property
     def successors(self) -> List[BasicBlock]:
         """
@@ -425,6 +457,7 @@ class Instruction(Value):
         list is empty.
         """
         ...
+
     def erase(self) -> None:
         """
         Removes this instruction from its parent basic block, then deletes it from memory.
@@ -456,6 +489,7 @@ class IntPredicate(Enum):
         :returns: The result of the comparison.
         """
         ...
+
     def __hash__(self) -> int: ...
 
     EQ: IntPredicate
@@ -480,6 +514,7 @@ class IntType(Type):
         :param width: The number of bits in the integer.
         """
         ...
+
     @property
     def width(self) -> int:
         """The number of bits in the integer."""
@@ -498,6 +533,7 @@ class Linkage(Enum):
         :returns: The result of the comparison.
         """
         ...
+
     def __hash__(self) -> int: ...
 
     APPENDING: Linkage
@@ -523,6 +559,7 @@ class Module:
         :param name: The module name.
         """
         ...
+
     @staticmethod
     def from_ir(context: Context, ir: str, name: str = "") -> Module:
         """
@@ -533,6 +570,7 @@ class Module:
         :returns: The module.
         """
         ...
+
     @staticmethod
     def from_bitcode(context: Context, bitcode: bytes, name: str = "") -> Module:
         """
@@ -543,24 +581,29 @@ class Module:
         :returns: The module.
         """
         ...
+
     @property
     def source_filename(self) -> str:
         """The name of the original source file that this module was compiled from."""
         ...
+
     @source_filename.setter
     def source_filename(self, value: str) -> None: ...
     @property
     def functions(self) -> List[Function]:
         """The functions declared in this module."""
         ...
+
     @property
     def bitcode(self) -> bytes:
         """The LLVM bitcode for this module."""
         ...
+
     @property
     def context(self) -> Context:
         """The LLVM context."""
         ...
+
     def add_flag(
         self, behavior: ModuleFlagBehavior, id: str, flag: Union[Metadata, Constant]
     ) -> None:
@@ -574,6 +617,7 @@ class Module:
         :param Union[Metadata, Constant] flag: value of the flag
         """
         ...
+
     def get_flag(self, id: str) -> Optional[Metadata]:
         """
         Gets the flag value from the llvm.module.flags metadata for a given id
@@ -584,6 +628,7 @@ class Module:
         :returns: value of the flag if found, otherwise None
         """
         ...
+
     def verify(self) -> Optional[str]:
         """
         Verifies that this module is valid.
@@ -591,6 +636,7 @@ class Module:
         :returns: An error description if this module is invalid or `None` if this module is valid.
         """
         ...
+
     def __str__(self) -> str:
         """Converts this module into an LLVM IR string."""
         ...
@@ -619,6 +665,7 @@ class Opcode(Enum):
         :returns: The result of the comparison.
         """
         ...
+
     def __hash__(self) -> int: ...
 
     ADD: Opcode
@@ -707,10 +754,12 @@ class PointerType(Type):
         :param pointee: The type being pointed to.
         """
         ...
+
     @property
     def pointee(self) -> Type:
         """The type being pointed to."""
         ...
+
     @property
     def address_space(self) -> int:
         """The pointer address space."""
@@ -723,6 +772,7 @@ class StructType(Type):
     def name(self) -> Optional[str]:
         """The name of the structure or the empty string if the structure is anonymous."""
         ...
+
     @property
     def fields(self) -> List[Type]:
         """The types of the structure fields."""
@@ -735,10 +785,12 @@ class Switch(Instruction):
     def cond(self) -> Value:
         """The condition of the switch."""
         ...
+
     @property
     def default(self) -> BasicBlock:
         """The default successor block if none of the cases match."""
         ...
+
     @property
     def cases(self) -> List[Tuple[IntConstant, BasicBlock]]:
         """The switch cases."""
@@ -756,6 +808,7 @@ class Type:
         :returns: The void type.
         """
         ...
+
     @staticmethod
     def double(context: Context) -> Type:
         """
@@ -765,10 +818,12 @@ class Type:
         :returns: The double type.
         """
         ...
+
     @property
     def is_void(self) -> bool:
         """Whether this type is the void type."""
         ...
+
     @property
     def is_double(self) -> bool:
         """Whether this type is the bool type."""
@@ -790,6 +845,7 @@ class MetadataString(Metadata):
         :param string: the value of the metadata string to create
         """
         ...
+
     @property
     def value(self) -> str:
         """The underlying metadata string value."""
@@ -810,10 +866,12 @@ class Value:
     def type(self) -> Type:
         """The type of this value."""
         ...
+
     @property
     def name(self) -> str:
         """The name of this value or the empty string if this value is anonymous."""
         ...
+
     def __richcmp__(self, other: Value, op: int) -> bool:
         """
         Compares this value to another value.
@@ -824,6 +882,7 @@ class Value:
         :returns: The result of the comparison.
         """
         ...
+
     def __hash__(self) -> int: ...
 
 def const(ty: Type, value: Union[bool, int, float]) -> Constant:

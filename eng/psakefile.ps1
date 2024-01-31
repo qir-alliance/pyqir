@@ -30,34 +30,35 @@ task cargo-fmt {
 
 task cargo-clippy -depends init {
     Invoke-LoggedCommand -workingDirectory $Root -errorMessage "Please fix the above clippy errors" {
-        cargo clippy --workspace --all-targets @(Get-CargoArgs) -- -D warnings
+        cargo clippy --workspace --all-targets @(Get-CliCargoArgs) -- -D warnings
     }
 }
 
 task black -depends check-environment {
-    exec { pip install black }
+    exec { & $Python -m pip install black }
     Invoke-LoggedCommand -workingDirectory $Root -errorMessage "Please run black before pushing" {
-        black --check --extend-exclude "^/examples/mock_language/" .
+        & $Python -m black --check --extend-exclude "^/examples/mock_language/" .
     }
 }
 
 task mypy -depends check-environment {
     $reqs = Resolve-PythonRequirements "$Pyqir[test]"
-    exec { pip install --requirement (Join-Path $Examples requirements.txt) @reqs mypy }
+    exec { & $Python -m pip install --requirement (Join-Path $Examples requirements.txt) @reqs mypy }
     Invoke-LoggedCommand -workingDirectory $Root -errorMessage "Please fix the above mypy errors" {
         mypy
     }
 }
 
 task qirlib -depends init {
-    Invoke-LoggedCommand -workingDirectory $Qirlib { cargo test --release @(Get-CargoArgs) }
-    Invoke-LoggedCommand -workingDirectory $Qirlib { cargo build --release @(Get-CargoArgs) }
+    Invoke-LoggedCommand -workingDirectory $Qirlib { cargo test --release @(Get-CliCargoArgs) }
+    Invoke-LoggedCommand -workingDirectory $Qirlib { cargo build --release @(Get-CliCargoArgs) }
 }
 
 task pyqir -depends init {
-    $env:MATURIN_PEP517_ARGS = (Get-CargoArgs) -Join " "
+    $configSettings = @(Get-CliCargoArgs) -Join " "
     Get-Wheels pyqir | Remove-Item
-    Invoke-LoggedCommand { & $Python -m pip --verbose wheel --wheel-dir $Wheels $Pyqir }
+
+    Invoke-LoggedCommand { & $Python -m pip --verbose wheel --config-settings=build-args="$configSettings" --wheel-dir $Wheels $Pyqir }
 
     if ($IsLinux) {
         Invoke-LoggedCommand { & $Python -m pip install auditwheel patchelf }
@@ -80,7 +81,7 @@ task wheelhouse -precondition { -not (Test-Path (Join-Path $Wheels *.whl)) } {
 
 task docs -depends check-environment, wheelhouse {
     Invoke-LoggedCommand {
-        pip install --requirement (Join-Path $DocsRoot requirements.txt) (Join-Path $Wheels *.whl)
+        & $Python -m pip install --requirement (Join-Path $DocsRoot requirements.txt) (Join-Path $Wheels *.whl)
     }
     Invoke-LoggedCommand { sphinx-build -M html $DocsRoot $DocsBuild -W --keep-going }
 }
@@ -109,7 +110,7 @@ task check-environment {
     }
 
     Assert ((Test-InVirtualEnvironment) -eq $true) ($env_message -Join ' ')
-    exec { & $Python -m pip install pip~=23.3 }
+    exec { & $Python -m pip install -U pip }
 }
 
 task init -depends check-environment {

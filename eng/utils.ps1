@@ -251,7 +251,11 @@ function Get-LLVMFeatureVersion {
 }
 
 function Get-CargoArgs {
-    @("-vv", "--features", (Get-LLVMFeatureVersion))
+    @(@("-vv", ""), @("--features", (Get-LLVMFeatureVersion)))
+}
+
+function Get-CliCargoArgs {
+    Get-CargoArgs | ForEach-Object { $_ } | Where-Object { $_ -ne "" }
 }
 
 function Get-Wheels([string] $project) {
