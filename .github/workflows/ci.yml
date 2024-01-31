@@ -110,7 +110,7 @@ jobs:
           submodules: false
 
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4.4.3
+        uses: actions/download-artifact@v4
         with:
           name: manylinux-artifacts
           path: target/wheels
@@ -127,7 +127,7 @@ jobs:
           path: docs/_build
 
       - name: Publish Docs to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@4
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
           folder: docs/_build/html
