@@ -52,9 +52,7 @@ jobs:
               os: "macos-14",
               arch: "aarch64",
               target: "default",
-              env: {
-                MACOSX_DEPLOYMENT_TARGET: 11.0
-              },
+              env: { },
             }
     steps:
       - uses: actions/checkout@v3
