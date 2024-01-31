@@ -127,7 +127,7 @@ jobs:
           path: docs/_build
 
       - name: Publish Docs to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@4.5.0
+        uses: JamesIves/github-pages-deploy-action@4
         with:
           branch: gh-pages
           folder: docs/_build/html
