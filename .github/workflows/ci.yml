@@ -49,7 +49,7 @@ jobs:
               },
             }
           - {
-              os: "macos-13-xlarge",
+              os: "macos-14",
               arch: "aarch64",
               target: "default",
               env: {
@@ -86,7 +86,7 @@ jobs:
         if: ${{ matrix.config.os == 'macos-11' }}
       - name: MacOS - Install build dependencies, ccache, ninja
         run: brew install ccache ninja
-        if: ${{ matrix.config.os == 'macos-13-xlarge' }}
+        if: ${{ matrix.config.os == 'macos-14' }}
       - name: "Build ${{ matrix.config.target }}"
         run: ./build.ps1 -t ${{ matrix.config.target }}
         shell: pwsh
