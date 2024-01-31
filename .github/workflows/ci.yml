@@ -110,7 +110,7 @@ jobs:
           submodules: false
 
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.4.3
         with:
           name: manylinux-artifacts
           path: target/wheels
