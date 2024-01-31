@@ -13,7 +13,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
   QIRLIB_DOWNLOAD_LLVM: false
-  MACOSX_DEPLOYMENT_TARGET: 10.9
 
 jobs:
   build:
@@ -45,7 +44,15 @@ jobs:
               os: "macos-11",
               arch: "amd64",
               target: "default",
-              env: {},
+              env: {
+                MACOSX_DEPLOYMENT_TARGET: 10.9
+              },
+            }
+          - {
+              os: "macos-14",
+              arch: "aarch64",
+              target: "default",
+              env: { },
             }
     steps:
       - uses: actions/checkout@v3
@@ -59,13 +66,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-      - name: Install LLVM
-        uses: ./.github/actions/install-llvm
-        with:
-          version: "14"
-          os: ${{ matrix.config.os }}
-          directory: ${{ github.workspace }}/target/llvm
-          target: ${{ matrix.config.target }}
+        if: ${{ matrix.config.os != 'macos-14' }}
       - name: Linux - Install build dependencies, ccache, ninja
         run: sudo apt-get install -y ccache ninja-build
         if: ${{ matrix.config.os == 'ubuntu-20.04' }}
@@ -75,6 +76,16 @@ jobs:
       - name: MacOS - Install build dependencies, ccache, ninja
         run: brew install ccache ninja
         if: ${{ matrix.config.os == 'macos-11' }}
+      - name: MacOS - Install build dependencies, ccache, ninja
+        run: brew install ccache ninja
+        if: ${{ matrix.config.os == 'macos-14' }}
+      - name: Install LLVM
+        uses: ./.github/actions/install-llvm
+        with:
+          version: "14"
+          os: ${{ matrix.config.os }}
+          directory: ${{ github.workspace }}/target/llvm
+          target: ${{ matrix.config.target }}
       - name: "Build ${{ matrix.config.target }}"
         run: ./build.ps1 -t ${{ matrix.config.target }}
         shell: pwsh
