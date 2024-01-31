@@ -55,15 +55,15 @@ jobs:
               env: { },
             }
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup rust toolchain
         uses: ./.github/actions/rust-toolchain
         with:
-          toolchain: 1.64.0
+          toolchain: 1.75.0
           components: rustfmt clippy
       - uses: actions/checkout@v4
       - name: Set up Python 3.8
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.8
         if: ${{ matrix.config.os != 'macos-14' }}
@@ -90,13 +90,13 @@ jobs:
         run: ./build.ps1 -t ${{ matrix.config.target }}
         shell: pwsh
       - name: Artifacts - manylinux
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: manylinux-artifacts
           path: target/wheels/*manylinux_2_*.whl
         if: ${{ matrix.config.os == 'ubuntu-20.04' }}
       - name: Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.config.os }}-artifacts
           path: target/wheels/*
@@ -105,12 +105,12 @@ jobs:
     runs-on: "ubuntu-20.04"
     needs: build
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: false
 
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: manylinux-artifacts
           path: target/wheels
@@ -121,13 +121,13 @@ jobs:
       # Always publish docs as an artifact, but only publish docs to GitHub Pages
       # when pushing to main.
       - name: Publish Docs as Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: docs
           path: docs/_build
 
       - name: Publish Docs to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@4.1.7
+        uses: JamesIves/github-pages-deploy-action@4.5.0
         with:
           branch: gh-pages
           folder: docs/_build/html

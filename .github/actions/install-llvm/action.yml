@@ -20,7 +20,7 @@ runs:
   steps:
     - name: LLVM install cache
       id: cache-llvm
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ inputs.directory }}
         key: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}-${{ inputs.target }}
