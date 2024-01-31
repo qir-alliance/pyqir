@@ -520,9 +520,10 @@ mod string_attribute_tests {
                 |_, _, _| {},
                 |f| {
                     let attrs = get_attributes(f, LLVMAttributeFunctionIndex);
-                    for _ in attrs {
-                        panic!("Should not have any attributes")
-                    }
+                    assert!(
+                        attrs.into_iter().next().is_none(),
+                        "Should not have any attributes"
+                    );
                 },
             );
         }
@@ -534,9 +535,10 @@ mod string_attribute_tests {
                 |_, _, _| {},
                 |f| {
                     let attrs = get_attributes(f, LLVMAttributeReturnIndex);
-                    for _ in attrs {
-                        panic!("Should not have any attributes")
-                    }
+                    assert!(
+                        attrs.into_iter().next().is_none(),
+                        "Should not have any attributes"
+                    );
                 },
             );
         }
@@ -549,9 +551,10 @@ mod string_attribute_tests {
                 |f| {
                     const INVALID_PARAM_ID: LLVMAttributeIndex = 1;
                     let attrs = get_attributes(f, INVALID_PARAM_ID);
-                    for _ in attrs {
-                        panic!("Should not have any attributes")
-                    }
+                    assert!(
+                        attrs.into_iter().next().is_none(),
+                        "Should not have any attributes"
+                    );
                 },
             );
         }
