@@ -3,6 +3,7 @@
 
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(clippy::needless_pass_by_value)]
+#![allow(unknown_lints, clippy::unnecessary_fallible_conversions)] // can be removed when MSRV is 1.75+
 
 #[cfg(feature = "llvm11-0")]
 extern crate llvm_sys_110 as llvm_sys;

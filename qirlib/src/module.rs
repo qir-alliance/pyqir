@@ -136,9 +136,7 @@ pub unsafe fn add_flag(
 ) {
     LLVMRustAddModuleFlag(
         module,
-        behavior
-            .try_into()
-            .expect("Could not convert behavior for the current version of LLVM"),
+        behavior.into(),
         id.as_ptr() as *mut std::ffi::c_char,
         id.len().try_into().unwrap(),
         md,
