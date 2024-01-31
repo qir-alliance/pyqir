@@ -69,13 +69,6 @@ jobs:
         with:
           python-version: 3.8
         if: ${{ matrix.config.os != 'macos-14' }}
-      - name: Install LLVM
-        uses: ./.github/actions/install-llvm
-        with:
-          version: "14"
-          os: ${{ matrix.config.os }}
-          directory: ${{ github.workspace }}/target/llvm
-          target: ${{ matrix.config.target }}
       - name: Linux - Install build dependencies, ccache, ninja
         run: sudo apt-get install -y ccache ninja-build
         if: ${{ matrix.config.os == 'ubuntu-20.04' }}
@@ -88,6 +81,13 @@ jobs:
       - name: MacOS - Install build dependencies, ccache, ninja
         run: brew install ccache ninja
         if: ${{ matrix.config.os == 'macos-14' }}
+      - name: Install LLVM
+        uses: ./.github/actions/install-llvm
+        with:
+          version: "14"
+          os: ${{ matrix.config.os }}
+          directory: ${{ github.workspace }}/target/llvm
+          target: ${{ matrix.config.target }}
       - name: "Build ${{ matrix.config.target }}"
         run: ./build.ps1 -t ${{ matrix.config.target }}
         shell: pwsh
