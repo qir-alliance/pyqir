@@ -53,7 +53,7 @@ jobs:
               arch: "aarch64",
               target: "default",
               env: {
-                MACOSX_DEPLOYMENT_TARGET: 11
+                MACOSX_DEPLOYMENT_TARGET: 11.0
               },
             }
     steps:
