@@ -42,7 +42,8 @@ pub(crate) struct Module {
 
 #[pymethods]
 impl Module {
-    #[new(text_signature = "(context, name)")]
+    #[new]
+    #[pyo3(text_signature = "(context, name)")]
     pub(crate) fn new(py: Python, context: Py<Context>, name: &str) -> Self {
         let name = CString::new(name).unwrap();
         let module = unsafe {

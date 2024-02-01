@@ -80,7 +80,8 @@ impl MetadataString {
     ///
     /// :param context: The LLVM context.
     /// :param string: the value of the metadata string to create
-    #[new(text_signature = "(context, string)")]
+    #[new]
+    #[pyo3(text_signature = "(context, string)")]
     pub(crate) unsafe fn new(
         py: Python,
         context: Py<Context>,

@@ -236,7 +236,8 @@ pub(crate) struct BasicBlock(NonNull<LLVMBasicBlock>);
 
 #[pymethods]
 impl BasicBlock {
-    #[new(text_signature = "(context, name, parent=None, before=None)")]
+    #[new]
+    #[pyo3(text_signature = "(context, name, parent=None, before=None)")]
     fn new(
         py: Python,
         context: Py<Context>,

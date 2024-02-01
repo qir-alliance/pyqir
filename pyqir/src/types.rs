@@ -116,7 +116,8 @@ pub(crate) struct IntType;
 
 #[pymethods]
 impl IntType {
-    #[new(text_signature = "(context, width)")]
+    #[new]
+    #[pyo3(text_signature = "(context, width)")]
     fn new(py: Python, context: Py<Context>, width: u32) -> (Self, Type) {
         let ty = unsafe { LLVMIntTypeInContext(context.borrow(py).as_ptr(), width) };
         (
@@ -146,7 +147,8 @@ pub(crate) struct FunctionType;
 
 #[pymethods]
 impl FunctionType {
-    #[new(text_signature = "(ret, params)")]
+    #[new]
+    #[pyo3(text_signature = "(ret, params)")]
     fn new(py: Python, ret: &Type, params: Vec<PyRef<Type>>) -> PyResult<(Self, Type)> {
         Owner::merge(
             py,
@@ -279,7 +281,8 @@ pub(crate) struct PointerType;
 
 #[pymethods]
 impl PointerType {
-    #[new(text_signature = "(pointee)")]
+    #[new]
+    #[pyo3(text_signature = "(pointee)")]
     fn new(py: Python, pointee: &Type) -> (Self, Type) {
         let ty = unsafe { LLVMPointerType(pointee.as_ptr(), 0) };
         (
