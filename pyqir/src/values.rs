@@ -232,12 +232,12 @@ impl From<Py<Module>> for Owner {
 /// :param typing.Optional[Function] parent: The parent function.
 /// :param typing.Optional[BasicBlock] before: The block to insert this block before.
 #[pyclass(extends = Value, unsendable)]
-#[pyo3(text_signature = "(context, name, parent=None, before=None)")]
 pub(crate) struct BasicBlock(NonNull<LLVMBasicBlock>);
 
 #[pymethods]
 impl BasicBlock {
     #[new]
+    #[pyo3(text_signature = "(context, name, parent=None, before=None)")]
     fn new(
         py: Python,
         context: Py<Context>,

@@ -35,7 +35,6 @@ use std::{
 /// :param Context context: The LLVM context.
 /// :param str name: The module name.
 #[pyclass(unsendable)]
-#[pyo3(text_signature = "(context, name)")]
 pub(crate) struct Module {
     module: NonNull<LLVMModule>,
     context: Py<Context>,
@@ -44,6 +43,7 @@ pub(crate) struct Module {
 #[pymethods]
 impl Module {
     #[new]
+    #[pyo3(text_signature = "(context, name)")]
     pub(crate) fn new(py: Python, context: Py<Context>, name: &str) -> Self {
         let name = CString::new(name).unwrap();
         let module = unsafe {

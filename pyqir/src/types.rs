@@ -112,12 +112,12 @@ impl Deref for Type {
 /// :param Context context: The LLVM context.
 /// :param int width: The number of bits in the integer.
 #[pyclass(extends = Type)]
-#[pyo3(text_signature = "(context, width)")]
 pub(crate) struct IntType;
 
 #[pymethods]
 impl IntType {
     #[new]
+    #[pyo3(text_signature = "(context, width)")]
     fn new(py: Python, context: Py<Context>, width: u32) -> (Self, Type) {
         let ty = unsafe { LLVMIntTypeInContext(context.borrow(py).as_ptr(), width) };
         (
@@ -143,12 +143,12 @@ impl IntType {
 /// :param Type ret: The return type.
 /// :param typing.Sequence[Type] params: The parameter types.
 #[pyclass(extends = Type)]
-#[pyo3(text_signature = "(ret, params)")]
 pub(crate) struct FunctionType;
 
 #[pymethods]
 impl FunctionType {
     #[new]
+    #[pyo3(text_signature = "(ret, params)")]
     fn new(py: Python, ret: &Type, params: Vec<PyRef<Type>>) -> PyResult<(Self, Type)> {
         Owner::merge(
             py,
@@ -277,12 +277,12 @@ impl ArrayType {
 ///
 /// :param Type pointee: The type being pointed to.
 #[pyclass(extends = Type)]
-#[pyo3(text_signature = "(pointee)")]
 pub(crate) struct PointerType;
 
 #[pymethods]
 impl PointerType {
     #[new]
+    #[pyo3(text_signature = "(pointee)")]
     fn new(py: Python, pointee: &Type) -> (Self, Type) {
         let ty = unsafe { LLVMPointerType(pointee.as_ptr(), 0) };
         (

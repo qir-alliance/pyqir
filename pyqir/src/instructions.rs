@@ -58,12 +58,7 @@ impl Instruction {
             #[allow(clippy::unnecessary_lazy_evaluations)]
             Self::operands(slf, py)?
                 .into_iter()
-                .filter_map(|o| {
-                    o.as_ref(py)
-                        .is_instance_of::<BasicBlock>()
-                        .map(|b| b.then(|| o))
-                        .transpose()
-                })
+                .filter_map(|o| o.as_ref(py).is_instance_of::<BasicBlock>().then(|| Ok(o)))
                 .collect()
         }
     }

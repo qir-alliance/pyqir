@@ -72,7 +72,6 @@ impl Deref for Metadata {
 
 /// A metadata string
 #[pyclass(extends = Metadata, subclass)]
-#[pyo3(text_signature = "(context, string)")]
 pub(crate) struct MetadataString;
 
 #[pymethods]
@@ -82,6 +81,7 @@ impl MetadataString {
     /// :param context: The LLVM context.
     /// :param string: the value of the metadata string to create
     #[new]
+    #[pyo3(text_signature = "(context, string)")]
     pub(crate) unsafe fn new(
         py: Python,
         context: Py<Context>,
