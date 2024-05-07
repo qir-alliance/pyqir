@@ -16,7 +16,7 @@ variables:
   RUST_TOOLCHAIN_VERSION: "1.77"
 
 jobs:
-- job: "pyqir-governance"
+- job: "pyqir_governance"
   pool:
     vmImage: 'ubuntu-latest'
   timeoutInMinutes: 240
