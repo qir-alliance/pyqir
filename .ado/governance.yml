@@ -1,7 +1,10 @@
 name: pyqir-governance
 
-trigger: none
-pr: none
+trigger:
+- main
+
+pr:
+- main
 
 schedules:
 - cron: "0 9 * * Sat"
