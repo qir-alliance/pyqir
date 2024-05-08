@@ -47,6 +47,22 @@ jobs:
     inputs:
       versionSpec: '3.11'
 
+# prerequisites for building
+  - script: |
+      sudo apt-get install -y ninja-build
+    displayName: Install build dependencies
+    condition: eq(variables['Agent.OS'], 'Linux')
+
+  - script: |
+      brew install ninja
+    displayName: Install build dependencies
+    condition: eq(variables['Agent.OS'], 'Darwin')
+
+  - script: |
+      choco install --accept-license -y ninja
+    displayName: Install build dependencies
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
+
 # build
 
   - script: |
