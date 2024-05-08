@@ -27,7 +27,7 @@ jobs:
     vmImage: $(imageName)
   variables:
     arch: $(arch)
-  timeoutInMinutes: 90
+  timeoutInMinutes: 300
 
   steps:
   # common init steps
