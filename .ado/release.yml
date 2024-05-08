@@ -65,8 +65,7 @@ jobs:
 
 # build
 
-  - script: |
-      ./build.ps1 -t default
+  - pwsh: ./build.ps1 -t default
     displayName: Build
 
 # publish the python artifacts
