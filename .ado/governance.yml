@@ -1,0 +1,53 @@
+name: pyqir-governance
+
+trigger:
+- main
+
+pr:
+- main
+
+schedules:
+- cron: "0 9 * * Sat"
+  displayName: 'Build for CodeQL'
+  branches:
+    include:
+    - main
+  always: true
+
+variables:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN_VERSION: "1.77"
+
+jobs:
+- job: "pyqir_governance"
+  pool:
+    vmImage: 'ubuntu-latest'
+  timeoutInMinutes: 240
+  steps:
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: 'Component detection'
+
+  - task: RustInstaller@1
+    inputs:
+      rustVersion: ms-$(RUST_TOOLCHAIN_VERSION)
+      cratesIoFeedOverride: $(cratesIoFeedOverride)
+      toolchainFeed: $(toolchainFeed)
+    displayName: Install Rust toolchain
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.11'
+
+  - script: |
+      sudo apt-get install -y ninja-build
+    displayName: Build VSCode Extension
+
+  - task: CodeQL3000Init@0
+    displayName: CodeQL Initialize
+
+  - script: |
+      ./build.ps1 -t default
+    displayName: Build
+
+  - task: CodeQL3000Finalize@0
+    displayName: CodeQL Finalize
