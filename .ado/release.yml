@@ -97,6 +97,8 @@ jobs:
     condition: eq(variables['Agent.OS'], 'Linux')
 
 - job: "Merge"
+  dependsOn:
+  - Build
   pool:
     vmImage: 'ubuntu-latest'
 
