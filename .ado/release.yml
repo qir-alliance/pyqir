@@ -18,7 +18,7 @@ jobs:
         imageName: 'macOS-latest'
         arch: x86_64
       mac_aarch64:
-        imageName: 'macOS-14-arm64'
+        imageName: 'macOS-latest'
         arch: aarch64
       windows:
         imageName: 'windows-latest'
@@ -37,6 +37,16 @@ jobs:
       cratesIoFeedOverride: $(cratesIoFeedOverride)
       toolchainFeed: $(toolchainFeed)
     displayName: Install Rust toolchain
+    condition: and(ne(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
+
+  - task: RustInstaller@1
+    inputs:
+      rustVersion: ms-$(RUST_TOOLCHAIN_VERSION)
+      additionalTargets: aarch64-apple-darwin
+      cratesIoFeedOverride: $(cratesIoFeedOverride)
+      toolchainFeed: $(toolchainFeed)
+    displayName: Install Rust toolchain
+    condition: and(eq(variables['Agent.OS'], 'Darwin'), eq(variables['arch'], 'aarch64'))
 
   - script: |
       rustc --version
@@ -67,6 +77,11 @@ jobs:
 
   - pwsh: ./build.ps1 -t default
     displayName: Build
+    condition: ne(variables['Agent.OS'], 'Darwin')
+
+  - pwsh: env CARGO_BUILD_TARGET=${{ variables['arch'] }}-apple-darwin ./build.ps1 -t build
+    displayName: Build
+    condition: eq(variables['Agent.OS'], 'Darwin')
 
 # publish the python artifacts
 
