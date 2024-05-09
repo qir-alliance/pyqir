@@ -18,7 +18,7 @@ jobs:
         imageName: 'macOS-latest'
         arch: x86_64
       mac_aarch64:
-        imageName: 'macOS-14-arm'
+        imageName: 'macOS-14-arm64'
         arch: aarch64
       windows:
         imageName: 'windows-latest'
