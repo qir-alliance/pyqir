@@ -18,7 +18,7 @@ Properties {
     $Python = Resolve-Python
 }
 
-task default -depends build, run-examples
+task default -depends build, test, run-examples
 task build -depends qirlib, pyqir
 task checks -depends cargo-fmt, cargo-clippy, black, mypy
 
@@ -69,7 +69,9 @@ task pyqir -depends init {
         Invoke-LoggedCommand { auditwheel repair --wheel-dir $Wheels --plat $AuditWheelTag $unauditedWheels }
         $unauditedWheels | Remove-Item
     }
+}
 
+task test {
     $packages = Get-Wheels pyqir | ForEach-Object { "$_[test]" }
     Invoke-LoggedCommand { & $Python -m pip install --force-reinstall $packages }
     Invoke-LoggedCommand -workingDirectory $Pyqir { pytest }

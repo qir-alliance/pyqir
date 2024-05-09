@@ -37,7 +37,7 @@ jobs:
       cratesIoFeedOverride: $(cratesIoFeedOverride)
       toolchainFeed: $(toolchainFeed)
     displayName: Install Rust toolchain
-    condition: and(ne(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
+    condition: or(ne(variables['Agent.OS'], 'Darwin'), ne($(arch), 'aarch64'))
 
   - task: RustInstaller@1
     inputs:
@@ -46,7 +46,7 @@ jobs:
       cratesIoFeedOverride: $(cratesIoFeedOverride)
       toolchainFeed: $(toolchainFeed)
     displayName: Install Rust toolchain
-    condition: and(eq(variables['Agent.OS'], 'Darwin'), eq(variables['arch'], 'aarch64'))
+    condition: and(eq(variables['Agent.OS'], 'Darwin'), eq($(arch), 'aarch64'))
 
   - script: |
       rustc --version
@@ -64,7 +64,7 @@ jobs:
     condition: eq(variables['Agent.OS'], 'Linux')
 
   - script: |
-      brew install ninja
+      brew install ninja qemu
     displayName: Install build dependencies
     condition: eq(variables['Agent.OS'], 'Darwin')
 
