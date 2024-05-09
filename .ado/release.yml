@@ -46,16 +46,7 @@ jobs:
       cratesIoFeedOverride: $(cratesIoFeedOverride)
       toolchainFeed: $(toolchainFeed)
     displayName: Install Rust toolchain
-    condition: and(eq(variables['Agent.OS'], 'Darwin'), eq(variables['arch'], 'x86_64'))
-
-  - task: RustInstaller@1
-    inputs:
-      rustVersion: ms-$(RUST_TOOLCHAIN_VERSION)
-      additionalTargets: x86_64-apple-darwin
-      cratesIoFeedOverride: $(cratesIoFeedOverride)
-      toolchainFeed: $(toolchainFeed)
-    displayName: Install Rust toolchain
-    condition: and(eq(variables['Agent.OS'], 'Darwin'), eq(variables['arch'], 'aarch64'))
+    condition: eq(variables['Agent.OS'], 'Darwin')
 
   - script: |
       rustc --version
