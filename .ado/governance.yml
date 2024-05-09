@@ -21,7 +21,7 @@ variables:
 jobs:
 - job: "pyqir_governance"
   pool:
-    vmImage: 'ubuntu-latest'
+    vmImage: 'ubuntu-20.04'
   timeoutInMinutes: 240
   steps:
   - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
