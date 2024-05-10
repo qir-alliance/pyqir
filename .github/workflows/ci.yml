@@ -69,6 +69,10 @@ jobs:
         with:
           toolchain: 1.78.0
           components: rustfmt clippy
+      - shell: pwsh
+        run: |
+          rustup target add x86_64-apple-darwin
+        if: ${{ (matrix.config.os == 'macos-14') && (matrix.config.arch == 'universal') }}
       - uses: actions/checkout@v4
       - name: Set up Python 3.8
         uses: actions/setup-python@v5
