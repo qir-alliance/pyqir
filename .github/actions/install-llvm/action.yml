@@ -8,6 +8,9 @@ inputs:
   os:
     description: "The OS being built upon."
     required: true
+  arch:
+    description: "The OS arch target being built."
+    required: true
   directory:
     description: "The directory to install LLVM binaries to."
     required: true
