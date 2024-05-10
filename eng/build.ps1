@@ -26,15 +26,11 @@ param(
 # PS 7.3 introduced exec alias which breaks the build.
 Remove-Item alias:exec -ErrorAction SilentlyContinue
 
-if ($null -eq (Import-Module -Name psake -PassThru -ErrorAction SilentlyContinue)) {    
-    Install-Module -Name Psake -Scope CurrentUser -Repository PSGallery -Force -Verbose
-}
-
 $scriptPath = $(Split-Path -Path $MyInvocation.MyCommand.path -Parent)
 
 # '[p]sake' is the same as 'psake' but $Error is not polluted
 Remove-Module -Name [p]sake -Verbose:$false
-Import-Module -Name psake -Verbose:$false
+Join-Path $scriptPath "psake" "4.9.0" "psake.psm1" | Import-Module -Force -Verbose:$false
 if ($help) {
     Get-Help -Name Invoke-psake -Full
     return
