@@ -17,9 +17,15 @@ jobs:
       mac_x64:
         imageName: 'macOS-latest'
         arch: x86_64
+        ARCHFLAGS: '-arch x86_64'
       mac_aarch64:
         imageName: 'macOS-latest'
         arch: aarch64
+        ARCHFLAGS: '-arch arm64'
+      mac_universal:
+        imageName: 'macOS-latest'
+        arch: universal
+        ARCHFLAGS: '-arch x86_64 -arch arm64'
       windows:
         imageName: 'windows-latest'
         arch: x86_64
@@ -37,7 +43,7 @@ jobs:
       cratesIoFeedOverride: $(cratesIoFeedOverride)
       toolchainFeed: $(toolchainFeed)
     displayName: Install Rust toolchain
-    condition: or(ne(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
+    condition: ne(variables['Agent.OS'], 'Darwin')
 
   - task: RustInstaller@1
     inputs:
@@ -64,7 +70,7 @@ jobs:
     condition: eq(variables['Agent.OS'], 'Linux')
 
   - script: |
-      brew install ninja qemu
+      brew install ninja
     displayName: Install build dependencies
     condition: eq(variables['Agent.OS'], 'Darwin')
 
@@ -79,9 +85,13 @@ jobs:
     displayName: Build
     condition: ne(variables['Agent.OS'], 'Darwin')
 
-  - pwsh: env CARGO_BUILD_TARGET=${{ variables['arch'] }}-apple-darwin ARCHFLAGS="-arch x86_64 -arch arm64" ./build.ps1 -t build
+  - pwsh: env ARCHFLAGS="${{ variables['ARCHFLAGS'] }}" ./build.ps1 -t build
     displayName: Build
     condition: eq(variables['Agent.OS'], 'Darwin')
+
+  - pwsh: ./build.ps1 -t test
+    displayName: Build
+    condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
 
 # publish the python artifacts
 
@@ -130,6 +140,10 @@ jobs:
     displayName: Download Python Artifacts Mac
 
   - download: current
+    artifact: Wheels.Mac.universal
+    displayName: Download Python Artifacts Mac
+
+  - download: current
     artifact: Wheels.Linux.x86_64
     displayName: Download x86_64 Python Artifacts Linux
 
@@ -139,6 +153,7 @@ jobs:
       mv ../Wheels.Win.x86_64/*.whl       target/wheels
       mv ../Wheels.Mac.x86_64/*.whl       target/wheels
       mv ../Wheels.Mac.aarch64/*.whl      target/wheels
+      mv ../Wheels.Mac.universal/*.whl    target/wheels
       ls                                  target/wheels/*
     displayName: Move Py Artifacts to Publishing Dir
 

@@ -186,6 +186,32 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
         .env("QIRLIB_LLVM_TAG", get_llvm_tag())
         .define("CPACK_PACKAGE_FILE_NAME", get_package_name()?)
         .define("CMAKE_INSTALL_PREFIX", get_llvm_install_dir());
+
+    let target = std::env::var("TARGET").unwrap();
+    if target.contains("apple-darwin") {
+        // On macOS, we need to set the CMAKE_OSX_ARCHITECTURES variable to
+        // ensure that the correct architectures are built. This is usually
+        // inferred from the target triple, but we need to set it explicitly
+        // when cross-compiling for universal binaries.
+        if let Ok(arch_flags) = env::var("ARCHFLAGS") {
+            let arches = arch_flags
+                .split("-arch")
+                .filter_map(|arch| {
+                    let arch = arch.trim();
+                    if arch.is_empty() {
+                        None
+                    } else {
+                        Some(arch)
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(";");
+            if !arches.is_empty() {
+                config.define("CMAKE_OSX_ARCHITECTURES", arches);
+            }
+        };
+    }
+
     let _ = config.build();
 
     if cfg!(feature = "package-llvm") {
