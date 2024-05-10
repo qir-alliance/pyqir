@@ -33,6 +33,7 @@ jobs:
     vmImage: $(imageName)
   variables:
     arch: $(arch)
+    ARCHFLAGS: $(ARCHFLAGS)
   timeoutInMinutes: 300
 
   steps:
