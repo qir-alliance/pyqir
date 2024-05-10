@@ -54,12 +54,20 @@ jobs:
               target: "default",
               env: { },
             }
+          - {
+              os: "macos-14",
+              arch: "universal",
+              target: "default",
+              env: {
+                ARCHFLAGS: "-arch arm64 -arch x86_64"
+              },
+            }
     steps:
       - uses: actions/checkout@v4
       - name: Setup rust toolchain
         uses: ./.github/actions/rust-toolchain
         with:
-          toolchain: 1.75.0
+          toolchain: 1.78.0
           components: rustfmt clippy
       - uses: actions/checkout@v4
       - name: Set up Python 3.8
@@ -98,7 +106,7 @@ jobs:
       - name: Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.config.os }}-artifacts
+          name: ${{ matrix.config.os }}-${{ matrix.config.arch }}-artifacts
           path: target/wheels/*
         if: ${{ matrix.config.os != 'ubuntu-20.04' }}
   docs:
