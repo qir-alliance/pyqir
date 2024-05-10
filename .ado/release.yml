@@ -33,7 +33,6 @@ jobs:
     vmImage: $(imageName)
   variables:
     arch: $(arch)
-    ARCHFLAGS: $(ARCHFLAGS)
   timeoutInMinutes: 300
 
   steps:
@@ -86,7 +85,7 @@ jobs:
     displayName: Build
     condition: ne(variables['Agent.OS'], 'Darwin')
 
-  - pwsh: env ARCHFLAGS="${{ variables['ARCHFLAGS'] }}" ./build.ps1 -t build
+  - pwsh: env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t build
     displayName: Build
     condition: eq(variables['Agent.OS'], 'Darwin')
 
