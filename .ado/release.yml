@@ -5,7 +5,7 @@ pr: none
 
 variables:
   CARGO_TERM_COLOR: always
-  RUST_TOOLCHAIN_VERSION: "1.77"
+  RUST_TOOLCHAIN_VERSION: "1.78"
 
 jobs:
 - job: "Build"
@@ -25,7 +25,7 @@ jobs:
       mac_universal:
         imageName: 'macOS-latest'
         arch: universal
-        ARCHFLAGS: '-arch x86_64 -arch arm64'
+        ARCHFLAGS: '-arch arm64 -arch x86_64'
       windows:
         imageName: 'windows-latest'
         arch: x86_64

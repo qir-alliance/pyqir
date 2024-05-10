@@ -16,7 +16,7 @@ schedules:
 
 variables:
   CARGO_TERM_COLOR: always
-  RUST_TOOLCHAIN_VERSION: "1.77"
+  RUST_TOOLCHAIN_VERSION: "1.78"
 
 jobs:
 - job: "pyqir_governance"
