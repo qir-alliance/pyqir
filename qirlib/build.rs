@@ -194,6 +194,8 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
         // inferred from the target triple, but we need to set it explicitly
         // when cross-compiling for universal binaries.
         if let Ok(arch_flags) = env::var("ARCHFLAGS") {
+            println!("ARCHFLAGS environment variable set to: {}", arch_flags);
+            config.env("ARCHFLAGS", &arch_flags);
             let arches = arch_flags
                 .split("-arch")
                 .filter_map(|arch| {
@@ -207,9 +209,14 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
                 .collect::<Vec<_>>()
                 .join(";");
             if !arches.is_empty() {
+                println!("Setting CMAKE_OSX_ARCHITECTURES to: {}", arches);
                 config.define("CMAKE_OSX_ARCHITECTURES", arches);
+            } else {
+                println!("cargo:warning=ARCHFLAGS environment variable set, but no architectures found.");
             }
-        };
+        } else {
+            println!("ARCHFLAGS environment variable not set. Building for the host architecture.");
+        }
     }
 
     let _ = config.build();
