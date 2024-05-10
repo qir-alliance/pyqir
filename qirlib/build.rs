@@ -212,7 +212,9 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
                 println!("Setting CMAKE_OSX_ARCHITECTURES to: {}", arches);
                 config.define("CMAKE_OSX_ARCHITECTURES", arches);
             } else {
-                println!("cargo:warning=ARCHFLAGS environment variable set, but no architectures found.");
+                println!(
+                    "cargo:warning=ARCHFLAGS environment variable set, but no architectures found."
+                );
             }
         } else {
             println!("ARCHFLAGS environment variable not set. Building for the host architecture.");
