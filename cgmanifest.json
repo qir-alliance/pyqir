@@ -7,7 +7,7 @@
         "type": "git",
         "git": {
           "repositoryUrl": "https://github.com/psake/psake",
-          "commitHash": "https://github.com/psake/psake/commit/96e47969c6bda21cdbeade59c469d088a87f9506",
+          "commitHash": "96e47969c6bda21cdbeade59c469d088a87f9506",
           "tag": "v4.9.0"
         }
       },
