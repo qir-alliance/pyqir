@@ -13,7 +13,7 @@ steps:
   inputs:
     key: llvm-${{ parameters.version }}-${{ parameters.arch }}-${{ parameters.os }}
     restoreKeys: llvm-${{ parameters.version }}-${{ parameters.arch }}-${{ parameters.os }}
-    path: $(directory)
+    path: ${{ parameters.directory }}
     cacheHitVar: CACHE_RESTORED
   displayName: Cache LLVM
 
