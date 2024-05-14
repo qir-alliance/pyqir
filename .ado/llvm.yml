@@ -1,0 +1,47 @@
+parameters:
+- name: version
+  type: string
+- name: os
+  type: string
+- name: arch
+  type: string
+- name: directory
+  type: string
+
+steps:
+- task: Cache@2
+  inputs:
+    key: llvm-$(version)-$(os)-$(arch)
+    restoreKeys: llvm-$(version)-$(os)-$(arch)
+    path: $(directory)
+  displayName: Cache LLVM
+  cacheHitVar: CACHE_RESTORED
+
+- scipt: |
+    git config --global core.longpaths true
+    echo "##vso[task.setvariable variable=QIRLIB_CACHE_DIR;]$(directory)"
+    echo "##vso[task.setvariable variable=LLVM_SYS_140_PREFIX;]$(directory)"
+    echo "##vso[task.setvariable variable=PYQIR_LLVM_FEATURE_VERSION;]llvm$(version)-0"
+  displayName: Configure Environment
+
+# prerequisites for building
+- script: |
+    sudo apt-get install -y ninja-build
+  displayName: Install build dependencies
+  condition: and(eq(variables['Agent.OS'], 'Linux'), ne(variables.CACHE_RESTORED, 'true'))
+
+- script: |
+    brew install ninja
+  displayName: Install build dependencies
+  condition: and(eq(variables['Agent.OS'], 'Darwin'), ne(variables.CACHE_RESTORED, 'true'))
+
+- script: |
+    choco install --accept-license -y ninja
+  displayName: Install build dependencies
+  condition: and(eq(variables['Agent.OS'], 'Windows_NT'), ne(variables.CACHE_RESTORED, 'true'))
+
+# build and install LLVM
+
+- script: ./build.ps1 -t install-llvm-from-source
+  displayName: Build and Install LLVM
+  condition: and(not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'))

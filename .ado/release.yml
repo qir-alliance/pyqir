@@ -6,6 +6,7 @@ pr: none
 variables:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN_VERSION: "1.78"
+  PYTHON_VERSION: "3.11"
 
 jobs:
 - job: "Build"
@@ -61,7 +62,7 @@ jobs:
 
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.11'
+      versionSpec: $(PYTHON_VERSION)
 
 # prerequisites for building
   - script: |
