@@ -40,7 +40,7 @@ jobs:
 
   - script: |
       sudo apt-get install -y ninja-build
-    displayName: Build VSCode Extension
+    displayName: Install LLVM build dependencies
 
   - task: CodeQL3000Init@0
     displayName: CodeQL Initialize
