@@ -14,8 +14,8 @@ steps:
 
 - task: Cache@2
   inputs:
-    key: llvm-${{ parameters.version }}-${{ parameters.arch }}-${{ parameters.os }}
-    restoreKeys: llvm-${{ parameters.version }}-${{ parameters.arch }}-${{ parameters.os }}
+    key: "llvm-${{ parameters.version }}-${{ parameters.arch }}-${{ parameters.os }}"
+    restoreKeys: "llvm-${{ parameters.version }}-${{ parameters.arch }}-${{ parameters.os }}"
     path: ${{ parameters.directory }}
     cacheHitVar: CACHE_RESTORED
   displayName: Cache LLVM
