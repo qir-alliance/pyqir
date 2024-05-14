@@ -1,4 +1,4 @@
-name: pyqir-governance
+name: pyqir-governance-$(BuildId)
 
 trigger:
 - main
