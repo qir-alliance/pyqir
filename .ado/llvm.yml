@@ -11,17 +11,17 @@ parameters:
 steps:
 - task: Cache@2
   inputs:
-    key: llvm-$(version)-$(os)-$(arch)
-    restoreKeys: llvm-$(version)-$(os)-$(arch)
+    key: llvm-${{ parameters.version }}-${{ parameters.arch }}-${{ parameters.os }}
+    restoreKeys: llvm-${{ parameters.version }}-${{ parameters.arch }}-${{ parameters.os }}
     path: $(directory)
     cacheHitVar: CACHE_RESTORED
   displayName: Cache LLVM
 
 - script: |
     git config --global core.longpaths true
-    echo "##vso[task.setvariable variable=QIRLIB_CACHE_DIR;]$(directory)"
-    echo "##vso[task.setvariable variable=LLVM_SYS_140_PREFIX;]$(directory)"
-    echo "##vso[task.setvariable variable=PYQIR_LLVM_FEATURE_VERSION;]llvm$(version)-0"
+    echo "##vso[task.setvariable variable=QIRLIB_CACHE_DIR;]${{ parameters.directory }}"
+    echo "##vso[task.setvariable variable=LLVM_SYS_140_PREFIX;]${{ parameters.directory }}"
+    echo "##vso[task.setvariable variable=PYQIR_LLVM_FEATURE_VERSION;]llvm${{ parameters.version }}-0"
   displayName: Configure Environment
 
 # prerequisites for building
