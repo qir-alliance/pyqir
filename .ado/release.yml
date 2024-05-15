@@ -5,7 +5,8 @@ pr: none
 
 variables:
   CARGO_TERM_COLOR: always
-  RUST_TOOLCHAIN_VERSION: "1.77"
+  RUST_TOOLCHAIN_VERSION: "1.78"
+  PYTHON_VERSION: "3.11"
 
 jobs:
 - job: "Build"
@@ -17,9 +18,15 @@ jobs:
       mac_x64:
         imageName: 'macOS-latest'
         arch: x86_64
+        ARCHFLAGS: '-arch x86_64'
       mac_aarch64:
-        imageName: 'macOS-14'
+        imageName: 'macOS-latest'
         arch: aarch64
+        ARCHFLAGS: '-arch arm64'
+      mac_universal:
+        imageName: 'macOS-latest'
+        arch: universal
+        ARCHFLAGS: '-arch arm64 -arch x86_64'
       windows:
         imageName: 'windows-latest'
         arch: x86_64
@@ -27,7 +34,7 @@ jobs:
     vmImage: $(imageName)
   variables:
     arch: $(arch)
-  timeoutInMinutes: 90
+  timeoutInMinutes: 300
 
   steps:
   # common init steps
@@ -37,6 +44,16 @@ jobs:
       cratesIoFeedOverride: $(cratesIoFeedOverride)
       toolchainFeed: $(toolchainFeed)
     displayName: Install Rust toolchain
+    condition: ne(variables['Agent.OS'], 'Darwin')
+
+  - task: RustInstaller@1
+    inputs:
+      rustVersion: ms-$(RUST_TOOLCHAIN_VERSION)
+      additionalTargets: aarch64-apple-darwin
+      cratesIoFeedOverride: $(cratesIoFeedOverride)
+      toolchainFeed: $(toolchainFeed)
+    displayName: Install Rust toolchain
+    condition: eq(variables['Agent.OS'], 'Darwin')
 
   - script: |
       rustc --version
@@ -45,13 +62,37 @@ jobs:
 
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.11'
+      versionSpec: $(PYTHON_VERSION)
+
+# prerequisites for building
+  - script: |
+      sudo apt-get install -y ninja-build
+    displayName: Install build dependencies
+    condition: eq(variables['Agent.OS'], 'Linux')
+
+  - script: |
+      brew install ninja
+    displayName: Install build dependencies
+    condition: eq(variables['Agent.OS'], 'Darwin')
+
+  - script: |
+      choco install --accept-license -y ninja
+    displayName: Install build dependencies
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
 
 # build
 
-  - script: |
-      ./build.ps1 -t default
+  - pwsh: ./build.ps1 -t default
     displayName: Build
+    condition: ne(variables['Agent.OS'], 'Darwin')
+
+  - pwsh: env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t build
+    displayName: Build
+    condition: eq(variables['Agent.OS'], 'Darwin')
+
+  - pwsh: ./build.ps1 -t test
+    displayName: Build
+    condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
 
 # publish the python artifacts
 
@@ -81,6 +122,8 @@ jobs:
     condition: eq(variables['Agent.OS'], 'Linux')
 
 - job: "Merge"
+  dependsOn:
+  - Build
   pool:
     vmImage: 'ubuntu-latest'
 
@@ -98,6 +141,10 @@ jobs:
     displayName: Download Python Artifacts Mac
 
   - download: current
+    artifact: Wheels.Mac.universal
+    displayName: Download Python Artifacts Mac
+
+  - download: current
     artifact: Wheels.Linux.x86_64
     displayName: Download x86_64 Python Artifacts Linux
 
@@ -107,6 +154,7 @@ jobs:
       mv ../Wheels.Win.x86_64/*.whl       target/wheels
       mv ../Wheels.Mac.x86_64/*.whl       target/wheels
       mv ../Wheels.Mac.aarch64/*.whl      target/wheels
+      mv ../Wheels.Mac.universal/*.whl    target/wheels
       ls                                  target/wheels/*
     displayName: Move Py Artifacts to Publishing Dir
 

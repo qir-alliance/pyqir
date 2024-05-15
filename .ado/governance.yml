@@ -1,4 +1,4 @@
-name: pyqir-governance
+name: pyqir-governance-$(BuildId)
 
 trigger:
 - main
@@ -16,12 +16,13 @@ schedules:
 
 variables:
   CARGO_TERM_COLOR: always
-  RUST_TOOLCHAIN_VERSION: "1.77"
+  RUST_TOOLCHAIN_VERSION: "1.78"
+  PYTHON_VERSION: "3.11"
 
 jobs:
 - job: "pyqir_governance"
   pool:
-    vmImage: 'ubuntu-latest'
+    vmImage: 'ubuntu-20.04'
   timeoutInMinutes: 240
   steps:
   - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
@@ -36,11 +37,14 @@ jobs:
 
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.11'
+      versionSpec: $(PYTHON_VERSION)
 
-  - script: |
-      sudo apt-get install -y ninja-build
-    displayName: Build VSCode Extension
+  - template: llvm.yml
+    parameters:
+      version: "14"
+      os: "ubuntu-20.04"
+      arch: "x86_64"
+      directory: $(Build.SourcesDirectory)/target/llvm14-0
 
   - task: CodeQL3000Init@0
     displayName: CodeQL Initialize

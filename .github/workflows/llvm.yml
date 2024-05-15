@@ -38,6 +38,13 @@ jobs:
               arch: "aarch64",
               env: {},
             }
+          - {
+              os: "macos-14",
+              arch: "universal",
+              env: {
+                ARCHFLAGS: "-arch arm64 -arch x86_64"
+              }
+            }
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,7 +70,7 @@ jobs:
       - name: Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-${{ matrix.config.os }}-${{ matrix.config.arch }}
           if-no-files-found: error
           path: |
             target/**/*.zip

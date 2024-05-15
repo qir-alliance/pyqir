@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/component-detection-manifest.json",
+  "version": 1,
+  "registrations": [
+    {
+      "component": {
+        "type": "git",
+        "git": {
+          "repositoryUrl": "https://github.com/psake/psake",
+          "commitHash": "96e47969c6bda21cdbeade59c469d088a87f9506",
+          "tag": "v4.9.0"
+        }
+      },
+      "developmentDependency": true
+    }
+  ]
+}

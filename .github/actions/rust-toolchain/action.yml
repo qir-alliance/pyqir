@@ -1,8 +1,12 @@
 name: rust-toolchain
+description: "Install a Rust toolchain."
+
 inputs:
   toolchain:
+    description: "The toolchain name. Usually a version number."
     required: false
   components:
+    description: "Additional components to install."
     required: false
 
 runs:
