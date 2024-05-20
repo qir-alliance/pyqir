@@ -28,3 +28,11 @@ def test_default_attributes_are_set() -> None:
 
     assert mod.get_flag("dynamic_result_management") is not None
     assert str(mod.get_flag("dynamic_result_management")) == "i1 false"
+
+
+def test_entry_point_override_is_applied() -> None:
+    simple = pyqir.SimpleModule("test", 2, 5, entry_point_name="new_entry")
+    mod = pyqir.Module.from_bitcode(pyqir.Context(), simple.bitcode())
+
+    entry = next(filter(is_entry_point, mod.functions))
+    assert entry.name == "new_entry"
