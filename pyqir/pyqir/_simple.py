@@ -32,6 +32,7 @@ class SimpleModule:
         num_qubits: int,
         num_results: int,
         context: Optional[Context] = None,
+        entrypoint_name: str = "main",
     ) -> None:
         """
         Initializes a simple module.
@@ -40,6 +41,7 @@ class SimpleModule:
         :param str num_qubits: The number of statically allocated qubits.
         :param int num_results: The number of statically allocated results.
         :param Optional[Context] context: The LLVM context.
+        :param str entrypoint_name: The name of the entry point function.
         """
 
         if context is None:
@@ -57,7 +59,9 @@ class SimpleModule:
         self._num_qubits = num_qubits
         self._num_results = num_results
 
-        entry_point = pyqir.entry_point(self._module, "main", num_qubits, num_results)
+        entry_point = pyqir.entry_point(
+            self._module, entrypoint_name, num_qubits, num_results
+        )
         self._builder.insert_at_end(BasicBlock(context, "entry", entry_point))
 
     @property
