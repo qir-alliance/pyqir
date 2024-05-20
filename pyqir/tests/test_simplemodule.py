@@ -31,7 +31,7 @@ def test_default_attributes_are_set() -> None:
 
 
 def test_entry_point_override_is_applied() -> None:
-    simple = pyqir.SimpleModule("test", 2, 5, "new_entry")
+    simple = pyqir.SimpleModule("test", 2, 5, entry_point_name="new_entry")
     mod = pyqir.Module.from_bitcode(pyqir.Context(), simple.bitcode())
 
     entry = next(filter(is_entry_point, mod.functions))
