@@ -42,24 +42,30 @@ jobs:
             }
           - {
               os: "macos-11",
-              arch: "amd64",
+              arch: "x86_64",
               target: "default",
               env: {
-                MACOSX_DEPLOYMENT_TARGET: 10.9
+                MACOSX_DEPLOYMENT_TARGET: 10.9,
+                ARCHFLAGS: "-arch x86_64",
+                CARGO_BUILD_TARGET: "x86_64-apple-darwin"
+              },
+            }
+          - {
+              os: "macos-11",
+              arch: "aarch64",
+              target: "default",
+              env: {
+                ARCHFLAGS: "-arch arm64",
+                CARGO_BUILD_TARGET: "aarch64-apple-darwin"
               },
             }
           - {
               os: "macos-14",
               arch: "aarch64",
               target: "default",
-              env: { },
-            }
-          - {
-              os: "macos-14",
-              arch: "universal",
-              target: "default",
               env: {
-                ARCHFLAGS: "-arch arm64 -arch x86_64"
+                ARCHFLAGS: "-arch arm64",
+                CARGO_BUILD_TARGET: "aarch64-apple-darwin"
               },
             }
     steps:
@@ -71,8 +77,8 @@ jobs:
           components: rustfmt clippy
       - shell: pwsh
         run: |
-          rustup target add x86_64-apple-darwin
-        if: ${{ (matrix.config.os == 'macos-14') && (matrix.config.arch == 'universal') }}
+          rustup target add aarch64-apple-darwin
+        if: ${{ (matrix.config.os == 'macos-11') }}
       - uses: actions/checkout@v4
       - name: Set up Python 3.8
         uses: actions/setup-python@v5
