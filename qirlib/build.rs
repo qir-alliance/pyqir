@@ -188,6 +188,14 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
         .define("CMAKE_INSTALL_PREFIX", get_llvm_install_dir());
 
     let target = std::env::var("TARGET").unwrap();
+    let host = std::env::var("HOST").unwrap();
+
+    if target != host {
+        println!("Cross-compiling from {} to {}", host, target);
+        config.define("CMAKE_CROSSCOMPILING", "On");
+    } else {
+        println!("Not cross-compiling");
+    }
     if target.contains("apple-darwin") {
         // On macOS, we need to set the CMAKE_OSX_ARCHITECTURES variable to
         // ensure that the correct architectures are built. This is usually
@@ -210,7 +218,12 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
                 .join(";");
             if !arches.is_empty() {
                 println!("Setting CMAKE_OSX_ARCHITECTURES to: {}", arches);
-                config.define("CMAKE_OSX_ARCHITECTURES", arches);
+                config.define("CMAKE_OSX_ARCHITECTURES", &arches);
+                if arches.contains("arm64") {
+                    println!("Setting CMAKE_SYSTEM_PROCESSOR to arm64");
+                    config.define("LLVM_DEFAULT_TARGET_TRIPLE", "aarch64-apple-darwin");
+                    config.define("LLVM_TARGET_ARCH", "aarch64-apple-darwin");
+                }
             } else {
                 println!(
                     "cargo:warning=ARCHFLAGS environment variable set, but no architectures found."
@@ -219,6 +232,7 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
         } else {
             println!("ARCHFLAGS environment variable not set. Building for the host architecture.");
         }
+
     }
 
     let _ = config.build();
