@@ -168,8 +168,9 @@ pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef
         0,
     );
 
-    let len = LLVMGetArrayLength(LLVMTypeOf(string));
-    let ty = LLVMArrayType(LLVMInt8TypeInContext(context), len);
+    let len = LLVMGetArrayLength2(LLVMTypeOf(string));
+    let i8_ty = LLVMInt8TypeInContext(context);
+    let ty = LLVMArrayType2(i8_ty, len);
     let global = LLVMAddGlobal(module, ty, raw_cstr!(""));
     LLVMSetLinkage(global, LLVMLinkage::LLVMInternalLinkage);
     LLVMSetGlobalConstant(global, 1);
@@ -177,8 +178,8 @@ pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef
 
     let zero = LLVMConstNull(LLVMInt32TypeInContext(context));
     let mut indices = [zero, zero];
-    #[allow(deprecated)]
-    LLVMConstGEP(
+    LLVMConstGEP2(
+        i8_ty,
         global,
         indices.as_mut_ptr(),
         indices.len().try_into().unwrap(),

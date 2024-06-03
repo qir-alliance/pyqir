@@ -18,6 +18,7 @@ llvm-sys-110 = { package = "llvm-sys", version = "110.0", optional = true }
 llvm-sys-120 = { package = "llvm-sys", version = "120.3", optional = true }
 llvm-sys-130 = { package = "llvm-sys", version = "130.1", optional = true }
 llvm-sys-140 = { package = "llvm-sys", version = "140.1", optional = true }
+llvm-sys-181 = { package = "llvm-sys", version = "181", optional = true }
 log = "0.4"
 mut_static = "5.0"
 
@@ -37,6 +38,7 @@ llvm11-0 = ["llvm-sys-110"]
 llvm12-0 = ["llvm-sys-120"]
 llvm13-0 = ["llvm-sys-130"]
 llvm14-0 = ["llvm-sys-140"]
+llvm18-1 = ["llvm-sys-181"]
 
 # default to use llvm-sys for llvm linking
 default = ["external-llvm-linking"]

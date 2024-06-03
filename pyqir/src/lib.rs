@@ -13,6 +13,8 @@ extern crate llvm_sys_120 as llvm_sys;
 extern crate llvm_sys_130 as llvm_sys;
 #[cfg(feature = "llvm14-0")]
 extern crate llvm_sys_140 as llvm_sys;
+#[cfg(feature = "llvm18-1")]
+extern crate llvm_sys_181 as llvm_sys;
 
 mod builder;
 mod core;

@@ -234,9 +234,9 @@ impl Builder {
                 .map(|(arg, ty)| arg.to_value(ty).map_err(Into::into))
                 .collect::<PyResult<Vec<_>>>()?;
 
-            #[allow(deprecated)]
-            let value = LLVMBuildCall(
+            let value = LLVMBuildCall2(
                 self.as_ptr(),
+                fn_type,
                 callee.as_ptr(),
                 args.as_mut_ptr(),
                 args.len().try_into().unwrap(),

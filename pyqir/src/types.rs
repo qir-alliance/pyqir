@@ -268,8 +268,8 @@ impl ArrayType {
     ///
     /// :type: int
     #[getter]
-    fn count(slf: PyRef<Self>) -> u32 {
-        unsafe { LLVMGetArrayLength(slf.into_super().as_ptr()) }
+    fn count(slf: PyRef<Self>) -> u64 {
+        unsafe { LLVMGetArrayLength2(slf.into_super().as_ptr()) }
     }
 }
 

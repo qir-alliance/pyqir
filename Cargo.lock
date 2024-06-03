@@ -12,6 +12,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.86"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3d1d046238990b9cf5bcde22a3fb3584ee5cf65fb2765f454ed428c7a0063da"
+
+[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -144,6 +150,20 @@ dependencies = [
  "lazy_static",
  "libc",
  "regex",
+ "semver 1.0.21",
+]
+
+[[package]]
+name = "llvm-sys"
+version = "181.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e770c3c1ba28b4be3b4f4a7bc621fdb3f10b325f042e7d51dd9298db231df6f"
+dependencies = [
+ "anyhow",
+ "cc",
+ "lazy_static",
+ "libc",
+ "regex-lite",
  "semver 1.0.21",
 ]
 
@@ -311,6 +331,7 @@ dependencies = [
  "llvm-sys 120.3.2",
  "llvm-sys 130.1.2",
  "llvm-sys 140.1.3",
+ "llvm-sys 181.0.0",
  "pyo3",
  "qirlib",
 ]
@@ -328,6 +349,7 @@ dependencies = [
  "llvm-sys 120.3.2",
  "llvm-sys 130.1.2",
  "llvm-sys 140.1.3",
+ "llvm-sys 181.0.0",
  "log",
  "mut_static",
  "normalize-line-endings",
@@ -379,6 +401,12 @@ dependencies = [
  "memchr",
  "regex-syntax",
 ]
+
+[[package]]
+name = "regex-lite"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "30b661b2f27137bdbc16f00eda72866a92bb28af1753ffbd56744fb6e2e9cd8e"
 
 [[package]]
 name = "regex-syntax"
