@@ -118,6 +118,7 @@ def test_adjoint(
 @pytest.mark.parametrize(
     "name, get_gate",
     [
+        ("delay", lambda qis: qis.delay),
         ("rx", lambda qis: qis.rx),
         ("ry", lambda qis: qis.ry),
         ("rz", lambda qis: qis.rz),
@@ -130,7 +131,7 @@ def test_adjoint(
         lambda _: 1.0,
     ],
 )
-def test_rotated(
+def test_double_param_gates(
     name: str,
     get_gate: Callable[[BasicQisBuilder], Callable[[Union[Value, float], Value], None]],
     get_value: Callable[[Context], Union[Value, float]],
