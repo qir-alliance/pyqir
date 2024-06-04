@@ -234,6 +234,15 @@ class Builder:
         """
         ...
 
+    def dyn_qubit(self, id: Value) -> Value:
+        """
+        Converts a dynamically-calculated qubit index to a Qubit pointer
+
+        :param id: The qubit id as a Value
+        :returns: A Value for a Qubit pointer
+        """
+        ...
+
     def call(
         self,
         callee: Value,
@@ -275,6 +284,26 @@ class Builder:
 
         :param dest: The destination block.
         :returns: The branch instruction.
+        """
+        ...
+
+    def condbr(self, if_: Value, then: BasicBlock, else_: BasicBlock) -> Instruction:
+        """
+        Inserts an conditional branch instruction.
+
+        :param if_: The condition
+        :param then: The destination block if condition is 1
+        :param else_: The destination block if condition is 0
+        :returns: The branch instruction.
+        """
+        ...
+
+    def phi(self, value: Type) -> Instruction:
+        """
+        Inserts a phi node.
+
+        :param type: The type of the phi node
+        :returns: The phi node.
         """
         ...
 
@@ -738,6 +767,10 @@ class Opcode(Enum):
 
 class Phi(Instruction):
     """A phi node instruction."""
+
+    def add_incoming(self, value: Value, block: BasicBlock):
+        """Adds an incoming value to the end of the phi list."""
+        ...
 
     @property
     def incoming(self) -> List[Tuple[Value, BasicBlock]]:
