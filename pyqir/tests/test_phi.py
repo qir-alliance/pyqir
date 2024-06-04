@@ -53,7 +53,7 @@ def test_ghz_loop() -> None:
     for i in range(num_qubits):
         pyqir.rt.result_record_output(builder, pyqir.result(context, i), nullptr)
 
-    builder.ret()
+    builder.ret(None)
     mod.verify()
 
     ir = str(mod)

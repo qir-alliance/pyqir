@@ -298,7 +298,7 @@ class Builder:
         """
         ...
 
-    def phi(self, value: Type) -> Instruction:
+    def phi(self, value: Type) -> Phi:
         """
         Inserts a phi node.
 
@@ -768,7 +768,7 @@ class Opcode(Enum):
 class Phi(Instruction):
     """A phi node instruction."""
 
-    def add_incoming(self, value: Value, block: BasicBlock):
+    def add_incoming(self, value: Value, block: BasicBlock) -> None:
         """Adds an incoming value to the end of the phi list."""
         ...
 
