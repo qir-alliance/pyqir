@@ -37,7 +37,11 @@ pub(crate) unsafe fn builder_module(builder: LLVMBuilderRef) -> LLVMModuleRef {
         .as_ptr()
 }
 
-pub(crate) unsafe fn no_param(module: LLVMModuleRef, name: &str, functor: Functor) -> (LLVMTypeRef, LLVMValueRef) {
+pub(crate) unsafe fn no_param(
+    module: LLVMModuleRef,
+    name: &str,
+    functor: Functor,
+) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut []);
     (ty, declare_qis(module, name, functor, ty))
@@ -64,21 +68,30 @@ pub(crate) unsafe fn two_qubit_gate(
     (ty, declare_qis(module, name, functor, ty))
 }
 
-pub(crate) unsafe fn controlled_gate(module: LLVMModuleRef, name: &str) -> (LLVMTypeRef, LLVMValueRef) {
+pub(crate) unsafe fn controlled_gate(
+    module: LLVMModuleRef,
+    name: &str,
+) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
     let qubit = types::qubit(context);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit]);
     (ty, declare_qis(module, name, Functor::Body, ty))
 }
 
-pub(crate) unsafe fn doubly_controlled_gate(module: LLVMModuleRef, name: &str) -> (LLVMTypeRef, LLVMValueRef) {
+pub(crate) unsafe fn doubly_controlled_gate(
+    module: LLVMModuleRef,
+    name: &str,
+) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
     let qubit = types::qubit(context);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit, qubit]);
     (ty, declare_qis(module, name, Functor::Body, ty))
 }
 
-pub(crate) unsafe fn rotation_gate(module: LLVMModuleRef, name: &str) -> (LLVMTypeRef, LLVMValueRef) {
+pub(crate) unsafe fn rotation_gate(
+    module: LLVMModuleRef,
+    name: &str,
+) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
     let ty = function_type(
         LLVMVoidTypeInContext(context),

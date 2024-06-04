@@ -20,22 +20,12 @@ pub unsafe fn build_array_record_output(
     label: LLVMValueRef,
 ) {
     let (func_ty, func_val) = array_record_output(builder_module(builder));
-    build_call(
-        builder,
-        func_ty,
-        func_val,
-        &mut [num_elements, label],
-    );
+    build_call(builder, func_ty, func_val, &mut [num_elements, label]);
 }
 
 pub unsafe fn build_initialize(builder: LLVMBuilderRef, data: LLVMValueRef) {
     let (func_ty, func_val) = initialize(builder_module(builder));
-    build_call(
-        builder,
-        func_ty,
-        func_val,
-        &mut [data]
-    );
+    build_call(builder, func_ty, func_val, &mut [data]);
 }
 
 pub unsafe fn build_result_record_output(
@@ -44,12 +34,7 @@ pub unsafe fn build_result_record_output(
     label: LLVMValueRef,
 ) {
     let (func_ty, func_val) = result_record_output(builder_module(builder));
-    build_call(
-        builder,
-        func_ty,
-        func_val,
-        &mut [result, label],
-    );
+    build_call(builder, func_ty, func_val, &mut [result, label]);
 }
 
 pub unsafe fn build_tuple_record_output(
@@ -58,12 +43,7 @@ pub unsafe fn build_tuple_record_output(
     label: LLVMValueRef,
 ) {
     let (func_ty, func_val) = tuple_record_output(builder_module(builder));
-    build_call(
-        builder,
-        func_ty,
-        func_val,
-        &mut [num_elements, label],
-    );
+    build_call(builder, func_ty, func_val, &mut [num_elements, label]);
 }
 
 unsafe fn array_record_output(module: LLVMModuleRef) -> (LLVMTypeRef, LLVMValueRef) {

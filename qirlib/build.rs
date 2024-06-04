@@ -31,23 +31,48 @@ compile_error!("One of the features `qirlib/llvm11-0`, `qirlib/llvm12-0`, `qirli
 #[cfg(any(
     all(
         feature = "llvm11-0",
-        any(feature = "llvm12-0", feature = "llvm13-0", feature = "llvm14-0", feature = "llvm18-1")
+        any(
+            feature = "llvm12-0",
+            feature = "llvm13-0",
+            feature = "llvm14-0",
+            feature = "llvm18-1"
+        )
     ),
     all(
         feature = "llvm12-0",
-        any(feature = "llvm11-0", feature = "llvm13-0", feature = "llvm14-0", feature = "llvm18-1")
+        any(
+            feature = "llvm11-0",
+            feature = "llvm13-0",
+            feature = "llvm14-0",
+            feature = "llvm18-1"
+        )
     ),
     all(
         feature = "llvm13-0",
-        any(feature = "llvm11-0", feature = "llvm12-0", feature = "llvm14-0", feature = "llvm18-1")
+        any(
+            feature = "llvm11-0",
+            feature = "llvm12-0",
+            feature = "llvm14-0",
+            feature = "llvm18-1"
+        )
     ),
     all(
         feature = "llvm14-0",
-        any(feature = "llvm11-0", feature = "llvm12-0", feature = "llvm13-0", feature = "llvm18-1")
+        any(
+            feature = "llvm11-0",
+            feature = "llvm12-0",
+            feature = "llvm13-0",
+            feature = "llvm18-1"
+        )
     ),
     all(
         feature = "llvm18-1",
-        any(feature = "llvm11-0", feature = "llvm12-0", feature = "llvm13-0", feature = "llvm14-0")
+        any(
+            feature = "llvm11-0",
+            feature = "llvm12-0",
+            feature = "llvm13-0",
+            feature = "llvm14-0"
+        )
     ),
 ))]
 compile_error!("Features `qirlib/llvm11-0`, `qirlib/llvm12-0`, `qirlib/llvm13-0`, `qirlib/llvm14-0`, and `qirlib/llvm18-1` must be used exclusive.");
