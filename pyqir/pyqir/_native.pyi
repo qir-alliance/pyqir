@@ -234,15 +234,6 @@ class Builder:
         """
         ...
 
-    def dyn_qubit(self, id: Value) -> Value:
-        """
-        Converts a dynamically-calculated qubit index to a Qubit pointer
-
-        :param id: The qubit id as a Value
-        :returns: A Value for a Qubit pointer
-        """
-        ...
-
     def call(
         self,
         callee: Value,

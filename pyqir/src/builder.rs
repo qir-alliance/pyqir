@@ -12,7 +12,6 @@ use const_str::raw_cstr;
 use llvm_sys::{core::*, prelude::*, LLVMBuilder, LLVMType, LLVMTypeKind};
 use pyo3::{exceptions::PyValueError, prelude::*};
 use qirlib::builder::try_build_if;
-use qirlib::types;
 use std::{
     convert::{Into, TryInto},
     ops::Deref,
@@ -197,21 +196,6 @@ impl Builder {
                 rhs.as_ptr(),
                 raw_cstr!(""),
             );
-            Value::from_raw(py, owner, value)
-        }
-    }
-
-    /// Converts a dynamically-calculated qubit index to a Qubit pointer
-    ///
-    /// :param Value id: The qubit id as a Value
-    /// :returns: A Value for a Qubit pointer
-    /// :rtype: Value
-    #[pyo3(text_signature = "(self, id)")]
-    fn dyn_qubit(&self, py: Python, id: &Value) -> PyResult<PyObject> {
-        let owner = Owner::merge(py, [&self.owner, id.owner()])?;
-        unsafe {
-            let qubit_type = types::qubit(self.owner.context(py).borrow(py).as_ptr());
-            let value = LLVMBuildIntToPtr(self.as_ptr(), id.as_ptr(), qubit_type, raw_cstr!(""));
             Value::from_raw(py, owner, value)
         }
     }

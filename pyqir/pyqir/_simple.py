@@ -59,10 +59,11 @@ class SimpleModule:
         self._num_qubits = num_qubits
         self._num_results = num_results
 
-        entry_point = pyqir.entry_point(
+        self._entry_point = pyqir.entry_point(
             self._module, entry_point_name, num_qubits, num_results
         )
-        self._builder.insert_at_end(BasicBlock(context, "entry", entry_point))
+        self._entry_block = BasicBlock(context, "entry", self._entry_point)
+        self._builder.insert_at_end(self._entry_block)
 
     @property
     def context(self) -> Context:
@@ -83,6 +84,16 @@ class SimpleModule:
     def builder(self) -> Builder:
         """The instruction builder."""
         return self._builder
+
+    @property
+    def entry_point(self) -> Function:
+        """The entry point function (automatically generated)."""
+        return self._entry_point
+
+    @property
+    def entry_block(self) -> BasicBlock:
+        """The first basic block of the entry point (automatically generated)."""
+        return self._entry_block
 
     def add_external_function(self, name: str, ty: FunctionType) -> Function:
         """
