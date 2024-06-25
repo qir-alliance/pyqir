@@ -41,7 +41,7 @@ jobs:
               env: {},
             }
           - {
-              os: "macos-11",
+              os: "macos-12",
               arch: "amd64",
               target: "default",
               env: {
