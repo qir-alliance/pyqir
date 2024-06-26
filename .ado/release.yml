@@ -1,212 +1,269 @@
 name: pyqir-publish-$(BuildId)
 
-trigger: none
-pr: none
+# Run on merges to main to ensure that the latest code
+# is always able to be published.
+trigger:
+  branches:
+    include:
+    - main
+
+# Run the pipeline every day at 6:00 AM to ensure
+# codeql and other governance checks are up-to-date.
+schedules:
+- cron: "0 5 * * *"
+  displayName: 'Build for Component Governance'
+  branches:
+    include:
+    - main
+  always: true
+
 
 variables:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN_VERSION: "1.78"
   PYTHON_VERSION: "3.11"
+  LLVM_VERSION: 14
 
-jobs:
-- job: "Build"
-  strategy:
-    matrix:
-      linux_x64:
-        imageName: 'ubuntu-20.04'
-        arch: x86_64
-      mac_x64:
-        imageName: 'macOS-latest'
-        arch: x86_64
-        ARCHFLAGS: '-arch x86_64'
-      mac_aarch64:
-        imageName: 'macOS-latest'
-        arch: aarch64
-        ARCHFLAGS: '-arch arm64'
-      mac_universal:
-        imageName: 'macOS-latest'
-        arch: universal
-        ARCHFLAGS: '-arch arm64 -arch x86_64'
-      windows:
-        imageName: 'windows-latest'
-        arch: x86_64
-  pool:
-    vmImage: $(imageName)
-  variables:
-    arch: $(arch)
-  timeoutInMinutes: 300
+resources:
+  repositories:
+  - repository: 1ESPipelineTemplates
+    type: git
+    name: 1ESPipelineTemplates/1ESPipelineTemplates
+    ref: refs/tags/release
 
-  steps:
-  # common init steps
-  - task: RustInstaller@1
-    inputs:
-      rustVersion: ms-$(RUST_TOOLCHAIN_VERSION)
-      cratesIoFeedOverride: $(cratesIoFeedOverride)
-      toolchainFeed: $(toolchainFeed)
-    displayName: Install Rust toolchain
-    condition: ne(variables['Agent.OS'], 'Darwin')
+parameters:
+- name: matrix
+  type: object
+  default:
+  - name: linux_x86_64
+    poolName: 'Azure-Pipelines-DevTools-EO'
+    imageName: 'ubuntu-20.04'
+    os: linux
+    arch: x86_64
+  - name: mac_x86_64
+    poolName: 'Azure Pipelines'
+    imageName: 'macOS-latest'       # MacOS-specific Py (Mac is usually quite limited).
+    os: macOS
+    arch: x86_64
+    ARCHFLAGS: '-arch x86_64'
+  - name: mac_aarch64
+    poolName: 'Azure Pipelines'
+    imageName: 'macOS-latest'
+    os: macOS
+    arch: aarch64
+    ARCHFLAGS: '-arch arm64'
+    additionalRustTargets: aarch64-apple-darwin
+  - name: mac_universal
+    poolName: 'Azure Pipelines'
+    imageName: 'macOS-latest'
+    os: macOS
+    arch: universal
+    ARCHFLAGS: '-arch arm64 -arch x86_64'
+    additionalRustTargets: aarch64-apple-darwin
+  - name: windows_x86_64
+    poolName: 'Azure-Pipelines-DevTools-EO'
+    imageName: 'windows-latest'
+    os: windows
+    arch: x86_64
 
-  - task: RustInstaller@1
-    inputs:
-      rustVersion: ms-$(RUST_TOOLCHAIN_VERSION)
-      additionalTargets: aarch64-apple-darwin
-      cratesIoFeedOverride: $(cratesIoFeedOverride)
-      toolchainFeed: $(toolchainFeed)
-    displayName: Install Rust toolchain
-    condition: eq(variables['Agent.OS'], 'Darwin')
+extends:
+  template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
+  parameters:
+    sdl:
+      sourceAnalysisPool:
+        name: 'Azure-Pipelines-DevTools-EO'
+        image: windows-2022
+        os: windows
+    stages:
+    - stage: build
+      displayName: Build
+      jobs:
+      - ${{ each target in parameters.matrix }}:
+        - job: ${{ target.name }}
+          pool:
+            name: ${{ target.poolName }}
+            image: ${{ target.imageName }}
+            os: ${{ target.os }}
+          variables:
+            arch: ${{ target.arch }}
+            ${{ if target.ARCHFLAGS }}:
+              ARCHFLAGS: ${{ target.ARCHFLAGS }}
+            ${{ if eq(target.os, 'windows') }}:
+                LLVM_DIRECTORY: $(Build.SourcesDirectory)\target\llvm
+            ${{ else }}:
+                LLVM_DIRECTORY: $(Build.SourcesDirectory)/target/llvm
+          timeoutInMinutes: 30
+          templateContext:
+            outputs:
+            - output: pipelineArtifact
+              displayName: 'Upload Python Artifacts for ${{ target.os }} ${{ target.arch }}'
+              condition: succeeded()
+              targetPath: $(System.DefaultWorkingDirectory)/target/wheels
+              artifactName: wheel.${{ target.os }}.${{ target.arch }}
+          steps:
+          - task: RustInstaller@1
+            inputs:
+              rustVersion: ms-$(RUST_TOOLCHAIN_VERSION)
+              ${{ if target.additionalRustTargets }}:
+                additionalTargets: ${{ target.additionalRustTargets }}
+              cratesIoFeedOverride: $(cratesIoFeedOverride)
+              toolchainFeed: $(toolchainFeed)
+            displayName: Install Rust toolchain
 
-  - script: |
-      rustc --version
-      rustc --print target-list
-    displayName: View rust target info
+          - script: |
+              rustc --version
+              rustc --print target-list
+            displayName: View rust target info
+            condition: succeeded()
 
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: $(PYTHON_VERSION)
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: $(PYTHON_VERSION)
+            condition: succeeded()
 
-# prerequisites for building
-  - script: |
-      sudo apt-get install -y ninja-build
-    displayName: Install build dependencies
-    condition: eq(variables['Agent.OS'], 'Linux')
+          # Build or restore LLVM
+          - pwsh: New-Item -ItemType Directory -Path $(LLVM_DIRECTORY) -Force
+            displayName: Ensure cache dir exists
+            condition: succeeded()
 
-  - script: |
-      brew install ninja
-    displayName: Install build dependencies
-    condition: eq(variables['Agent.OS'], 'Darwin')
+          - task: Cache@2
+            inputs:
+              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
+              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
+              path: $(LLVM_DIRECTORY)
+              cacheHitVar: CACHE_RESTORED
+            displayName: Cache LLVM
+            condition: succeeded()
 
-  - script: |
-      choco install --accept-license -y ninja
-    displayName: Install build dependencies
-    condition: eq(variables['Agent.OS'], 'Windows_NT')
+          - pwsh: |
+              git config --global core.longpaths true
 
-# build
+              $directory = Resolve-Path $(LLVM_DIRECTORY)
 
-  - pwsh: ./build.ps1 -t default
-    displayName: Build
-    condition: ne(variables['Agent.OS'], 'Darwin')
+              # Tell the build where LLVM is installed
+              # This is usually automatic, but we are using a different directory than the default
+              Write-Host "##vso[task.setvariable variable=QIRLIB_LLVM_EXTERNAL_DIR;]$directory"
 
-  - pwsh: env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t build
-    displayName: Build
-    condition: eq(variables['Agent.OS'], 'Darwin')
+              # Tell the build what llvm feature version to use
+              $feature = "llvm$(LLVM_VERSION)-0"
+              $variableName = "LLVM_SYS_$(LLVM_VERSION)0_PREFIX"
+              Write-Host "##vso[task.setvariable variable=PYQIR_LLVM_FEATURE_VERSION;]$feature"
 
-  - pwsh: ./build.ps1 -t test
-    displayName: Build
-    condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
+              # Tell LLVM-SYS where LLVM is installed
+              Write-Host "##vso[task.setvariable variable=$variableName;]$directory"
 
-# publish the python artifacts
+              # Tell the qirlib build where to cache the LLVM directory and to not download LLVM
+              Write-Host "##vso[task.setvariable variable=QIRLIB_CACHE_DIR;]$directory"
+              Write-Host "##vso[task.setvariable variable=QIRLIB_DOWNLOAD_LLVM;]false"
+            displayName: Configure Environment
+            condition: succeeded()
 
-  - script: |
-      dir target\wheels\*
-    displayName: List Py Packages on Win
-    condition: eq(variables['Agent.OS'], 'Windows_NT')
+          # prerequisites for building
+          - script: |
+              sudo apt-get install -y ninja-build
+            displayName: Install build dependencies
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), ne(variables.CACHE_RESTORED, 'true'))
 
-  - script: |
-      ls target/wheels/*
-    displayName: List Py Packages on non-Win
-    condition: ne(variables['Agent.OS'], 'Windows_NT')
+          - script: |
+              brew install ninja
+            displayName: Install build dependencies
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables.CACHE_RESTORED, 'true'))
 
-  - publish: $(System.DefaultWorkingDirectory)/target/wheels
-    artifact: Wheels.Mac.${{ variables['arch'] }}
-    displayName: Upload Python Artifacts Mac
-    condition: eq(variables['Agent.OS'], 'Darwin')
+          - script: |
+              choco install --accept-license -y ninja
+            displayName: Install build dependencies
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), ne(variables.CACHE_RESTORED, 'true'))
 
-  - publish: $(System.DefaultWorkingDirectory)/target/wheels
-    artifact: Wheels.Win.${{ variables['arch'] }}
-    displayName: Upload Python Artifacts Win
-    condition: eq(variables['Agent.OS'], 'Windows_NT')
+          # build and install LLVM
 
-  - publish: $(System.DefaultWorkingDirectory)/target/wheels
-    artifact: Wheels.Linux.${{ variables['arch'] }}
-    displayName: Upload Python Artifacts Linux
-    condition: eq(variables['Agent.OS'], 'Linux')
+          - pwsh: ./build.ps1 -t install-llvm-from-source
+            displayName: Build and Install LLVM
+            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), ne(variables['Agent.OS'], 'Darwin'))
 
-- job: "Merge"
-  dependsOn:
-  - Build
-  pool:
-    vmImage: 'ubuntu-latest'
+          - script: |
+              echo "env ARCHFLAGS='$(ARCHFLAGS)' ./build.ps1 -t install-llvm-from-source"
+              env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t install-llvm-from-source
+            displayName: Build and Install LLVM
+            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), eq(variables['Agent.OS'], 'Darwin'))
 
-  steps:
-  - download: current
-    artifact: Wheels.Win.x86_64
-    displayName: Download x86_64 Python Artifacts Win
+          # Build PyQIR
+          - pwsh: ./build.ps1 -t default
+            displayName: Build
+            condition: and(succeeded(), ne(variables['Agent.OS'], 'Darwin'))
 
-  - download: current
-    artifact: Wheels.Mac.x86_64
-    displayName: Download Python Artifacts Mac
+          - pwsh: env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t build
+            displayName: Build
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
 
-  - download: current
-    artifact: Wheels.Mac.aarch64
-    displayName: Download Python Artifacts Mac
+          - pwsh: ./build.ps1 -t test
+            displayName: Build
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
 
-  - download: current
-    artifact: Wheels.Mac.universal
-    displayName: Download Python Artifacts Mac
+          - script: |
+              dir target\wheels\*
+            displayName: List Py Packages on Win
+            condition: eq(variables['Agent.OS'], 'Windows_NT')
 
-  - download: current
-    artifact: Wheels.Linux.x86_64
-    displayName: Download x86_64 Python Artifacts Linux
+          - script: |
+              ls target/wheels/*
+            displayName: List Py Packages on non-Win
+            condition: ne(variables['Agent.OS'], 'Windows_NT')
 
-  - script: |
-      mkdir -p                            target/wheels
-      mv ../Wheels.Linux.x86_64/*.whl     target/wheels
-      mv ../Wheels.Win.x86_64/*.whl       target/wheels
-      mv ../Wheels.Mac.x86_64/*.whl       target/wheels
-      mv ../Wheels.Mac.aarch64/*.whl      target/wheels
-      mv ../Wheels.Mac.universal/*.whl    target/wheels
-      ls                                  target/wheels/*
-    displayName: Move Py Artifacts to Publishing Dir
+    - stage: approval
+      displayName: Approval
+      dependsOn: build
+      condition: and(succeeded(), eq(variables['Build.Reason'], 'Manual'))
+      jobs:
+      - job: "Approval"
+        pool: server
+        timeoutInMinutes: 1440 # job times out in 1 day
+        steps:
+        - task: ManualValidation@0
+          timeoutInMinutes: 1440 # task times out in 1 day
+          inputs:
+            notifyUsers: ''
+            instructions: 'Please verify artifacts and approve the release'
+            onTimeout: 'reject'
 
-  - publish: $(System.DefaultWorkingDirectory)/target/wheels
-    artifact: wheels
-    displayName: Upload Python Artifacts
+    - stage: release
+      displayName: Release
+      dependsOn: approval
+      condition: and(succeeded(), eq(variables['Build.Reason'], 'Manual'))
+      jobs:
+      # We will get a warning about extra files in the sbom validation saying it failed.
+      # This is expected as we have the wheels being downloaded to the same directory.
+      # So each successive wheel will have the previous wheel in the directory and each
+      # will be flagged as an extra file. See:
+      # http://aka.ms/drop-validation-failure-additional-files
+      - job: "Publish_Python_Packages"
+        pool:
+          name: 'Azure-Pipelines-DevTools-EO'
+          image: 'ubuntu-latest'
+          os: linux
+        templateContext:
+          type: releaseJob
+          isProduction: true
+          inputs:
+          - ${{ each target in parameters.matrix }}:
+            - input: pipelineArtifact
+              artifactName: wheel.${{ target.os }}.${{ target.arch }}
+              targetPath: $(System.DefaultWorkingDirectory)/target/wheels
+        steps:
+        - script: |
+            ls $(System.DefaultWorkingDirectory)/target/wheels
+          displayName: Display Py Artifacts in Publishing Dir
 
-
-- job: "Approval"
-  dependsOn:
-  - Build
-  - Merge
-
-  pool: server
-  timeoutInMinutes: 1440 # job times out in 1 day
-  steps:
-  - task: ManualValidation@0
-    timeoutInMinutes: 1440 # task times out in 1 day
-    inputs:
-      notifyUsers: ''
-      instructions: 'Please verify artifacts and approve the release'
-      onTimeout: 'reject'
-
-
-- job: "Publish_Python_Packages"
-  dependsOn: Approval
-  pool:
-    vmImage: 'ubuntu-latest'
-
-  steps:
-  - download: current
-    artifact: wheels
-    displayName: Download Python Artifacts
-
-  - script: |
-      mkdir -p                            target/wheels
-      mv ../wheels/*.whl                  target/wheels
-      ls                                  target/wheels/*
-    displayName: Move Py Artifacts to Publishing Dir
-
-# Add ESRP steps here
-
-  - task: EsrpRelease@4
-    displayName: Publish Py Packages
-    inputs:
-     ConnectedServiceName: 'ESRP_Release'
-     Intent: 'PackageDistribution'
-     ContentType: 'PyPi'
-     FolderLocation: '$(System.DefaultWorkingDirectory)/target/wheels'
-     Owners: '$(OwnerPersonalAlias)@microsoft.com'  # NB: Group email here fails the task with non-actionable output.
-     Approvers: 'billti@microsoft.com'
-     # Auto-inserted Debugging defaults:
-     ServiceEndpointUrl: 'https://api.esrp.microsoft.com'
-     MainPublisher: 'QuantumDevelpmentKit'          # ESRP Team's Correction (including the critical typo "Develpm").
-     DomainTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
+        - task: EsrpRelease@4
+          condition: succeeded()
+          displayName: Publish Py Packages
+          inputs:
+            ConnectedServiceName: 'ESRP_Release'
+            Intent: 'PackageDistribution'
+            ContentType: 'PyPi'
+            FolderLocation: '$(System.DefaultWorkingDirectory)/target/wheels'
+            Owners: '$(OwnerPersonalAlias)@microsoft.com'  # NB: Group email here fails the task with non-actionable output.
+            Approvers: 'billti@microsoft.com'
+            # Auto-inserted Debugging defaults:
+            ServiceEndpointUrl: 'https://api.esrp.microsoft.com'
+            MainPublisher: 'QuantumDevelpmentKit'          # ESRP Team's Correction (including the critical typo "Develpm").
+            DomainTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
