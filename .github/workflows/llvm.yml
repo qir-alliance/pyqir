@@ -29,7 +29,7 @@ jobs:
               env: {},
             }
           - {
-              os: "macos-11",
+              os: "macos-12",
               arch: "amd64",
               env: {},
             }
@@ -57,7 +57,7 @@ jobs:
         if: ${{ matrix.config.os == 'windows-2019' }}
       - name: MacOS - Install build dependencies, ccache, ninja
         run: brew install ccache ninja
-        if: ${{ matrix.config.os == 'macos-11' }}
+        if: ${{ matrix.config.os == 'macos-12' }}
       - name: MacOS - Install build dependencies, ccache, ninja
         run: brew install ccache ninja
         if: ${{ matrix.config.os == 'macos-14' }}
