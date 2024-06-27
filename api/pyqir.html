@@ -709,6 +709,27 @@ and zero callables should use this module’s builder to build instructions.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pyqir.Builder.condbr">
+<span class="sig-name descname"><span class="pre">condbr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">then</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">else_</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.condbr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts an conditional branch instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>if</strong> (<a class="reference internal" href="#pyqir.BasicBlock" title="pyqir.BasicBlock"><em>BasicBlock</em></a>) – The condition</p></li>
+<li><p><strong>then</strong> (<a class="reference internal" href="#pyqir.BasicBlock" title="pyqir.BasicBlock"><em>BasicBlock</em></a>) – The destination block if condition is 1</p></li>
+<li><p><strong>else</strong> (<a class="reference internal" href="#pyqir.BasicBlock" title="pyqir.BasicBlock"><em>BasicBlock</em></a>) – The destination block if condition is 0</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The branch instruction.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Instruction" title="pyqir.Instruction">Instruction</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pyqir.Builder.icmp">
 <span class="sig-name descname"><span class="pre">icmp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.icmp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Inserts an integer comparison instruction.</p>
@@ -817,6 +838,20 @@ true and false callables should use this module’s builder to build instruction
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#pyqir.Value" title="pyqir.Value">Value</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.Builder.phi">
+<span class="sig-name descname"><span class="pre">phi</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.phi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a phi node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The phi node.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#pyqir.Instruction" title="pyqir.Instruction">Instruction</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1997,6 +2032,12 @@ list is empty.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">Phi</span></span><a class="headerlink" href="#pyqir.Phi" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pyqir.Instruction" title="pyqir.Instruction"><code class="xref py py-class docutils literal notranslate"><span class="pre">Instruction</span></code></a></p>
 <p>A phi node instruction.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.Phi.add_incoming">
+<span class="sig-name descname"><span class="pre">add_incoming</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Phi.add_incoming" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an incoming value to the end of the phi list.</p>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyqir.Phi.incoming">
 <span class="sig-name descname"><span class="pre">incoming</span></span><a class="headerlink" href="#pyqir.Phi.incoming" title="Permalink to this definition">¶</a></dt>
@@ -2100,6 +2141,18 @@ list is empty.</p>
 <dt class="sig sig-object py" id="pyqir.SimpleModule.context">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">context</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.Context" title="pyqir.Context"><span class="pre">Context</span></a></em><a class="headerlink" href="#pyqir.SimpleModule.context" title="Permalink to this definition">¶</a></dt>
 <dd><p>The LLVM context.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.SimpleModule.entry_block">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">entry_block</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.BasicBlock" title="pyqir.BasicBlock"><span class="pre">BasicBlock</span></a></em><a class="headerlink" href="#pyqir.SimpleModule.entry_block" title="Permalink to this definition">¶</a></dt>
+<dd><p>The first basic block of the entry point (automatically generated).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.SimpleModule.entry_point">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">entry_point</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.Function" title="pyqir.Function"><span class="pre">Function</span></a></em><a class="headerlink" href="#pyqir.SimpleModule.entry_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>The entry point function (automatically generated).</p>
 </dd></dl>
 
 <dl class="py method">
@@ -2715,12 +2768,14 @@ list is empty.</p>
 <li><a class="reference internal" href="#pyqir.Builder.and_"><code class="docutils literal notranslate"><span class="pre">Builder.and_()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.br"><code class="docutils literal notranslate"><span class="pre">Builder.br()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.call"><code class="docutils literal notranslate"><span class="pre">Builder.call()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.Builder.condbr"><code class="docutils literal notranslate"><span class="pre">Builder.condbr()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.icmp"><code class="docutils literal notranslate"><span class="pre">Builder.icmp()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.if_"><code class="docutils literal notranslate"><span class="pre">Builder.if_()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.insert_at_end"><code class="docutils literal notranslate"><span class="pre">Builder.insert_at_end()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.lshr"><code class="docutils literal notranslate"><span class="pre">Builder.lshr()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.mul"><code class="docutils literal notranslate"><span class="pre">Builder.mul()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.or_"><code class="docutils literal notranslate"><span class="pre">Builder.or_()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.Builder.phi"><code class="docutils literal notranslate"><span class="pre">Builder.phi()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.ret"><code class="docutils literal notranslate"><span class="pre">Builder.ret()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.shl"><code class="docutils literal notranslate"><span class="pre">Builder.shl()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.sub"><code class="docutils literal notranslate"><span class="pre">Builder.sub()</span></code></a></li>
@@ -2925,6 +2980,7 @@ list is empty.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#pyqir.Phi"><code class="docutils literal notranslate"><span class="pre">Phi</span></code></a><ul>
+<li><a class="reference internal" href="#pyqir.Phi.add_incoming"><code class="docutils literal notranslate"><span class="pre">Phi.add_incoming()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Phi.incoming"><code class="docutils literal notranslate"><span class="pre">Phi.incoming</span></code></a></li>
 </ul>
 </li>
@@ -2939,6 +2995,8 @@ list is empty.</p>
 <li><a class="reference internal" href="#pyqir.SimpleModule.bitcode"><code class="docutils literal notranslate"><span class="pre">SimpleModule.bitcode()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.SimpleModule.builder"><code class="docutils literal notranslate"><span class="pre">SimpleModule.builder</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.SimpleModule.context"><code class="docutils literal notranslate"><span class="pre">SimpleModule.context</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.SimpleModule.entry_block"><code class="docutils literal notranslate"><span class="pre">SimpleModule.entry_block</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.SimpleModule.entry_point"><code class="docutils literal notranslate"><span class="pre">SimpleModule.entry_point</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.SimpleModule.ir"><code class="docutils literal notranslate"><span class="pre">SimpleModule.ir()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.SimpleModule.qubits"><code class="docutils literal notranslate"><span class="pre">SimpleModule.qubits</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.SimpleModule.results"><code class="docutils literal notranslate"><span class="pre">SimpleModule.results</span></code></a></li>
