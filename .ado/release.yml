@@ -1,5 +1,8 @@
 name: pyqir-publish-$(BuildId)
 
+# This pipeline is used to build and publish the PyQIR package
+# It uses a Microsoft ADO template for additional security checks.
+
 # Run on merges to main to ensure that the latest code
 # is always able to be published.
 trigger:
@@ -40,19 +43,6 @@ parameters:
     imageName: 'ubuntu-20.04'
     os: linux
     arch: x86_64
-  - name: mac_x86_64
-    poolName: 'Azure Pipelines'
-    imageName: 'macOS-latest'       # MacOS-specific Py (Mac is usually quite limited).
-    os: macOS
-    arch: x86_64
-    ARCHFLAGS: '-arch x86_64'
-  - name: mac_aarch64
-    poolName: 'Azure Pipelines'
-    imageName: 'macOS-latest'
-    os: macOS
-    arch: aarch64
-    ARCHFLAGS: '-arch arm64'
-    additionalRustTargets: aarch64-apple-darwin
   - name: mac_universal
     poolName: 'Azure Pipelines'
     imageName: 'macOS-latest'
