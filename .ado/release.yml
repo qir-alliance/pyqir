@@ -82,7 +82,7 @@ extends:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)\target\llvm
             ${{ else }}:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)/target/llvm
-          timeoutInMinutes: 30
+          timeoutInMinutes: 300
           templateContext:
             outputs:
             - output: pipelineArtifact
