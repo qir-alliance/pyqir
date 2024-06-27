@@ -4,6 +4,7 @@
 use crate::{
     core::Context,
     instructions::IntPredicate,
+    types::Type,
     values::{BasicBlock, Literal, Owner, Value},
 };
 use const_str::raw_cstr;
@@ -286,6 +287,54 @@ impl Builder {
         let owner = Owner::merge(py, [&self.owner, dest.as_ref().owner()])?;
         unsafe {
             let value = LLVMBuildBr(self.builder.as_ptr(), dest.as_ptr());
+            Value::from_raw(py, owner, value)
+        }
+    }
+
+    /// Inserts an conditional branch instruction.
+    ///
+    /// :param BasicBlock if_: The condition
+    /// :param BasicBlock then: The destination block if condition is 1
+    /// :param BasicBlock else_: The destination block if condition is 0
+    /// :returns: The branch instruction.
+    /// :rtype: Instruction
+    #[pyo3(text_signature = "(if_, then, else_)")]
+    fn condbr(
+        &self,
+        py: Python,
+        if_: &Value,
+        then: PyRef<BasicBlock>,
+        else_: PyRef<BasicBlock>,
+    ) -> PyResult<PyObject> {
+        let owner = Owner::merge(
+            py,
+            [
+                &self.owner,
+                if_.owner(),
+                then.as_ref().owner(),
+                else_.as_ref().owner(),
+            ],
+        )?;
+        unsafe {
+            let value = LLVMBuildCondBr(
+                self.builder.as_ptr(),
+                if_.as_ptr(),
+                then.as_ptr(),
+                else_.as_ptr(),
+            );
+            Value::from_raw(py, owner, value)
+        }
+    }
+
+    /// Inserts a phi node.
+    ///
+    /// :returns: The phi node.
+    /// :rtype: Instruction
+    #[pyo3(text_signature = "(type)")]
+    fn phi(&self, py: Python, r#type: &Type) -> PyResult<PyObject> {
+        unsafe {
+            let owner = self.owner.clone_ref(py);
+            let value = LLVMBuildPhi(self.builder.as_ptr(), r#type.as_ptr(), raw_cstr!(""));
             Value::from_raw(py, owner, value)
         }
     }

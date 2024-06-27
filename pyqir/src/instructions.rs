@@ -607,6 +607,15 @@ pub(crate) struct Phi;
 
 #[pymethods]
 impl Phi {
+    /// Adds an incoming value to the end of the phi list.
+    #[pyo3(text_signature = "(value, block)")]
+    fn add_incoming(slf: PyRef<Self>, value: &Value, block: PyRef<BasicBlock>) {
+        let slf = slf.into_super().into_super();
+        unsafe {
+            LLVMAddIncoming(slf.as_ptr(), &mut value.as_ptr(), &mut block.as_ptr(), 1);
+        }
+    }
+
     /// The incoming values and their preceding basic blocks.
     ///
     /// :type: typing.List[typing.Tuple[Value, BasicBlock]]

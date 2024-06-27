@@ -278,6 +278,26 @@ class Builder:
         """
         ...
 
+    def condbr(self, if_: Value, then: BasicBlock, else_: BasicBlock) -> Instruction:
+        """
+        Inserts an conditional branch instruction.
+
+        :param if_: The condition
+        :param then: The destination block if condition is 1
+        :param else_: The destination block if condition is 0
+        :returns: The branch instruction.
+        """
+        ...
+
+    def phi(self, value: Type) -> Phi:
+        """
+        Inserts a phi node.
+
+        :param type: The type of the phi node
+        :returns: The phi node.
+        """
+        ...
+
     def ret(self, value: Optional[Value]) -> Instruction:
         """
         Inserts a return instruction.
@@ -738,6 +758,10 @@ class Opcode(Enum):
 
 class Phi(Instruction):
     """A phi node instruction."""
+
+    def add_incoming(self, value: Value, block: BasicBlock) -> None:
+        """Adds an incoming value to the end of the phi list."""
+        ...
 
     @property
     def incoming(self) -> List[Tuple[Value, BasicBlock]]:
