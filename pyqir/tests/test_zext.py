@@ -18,15 +18,13 @@ def test_zext() -> None:
     i16 = pyqir.IntType(context, 16)
     i32 = pyqir.IntType(context, 32)
     random_int = module.add_external_function(
-            "random_int",
-            pyqir.FunctionType(
-                i16,
-                [i16],
-            ),
-        )
-    const1 = builder.call(
-                random_int, [pyqir.const(i16, 0)]
-            )
+        "random_int",
+        pyqir.FunctionType(
+            i16,
+            [i16],
+        ),
+    )
+    const1 = builder.call(random_int, [pyqir.const(i16, 0)])
     builder.zext(const1, i32)
     ir = module.ir()
 

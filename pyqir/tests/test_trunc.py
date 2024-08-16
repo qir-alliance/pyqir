@@ -18,15 +18,13 @@ def test_trunc() -> None:
     i16 = pyqir.IntType(context, 16)
     i32 = pyqir.IntType(context, 32)
     random_int = module.add_external_function(
-            "random_int",
-            pyqir.FunctionType(
-                i32,
-                [i32],
-            ),
-        )
-    const = builder.call(
-                random_int, [pyqir.const(i32, 0)]
-            )
+        "random_int",
+        pyqir.FunctionType(
+            i32,
+            [i32],
+        ),
+    )
+    const = builder.call(random_int, [pyqir.const(i32, 0)])
     builder.trunc(const, i16)
     ir = module.ir()
 
