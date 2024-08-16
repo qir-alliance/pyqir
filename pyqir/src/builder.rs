@@ -368,7 +368,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, val, ty)")]
     fn zext(&self, py: Python, val: &Value, ty: &Type) -> PyResult<PyObject> {
-        let owner = Owner::merge(py, [&self.owner, val.owner(), ty.owner()])?;
+        let owner = Owner::merge(py, [&self.owner, val.owner()])?;
         unsafe {
             let value = LLVMBuildZExt(self.as_ptr(), val.as_ptr(), ty.as_ptr(), raw_cstr!(""));
             Value::from_raw(py, owner, value)
@@ -383,7 +383,7 @@ impl Builder {
     /// :rtype: Value
     #[pyo3(text_signature = "(self, val, ty)")]
     fn trunc(&self, py: Python, val: &Value, ty: &Type) -> PyResult<PyObject> {
-        let owner = Owner::merge(py, [&self.owner, val.owner(), ty.owner()])?;
+        let owner = Owner::merge(py, [&self.owner, val.owner()])?;
         unsafe {
             let value = LLVMBuildTrunc(self.as_ptr(), val.as_ptr(), ty.as_ptr(), raw_cstr!(""));
             Value::from_raw(py, owner, value)
