@@ -313,7 +313,7 @@ class Builder:
 
         :param Value val: Value to be converted.
         :param Type ty: Target type.
-        :returns: The result.
+        :returns: The zext instruction.
         """
         ...
 
@@ -323,7 +323,7 @@ class Builder:
 
         :param Value val: Value to be converted.
         :param Type ty: Target type.
-        :returns: The result.
+        :returns: The trunc instruction.
         """
         ...
 

@@ -364,7 +364,7 @@ impl Builder {
     ///
     /// :param Value val: Value to be converted.
     /// :param Type ty: Target type.
-    /// :returns: The result.
+    /// :returns: The zext instruction.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, val, ty)")]
     fn zext(&self, py: Python, val: &Value, ty: &Type) -> PyResult<PyObject> {
@@ -379,7 +379,7 @@ impl Builder {
     ///
     /// :param Value val: Value to be converted.
     /// :param Type ty: Target type.
-    /// :returns: The result.
+    /// :returns: The trunc instruction.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, val, ty)")]
     fn trunc(&self, py: Python, val: &Value, ty: &Type) -> PyResult<PyObject> {
