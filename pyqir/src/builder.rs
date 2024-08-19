@@ -359,6 +359,36 @@ impl Builder {
         };
         unsafe { Value::from_raw(py, owner, value) }
     }
+
+    /// The ‘zext’ instruction zero extends its operand to the given type.
+    ///
+    /// :param Value val: Value to be converted.
+    /// :param Type ty: Target type.
+    /// :returns: The result.
+    /// :rtype: Value
+    #[pyo3(text_signature = "(self, val, ty)")]
+    fn zext(&self, py: Python, val: &Value, ty: &Type) -> PyResult<PyObject> {
+        let owner = Owner::merge(py, [&self.owner, val.owner()])?;
+        unsafe {
+            let value = LLVMBuildZExt(self.as_ptr(), val.as_ptr(), ty.as_ptr(), raw_cstr!(""));
+            Value::from_raw(py, owner, value)
+        }
+    }
+
+    /// The ‘trunc’ instruction truncates its operand to the given type.
+    ///
+    /// :param Value val: Value to be converted.
+    /// :param Type ty: Target type.
+    /// :returns: The result.
+    /// :rtype: Value
+    #[pyo3(text_signature = "(self, val, ty)")]
+    fn trunc(&self, py: Python, val: &Value, ty: &Type) -> PyResult<PyObject> {
+        let owner = Owner::merge(py, [&self.owner, val.owner()])?;
+        unsafe {
+            let value = LLVMBuildTrunc(self.as_ptr(), val.as_ptr(), ty.as_ptr(), raw_cstr!(""));
+            Value::from_raw(py, owner, value)
+        }
+    }
 }
 
 impl Builder {

@@ -307,6 +307,26 @@ class Builder:
         """
         ...
 
+    def zext(self, value: Value, type: Type) -> Value:
+        """
+        Inserts an zext instruction.
+
+        :param Value val: Value to be converted.
+        :param Type ty: Target type.
+        :returns: The result.
+        """
+        ...
+
+    def trunc(self, value: Value, type: Type) -> Value:
+        """
+        Inserts an trunc instruction.
+
+        :param Value val: Value to be converted.
+        :param Type ty: Target type.
+        :returns: The result.
+        """
+        ...
+
 class Call(Instruction):
     """A call instruction."""
 
