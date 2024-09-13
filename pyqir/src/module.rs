@@ -283,7 +283,7 @@ impl Module {
             // and we'll get a segfault if we drop it.
             forget(other);
             if result == 0 {
-                return None;
+                None
             } else {
                 // in the future we need to return a proper error message
                 // using `LLVMContextSetDiagnosticHandler`. This is a lot of work
