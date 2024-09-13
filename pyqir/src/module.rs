@@ -9,6 +9,7 @@ use crate::{
     metadata::Metadata,
     values::{Constant, Owner, Value},
 };
+use core::mem::forget;
 use core::slice;
 #[allow(clippy::wildcard_imports, deprecated)]
 use llvm_sys::{
@@ -22,9 +23,13 @@ use llvm_sys::{
 };
 use pyo3::{exceptions::PyValueError, prelude::*, pyclass::CompareOp, types::PyBytes};
 use qirlib::module::FlagBehavior;
-use core::mem::forget;
 use std::{
-   collections::hash_map::DefaultHasher, ffi::CString, hash::{Hash, Hasher}, ops::Deref, ptr::{self, NonNull}, str
+    collections::hash_map::DefaultHasher,
+    ffi::CString,
+    hash::{Hash, Hasher},
+    ops::Deref,
+    ptr::{self, NonNull},
+    str,
 };
 
 /// A module is a collection of global values.
@@ -268,7 +273,9 @@ impl Module {
     /// :rtype: typing.Optional[str]
     pub fn link(&self, other: Py<Module>, py: Python) -> Option<String> {
         if self.context.borrow(py).as_ptr() != other.borrow(py).context.borrow(py).as_ptr() {
-            return Some("Cannot link modules from different contexts. Modules are untouched.".to_string());
+            return Some(
+                "Cannot link modules from different contexts. Modules are untouched.".to_string(),
+            );
         }
         unsafe {
             let result = LLVMLinkModules2(self.module.as_ptr(), other.borrow(py).module.as_ptr());
