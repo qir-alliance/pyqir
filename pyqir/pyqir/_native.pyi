@@ -681,6 +681,16 @@ class Module:
         """Converts this module into an LLVM IR string."""
         ...
 
+    def link(self, other: Module) -> Optional[str]:
+        """
+        Link the supplied module into the current module.
+        Destroys the supplied module.
+
+        :returns: An error message if linking failed or `None` if linking succeeded.
+        :rtype: typing.Optional[str]
+        """
+        ...
+
 class ModuleFlagBehavior(Enum):
     """Module flag behavior choices"""
 

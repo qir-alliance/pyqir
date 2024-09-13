@@ -17,17 +17,14 @@ use llvm_sys::{
     bit_writer::LLVMWriteBitcodeToMemoryBuffer,
     core::*,
     ir_reader::LLVMParseIRInContext,
+    linker::LLVMLinkModules2,
     LLVMLinkage, LLVMModule,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, pyclass::CompareOp, types::PyBytes};
 use qirlib::module::FlagBehavior;
+use core::mem::forget;
 use std::{
-    collections::hash_map::DefaultHasher,
-    ffi::CString,
-    hash::{Hash, Hasher},
-    ops::Deref,
-    ptr::{self, NonNull},
-    str,
+   collections::hash_map::DefaultHasher, ffi::CString, hash::{Hash, Hasher}, ops::Deref, ptr::{self, NonNull}, str
 };
 
 /// A module is a collection of global values.
@@ -261,6 +258,31 @@ impl Module {
                 .to_str()
                 .unwrap()
                 .to_string()
+        }
+    }
+
+    /// Link the supplied module into the current module.
+    /// Destroys the supplied module.
+    ///
+    /// :returns: An error message if linking failed or `None` if linking succeeded.
+    /// :rtype: typing.Optional[str]
+    pub fn link(&self, other: Py<Module>, py: Python) -> Option<String> {
+        if self.context.borrow(py).as_ptr() != other.borrow(py).context.borrow(py).as_ptr() {
+            return Some("Cannot link modules from different contexts. Modules are untouched.".to_string());
+        }
+        unsafe {
+            let result = LLVMLinkModules2(self.module.as_ptr(), other.borrow(py).module.as_ptr());
+            // `forget` the other module. LLVM has destroyed it
+            // and we'll get a segfault if we drop it.
+            forget(other);
+            if result == 0 {
+                return None;
+            } else {
+                // in the future we need to return a proper error message
+                // using `LLVMContextSetDiagnosticHandler`. This is a lot of work
+                // to get right, so we'll leave it for now.
+                Some("Failed to link modules".to_string())
+            }
         }
     }
 }
