@@ -681,13 +681,12 @@ class Module:
         """Converts this module into an LLVM IR string."""
         ...
 
-    def link(self, other: Module) -> Optional[str]:
+    def link(self, other: Module) -> None:
         """
         Link the supplied module into the current module.
         Destroys the supplied module.
 
-        :returns: An error message if linking failed or `None` if linking succeeded.
-        :rtype: typing.Optional[str]
+        :raises: An error if linking failed.
         """
         ...
 
