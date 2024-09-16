@@ -279,7 +279,7 @@ impl Module {
         }
         unsafe {
             let mut c_char_output: *mut ::core::ffi::c_char = ptr::null_mut();
-            let output = (&mut char_ptr as *mut *mut ::core::ffi::c_char
+            let output = (&mut c_char_output as *mut *mut ::core::ffi::c_char
                 as *mut *mut ::core::ffi::c_void)
                 .cast::<::core::ffi::c_void>();
 
@@ -291,7 +291,7 @@ impl Module {
             if result == 0 {
                 Ok(())
             } else {
-                let error = Message::from_raw(char_ptr);
+                let error = Message::from_raw(c_char_output);
                 return Err(PyValueError::new_err(error.to_str().unwrap().to_string()));
             }
         }
