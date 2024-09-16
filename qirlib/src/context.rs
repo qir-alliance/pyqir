@@ -19,8 +19,8 @@ pub(crate) extern "C" fn diagnostic_handler(
         let severity = LLVMGetDiagInfoSeverity(diagnostic_info);
         if severity == LLVMDiagnosticSeverity::LLVMDSError {
             let c_char_output =
-                (output as *mut *mut ::core::ffi::c_void).cast::<*mut ::core::ffi::c_char>();
-            *c_char_output = LLVMGetDiagInfoDescription(diagnostic_info)
+                output.cast::<*mut ::core::ffi::c_void>().cast::<*mut ::core::ffi::c_char>();
+            *c_char_output = LLVMGetDiagInfoDescription(diagnostic_info);
         }
     }
 }
