@@ -278,12 +278,12 @@ impl Module {
             ));
         }
         unsafe {
-            let mut char_ptr: *mut ::core::ffi::c_char = ptr::null_mut();
-            let char_ptr_ptr = &mut char_ptr as *mut *mut ::core::ffi::c_char
-                as *mut *mut ::core::ffi::c_void
-                as *mut ::core::ffi::c_void;
+            let mut c_char_output: *mut ::core::ffi::c_char = ptr::null_mut();
+            let output = (&mut char_ptr as *mut *mut ::core::ffi::c_char
+                as *mut *mut ::core::ffi::c_void)
+                .cast::<::core::ffi::c_void>();
 
-            set_diagnostic_handler(context, char_ptr_ptr);
+            set_diagnostic_handler(context, output);
             let result = LLVMLinkModules2(self.module.as_ptr(), other.borrow(py).module.as_ptr());
             // `forget` the other module. LLVM has destroyed it
             // and we'll get a segfault if we drop it.
