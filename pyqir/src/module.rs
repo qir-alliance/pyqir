@@ -279,7 +279,7 @@ impl Module {
         }
         unsafe {
             let mut c_char_output: *mut ::core::ffi::c_char = ptr::null_mut();
-            let output = (&mut c_char_output as *mut *mut ::core::ffi::c_char)
+            let output = std::ptr::from_mut::<*mut ::core::ffi::c_char>(&mut c_char_output)
                 .cast::<*mut ::core::ffi::c_void>()
                 .cast::<::core::ffi::c_void>();
 
