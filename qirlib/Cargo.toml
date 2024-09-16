@@ -1,14 +1,13 @@
 [package]
 name = "qirlib"
-version = "0.10.5"
-edition = "2021"
-license = "MIT"
 description = "Base Profile QIR library"
-build = "build.rs"
 readme = "README.md"
-homepage = "https://github.com/qir-alliance/pyqir"
-repository = "https://github.com/qir-alliance/pyqir"
-rust-version = "1.80"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
 
 [dependencies]
 bitvec = "1.0"

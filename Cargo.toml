@@ -1,3 +1,12 @@
 [workspace]
 members = ["pyqir", "qirlib"]
 resolver = "2"
+
+[workspace.package]
+authors = ["Microsoft"]
+version = "0.10.5"
+edition = "2021"
+license = "MIT"
+homepage = "https://github.com/qir-alliance/pyqir"
+repository = "https://github.com/qir-alliance/pyqir"
+
