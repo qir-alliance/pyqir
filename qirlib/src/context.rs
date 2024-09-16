@@ -7,7 +7,10 @@ use llvm_sys::{
     LLVMDiagnosticSeverity,
 };
 
-pub unsafe fn set_diagnostic_handler(context: LLVMContextRef, output_ptr: *mut core::ffi::c_void) {
+pub unsafe fn set_diagnostic_handler(
+    context: LLVMContextRef,
+    output_ptr: *mut ::core::ffi::c_void,
+) {
     unsafe { LLVMContextSetDiagnosticHandler(context, Some(diagnostic_handler), output_ptr) };
 }
 

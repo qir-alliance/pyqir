@@ -3,6 +3,7 @@
 
 from pathlib import Path
 
+import pyqir
 import pytest
 
 current_file_path = Path(__file__)
@@ -17,6 +18,14 @@ from pyqir import (
 
 def read_file(file_name: str) -> str:
     return Path(current_dir / file_name).read_text(encoding="utf-8")
+
+
+def get_int_flag_value(module: Module, flag_name: str) -> int:
+    flag = module.get_flag(flag_name)
+    assert flag is not None
+    assert isinstance(flag, pyqir.ConstantAsMetadata)
+    assert isinstance(flag.value, pyqir.IntConstant)
+    return flag.value.value
 
 
 def test_link_modules_with_same_context() -> None:
@@ -52,7 +61,7 @@ def test_link_module_with_src_minor_version_less() -> None:
     ir = read_file("profile_v1.1_compat.ll")
     src = Module.from_ir(context, ir)
     dest.link(src)
-    assert dest.get_flag("qir_minor_version").value.value == 1
+    assert get_int_flag_value(dest, "qir_minor_version") == 1
 
 
 def test_link_module_with_src_minor_version_greater() -> None:
@@ -62,7 +71,7 @@ def test_link_module_with_src_minor_version_greater() -> None:
     ir = read_file("profile_v1.0_compat.ll")
     src = Module.from_ir(context, ir)
     dest.link(src)
-    assert dest.get_flag("qir_minor_version").value.value == 1
+    assert get_int_flag_value(dest, "qir_minor_version") == 1
 
 
 def test_link_module_with_src_major_version_less() -> None:
