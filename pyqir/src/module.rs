@@ -9,6 +9,7 @@ use crate::{
     metadata::Metadata,
     values::{Constant, Owner, Value},
 };
+use core::mem::forget;
 use core::slice;
 #[allow(clippy::wildcard_imports, deprecated)]
 use llvm_sys::{
@@ -17,10 +18,11 @@ use llvm_sys::{
     bit_writer::LLVMWriteBitcodeToMemoryBuffer,
     core::*,
     ir_reader::LLVMParseIRInContext,
+    linker::LLVMLinkModules2,
     LLVMLinkage, LLVMModule,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, pyclass::CompareOp, types::PyBytes};
-use qirlib::module::FlagBehavior;
+use qirlib::{context::set_diagnostic_handler, module::FlagBehavior};
 use std::{
     collections::hash_map::DefaultHasher,
     ffi::CString,
@@ -261,6 +263,37 @@ impl Module {
                 .to_str()
                 .unwrap()
                 .to_string()
+        }
+    }
+
+    /// Link the supplied module into the current module.
+    /// Destroys the supplied module.
+    ///
+    /// :raises: An error if linking failed.
+    pub fn link(&self, other: Py<Module>, py: Python) -> PyResult<()> {
+        let context = self.context.borrow(py).as_ptr();
+        if context != other.borrow(py).context.borrow(py).as_ptr() {
+            return Err(PyValueError::new_err(
+                "Cannot link modules from different contexts. Modules are untouched.".to_string(),
+            ));
+        }
+        unsafe {
+            let mut c_char_output: *mut ::core::ffi::c_char = ptr::null_mut();
+            let output = ::core::ptr::from_mut::<*mut ::core::ffi::c_char>(&mut c_char_output)
+                .cast::<*mut ::core::ffi::c_void>()
+                .cast::<::core::ffi::c_void>();
+
+            set_diagnostic_handler(context, output);
+            let result = LLVMLinkModules2(self.module.as_ptr(), other.borrow(py).module.as_ptr());
+            // `forget` the other module. LLVM has destroyed it
+            // and we'll get a segfault if we drop it.
+            forget(other);
+            if result == 0 {
+                Ok(())
+            } else {
+                let error = Message::from_raw(c_char_output);
+                return Err(PyValueError::new_err(error.to_str().unwrap().to_string()));
+            }
         }
     }
 }
