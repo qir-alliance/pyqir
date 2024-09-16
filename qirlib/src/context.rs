@@ -7,7 +7,7 @@ use llvm_sys::{
     LLVMDiagnosticSeverity,
 };
 
-pub fn set_diagnostic_handler(context: LLVMContextRef, output_ptr: *mut core::ffi::c_void) {
+pub unsafe fn set_diagnostic_handler(context: LLVMContextRef, output_ptr: *mut core::ffi::c_void) {
     unsafe { LLVMContextSetDiagnosticHandler(context, Some(diagnostic_handler), output_ptr) };
 }
 
@@ -19,7 +19,7 @@ pub(crate) extern "C" fn diagnostic_handler(
         let severity = LLVMGetDiagInfoSeverity(diagnostic_info);
         if severity == LLVMDiagnosticSeverity::LLVMDSError {
             let c_char_output =
-                output as *mut *mut ::core::ffi::c_void as *mut *mut ::core::ffi::c_char;
+                (output as *mut *mut ::core::ffi::c_void).cast::<*mut ::core::ffi::c_char>();
             *c_char_output = LLVMGetDiagInfoDescription(diagnostic_info)
         }
     }
