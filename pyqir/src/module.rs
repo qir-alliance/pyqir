@@ -279,8 +279,8 @@ impl Module {
         }
         unsafe {
             let mut c_char_output: *mut ::core::ffi::c_char = ptr::null_mut();
-            let output = (&mut c_char_output as *mut *mut ::core::ffi::c_char
-                as *mut *mut ::core::ffi::c_void)
+            let output = (&mut c_char_output as *mut *mut ::core::ffi::c_char)
+                .cast::<*mut ::core::ffi::c_void>()
                 .cast::<::core::ffi::c_void>();
 
             set_diagnostic_handler(context, output);
