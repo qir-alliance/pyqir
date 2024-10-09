@@ -77,7 +77,7 @@ pub(crate) unsafe fn doubly_controlled_gate(module: LLVMModuleRef, name: &str) -
     declare_qis(module, name, Functor::Body, ty)
 }
 
-pub(crate) unsafe fn rotation_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
+pub(crate) unsafe fn double_param_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let ty = function_type(
         LLVMVoidTypeInContext(context),

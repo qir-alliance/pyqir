@@ -60,6 +60,15 @@ class BasicQisBuilder:
         """
         qis.reset(self._builder, qubit)
 
+    def delay(self, duration: Union[Value, float], qubit: Value) -> None:
+        """
+        Inserts a delay operation.
+
+        :param duration: The duration the qubit needs to wait for.
+        :param qubit: The qubit to make wait.
+        """
+        qis.delay(self._builder, duration, qubit)
+
     def rx(self, theta: Union[Value, float], qubit: Value) -> None:
         """
         Inserts a rotation gate about the :math:`x` axis.
