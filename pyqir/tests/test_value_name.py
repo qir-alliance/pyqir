@@ -19,6 +19,7 @@ from pyqir import (
 def read_file(file_name: str) -> str:
     return Path(current_dir / file_name).read_text(encoding="utf-8")
 
+
 def test_setting_function_name_changes_name() -> None:
     context = Context()
     ir = read_file("random_bit.ll")
@@ -48,10 +49,10 @@ def test_setting_block_name_changes_name() -> None:
 def test_int_variable() -> None:
     mod = pyqir.SimpleModule("test", 0, 0)
     i64 = pyqir.IntType(mod.context, 64)
-    
+
     source = mod.add_external_function("source", pyqir.FunctionType(i64, []))
     sink = mod.add_external_function("sink", pyqir.FunctionType(i64, [i64]))
-    
+
     source_res = mod.builder.call(source, [])
     source_res.name = "my_var"
 
@@ -68,7 +69,7 @@ def test_function_name_can_contain_spaces_and_chars() -> None:
     mod.entry_point.name = expected
 
     # verify the name is use and wrapped in quotes
-    assert f"@\"{expected}\"() #0" in mod.ir()
+    assert f'@"{expected}"() #0' in mod.ir()
 
     # verify we can find it by name without having to use quotes
     func = next(filter(lambda f: f.name == expected, mod._module.functions))
