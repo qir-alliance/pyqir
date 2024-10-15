@@ -67,7 +67,13 @@ def test_function_name_can_contain_spaces_and_chars() -> None:
     expected = "Some - ; name fin"
     mod.entry_point.name = expected
 
+    # verify the name is use and wrapped in quotes
     assert f"@\"{expected}\"() #0" in mod.ir()
-    # verify we can find it by name
+
+    # verify we can find it by name without having to use quotes
     func = next(filter(lambda f: f.name == expected, mod._module.functions))
     assert func == mod.entry_point
+
+    # Double check that the module is valid with this kind of name
+    mod = pyqir.Module.from_ir(Context(), mod.ir())
+    assert mod.verify() is None
