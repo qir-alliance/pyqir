@@ -925,6 +925,11 @@ class Value:
         """The name of this value or the empty string if this value is anonymous."""
         ...
 
+    @name.setter
+    def name(self, value: str) -> None:
+        """Sets the name of the value."""
+        ...
+
     def __richcmp__(self, other: Value, op: int) -> bool:
         """
         Compares this value to another value.
