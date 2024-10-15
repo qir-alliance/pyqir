@@ -64,17 +64,18 @@ def test_int_variable() -> None:
 
 
 def test_function_name_can_contain_spaces_and_chars() -> None:
-    mod = pyqir.SimpleModule("test", 0, 0)
+    simple_mod = pyqir.SimpleModule("test", 0, 0)
     expected = "Some - ; name fin"
-    mod.entry_point.name = expected
+    simple_mod.entry_point.name = expected
 
     # verify the name is use and wrapped in quotes
-    assert f'@"{expected}"() #0' in mod.ir()
+    ir = simple_mod.ir()
+    assert f'@"{expected}"() #0' in ir
 
     # verify we can find it by name without having to use quotes
-    func = next(filter(lambda f: f.name == expected, mod._module.functions))
-    assert func == mod.entry_point
+    func = next(filter(lambda f: f.name == expected, simple_mod._module.functions))
+    assert func == simple_mod.entry_point
 
     # Double check that the module is valid with this kind of name
-    mod = pyqir.Module.from_ir(Context(), mod.ir())
+    mod = pyqir.Module.from_ir(Context(), ir)
     assert mod.verify() is None
