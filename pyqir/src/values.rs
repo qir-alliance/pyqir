@@ -93,6 +93,18 @@ impl Value {
         }
     }
 
+    #[setter]
+    fn set_name(&self, value: &str) {
+        unsafe {
+            let c_name = &CString::new(value).unwrap();
+            LLVMSetValueName2(
+                self.as_ptr(),
+                value.as_ptr().cast(),
+                c_name.as_bytes().len(),
+            );
+        }
+    }
+
     fn __str__(&self) -> String {
         unsafe {
             Message::from_raw(LLVMPrintValueToString(self.as_ptr()))
