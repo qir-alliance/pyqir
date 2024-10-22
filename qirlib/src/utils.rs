@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::types;
 use const_str::raw_cstr;
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{core::*, prelude::*, LLVMLinkage};
@@ -15,12 +14,13 @@ pub(crate) enum Functor {
 
 pub(crate) unsafe fn build_call(
     builder: LLVMBuilderRef,
+    function_type: LLVMTypeRef,
     function: LLVMValueRef,
     args: &mut [LLVMValueRef],
 ) -> LLVMValueRef {
-    #[allow(deprecated)]
-    LLVMBuildCall(
+    LLVMBuildCall2(
         builder,
+        function_type,
         function,
         args.as_mut_ptr(),
         args.len().try_into().unwrap(),
@@ -36,54 +36,73 @@ pub(crate) unsafe fn builder_module(builder: LLVMBuilderRef) -> LLVMModuleRef {
         .as_ptr()
 }
 
-pub(crate) unsafe fn no_param(module: LLVMModuleRef, name: &str, functor: Functor) -> LLVMValueRef {
+pub(crate) unsafe fn no_param(
+    module: LLVMModuleRef,
+    name: &str,
+    functor: Functor,
+) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut []);
-    declare_qis(module, name, functor, ty)
+    (ty, declare_qis(module, name, functor, ty))
 }
 
 pub(crate) unsafe fn simple_gate(
     module: LLVMModuleRef,
     name: &str,
     functor: Functor,
-) -> LLVMValueRef {
+) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
-    let ty = function_type(LLVMVoidTypeInContext(context), &mut [types::qubit(context)]);
-    declare_qis(module, name, functor, ty)
+    let ty = function_type(
+        LLVMVoidTypeInContext(context),
+        &mut [LLVMPointerTypeInContext(context, 0)],
+    );
+    (ty, declare_qis(module, name, functor, ty))
 }
 
 pub(crate) unsafe fn two_qubit_gate(
     module: LLVMModuleRef,
     name: &str,
     functor: Functor,
-) -> LLVMValueRef {
+) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
-    let qubit = types::qubit(context);
+    let qubit = LLVMPointerTypeInContext(context, 0);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit]);
-    declare_qis(module, name, functor, ty)
+    (ty, declare_qis(module, name, functor, ty))
 }
 
-pub(crate) unsafe fn controlled_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
+pub(crate) unsafe fn controlled_gate(
+    module: LLVMModuleRef,
+    name: &str,
+) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
-    let qubit = types::qubit(context);
+    let qubit = LLVMPointerTypeInContext(context, 0);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit]);
-    declare_qis(module, name, Functor::Body, ty)
+    (ty, declare_qis(module, name, Functor::Body, ty))
 }
 
-pub(crate) unsafe fn doubly_controlled_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
+pub(crate) unsafe fn doubly_controlled_gate(
+    module: LLVMModuleRef,
+    name: &str,
+) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
-    let qubit = types::qubit(context);
+    let qubit = LLVMPointerTypeInContext(context, 0);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [qubit, qubit, qubit]);
-    declare_qis(module, name, Functor::Body, ty)
+    (ty, declare_qis(module, name, Functor::Body, ty))
 }
 
-pub(crate) unsafe fn rotation_gate(module: LLVMModuleRef, name: &str) -> LLVMValueRef {
+pub(crate) unsafe fn rotation_gate(
+    module: LLVMModuleRef,
+    name: &str,
+) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
     let ty = function_type(
         LLVMVoidTypeInContext(context),
-        &mut [LLVMDoubleTypeInContext(context), types::qubit(context)],
+        &mut [
+            LLVMDoubleTypeInContext(context),
+            LLVMPointerTypeInContext(context, 0),
+        ],
     );
-    declare_qis(module, name, Functor::Body, ty)
+    (ty, declare_qis(module, name, Functor::Body, ty))
 }
 
 pub(crate) unsafe fn function_type(ret: LLVMTypeRef, params: &mut [LLVMTypeRef]) -> LLVMTypeRef {

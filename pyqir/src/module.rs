@@ -82,7 +82,7 @@ impl Module {
         let mut error = ptr::null_mut();
         unsafe {
             let context_ref = context.borrow(py).cast().as_ptr();
-            if LLVMParseIRInContext(context_ref, buffer, &mut module, &mut error) != 0 {
+            if LLVMParseIRInContext(context_ref, buffer, &raw mut module, &raw mut error) != 0 {
                 let error = Message::from_raw(error);
                 return Err(PyValueError::new_err(
                     error
@@ -132,8 +132,8 @@ impl Module {
             if LLVMParseBitcodeInContext(
                 context_ref,
                 buffer.cast().as_ptr(),
-                &mut module,
-                &mut error,
+                &raw mut module,
+                &raw mut error,
             ) == 0
             {
                 Ok(Self {
@@ -154,7 +154,7 @@ impl Module {
     fn source_filename(&self) -> &str {
         unsafe {
             let mut len = 0;
-            let name = LLVMGetSourceFileName(self.cast().as_ptr(), &mut len);
+            let name = LLVMGetSourceFileName(self.cast().as_ptr(), &raw mut len);
             str::from_utf8(slice::from_raw_parts(name.cast(), len)).unwrap()
         }
     }
@@ -265,7 +265,7 @@ impl Module {
         unsafe {
             let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
             let mut error = ptr::null_mut();
-            if LLVMVerifyModule(self.cast().as_ptr(), action, &mut error) == 0 {
+            if LLVMVerifyModule(self.cast().as_ptr(), action, &raw mut error) == 0 {
                 None
             } else {
                 let error = Message::from_raw(error);
@@ -419,6 +419,8 @@ pub(crate) enum ModuleFlagBehavior {
     AppendUnique,
     #[pyo3(name = "MAX")]
     Max,
+    #[pyo3(name = "MIN")]
+    Min,
 }
 
 impl From<FlagBehavior> for ModuleFlagBehavior {
@@ -431,6 +433,7 @@ impl From<FlagBehavior> for ModuleFlagBehavior {
             FlagBehavior::Append => ModuleFlagBehavior::Append,
             FlagBehavior::AppendUnique => ModuleFlagBehavior::AppendUnique,
             FlagBehavior::Max => ModuleFlagBehavior::Max,
+            FlagBehavior::Min => ModuleFlagBehavior::Min,
         }
     }
 }
@@ -445,6 +448,7 @@ impl From<ModuleFlagBehavior> for FlagBehavior {
             ModuleFlagBehavior::Append => FlagBehavior::Append,
             ModuleFlagBehavior::AppendUnique => FlagBehavior::AppendUnique,
             ModuleFlagBehavior::Max => FlagBehavior::Max,
+            ModuleFlagBehavior::Min => FlagBehavior::Min,
         }
     }
 }

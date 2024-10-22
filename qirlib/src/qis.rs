@@ -3,7 +3,6 @@
 
 use crate::{
     builder::{build_if, try_build_if},
-    types,
     utils::{
         build_call, builder_module, controlled_gate, declare_qis, doubly_controlled_gate,
         function_type, no_param, rotation_gate, simple_gate, two_qubit_gate, Functor,
@@ -17,11 +16,8 @@ use llvm_sys::LLVMAttributeFunctionIndex;
 use llvm_sys::{core::*, prelude::*};
 
 pub unsafe fn build_barrier(builder: LLVMBuilderRef) {
-    build_call(
-        builder,
-        no_param(builder_module(builder), "barrier", Functor::Body),
-        &mut [],
-    );
+    let (func_ty, func_val) = no_param(builder_module(builder), "barrier", Functor::Body);
+    build_call(builder, func_ty, func_val, &mut []);
 }
 
 pub unsafe fn build_ccx(
@@ -30,135 +26,88 @@ pub unsafe fn build_ccx(
     control2: LLVMValueRef,
     qubit: LLVMValueRef,
 ) {
-    build_call(
-        builder,
-        doubly_controlled_gate(builder_module(builder), "ccx"),
-        &mut [control1, control2, qubit],
-    );
+    let (func_ty, func_val) = doubly_controlled_gate(builder_module(builder), "ccx");
+    build_call(builder, func_ty, func_val, &mut [control1, control2, qubit]);
 }
 
 pub unsafe fn build_cx(builder: LLVMBuilderRef, control: LLVMValueRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        controlled_gate(builder_module(builder), "cnot"),
-        &mut [control, qubit],
-    );
+    let (func_ty, func_val) = controlled_gate(builder_module(builder), "cnot");
+    build_call(builder, func_ty, func_val, &mut [control, qubit]);
 }
 
 pub unsafe fn build_cz(builder: LLVMBuilderRef, control: LLVMValueRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        controlled_gate(builder_module(builder), "cz"),
-        &mut [control, qubit],
-    );
+    let (func_ty, func_val) = controlled_gate(builder_module(builder), "cz");
+    build_call(builder, func_ty, func_val, &mut [control, qubit]);
 }
 
 pub unsafe fn build_h(builder: LLVMBuilderRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        simple_gate(builder_module(builder), "h", Functor::Body),
-        &mut [qubit],
-    );
+    let (func_ty, func_val) = simple_gate(builder_module(builder), "h", Functor::Body);
+    build_call(builder, func_ty, func_val, &mut [qubit]);
 }
 
 pub unsafe fn build_s(builder: LLVMBuilderRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        simple_gate(builder_module(builder), "s", Functor::Body),
-        &mut [qubit],
-    );
+    let (func_ty, func_val) = simple_gate(builder_module(builder), "s", Functor::Body);
+    build_call(builder, func_ty, func_val, &mut [qubit]);
 }
 
 pub unsafe fn build_s_adj(builder: LLVMBuilderRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        simple_gate(builder_module(builder), "s", Functor::Adjoint),
-        &mut [qubit],
-    );
+    let (func_ty, func_val) = simple_gate(builder_module(builder), "s", Functor::Adjoint);
+    build_call(builder, func_ty, func_val, &mut [qubit]);
 }
 
 pub unsafe fn build_swap(builder: LLVMBuilderRef, qubit1: LLVMValueRef, qubit2: LLVMValueRef) {
-    build_call(
-        builder,
-        two_qubit_gate(builder_module(builder), "swap", Functor::Body),
-        &mut [qubit1, qubit2],
-    );
+    let (func_ty, func_val) = two_qubit_gate(builder_module(builder), "swap", Functor::Body);
+    build_call(builder, func_ty, func_val, &mut [qubit1, qubit2]);
 }
 
 pub unsafe fn build_t(builder: LLVMBuilderRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        simple_gate(builder_module(builder), "t", Functor::Body),
-        &mut [qubit],
-    );
+    let (func_ty, func_val) = simple_gate(builder_module(builder), "t", Functor::Body);
+    build_call(builder, func_ty, func_val, &mut [qubit]);
 }
 
 pub unsafe fn build_t_adj(builder: LLVMBuilderRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        simple_gate(builder_module(builder), "t", Functor::Adjoint),
-        &mut [qubit],
-    );
+    let (func_ty, func_val) = simple_gate(builder_module(builder), "t", Functor::Adjoint);
+    build_call(builder, func_ty, func_val, &mut [qubit]);
 }
 
 pub unsafe fn build_x(builder: LLVMBuilderRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        simple_gate(builder_module(builder), "x", Functor::Body),
-        &mut [qubit],
-    );
+    let (func_ty, func_val) = simple_gate(builder_module(builder), "x", Functor::Body);
+    build_call(builder, func_ty, func_val, &mut [qubit]);
 }
 
 pub unsafe fn build_y(builder: LLVMBuilderRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        simple_gate(builder_module(builder), "y", Functor::Body),
-        &mut [qubit],
-    );
+    let (func_ty, func_val) = simple_gate(builder_module(builder), "y", Functor::Body);
+    build_call(builder, func_ty, func_val, &mut [qubit]);
 }
 
 pub unsafe fn build_z(builder: LLVMBuilderRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        simple_gate(builder_module(builder), "z", Functor::Body),
-        &mut [qubit],
-    );
+    let (func_ty, func_val) = simple_gate(builder_module(builder), "z", Functor::Body);
+    build_call(builder, func_ty, func_val, &mut [qubit]);
 }
 
 pub unsafe fn build_rx(builder: LLVMBuilderRef, theta: LLVMValueRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        rotation_gate(builder_module(builder), "rx"),
-        &mut [theta, qubit],
-    );
+    let (func_ty, func_val) = rotation_gate(builder_module(builder), "rx");
+    build_call(builder, func_ty, func_val, &mut [theta, qubit]);
 }
 
 pub unsafe fn build_ry(builder: LLVMBuilderRef, theta: LLVMValueRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        rotation_gate(builder_module(builder), "ry"),
-        &mut [theta, qubit],
-    );
+    let (func_ty, func_val) = rotation_gate(builder_module(builder), "ry");
+    build_call(builder, func_ty, func_val, &mut [theta, qubit]);
 }
 
 pub unsafe fn build_rz(builder: LLVMBuilderRef, theta: LLVMValueRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        rotation_gate(builder_module(builder), "rz"),
-        &mut [theta, qubit],
-    );
+    let (func_ty, func_val) = rotation_gate(builder_module(builder), "rz");
+    build_call(builder, func_ty, func_val, &mut [theta, qubit]);
 }
 
 pub unsafe fn build_reset(builder: LLVMBuilderRef, qubit: LLVMValueRef) {
-    build_call(
-        builder,
-        simple_gate(builder_module(builder), "reset", Functor::Body),
-        &mut [qubit],
-    );
+    let (func_ty, func_val) = simple_gate(builder_module(builder), "reset", Functor::Body);
+    build_call(builder, func_ty, func_val, &mut [qubit]);
 }
 
 pub unsafe fn build_mz(builder: LLVMBuilderRef, qubit: LLVMValueRef, result: LLVMValueRef) {
-    build_call(builder, mz(builder_module(builder)), &mut [qubit, result]);
+    let (func_ty, func_val) = mz(builder_module(builder));
+    build_call(builder, func_ty, func_val, &mut [qubit, result]);
 }
 
 pub unsafe fn build_if_result(
@@ -182,15 +131,16 @@ pub unsafe fn try_build_if_result<E>(
 }
 
 unsafe fn build_read_result(builder: LLVMBuilderRef, result: LLVMValueRef) -> LLVMValueRef {
-    build_call(builder, read_result(builder_module(builder)), &mut [result])
+    let (func_ty, func_val) = read_result(builder_module(builder));
+    build_call(builder, func_ty, func_val, &mut [result])
 }
 
-unsafe fn mz(module: LLVMModuleRef) -> LLVMValueRef {
+unsafe fn mz(module: LLVMModuleRef) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
-    let result_type = types::result(context);
+    let result_type = LLVMPointerTypeInContext(context, 0);
     let ty = function_type(
         LLVMVoidTypeInContext(context),
-        &mut [types::qubit(context), result_type],
+        &mut [LLVMPointerTypeInContext(context, 0), result_type],
     );
 
     let function = declare_qis(module, "mz", Functor::Body, ty);
@@ -202,7 +152,7 @@ unsafe fn mz(module: LLVMModuleRef) -> LLVMValueRef {
     LLVMAddAttributeAtIndex(function, result_param_index, attr);
 
     add_irreversible_attr(context, function);
-    function
+    (ty, function)
 }
 
 #[allow(clippy::cast_possible_truncation)]
@@ -218,13 +168,13 @@ unsafe fn add_irreversible_attr(context: LLVMContextRef, function: LLVMValueRef)
     LLVMAddAttributeAtIndex(function, LLVMAttributeFunctionIndex, irreversable_attr);
 }
 
-unsafe fn read_result(module: LLVMModuleRef) -> LLVMValueRef {
+unsafe fn read_result(module: LLVMModuleRef) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
     let ty = function_type(
         LLVMInt1TypeInContext(context),
-        &mut [types::result(context)],
+        &mut [LLVMPointerTypeInContext(context, 0)],
     );
-    declare_qis(module, "read_result", Functor::Body, ty)
+    (ty, declare_qis(module, "read_result", Functor::Body, ty))
 }
 
 #[cfg(test)]

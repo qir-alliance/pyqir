@@ -104,7 +104,7 @@ impl MetadataString {
             let slf = slf.into_super();
             let context = slf.owner.context(py).borrow(py).cast().as_ptr();
             let value = LLVMMetadataAsValue(context, slf.cast().as_ptr());
-            let mds = LLVMGetMDString(value, &mut len);
+            let mds = LLVMGetMDString(value, &raw mut len);
             str::from_utf8(slice::from_raw_parts(mds.cast(), len as usize))
                 .unwrap()
                 .to_string()

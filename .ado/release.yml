@@ -25,7 +25,7 @@ variables:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN_VERSION: "1.86"
   PYTHON_VERSION: "3.11"
-  LLVM_VERSION: 14
+  LLVM_VERSION: 20
 
 resources:
   repositories:
@@ -143,8 +143,8 @@ extends:
               Write-Host "##vso[task.setvariable variable=QIRLIB_LLVM_EXTERNAL_DIR;]$directory"
 
               # Tell the build what llvm feature version to use
-              $feature = "llvm$(LLVM_VERSION)-0"
-              $variableName = "LLVM_SYS_$(LLVM_VERSION)0_PREFIX"
+              $feature = "llvm$(LLVM_VERSION)-1"
+              $variableName = "LLVM_SYS_$(LLVM_VERSION)1_PREFIX"
               Write-Host "##vso[task.setvariable variable=PYQIR_LLVM_FEATURE_VERSION;]$feature"
 
               # Tell LLVM-SYS where LLVM is installed

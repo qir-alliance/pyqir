@@ -19,6 +19,7 @@ from pyqir import (
     Context,
     Function,
     FunctionType,
+    PointerType,
     Instruction,
     IntType,
     Linkage,
@@ -158,7 +159,9 @@ def test_multiple_contexts() -> None:
     ):
         m1.add_external_function(
             "f",
-            FunctionType(pyqir.result_type(m1.context), [pyqir.qubit_type(m2.context)]),
+            FunctionType(
+                PointerType(Type.void(m1.context)), [PointerType(Type.void(m2.context))]
+            ),
         )
 
 
@@ -186,10 +189,10 @@ def test_ir_gate_ir() -> None:
     qis = BasicQisBuilder(m.builder)
     qis.x(m.qubits[0])
     ir1 = m.ir()
-    assert "call void @__quantum__qis__x__body(%Qubit* null)" in ir1
+    assert "call void @__quantum__qis__x__body(ptr null)" in ir1
     qis.h(m.qubits[0])
     ir2 = m.ir()
-    assert "call void @__quantum__qis__h__body(%Qubit* null)" in ir2
+    assert "call void @__quantum__qis__h__body(ptr null)" in ir2
 
 
 def test_shared_context() -> None:

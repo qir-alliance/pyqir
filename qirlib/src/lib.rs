@@ -8,14 +8,12 @@
     clippy::missing_safety_doc
 )]
 
-#[cfg(feature = "llvm11-0")]
-extern crate llvm_sys_110 as llvm_sys;
-#[cfg(feature = "llvm12-0")]
-extern crate llvm_sys_120 as llvm_sys;
-#[cfg(feature = "llvm13-0")]
-extern crate llvm_sys_130 as llvm_sys;
-#[cfg(feature = "llvm14-0")]
-extern crate llvm_sys_140 as llvm_sys;
+#[cfg(feature = "llvm18-1")]
+extern crate llvm_sys_181 as llvm_sys;
+#[cfg(feature = "llvm19-1")]
+extern crate llvm_sys_191 as llvm_sys;
+#[cfg(feature = "llvm20-1")]
+extern crate llvm_sys_201 as llvm_sys;
 
 #[cfg(not(feature = "no-llvm-linking"))]
 pub mod builder;
@@ -33,8 +31,6 @@ pub mod qis;
 pub mod rt;
 #[cfg(all(test, not(feature = "no-llvm-linking")))]
 mod tests;
-#[cfg(not(feature = "no-llvm-linking"))]
-pub mod types;
 #[cfg(not(feature = "no-llvm-linking"))]
 pub(crate) mod utils;
 #[cfg(not(feature = "no-llvm-linking"))]

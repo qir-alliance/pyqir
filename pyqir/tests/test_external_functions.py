@@ -38,24 +38,21 @@ def test_call_single_qubit() -> None:
     mod = SimpleModule("test", 1, 0)
     f = mod.add_external_function(
         "test_function",
-        FunctionType(Type.void(mod.context), [pyqir.qubit_type(mod.context)]),
+        FunctionType(Type.void(mod.context), [PointerType(Type.void(mod.context))]),
     )
     mod.builder.call(f, [mod.qubits[0]])
-    assert "call void @test_function(%Qubit* null)" in mod.ir()
+    assert "call void @test_function(ptr null)" in mod.ir()
 
 
 def test_call_two_qubits() -> None:
     mod = SimpleModule("test", 2, 0)
-    qubit = pyqir.qubit_type(mod.context)
+    qubit = PointerType(Type.void(mod.context))
     f = mod.add_external_function(
         "test_function",
         FunctionType(Type.void(mod.context), [qubit, qubit]),
     )
     mod.builder.call(f, [mod.qubits[0], mod.qubits[1]])
-    assert (
-        "call void @test_function(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*))"
-        in mod.ir()
-    )
+    assert "call void @test_function(ptr null, ptr inttoptr (i64 1 to ptr))" in mod.ir()
 
 
 @pytest.mark.parametrize(
@@ -120,10 +117,10 @@ def test_call_single_result() -> None:
     qis.mz(mod.qubits[0], mod.results[0])
     f = mod.add_external_function(
         "test_function",
-        FunctionType(Type.void(mod.context), [pyqir.result_type(mod.context)]),
+        FunctionType(Type.void(mod.context), [PointerType(Type.void(mod.context))]),
     )
     mod.builder.call(f, [mod.results[0]])
-    assert "call void @test_function(%Result* null)" in mod.ir()
+    assert "call void @test_function(ptr null)" in mod.ir()
 
 
 def test_call_two_results() -> None:
@@ -132,16 +129,13 @@ def test_call_two_results() -> None:
     qis.mz(mod.qubits[0], mod.results[0])
     qis.mz(mod.qubits[0], mod.results[1])
 
-    result = pyqir.result_type(mod.context)
+    result = PointerType(Type.void(mod.context))
     f = mod.add_external_function(
         "test_function", FunctionType(Type.void(mod.context), [result, result])
     )
     mod.builder.call(f, [mod.results[1], mod.results[0]])
 
-    assert (
-        "call void @test_function(%Result* inttoptr (i64 1 to %Result*), %Result* null)"
-        in mod.ir()
-    )
+    assert "call void @test_function(ptr inttoptr (i64 1 to ptr), ptr null)" in mod.ir()
 
 
 def test_call_numbers() -> None:
@@ -303,7 +297,8 @@ def test_variable_wrong_external_type() -> None:
     mod = SimpleModule("test", 0, 0)
     foo = mod.add_external_function("foo", FunctionType(IntType(mod.context, 64), []))
     bar = mod.add_external_function(
-        "bar", FunctionType(Type.void(mod.context), [pyqir.qubit_type(mod.context)])
+        "bar",
+        FunctionType(Type.void(mod.context), [PointerType(Type.void(mod.context))]),
     )
 
     x = mod.builder.call(foo, [])
@@ -364,9 +359,9 @@ def test_computed_rotation() -> None:
 
     ir = mod.ir()
     assert "%0 = call double @foo()" in ir
-    assert "call void @__quantum__qis__rx__body(double %0, %Qubit* null)" in ir
-    assert "call void @__quantum__qis__ry__body(double %0, %Qubit* null)" in ir
-    assert "call void @__quantum__qis__rz__body(double %0, %Qubit* null)" in ir
+    assert "call void @__quantum__qis__rx__body(double %0, ptr null)" in ir
+    assert "call void @__quantum__qis__ry__body(double %0, ptr null)" in ir
+    assert "call void @__quantum__qis__rz__body(double %0, ptr null)" in ir
 
 
 def test_record_output() -> None:
@@ -375,7 +370,7 @@ def test_record_output() -> None:
     result_record_output = Function(
         FunctionType(
             Type.void(mod.context),
-            [pyqir.result_type(mod.context), PointerType(IntType(mod.context, 8))],
+            [PointerType(Type.void(mod.context)), PointerType(IntType(mod.context, 8))],
         ),
         Linkage.EXTERNAL,
         "__quantum__rt__result_record_output",
@@ -392,10 +387,7 @@ def test_record_output() -> None:
 
     ir = str(mod)
     assert r'@0 = internal constant [4 x i8] c"foo\00"' in ir
-    assert (
-        "call void @__quantum__rt__result_record_output(%Result* null, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0))"
-        in ir
-    )
+    assert "call void @__quantum__rt__result_record_output(ptr null, ptr @0)" in ir
 
 
 def test_record_output_simple() -> None:
@@ -404,7 +396,7 @@ def test_record_output_simple() -> None:
         "__quantum__rt__result_record_output",
         FunctionType(
             Type.void(mod.context),
-            [pyqir.result_type(mod.context), PointerType(IntType(mod.context, 8))],
+            [PointerType(Type.void(mod.context)), PointerType(IntType(mod.context, 8))],
         ),
     )
     mod.builder.call(
@@ -414,10 +406,7 @@ def test_record_output_simple() -> None:
 
     ir = mod.ir()
     assert r'@0 = internal constant [4 x i8] c"foo\00"' in ir
-    assert (
-        "call void @__quantum__rt__result_record_output(%Result* null, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0))"
-        in ir
-    )
+    assert "call void @__quantum__rt__result_record_output(ptr null, ptr @0)" in ir
 
 
 def test_simple_module_injected_context() -> None:
@@ -434,4 +423,4 @@ def test_null_pointer() -> None:
     i8p = PointerType(IntType(mod.context, 8))
     f = mod.add_external_function("f", FunctionType(Type.void(mod.context), [i8p]))
     mod.builder.call(f, [Constant.null(i8p)])
-    assert "call void @f(i8* null)" in mod.ir()
+    assert "call void @f(ptr null)" in mod.ir()
