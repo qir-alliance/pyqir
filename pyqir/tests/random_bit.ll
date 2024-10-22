@@ -1,7 +1,5 @@
 ; ModuleID = 'random_bit'
 
-
-
 define void @random_bit() #0 {
 block_0:
   call void @__quantum__qis__h__body(ptr inttoptr (i64 0 to ptr))

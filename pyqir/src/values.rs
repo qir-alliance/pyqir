@@ -481,7 +481,7 @@ impl Function {
     fn r#type(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super().into_super();
         unsafe {
-            let ty = LLVMGetElementType(LLVMTypeOf(slf.as_ptr()));
+            let ty = LLVMGlobalGetValueType(slf.as_ptr());
             Type::from_raw(py, slf.owner().context(py), ty)
         }
     }

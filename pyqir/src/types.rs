@@ -294,14 +294,16 @@ impl PointerType {
         )
     }
 
-    /// The type being pointed to.
+    /// The type being pointed to. With opaque pointers, always treat this as void.
     ///
     /// :type: Type
-    /// TODO: will probably crash
     #[getter]
     fn pointee(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super();
         unsafe {
+            if LLVMPointerTypeIsOpaque(slf.ty.as_ptr()) != 0 {
+                return Ok(Py::new(py, Type::void(py, slf.context.clone_ref(py)))?.to_object(py));
+            }
             let ty = LLVMGetElementType(slf.as_ptr());
             Type::from_raw(py, slf.context.clone_ref(py), ty)
         }

@@ -18,7 +18,8 @@ mod.builder.call(my_function, [])
 
 # Declare a function that takes an integer and a qubit and returns void.
 my_gate = mod.add_external_function(
-    "my_gate", pyqir.FunctionType(void, [i64, pyqir.qubit_type(mod.context)])
+    "my_gate",
+    pyqir.FunctionType(void, [i64, pyqir.PointerType(pyqir.Type.void(mod.context))]),
 )
 
 # Call the functions with a list of arguments.

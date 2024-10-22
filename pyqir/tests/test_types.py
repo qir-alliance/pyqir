@@ -42,19 +42,10 @@ def test_function() -> None:
 
 def test_pointer() -> None:
     pointer = PointerType(IntType(Context(), 1))
-    assert isinstance(pointer.pointee, IntType)
+    # We expect this to be an opaque pointer, which always shows up with the void type.
+    assert pointer.pointee.is_void
 
 
 def test_void_pointer() -> None:
     voidp = PointerType(Type.void(Context()))
     assert voidp.pointee.is_void
-
-
-def test_qubit() -> None:
-    qubit = pyqir.qubit_type(Context())
-    assert pyqir.is_qubit_type(qubit)
-
-
-def test_result() -> None:
-    result = pyqir.result_type(Context())
-    assert pyqir.is_result_type(result)

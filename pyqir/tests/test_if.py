@@ -15,13 +15,15 @@ from pyqir import (
     FunctionType,
     IntType,
     SimpleModule,
+    PointerType,
+    Type,
 )
 
 
 def define_read_result(context: Context, module: SimpleModule) -> Function:
     read_result = module.add_external_function(
         "__quantum__qis__read_result__body",
-        FunctionType(IntType(context, 1), [pyqir.result_type(context)]),
+        FunctionType(IntType(context, 1), [PointerType(Type.void(context))]),
     )
     return read_result
 

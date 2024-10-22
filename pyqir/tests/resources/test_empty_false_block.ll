@@ -1,9 +1,6 @@
 ; ModuleID = 'test_if'
 source_filename = "test_if"
 
-
-
-
 define void @main() #0 {
 entry:
   %0 = call i1 @__quantum__qis__read_result__body(ptr null)

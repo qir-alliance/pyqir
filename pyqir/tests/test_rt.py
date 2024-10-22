@@ -27,7 +27,7 @@ def test_array_record_output_tagged() -> None:
     label = mod.add_byte_string(b"some tag")
     rt.array_record_output(mod.builder, const(IntType(mod.context, 64), 42), label)
     name = "array_record_output"
-    call = f"call void @__quantum__rt__{name}(i64 42, ptr getelementptr inbounds ([9 x i8], [9 x i8]* @0, i32 0, i32 0))"
+    call = f"call void @__quantum__rt__{name}(i64 42, ptr @0)"
     assert call in mod.ir()
 
 
@@ -56,7 +56,7 @@ def test_tuple_record_output_tagged() -> None:
     label = mod.add_byte_string(b"some tag")
     rt.tuple_record_output(mod.builder, const(IntType(mod.context, 64), 42), label)
     name = "tuple_record_output"
-    call = f"call void @__quantum__rt__{name}(i64 42, ptr getelementptr inbounds ([9 x i8], [9 x i8]* @0, i32 0, i32 0))"
+    call = f"call void @__quantum__rt__{name}(i64 42, ptr @0)"
     assert call in mod.ir()
 
 
@@ -74,5 +74,5 @@ def test_result_record_output_tagged() -> None:
     label = mod.add_byte_string(b"some tag")
     rt.result_record_output(mod.builder, mod.results[0], label)
     name = "result_record_output"
-    call = f"call void @__quantum__rt__{name}(ptr null, ptr getelementptr inbounds ([9 x i8], [9 x i8]* @0, i32 0, i32 0))"
+    call = f"call void @__quantum__rt__{name}(ptr null, ptr @0)"
     assert call in mod.ir()
