@@ -347,9 +347,10 @@ impl Builder {
                 .collect::<PyResult<Vec<_>>>()?;
 
             #[allow(deprecated)]
-            let value = LLVMBuildCall(
-                self.cast().as_ptr(),
-                callee.cast().as_ptr(),
+            let value = LLVMBuildCall2(
+                self.as_ptr(),
+                fn_type,
+                callee.as_ptr(),
                 args.as_mut_ptr(),
                 args.len().try_into().unwrap(),
                 raw_cstr!(""),

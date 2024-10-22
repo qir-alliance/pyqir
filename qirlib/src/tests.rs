@@ -191,7 +191,7 @@ fn build_ir(
 
         let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
         let mut error = ptr::null_mut();
-        if LLVMVerifyModule(module.as_ptr(), action, &mut error) == 0 {
+        if LLVMVerifyModule(module.as_ptr(), action, &raw mut error) == 0 {
             let ir = LLVMPrintModuleToString(module.as_ptr());
             Ok(Message::from_raw(ir))
         } else {

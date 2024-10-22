@@ -14,16 +14,13 @@ use crate::{
         z,
     },
     rt::{array_record_output, initialize, result_record_output, tuple_record_output},
-    types::{
-        is_qubit_type, is_result_type, qubit_type, result_type, ArrayType, FunctionType, IntType,
-        PointerType, StructType, Type,
-    },
+    types::{ArrayType, FunctionType, IntType, PointerType, StructType, Type},
     values::{
         add_string_attribute, dynamic_qubit_management, dynamic_result_management,
-        extract_byte_string, global_byte_string, is_entry_point, is_interop_friendly,
-        qir_major_version, qir_minor_version, qir_module, qubit, qubit_id, r#const,
-        required_num_qubits, required_num_results, result, result_id, Attribute, AttributeList,
-        AttributeSet, BasicBlock, Constant, FloatConstant, Function, IntConstant, Value,
+        extract_byte_string, global_byte_string, is_entry_point, is_interop_friendly, ptr_id,
+        qir_major_version, qir_minor_version, qir_module, qubit, r#const, required_num_qubits,
+        required_num_results, result, Attribute, AttributeList, AttributeSet, BasicBlock, Constant,
+        FloatConstant, Function, IntConstant, Value,
     },
 };
 use pyo3::prelude::*;
@@ -69,19 +66,14 @@ fn _native<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(global_byte_string, m)?)?;
     m.add_function(wrap_pyfunction!(is_entry_point, m)?)?;
     m.add_function(wrap_pyfunction!(is_interop_friendly, m)?)?;
-    m.add_function(wrap_pyfunction!(is_qubit_type, m)?)?;
-    m.add_function(wrap_pyfunction!(is_result_type, m)?)?;
     m.add_function(wrap_pyfunction!(qir_major_version, m)?)?;
     m.add_function(wrap_pyfunction!(qir_minor_version, m)?)?;
     m.add_function(wrap_pyfunction!(qir_module, m)?)?;
-    m.add_function(wrap_pyfunction!(qubit_id, m)?)?;
-    m.add_function(wrap_pyfunction!(qubit_type, m)?)?;
+    m.add_function(wrap_pyfunction!(ptr_id, m)?)?;
     m.add_function(wrap_pyfunction!(qubit, m)?)?;
     m.add_function(wrap_pyfunction!(r#const, m)?)?;
     m.add_function(wrap_pyfunction!(required_num_qubits, m)?)?;
     m.add_function(wrap_pyfunction!(required_num_results, m)?)?;
-    m.add_function(wrap_pyfunction!(result_id, m)?)?;
-    m.add_function(wrap_pyfunction!(result_type, m)?)?;
     m.add_function(wrap_pyfunction!(result, m)?)?;
 
     // qis

@@ -106,7 +106,7 @@ Within each project folder, the build can be run specifically for that project.
 
 For any of these commands, the LLVM version must be added via features.
 
-- `<features>` is a placeholder for `--features (llvm11-0 | llvm12-0 | llvm13-0 | llvm14-0)`
+- `<features>` is a placeholder for `--features (llvm18-1 | llvm19-1)`
 
 Build commands:
 

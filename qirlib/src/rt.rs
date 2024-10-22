@@ -1,15 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{
-    types,
-    utils::{build_call, builder_module, declare_external_function, function_type},
-};
+use crate::utils::{build_call, builder_module, declare_external_function, function_type};
 
 use llvm_sys::{
     core::{
         LLVMGetModuleContext, LLVMInt64TypeInContext, LLVMInt8TypeInContext, LLVMPointerType,
-        LLVMVoidTypeInContext,
+        LLVMPointerTypeInContext, LLVMVoidTypeInContext,
     },
     prelude::*,
 };
@@ -19,15 +16,13 @@ pub unsafe fn build_array_record_output(
     num_elements: LLVMValueRef,
     label: LLVMValueRef,
 ) {
-    build_call(
-        builder,
-        array_record_output(builder_module(builder)),
-        &mut [num_elements, label],
-    );
+    let (func_ty, func_val) = array_record_output(builder_module(builder));
+    build_call(builder, func_ty, func_val, &mut [num_elements, label]);
 }
 
 pub unsafe fn build_initialize(builder: LLVMBuilderRef, data: LLVMValueRef) {
-    build_call(builder, initialize(builder_module(builder)), &mut [data]);
+    let (func_ty, func_val) = initialize(builder_module(builder));
+    build_call(builder, func_ty, func_val, &mut [data]);
 }
 
 pub unsafe fn build_result_record_output(
@@ -35,11 +30,8 @@ pub unsafe fn build_result_record_output(
     result: LLVMValueRef,
     label: LLVMValueRef,
 ) {
-    build_call(
-        builder,
-        result_record_output(builder_module(builder)),
-        &mut [result, label],
-    );
+    let (func_ty, func_val) = result_record_output(builder_module(builder));
+    build_call(builder, func_ty, func_val, &mut [result, label]);
 }
 
 pub unsafe fn build_tuple_record_output(
@@ -47,37 +39,34 @@ pub unsafe fn build_tuple_record_output(
     num_elements: LLVMValueRef,
     label: LLVMValueRef,
 ) {
-    build_call(
-        builder,
-        tuple_record_output(builder_module(builder)),
-        &mut [num_elements, label],
-    );
+    let (func_ty, func_val) = tuple_record_output(builder_module(builder));
+    build_call(builder, func_ty, func_val, &mut [num_elements, label]);
 }
 
-unsafe fn array_record_output(module: LLVMModuleRef) -> LLVMValueRef {
+unsafe fn array_record_output(module: LLVMModuleRef) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
     let param_type = LLVMInt64TypeInContext(context);
     let name = "array_record_output";
     record_output(module, name, param_type)
 }
 
-unsafe fn initialize(module: LLVMModuleRef) -> LLVMValueRef {
+unsafe fn initialize(module: LLVMModuleRef) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
     let i8type = LLVMInt8TypeInContext(context);
     let i8p = LLVMPointerType(i8type, 0);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [i8p]);
     let name = "__quantum__rt__initialize";
-    declare_external_function(module, name, ty)
+    (ty, declare_external_function(module, name, ty))
 }
 
-unsafe fn result_record_output(module: LLVMModuleRef) -> LLVMValueRef {
+unsafe fn result_record_output(module: LLVMModuleRef) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
-    let param_type = types::result(context);
+    let param_type = LLVMPointerTypeInContext(context, 0);
     let name = "result_record_output";
     record_output(module, name, param_type)
 }
 
-unsafe fn tuple_record_output(module: LLVMModuleRef) -> LLVMValueRef {
+unsafe fn tuple_record_output(module: LLVMModuleRef) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
     let param_type = LLVMInt64TypeInContext(context);
     let name = "tuple_record_output";
@@ -88,13 +77,13 @@ unsafe fn record_output(
     module: LLVMModuleRef,
     name: &str,
     param_type: LLVMTypeRef,
-) -> LLVMValueRef {
+) -> (LLVMTypeRef, LLVMValueRef) {
     let context = LLVMGetModuleContext(module);
     let i8type = LLVMInt8TypeInContext(context);
     let i8p = LLVMPointerType(i8type, 0);
     let ty = function_type(LLVMVoidTypeInContext(context), &mut [param_type, i8p]);
     let name = format!("__quantum__rt__{name}");
-    declare_external_function(module, &name, ty)
+    (ty, declare_external_function(module, &name, ty))
 }
 
 #[cfg(test)]

@@ -18,10 +18,8 @@ from pyqir import (
     extract_byte_string,
     is_entry_point,
     is_interop_friendly,
-    is_qubit_type,
-    qubit_id,
+    ptr_id,
     required_num_qubits,
-    result_id,
 )
 
 
@@ -64,7 +62,7 @@ def test_parser() -> None:
 
     block = next(filter(lambda b: b.name == "then0__2.i.i3.i", func.basic_blocks))
     assert isinstance(block.instructions[0], Call)
-    assert qubit_id(block.instructions[0].operands[0]) == 5
+    assert ptr_id(block.instructions[0].operands[0]) == 5
 
     block = next(filter(lambda b: b.name == "continue__1.i.i2.i", func.basic_blocks))
     term = block.terminator
@@ -75,7 +73,7 @@ def test_parser() -> None:
     inst = term.operands[0]
     assert isinstance(inst, Call)
     assert inst.callee.name == "__quantum__qir__read_result"
-    assert result_id(inst.args[0]) == 3
+    assert ptr_id(inst.args[0]) == 3
 
     inst_type = inst.type
     assert isinstance(inst_type, IntType)
@@ -101,7 +99,7 @@ def test_parser_select_support() -> None:
     cond = select.operands[0]
     assert isinstance(cond, Call)
     assert cond.callee.name == "__quantum__qis__read_result__body"
-    assert result_id(cond.args[0]) == 0
+    assert ptr_id(cond.args[0]) == 0
 
     true = select.operands[1]
     assert isinstance(true, IntConstant)
@@ -141,10 +139,10 @@ def test_global_string() -> None:
 def test_null_i8ptr_string() -> None:
     llvm_ir = """
     define void @main() {
-      call void @a(i8* null)
+      call void @a(ptr null)
       ret void
     }
-    declare void @a(i8*)
+    declare void @a(ptr)
     """
 
     module = Module.from_ir(Context(), llvm_ir, "module")
@@ -236,8 +234,7 @@ def test_parser_internals() -> None:
 
     arg = args[0]
     assert isinstance(arg, Constant)
-    assert is_qubit_type(arg.type)
-    assert qubit_id(arg) == 0
+    assert ptr_id(arg) == 0
 
     call = entry_block.instructions[8]
     assert isinstance(call, Call)
@@ -245,11 +242,11 @@ def test_parser_internals() -> None:
 
     arg = call.args[0]
     assert isinstance(arg, Constant)
-    assert qubit_id(arg) == 1
+    assert ptr_id(arg) == 1
 
     arg = call.args[1]
     assert isinstance(arg, Constant)
-    assert result_id(arg) == 0
+    assert ptr_id(arg) == 0
 
     term = entry_block.terminator
     assert term is not None
@@ -260,7 +257,7 @@ def test_parser_internals() -> None:
 
     arg = branch_cond.args[0]
     assert isinstance(arg, Constant)
-    assert result_id(arg) == 0
+    assert ptr_id(arg) == 0
     assert branch_cond.name == ""
 
     call = entry_block.instructions[10]
@@ -269,7 +266,7 @@ def test_parser_internals() -> None:
 
     arg = call.args[0]
     assert isinstance(arg, Constant)
-    assert result_id(arg) == 0
+    assert ptr_id(arg) == 0
 
     assert not entry_block.instructions[10].type.is_void
     assert entry_block.instructions[10].name == ""
