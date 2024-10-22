@@ -77,7 +77,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     // llvm-sys components
     println!("cargo:rerun-if-changed=external.rs");
     println!("cargo:rerun-if-changed=target.c");
-    println!("cargo:rerun-if-changed=llvm-wrapper/LLVMWrapper.h");
     println!("cargo:rerun-if-changed=llvm-wrapper/MetadataWrapper.cpp");
     println!("cargo:rerun-if-changed=llvm-wrapper/ModuleWrapper.cpp");
 
