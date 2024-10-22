@@ -13,7 +13,6 @@ pub enum LLVMRustModFlagBehavior {
     Append = 5,
     AppendUnique = 6,
     Max = 7,
-    #[cfg(feature = "llvm15-0")]
     Min = 8,
 }
 

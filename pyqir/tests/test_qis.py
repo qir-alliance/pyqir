@@ -44,7 +44,7 @@ def test_single(
     mod = SimpleModule("test_single", 1, 0)
     qis = BasicQisBuilder(mod.builder)
     get_gate(qis)(mod.qubits[0])
-    call = f"call void @__quantum__qis__{name}__body(%Qubit* null)"
+    call = f"call void @__quantum__qis__{name}__body(ptr null)"
     assert call in mod.ir()
 
 
@@ -60,7 +60,7 @@ def test_two_qubit_gates(
 ) -> None:
     mod = SimpleModule("test_two_qubit_gates", 2, 0)
     get_gate()(mod.builder, mod.qubits[0], mod.qubits[1])
-    call = f"call void @__quantum__qis__{name}__body(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*))"
+    call = f"call void @__quantum__qis__{name}__body(ptr null, ptr inttoptr (i64 1 to ptr))"
     assert call in mod.ir()
 
 
@@ -77,7 +77,7 @@ def test_three_qubit_gates(
     mod = SimpleModule("test_three_qubit_gates", 3, 0)
     basic = BasicQisBuilder(mod.builder)
     get_gate()(mod.builder, mod.qubits[0], mod.qubits[1], mod.qubits[2])
-    call = f"call void @__quantum__qis__{name}__body(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*), %Qubit* inttoptr (i64 2 to %Qubit*))"
+    call = f"call void @__quantum__qis__{name}__body(ptr null, ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 2 to ptr))"
     assert call in mod.ir()
 
 
@@ -94,7 +94,7 @@ def test_controlled(
     mod = SimpleModule("test_controlled", 2, 0)
     qis = BasicQisBuilder(mod.builder)
     get_gate(qis)(mod.qubits[0], mod.qubits[1])
-    call = f"call void @__quantum__qis__{name}__body(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*))"
+    call = f"call void @__quantum__qis__{name}__body(ptr null, ptr inttoptr (i64 1 to ptr))"
     assert call in mod.ir()
 
 
@@ -111,7 +111,7 @@ def test_adjoint(
     mod = SimpleModule("test_adjoint", 1, 0)
     qis = BasicQisBuilder(mod.builder)
     get_gate(qis)(mod.qubits[0])
-    call = f"call void @__quantum__qis__{name}__adj(%Qubit* null)"
+    call = f"call void @__quantum__qis__{name}__adj(ptr null)"
     assert call in mod.ir()
 
 
@@ -138,7 +138,7 @@ def test_rotated(
     mod = SimpleModule("test_rotated", 1, 0)
     qis = BasicQisBuilder(mod.builder)
     get_gate(qis)(get_value(mod.context), mod.qubits[0])
-    call = f"call void @__quantum__qis__{name}__body(double 1.000000e+00, %Qubit* null)"
+    call = f"call void @__quantum__qis__{name}__body(double 1.000000e+00, ptr null)"
     assert call in mod.ir()
 
 
@@ -146,5 +146,5 @@ def test_mz() -> None:
     mod = SimpleModule("test_mz", 1, 1)
     qis = BasicQisBuilder(mod.builder)
     qis.mz(mod.qubits[0], mod.results[0])
-    call = f"call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)"
+    call = f"call void @__quantum__qis__mz__body(ptr null, ptr null)"
     assert call in mod.ir()

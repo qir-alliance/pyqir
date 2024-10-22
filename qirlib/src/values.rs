@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::types;
 use const_str::raw_cstr;
 use core::slice;
 #[allow(clippy::wildcard_imports)]
@@ -20,11 +19,11 @@ use std::{
 pub unsafe fn qubit(context: LLVMContextRef, id: u64) -> LLVMValueRef {
     let i64 = LLVMInt64TypeInContext(context);
     let value = LLVMConstInt(i64, id, 0);
-    LLVMConstIntToPtr(value, types::qubit(context))
+    LLVMConstIntToPtr(value, LLVMPointerTypeInContext(context, 0))
 }
 
-pub unsafe fn qubit_id(value: LLVMValueRef) -> Option<u64> {
-    if types::is_qubit(LLVMTypeOf(value)) {
+pub unsafe fn ptr_id(value: LLVMValueRef) -> Option<u64> {
+    if LLVMPointerTypeIsOpaque(LLVMTypeOf(value)) == 1 {
         pointer_to_int(value)
     } else {
         None
@@ -34,16 +33,9 @@ pub unsafe fn qubit_id(value: LLVMValueRef) -> Option<u64> {
 pub unsafe fn result(context: LLVMContextRef, id: u64) -> LLVMValueRef {
     let i64 = LLVMInt64TypeInContext(context);
     let value = LLVMConstInt(i64, id, 0);
-    LLVMConstIntToPtr(value, types::result(context))
+    LLVMConstIntToPtr(value, LLVMPointerTypeInContext(context, 0))
 }
 
-pub unsafe fn result_id(value: LLVMValueRef) -> Option<u64> {
-    if types::is_result(LLVMTypeOf(value)) {
-        pointer_to_int(value)
-    } else {
-        None
-    }
-}
 pub unsafe fn entry_point(
     module: LLVMModuleRef,
     name: &CStr,
@@ -161,15 +153,16 @@ pub unsafe fn required_num_results(function: LLVMValueRef) -> Option<u64> {
 
 pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
-    let string = LLVMConstStringInContext(
+    let string = LLVMConstStringInContext2(
         context,
         value.as_ptr().cast(),
         value.len().try_into().unwrap(),
         0,
     );
 
-    let len = LLVMGetArrayLength(LLVMTypeOf(string));
-    let ty = LLVMArrayType(LLVMInt8TypeInContext(context), len);
+    let len = LLVMGetArrayLength2(LLVMTypeOf(string));
+    let i8_ty = LLVMInt8TypeInContext(context);
+    let ty = LLVMArrayType2(LLVMInt8TypeInContext(context), len);
     let global = LLVMAddGlobal(module, ty, raw_cstr!(""));
     LLVMSetLinkage(global, LLVMLinkage::LLVMInternalLinkage);
     LLVMSetGlobalConstant(global, 1);
@@ -177,8 +170,8 @@ pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef
 
     let zero = LLVMConstNull(LLVMInt32TypeInContext(context));
     let mut indices = [zero, zero];
-    #[allow(deprecated)]
-    LLVMConstGEP(
+    LLVMConstGEP2(
+        i8_ty,
         global,
         indices.as_mut_ptr(),
         indices.len().try_into().unwrap(),

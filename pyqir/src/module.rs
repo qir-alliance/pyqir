@@ -406,6 +406,8 @@ pub(crate) enum ModuleFlagBehavior {
     AppendUnique,
     #[pyo3(name = "MAX")]
     Max,
+    #[pyo3(name = "MIN")]
+    Min,
 }
 
 impl From<FlagBehavior> for ModuleFlagBehavior {
@@ -418,6 +420,7 @@ impl From<FlagBehavior> for ModuleFlagBehavior {
             FlagBehavior::Append => ModuleFlagBehavior::Append,
             FlagBehavior::AppendUnique => ModuleFlagBehavior::AppendUnique,
             FlagBehavior::Max => ModuleFlagBehavior::Max,
+            FlagBehavior::Min => ModuleFlagBehavior::Min,
         }
     }
 }
@@ -432,6 +435,7 @@ impl From<ModuleFlagBehavior> for FlagBehavior {
             ModuleFlagBehavior::Append => FlagBehavior::Append,
             ModuleFlagBehavior::AppendUnique => FlagBehavior::AppendUnique,
             ModuleFlagBehavior::Max => FlagBehavior::Max,
+            ModuleFlagBehavior::Min => FlagBehavior::Min,
         }
     }
 }

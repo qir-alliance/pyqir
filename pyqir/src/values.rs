@@ -723,15 +723,15 @@ pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObj
     }
 }
 
-/// If the value is a static qubit ID, extracts it.
+/// If the value is a static ptr, extracts the integer value.
 ///
 /// :param Value value: The value.
-/// :returns: The static qubit ID.
+/// :returns: The static integer.
 /// :rtype: typing.Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
-pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
-    unsafe { values::qubit_id(value.as_ptr()) }
+pub(crate) fn ptr_id(value: &Value) -> Option<u64> {
+    unsafe { values::ptr_id(value.as_ptr()) }
 }
 
 /// Creates a static result value.
@@ -747,17 +747,6 @@ pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyOb
         let value = values::result(context.borrow(py).as_ptr(), id);
         Value::from_raw(py, context.into(), value)
     }
-}
-
-/// If the value is a static result ID, extracts it.
-///
-/// :param Value value: The value.
-/// :returns: The static result ID.
-/// :rtype: typing.Optional[int]
-#[pyfunction]
-#[pyo3(text_signature = "(value)")]
-pub(crate) fn result_id(value: &Value) -> Option<u64> {
-    unsafe { values::result_id(value.as_ptr()) }
 }
 
 /// Whether the function is an entry point.
