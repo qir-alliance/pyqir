@@ -566,7 +566,7 @@ unsafe fn callable_fn_type(value: LLVMValueRef) -> Option<NonNull<LLVMType>> {
     match LLVMGetTypeKind(ty) {
         LLVMTypeKind::LLVMFunctionTypeKind => Some(NonNull::new(ty).unwrap()),
         LLVMTypeKind::LLVMPointerTypeKind => {
-            let pointee = LLVMGetElementType(ty);
+            let pointee = LLVMGlobalGetValueType(value);
             if LLVMGetTypeKind(pointee) == LLVMTypeKind::LLVMFunctionTypeKind {
                 Some(NonNull::new(pointee).unwrap())
             } else {

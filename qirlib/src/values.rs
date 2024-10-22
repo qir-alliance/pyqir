@@ -6,10 +6,9 @@ use core::slice;
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{
     core::*, prelude::*, LLVMAttributeFunctionIndex, LLVMAttributeIndex, LLVMLinkage,
-    LLVMOpaqueAttributeRef, LLVMOpcode, LLVMTypeKind, LLVMValueKind,
+    LLVMOpaqueAttributeRef, LLVMTypeKind, LLVMValueKind,
 };
 use std::{
-    convert::TryFrom,
     ffi::CStr,
     mem::{ManuallyDrop, MaybeUninit},
     ptr::NonNull,
@@ -178,28 +177,15 @@ pub unsafe fn extract_string(value: LLVMValueRef) -> Option<Vec<u8>> {
         return None;
     }
 
-    if !is_byte_string(LLVMTypeOf(value)) {
+    if LLVMIsGlobalConstant(value) == 0 {
         return None;
     }
 
-    let expr = LLVMIsAConstantExpr(value);
-    let opcode = LLVMGetConstOpcode(expr);
-    if opcode != LLVMOpcode::LLVMGetElementPtr {
-        return None;
-    }
-
-    let element = LLVMGetOperand(expr, 0);
-    let offset = LLVMConstIntGetZExtValue(LLVMGetOperand(expr, 1));
-    let offset = usize::try_from(offset).expect("Pointer offset larger than usize.");
-    let init = LLVMIsAConstantDataSequential(LLVMGetInitializer(element));
-    if init.is_null() {
-        return None;
-    }
-
+    let element = LLVMGetOperand(value, 0);
     let mut len = 0;
-    let data = LLVMGetAsString(init, &raw mut len);
+    let data = LLVMGetAsString(element, &raw mut len);
     let data = slice::from_raw_parts(data.cast(), len);
-    Some(data[offset..].to_vec())
+    Some(data[..].to_vec())
 }
 
 pub unsafe fn add_string_attribute(
@@ -289,16 +275,6 @@ unsafe fn pointer_to_int(value: LLVMValueRef) -> Option<u64> {
         Some(LLVMConstIntGetZExtValue(int))
     } else {
         None
-    }
-}
-
-unsafe fn is_byte_string(ty: LLVMTypeRef) -> bool {
-    if LLVMGetTypeKind(ty) == LLVMTypeKind::LLVMPointerTypeKind {
-        let pointee = LLVMGetElementType(ty);
-        LLVMGetTypeKind(pointee) == LLVMTypeKind::LLVMIntegerTypeKind
-            && LLVMGetIntTypeWidth(pointee) == 8
-    } else {
-        false
     }
 }
 

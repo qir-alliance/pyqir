@@ -31,7 +31,7 @@ pub unsafe fn build_ccx(
 }
 
 pub unsafe fn build_cx(builder: LLVMBuilderRef, control: LLVMValueRef, qubit: LLVMValueRef) {
-    let (func_ty, func_val) = controlled_gate(builder_module(builder), "cx");
+    let (func_ty, func_val) = controlled_gate(builder_module(builder), "cnot");
     build_call(builder, func_ty, func_val, &mut [control, qubit]);
 }
 
