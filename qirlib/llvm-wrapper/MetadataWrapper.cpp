@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#include "LLVMWrapper.h"
+#include "llvm-c/Core.h"
+#include "llvm/Support/CBindingWrapping.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Metadata.h"
 

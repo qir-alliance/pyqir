@@ -18,22 +18,15 @@ extern crate cc;
 extern crate lazy_static;
 
 // Make sure one version of llvm features is used
-#[cfg(all(
-    not(any(feature = "llvm18-1")),
-    not(any(feature = "llvm19-1")),
-))]
-compile_error!("One of the features `qirlib/llvm18-1` and `qirlib/llvm19-1` must be used exclusive.");
+#[cfg(all(not(any(feature = "llvm18-1")), not(any(feature = "llvm19-1")),))]
+compile_error!(
+    "One of the features `qirlib/llvm18-1` and `qirlib/llvm19-1` must be used exclusive."
+);
 
 // Make sure only one llvm option is used.
 #[cfg(any(
-    all(
-        feature = "llvm18-1",
-        any(feature = "llvm19-1")
-    ),
-    all(
-        feature = "llvm19-1",
-        any(feature = "llvm18-1")
-    ),
+    all(feature = "llvm18-1", any(feature = "llvm19-1")),
+    all(feature = "llvm19-1", any(feature = "llvm18-1")),
 ))]
 compile_error!("Features `qirlib/llvm18-1` and `qirlib/llvm19-1` must be used exclusive.");
 
@@ -86,7 +79,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     // llvm-sys components
     println!("cargo:rerun-if-changed=external.rs");
     println!("cargo:rerun-if-changed=target.c");
-    println!("cargo:rerun-if-changed=llvm-wrapper/LLVMWrapper.h");
     println!("cargo:rerun-if-changed=llvm-wrapper/MetadataWrapper.cpp");
     println!("cargo:rerun-if-changed=llvm-wrapper/ModuleWrapper.cpp");
 
