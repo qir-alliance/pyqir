@@ -98,6 +98,7 @@ def test_all_gates() -> None:
     qis.cz(q[1], control)
     qis.h(q[0])
     qis.reset(q[0])
+    qis.delay(14.0, q[0])
     qis.rx(15.0, q[1])
     qis.ry(16.0, q[2])
     qis.rz(17.0, q[3])

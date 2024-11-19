@@ -156,6 +156,39 @@ pub(crate) fn reset(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()
     Ok(())
 }
 
+/// Inserts a delay operation.
+///
+/// :param Builder builder: The IR Builder used to create the instructions
+/// :param typing.Union[Value, float] duration: The duration the qubit needs to wait for.
+/// :param Value qubit: The qubit to make wait.
+/// :rtype: None
+#[pyfunction]
+#[pyo3(text_signature = "(builder, duration, qubit)")]
+pub(crate) fn delay(
+    py: Python,
+    builder: &Builder,
+    duration: Double,
+    qubit: &Value,
+) -> PyResult<()> {
+    Owner::merge(
+        py,
+        [Some(builder.owner()), duration.owner(), Some(qubit.owner())]
+            .into_iter()
+            .flatten(),
+    )?;
+
+    let context = builder.owner().context(py);
+    let context = context.borrow(py);
+    unsafe {
+        qis::build_delay(
+            builder.as_ptr(),
+            duration.to_value(context.as_ptr()),
+            qubit.as_ptr(),
+        );
+    }
+    Ok(())
+}
+
 /// Inserts a rotation gate about the :math:`x` axis.
 ///
 /// :param Builder builder: The IR Builder used to create the instructions
@@ -164,7 +197,7 @@ pub(crate) fn reset(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()
 /// :rtype: None
 #[pyfunction]
 #[pyo3(text_signature = "(builder, theta, qubit)")]
-pub(crate) fn rx(py: Python, builder: &Builder, theta: Angle, qubit: &Value) -> PyResult<()> {
+pub(crate) fn rx(py: Python, builder: &Builder, theta: Double, qubit: &Value) -> PyResult<()> {
     Owner::merge(
         py,
         [Some(builder.owner()), theta.owner(), Some(qubit.owner())]
@@ -192,7 +225,7 @@ pub(crate) fn rx(py: Python, builder: &Builder, theta: Angle, qubit: &Value) -> 
 /// :rtype: None
 #[pyfunction]
 #[pyo3(text_signature = "(builder, theta, qubit)")]
-pub(crate) fn ry(py: Python, builder: &Builder, theta: Angle, qubit: &Value) -> PyResult<()> {
+pub(crate) fn ry(py: Python, builder: &Builder, theta: Double, qubit: &Value) -> PyResult<()> {
     Owner::merge(
         py,
         [Some(builder.owner()), theta.owner(), Some(qubit.owner())]
@@ -220,7 +253,7 @@ pub(crate) fn ry(py: Python, builder: &Builder, theta: Angle, qubit: &Value) -> 
 /// :rtype: None
 #[pyfunction]
 #[pyo3(text_signature = "(builder, theta, qubit)")]
-pub(crate) fn rz(py: Python, builder: &Builder, theta: Angle, qubit: &Value) -> PyResult<()> {
+pub(crate) fn rz(py: Python, builder: &Builder, theta: Double, qubit: &Value) -> PyResult<()> {
     Owner::merge(
         py,
         [Some(builder.owner()), theta.owner(), Some(qubit.owner())]
@@ -379,23 +412,23 @@ pub(crate) fn if_result(
 }
 
 #[derive(FromPyObject)]
-pub(crate) enum Angle<'py> {
+pub(crate) enum Double<'py> {
     Value(PyRef<'py, Value>),
     Constant(f64),
 }
 
-impl Angle<'_> {
+impl Double<'_> {
     fn owner(&self) -> Option<&Owner> {
         match self {
-            Angle::Value(v) => Some(v.owner()),
-            Angle::Constant(_) => None,
+            Double::Value(v) => Some(v.owner()),
+            Double::Constant(_) => None,
         }
     }
 
     unsafe fn to_value(&self, context: LLVMContextRef) -> LLVMValueRef {
         match self {
-            Angle::Value(v) => v.as_ptr(),
-            &Angle::Constant(c) => LLVMConstReal(LLVMDoubleTypeInContext(context), c),
+            Double::Value(v) => v.as_ptr(),
+            &Double::Constant(c) => LLVMConstReal(LLVMDoubleTypeInContext(context), c),
         }
     }
 }
