@@ -26,7 +26,7 @@ Install python and libs:
 ```bash
 sudo apt-get install -y --no-install-recommends python3-dev python3-pip
 python3 -m pip install --user -U pip
-python3 -m pip install --user maturin
+python3 -m pip install --user maturin~=1.4.0
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
@@ -42,7 +42,7 @@ path.
 In a command prompt:
 
 ```bash
-python -m pip install --user maturin
+python -m pip install --user maturin~=1.4.0
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
@@ -55,7 +55,7 @@ or brew:
 
 ```bash
 brew install 'python@3.9'
-python -m pip install --user maturin
+python -m pip install --user maturin~=1.4.0
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
@@ -104,18 +104,17 @@ The [](#environment-variables) section details ways to change this behavior.
 
 Within each project folder, the build can be run specifically for that project.
 
-For any of these commands, the LLVM version must be added via features. For `maturin`,
-they must be added to the `cargo-extra-args` option.
+For any of these commands, the LLVM version must be added via features.
 
 - `<features>` is a placeholder for `--features (llvm11-0 | llvm12-0 | llvm13-0 | llvm14-0)`
 
 Build commands:
 
-- `maturin build --cargo-extra-args="<features>"`: Build the crate into python packages
-- `maturin build --release --cargo-extra-args="<features>"`: Build and pass --release to cargo
+- `maturin build <features>`: Build the crate into python packages
+- `maturin build --release <features>`: Build and pass --release to cargo
 - `maturin build --help`: to view more options
-- `maturin develop --cargo-extra-args="<features>"`: Installs the crate as module in the current virtualenv
-- `maturin develop --cargo-extra-args="<features>" && pytest`: Installs the crate as module in the current
+- `maturin develop <features>`: Installs the crate as module in the current virtualenv
+- `maturin develop <features> && pytest`: Installs the crate as module in the current
   virtualenv and runs the Python tests
 
 If you do not wish to package and test the Python wheels, `cargo` can be used to
