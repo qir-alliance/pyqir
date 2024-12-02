@@ -281,7 +281,7 @@
 <p>Install python and libs:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>--no-install-recommends<span class="w"> </span>python3-dev<span class="w"> </span>python3-pip
 python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>-U<span class="w"> </span>pip
-python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>maturin
+python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>maturin~<span class="o">=</span><span class="m">1</span>.4.0
 </pre></div>
 </div>
 <p>Install Rust from <a class="reference external" href="https://rustup.rs/">rustup</a>.</p>
@@ -295,7 +295,7 @@ path.</p>
 <li><p><a class="reference external" href="https://www.python.org/downloads/">Python.org</a></p></li>
 </ul>
 <p>In a command prompt:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>maturin
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>maturin~<span class="o">=</span><span class="m">1</span>.4.0
 </pre></div>
 </div>
 <p>Install Rust from <a class="reference external" href="https://rustup.rs/">rustup</a>.</p>
@@ -305,7 +305,7 @@ path.</p>
 <p>Install Python 3.7+ from <a class="reference external" href="https://www.python.org/downloads/macos/">Python.org</a>.</p>
 <p>or brew:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;python@3.9&#39;</span>
-python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>maturin
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>maturin~<span class="o">=</span><span class="m">1</span>.4.0
 </pre></div>
 </div>
 <p>Install Rust from <a class="reference external" href="https://rustup.rs/">rustup</a>.</p>
@@ -356,18 +356,17 @@ variables set for their build scripts. After this is run, the build commands
 below can be used instead of <code class="docutils literal notranslate"><span class="pre">build.ps1</span></code>.</p>
 <p>The <a class="reference internal" href="#environment-variables"><span class="std std-ref">Environment Variables</span></a> section details ways to change this behavior.</p>
 <p>Within each project folder, the build can be run specifically for that project.</p>
-<p>For any of these commands, the LLVM version must be added via features. For <code class="docutils literal notranslate"><span class="pre">maturin</span></code>,
-they must be added to the <code class="docutils literal notranslate"><span class="pre">cargo-extra-args</span></code> option.</p>
+<p>For any of these commands, the LLVM version must be added via features.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">&lt;features&gt;</span></code> is a placeholder for <code class="docutils literal notranslate"><span class="pre">--features</span> <span class="pre">(llvm11-0</span> <span class="pre">|</span> <span class="pre">llvm12-0</span> <span class="pre">|</span> <span class="pre">llvm13-0</span> <span class="pre">|</span> <span class="pre">llvm14-0)</span></code></p></li>
 </ul>
 <p>Build commands:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">build</span> <span class="pre">--cargo-extra-args=&quot;&lt;features&gt;&quot;</span></code>: Build the crate into python packages</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">build</span> <span class="pre">--release</span> <span class="pre">--cargo-extra-args=&quot;&lt;features&gt;&quot;</span></code>: Build and pass –release to cargo</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">build</span> <span class="pre">&lt;features&gt;</span></code>: Build the crate into python packages</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">build</span> <span class="pre">--release</span> <span class="pre">&lt;features&gt;</span></code>: Build and pass –release to cargo</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">build</span> <span class="pre">--help</span></code>: to view more options</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">develop</span> <span class="pre">--cargo-extra-args=&quot;&lt;features&gt;&quot;</span></code>: Installs the crate as module in the current virtualenv</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">develop</span> <span class="pre">--cargo-extra-args=&quot;&lt;features&gt;&quot;</span> <span class="pre">&amp;&amp;</span> <span class="pre">pytest</span></code>: Installs the crate as module in the current
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">develop</span> <span class="pre">&lt;features&gt;</span></code>: Installs the crate as module in the current virtualenv</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">develop</span> <span class="pre">&lt;features&gt;</span> <span class="pre">&amp;&amp;</span> <span class="pre">pytest</span></code>: Installs the crate as module in the current
 virtualenv and runs the Python tests</p></li>
 </ul>
 <p>If you do not wish to package and test the Python wheels, <code class="docutils literal notranslate"><span class="pre">cargo</span></code> can be used to
