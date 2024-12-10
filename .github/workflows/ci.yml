@@ -41,14 +41,6 @@ jobs:
               env: {},
             }
           - {
-              os: "macos-12",
-              arch: "amd64",
-              target: "default",
-              env: {
-                MACOSX_DEPLOYMENT_TARGET: 10.9
-              },
-            }
-          - {
               os: "macos-14",
               arch: "aarch64",
               target: "default",

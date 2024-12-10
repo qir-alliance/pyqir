@@ -29,11 +29,6 @@ jobs:
               env: {},
             }
           - {
-              os: "macos-12",
-              arch: "amd64",
-              env: {},
-            }
-          - {
               os: "macos-14",
               arch: "aarch64",
               env: {},
@@ -55,9 +50,6 @@ jobs:
       - name: Windows - Install build dependencies, sccache, ninja
         run: choco install --accept-license -y sccache ninja
         if: ${{ matrix.config.os == 'windows-2019' }}
-      - name: MacOS - Install build dependencies, ccache, ninja
-        run: brew install ccache ninja
-        if: ${{ matrix.config.os == 'macos-12' }}
       - name: MacOS - Install build dependencies, ccache, ninja
         run: brew install ccache ninja
         if: ${{ matrix.config.os == 'macos-14' }}
