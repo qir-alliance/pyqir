@@ -26,7 +26,7 @@ Install python and libs:
 ```bash
 sudo apt-get install -y --no-install-recommends python3-dev python3-pip
 python3 -m pip install --user -U pip
-python3 -m pip install --user maturin~=1.4.0
+python3 -m pip install --user maturin~=1.7.8
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
@@ -42,7 +42,7 @@ path.
 In a command prompt:
 
 ```bash
-python -m pip install --user maturin~=1.4.0
+python -m pip install --user maturin~=1.7.8
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
@@ -55,7 +55,7 @@ or brew:
 
 ```bash
 brew install 'python@3.9'
-python -m pip install --user maturin~=1.4.0
+python -m pip install --user maturin~=1.7.8
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
