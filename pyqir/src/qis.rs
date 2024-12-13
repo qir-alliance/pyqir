@@ -21,7 +21,7 @@ use qirlib::qis;
 #[allow(clippy::needless_pass_by_value)]
 pub(crate) fn barrier(builder: &Builder) {
     unsafe {
-        qis::build_barrier(builder.as_ptr());
+        qis::build_barrier(builder.cast().as_ptr());
     }
 }
 
@@ -37,7 +37,11 @@ pub(crate) fn barrier(builder: &Builder) {
 pub(crate) fn swap(py: Python, builder: &Builder, qubit1: &Value, qubit2: &Value) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), qubit1.owner(), qubit2.owner()])?;
     unsafe {
-        qis::build_swap(builder.as_ptr(), qubit1.as_ptr(), qubit2.as_ptr());
+        qis::build_swap(
+            builder.cast().as_ptr(),
+            qubit1.cast().as_ptr(),
+            qubit2.cast().as_ptr(),
+        );
     }
     Ok(())
 }
@@ -69,10 +73,10 @@ pub(crate) fn ccx(
     )?;
     unsafe {
         qis::build_ccx(
-            builder.as_ptr(),
-            control1.as_ptr(),
-            control2.as_ptr(),
-            target.as_ptr(),
+            builder.cast().as_ptr(),
+            control1.cast().as_ptr(),
+            control2.cast().as_ptr(),
+            target.cast().as_ptr(),
         );
     }
     Ok(())
@@ -89,7 +93,11 @@ pub(crate) fn ccx(
 pub(crate) fn cx(py: Python, builder: &Builder, control: &Value, target: &Value) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), control.owner(), target.owner()])?;
     unsafe {
-        qis::build_cx(builder.as_ptr(), control.as_ptr(), target.as_ptr());
+        qis::build_cx(
+            builder.cast().as_ptr(),
+            control.cast().as_ptr(),
+            target.cast().as_ptr(),
+        );
     }
     Ok(())
 }
@@ -105,7 +113,11 @@ pub(crate) fn cx(py: Python, builder: &Builder, control: &Value, target: &Value)
 pub(crate) fn cz(py: Python, builder: &Builder, control: &Value, target: &Value) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), control.owner(), target.owner()])?;
     unsafe {
-        qis::build_cz(builder.as_ptr(), control.as_ptr(), target.as_ptr());
+        qis::build_cz(
+            builder.cast().as_ptr(),
+            control.cast().as_ptr(),
+            target.cast().as_ptr(),
+        );
     }
     Ok(())
 }
@@ -120,7 +132,7 @@ pub(crate) fn cz(py: Python, builder: &Builder, control: &Value, target: &Value)
 pub(crate) fn h(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), qubit.owner()])?;
     unsafe {
-        qis::build_h(builder.as_ptr(), qubit.as_ptr());
+        qis::build_h(builder.cast().as_ptr(), qubit.cast().as_ptr());
     }
     Ok(())
 }
@@ -136,7 +148,11 @@ pub(crate) fn h(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
 pub(crate) fn mz(py: Python, builder: &Builder, qubit: &Value, result: &Value) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), qubit.owner(), result.owner()])?;
     unsafe {
-        qis::build_mz(builder.as_ptr(), qubit.as_ptr(), result.as_ptr());
+        qis::build_mz(
+            builder.cast().as_ptr(),
+            qubit.cast().as_ptr(),
+            result.cast().as_ptr(),
+        );
     }
     Ok(())
 }
@@ -151,7 +167,7 @@ pub(crate) fn mz(py: Python, builder: &Builder, qubit: &Value, result: &Value) -
 pub(crate) fn reset(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), qubit.owner()])?;
     unsafe {
-        qis::build_reset(builder.as_ptr(), qubit.as_ptr());
+        qis::build_reset(builder.cast().as_ptr(), qubit.cast().as_ptr());
     }
     Ok(())
 }
@@ -176,9 +192,9 @@ pub(crate) fn rx(py: Python, builder: &Builder, theta: Angle, qubit: &Value) -> 
     let context = context.borrow(py);
     unsafe {
         qis::build_rx(
-            builder.as_ptr(),
-            theta.to_value(context.as_ptr()),
-            qubit.as_ptr(),
+            builder.cast().as_ptr(),
+            theta.to_value(context.cast().as_ptr()),
+            qubit.cast().as_ptr(),
         );
     }
     Ok(())
@@ -204,9 +220,9 @@ pub(crate) fn ry(py: Python, builder: &Builder, theta: Angle, qubit: &Value) -> 
     let context = context.borrow(py);
     unsafe {
         qis::build_ry(
-            builder.as_ptr(),
-            theta.to_value(context.as_ptr()),
-            qubit.as_ptr(),
+            builder.cast().as_ptr(),
+            theta.to_value(context.cast().as_ptr()),
+            qubit.cast().as_ptr(),
         );
     }
     Ok(())
@@ -232,9 +248,9 @@ pub(crate) fn rz(py: Python, builder: &Builder, theta: Angle, qubit: &Value) -> 
     let context = context.borrow(py);
     unsafe {
         qis::build_rz(
-            builder.as_ptr(),
-            theta.to_value(context.as_ptr()),
-            qubit.as_ptr(),
+            builder.cast().as_ptr(),
+            theta.to_value(context.cast().as_ptr()),
+            qubit.cast().as_ptr(),
         );
     }
     Ok(())
@@ -250,7 +266,7 @@ pub(crate) fn rz(py: Python, builder: &Builder, theta: Angle, qubit: &Value) -> 
 pub(crate) fn s(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), qubit.owner()])?;
     unsafe {
-        qis::build_s(builder.as_ptr(), qubit.as_ptr());
+        qis::build_s(builder.cast().as_ptr(), qubit.cast().as_ptr());
     }
     Ok(())
 }
@@ -265,7 +281,7 @@ pub(crate) fn s(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
 pub(crate) fn s_adj(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), qubit.owner()])?;
     unsafe {
-        qis::build_s_adj(builder.as_ptr(), qubit.as_ptr());
+        qis::build_s_adj(builder.cast().as_ptr(), qubit.cast().as_ptr());
     }
     Ok(())
 }
@@ -280,7 +296,7 @@ pub(crate) fn s_adj(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()
 pub(crate) fn t(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), qubit.owner()])?;
     unsafe {
-        qis::build_t(builder.as_ptr(), qubit.as_ptr());
+        qis::build_t(builder.cast().as_ptr(), qubit.cast().as_ptr());
     }
     Ok(())
 }
@@ -295,7 +311,7 @@ pub(crate) fn t(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
 pub(crate) fn t_adj(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), qubit.owner()])?;
     unsafe {
-        qis::build_t_adj(builder.as_ptr(), qubit.as_ptr());
+        qis::build_t_adj(builder.cast().as_ptr(), qubit.cast().as_ptr());
     }
     Ok(())
 }
@@ -310,7 +326,7 @@ pub(crate) fn t_adj(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()
 pub(crate) fn x(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), qubit.owner()])?;
     unsafe {
-        qis::build_x(builder.as_ptr(), qubit.as_ptr());
+        qis::build_x(builder.cast().as_ptr(), qubit.cast().as_ptr());
     }
     Ok(())
 }
@@ -325,7 +341,7 @@ pub(crate) fn x(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
 pub(crate) fn y(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), qubit.owner()])?;
     unsafe {
-        qis::build_y(builder.as_ptr(), qubit.as_ptr());
+        qis::build_y(builder.cast().as_ptr(), qubit.cast().as_ptr());
     }
     Ok(())
 }
@@ -340,7 +356,7 @@ pub(crate) fn y(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
 pub(crate) fn z(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), qubit.owner()])?;
     unsafe {
-        qis::build_z(builder.as_ptr(), qubit.as_ptr());
+        qis::build_z(builder.cast().as_ptr(), qubit.cast().as_ptr());
     }
     Ok(())
 }
@@ -370,8 +386,8 @@ pub(crate) fn if_result(
     Owner::merge(py, [builder.owner(), cond.owner()])?;
     unsafe {
         qis::try_build_if_result(
-            builder.as_ptr(),
-            cond.as_ptr(),
+            builder.cast().as_ptr(),
+            cond.cast().as_ptr(),
             || one.iter().try_for_each(|f| f.call0().map(|_| ())),
             || zero.iter().try_for_each(|f| f.call0().map(|_| ())),
         )
@@ -394,7 +410,7 @@ impl Angle<'_> {
 
     unsafe fn to_value(&self, context: LLVMContextRef) -> LLVMValueRef {
         match self {
-            Angle::Value(v) => v.as_ptr(),
+            Angle::Value(v) => v.cast().as_ptr(),
             &Angle::Constant(c) => LLVMConstReal(LLVMDoubleTypeInContext(context), c),
         }
     }

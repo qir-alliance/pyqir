@@ -25,7 +25,7 @@ impl Instruction {
     /// :type: Opcode
     #[getter]
     fn opcode(slf: PyRef<Self>) -> Opcode {
-        unsafe { LLVMGetInstructionOpcode(slf.into_super().as_ptr()) }.into()
+        unsafe { LLVMGetInstructionOpcode(slf.into_super().cast().as_ptr()) }.into()
     }
 
     /// The operands to the instruction.
@@ -36,9 +36,9 @@ impl Instruction {
         let slf = slf.into_super();
         let owner = slf.owner();
         unsafe {
-            (0..u32::try_from(LLVMGetNumOperands(slf.as_ptr())).unwrap())
+            (0..u32::try_from(LLVMGetNumOperands(slf.cast().as_ptr())).unwrap())
                 .map(|i| {
-                    let operand = LLVMGetOperand(slf.as_ptr(), i);
+                    let operand = LLVMGetOperand(slf.cast().as_ptr(), i);
                     Value::from_raw(py, owner.clone_ref(py), operand)
                 })
                 .collect()
@@ -51,7 +51,7 @@ impl Instruction {
     /// :type: typing.List[BasicBlock]
     #[getter]
     fn successors(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
-        if unsafe { LLVMIsATerminatorInst(slf.as_ref().as_ptr()) }.is_null() {
+        if unsafe { LLVMIsATerminatorInst(slf.as_ref().cast().as_ptr()) }.is_null() {
             Ok(Vec::new())
         } else {
             // then_some is stabilized in Rust 1.62.
@@ -70,7 +70,7 @@ impl Instruction {
     /// :rtype: None
     fn erase(slf: PyRef<Self>) {
         unsafe {
-            LLVMInstructionEraseFromParent(slf.into_super().as_ptr());
+            LLVMInstructionEraseFromParent(slf.into_super().cast().as_ptr());
         }
     }
 }
@@ -83,7 +83,7 @@ impl Instruction {
     ) -> PyResult<PyObject> {
         let value = NonNull::new(value).expect("Value is null.");
         let base = PyClassInitializer::from(Value::new(owner, value)).add_subclass(Self);
-        match LLVMGetInstructionOpcode(value.as_ptr()) {
+        match LLVMGetInstructionOpcode(value.cast().as_ptr()) {
             LLVMOpcode::LLVMSwitch => Ok(Py::new(py, base.add_subclass(Switch))?.to_object(py)),
             LLVMOpcode::LLVMICmp => Ok(Py::new(py, base.add_subclass(ICmp))?.to_object(py)),
             LLVMOpcode::LLVMFCmp => Ok(Py::new(py, base.add_subclass(FCmp))?.to_object(py)),
@@ -340,7 +340,7 @@ impl Switch {
     fn cond(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super().into_super();
         unsafe {
-            let value = LLVMGetCondition(slf.as_ptr());
+            let value = LLVMGetCondition(slf.cast().as_ptr());
             Value::from_raw(py, slf.owner().clone_ref(py), value)
         }
     }
@@ -352,7 +352,7 @@ impl Switch {
     fn default(slf: PyRef<Self>, py: Python) -> PyResult<Py<BasicBlock>> {
         let slf = slf.into_super().into_super();
         unsafe {
-            let block = LLVMGetSwitchDefaultDest(slf.as_ptr());
+            let block = LLVMGetSwitchDefaultDest(slf.cast().as_ptr());
             let block = BasicBlock::from_raw(slf.owner().clone_ref(py), block);
             Py::new(py, block)
         }
@@ -366,11 +366,11 @@ impl Switch {
         let slf = slf.into_super().into_super();
         let owner = slf.owner();
         unsafe {
-            (2..u32::try_from(LLVMGetNumOperands(slf.as_ptr())).unwrap())
+            (2..u32::try_from(LLVMGetNumOperands(slf.cast().as_ptr())).unwrap())
                 .step_by(2)
                 .map(|i| {
-                    let cond = LLVMGetOperand(slf.as_ptr(), i);
-                    let succ = LLVMGetOperand(slf.as_ptr(), i + 1);
+                    let cond = LLVMGetOperand(slf.cast().as_ptr(), i);
+                    let succ = LLVMGetOperand(slf.cast().as_ptr(), i + 1);
                     Ok((
                         Value::from_raw(py, owner.clone_ref(py), cond)?,
                         Value::from_raw(py, owner.clone_ref(py), succ)?,
@@ -392,7 +392,7 @@ impl ICmp {
     /// :type: IntPredicate
     #[getter]
     fn predicate(slf: PyRef<Self>) -> IntPredicate {
-        unsafe { LLVMGetICmpPredicate(slf.into_super().into_super().as_ptr()) }.into()
+        unsafe { LLVMGetICmpPredicate(slf.into_super().into_super().cast().as_ptr()) }.into()
     }
 }
 
@@ -487,7 +487,7 @@ impl FCmp {
     /// :type: FloatPredicate
     #[getter]
     fn predicate(slf: PyRef<Self>) -> FloatPredicate {
-        unsafe { LLVMGetFCmpPredicate(slf.into_super().into_super().as_ptr()) }.into()
+        unsafe { LLVMGetFCmpPredicate(slf.into_super().into_super().cast().as_ptr()) }.into()
     }
 }
 
@@ -585,7 +585,7 @@ impl Call {
     fn callee(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super().into_super();
         unsafe {
-            let value = LLVMGetCalledValue(slf.as_ptr());
+            let value = LLVMGetCalledValue(slf.cast().as_ptr());
             Value::from_raw(py, slf.owner().clone_ref(py), value)
         }
     }
@@ -612,7 +612,12 @@ impl Phi {
     fn add_incoming(slf: PyRef<Self>, value: &Value, block: PyRef<BasicBlock>) {
         let slf = slf.into_super().into_super();
         unsafe {
-            LLVMAddIncoming(slf.as_ptr(), &mut value.as_ptr(), &mut block.as_ptr(), 1);
+            LLVMAddIncoming(
+                slf.cast().as_ptr(),
+                &mut value.cast().as_ptr(),
+                &mut block.cast().as_ptr(),
+                1,
+            );
         }
     }
 
@@ -624,10 +629,10 @@ impl Phi {
         let slf = slf.into_super().into_super();
         let owner = slf.owner();
         unsafe {
-            (0..LLVMCountIncoming(slf.as_ptr()))
+            (0..LLVMCountIncoming(slf.cast().as_ptr()))
                 .map(|i| {
-                    let value = LLVMGetIncomingValue(slf.as_ptr(), i);
-                    let block = LLVMBasicBlockAsValue(LLVMGetIncomingBlock(slf.as_ptr(), i));
+                    let value = LLVMGetIncomingValue(slf.cast().as_ptr(), i);
+                    let block = LLVMBasicBlockAsValue(LLVMGetIncomingBlock(slf.cast().as_ptr(), i));
                     Ok((
                         Value::from_raw(py, owner.clone_ref(py), value)?,
                         Value::from_raw(py, owner.clone_ref(py), block)?,
