@@ -30,5 +30,3 @@ llvm15-0 = ["llvm-sys-150", "qirlib/llvm15-0"]
 [lib]
 crate-type = ["cdylib"]
 
-[package.metadata.maturin]
-name = "pyqir._native"
