@@ -45,7 +45,7 @@ pub(crate) struct Value {
 
 impl Hash for Value {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        let x: LLVMValueRef = self.value.as_ptr();
+        let x: LLVMValueRef = self.value.cast().as_ptr();
         x.hash(state);
     }
 }
@@ -53,7 +53,7 @@ impl Hash for Value {
 impl std::cmp::Eq for Value {}
 impl std::cmp::PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
-        self.value.as_ptr() == other.value.as_ptr()
+        self.value.as_ptr() == other.value.cast().as_ptr()
     }
 }
 
@@ -80,7 +80,7 @@ impl Value {
     /// :type: Type
     #[getter]
     fn r#type(&self, py: Python) -> PyResult<PyObject> {
-        unsafe { Type::from_raw(py, self.owner.context(py), LLVMTypeOf(self.as_ptr())) }
+        unsafe { Type::from_raw(py, self.owner.context(py), LLVMTypeOf(self.cast().as_ptr())) }
     }
 
     /// The name of this value or the empty string if this value is anonymous.
@@ -88,7 +88,7 @@ impl Value {
     fn name(&self) -> &str {
         let mut len = 0;
         unsafe {
-            let name = LLVMGetValueName2(self.as_ptr(), &mut len).cast();
+            let name = LLVMGetValueName2(self.cast().as_ptr(), &mut len).cast();
             str::from_utf8(slice::from_raw_parts(name, len)).unwrap()
         }
     }
@@ -98,7 +98,7 @@ impl Value {
         unsafe {
             let c_name = &CString::new(value).unwrap();
             LLVMSetValueName2(
-                self.as_ptr(),
+                self.cast().as_ptr(),
                 value.as_ptr().cast(),
                 c_name.as_bytes().len(),
             );
@@ -107,7 +107,7 @@ impl Value {
 
     fn __str__(&self) -> String {
         unsafe {
-            Message::from_raw(LLVMPrintValueToString(self.as_ptr()))
+            Message::from_raw(LLVMPrintValueToString(self.cast().as_ptr()))
                 .to_str()
                 .unwrap()
                 .to_string()
@@ -275,17 +275,27 @@ impl BasicBlock {
             match (parent, before) {
                 (None, None) => Err(PyValueError::new_err("Can't create block without parent.")),
                 (Some(parent), None) => Ok(unsafe {
-                    LLVMAppendBasicBlockInContext(context.as_ptr(), parent.as_ptr(), name.as_ptr())
+                    LLVMAppendBasicBlockInContext(
+                        context.cast().as_ptr(),
+                        parent.cast().as_ptr(),
+                        name.as_ptr(),
+                    )
                 }),
                 (Some(parent), Some(before))
-                    if unsafe { LLVMGetBasicBlockParent(before.as_ptr()) != parent.as_ptr() } =>
+                    if unsafe {
+                        LLVMGetBasicBlockParent(before.cast().as_ptr()) != parent.cast().as_ptr()
+                    } =>
                 {
                     Err(PyValueError::new_err(
                         "Insert before block isn't in parent function.",
                     ))
                 }
                 (_, Some(before)) => Ok(unsafe {
-                    LLVMInsertBasicBlockInContext(context.as_ptr(), before.as_ptr(), name.as_ptr())
+                    LLVMInsertBasicBlockInContext(
+                        context.cast().as_ptr(),
+                        before.cast().as_ptr(),
+                        name.as_ptr(),
+                    )
                 }),
             }
         }?;
@@ -304,7 +314,7 @@ impl BasicBlock {
     fn instructions(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let mut insts = Vec::new();
         unsafe {
-            let mut inst = LLVMGetFirstInstruction(slf.as_ptr());
+            let mut inst = LLVMGetFirstInstruction(slf.cast().as_ptr());
             while !inst.is_null() {
                 let owner = slf.as_ref().owner.clone_ref(py);
                 insts.push(Instruction::from_raw(py, owner, inst)?);
@@ -320,7 +330,7 @@ impl BasicBlock {
     #[getter]
     fn terminator(slf: PyRef<Self>, py: Python) -> PyResult<Option<PyObject>> {
         unsafe {
-            let term = LLVMGetBasicBlockTerminator(slf.as_ptr());
+            let term = LLVMGetBasicBlockTerminator(slf.cast().as_ptr());
             if term.is_null() {
                 Ok(None)
             } else {
@@ -337,7 +347,8 @@ impl BasicBlock {
         block: LLVMBasicBlockRef,
     ) -> PyClassInitializer<Self> {
         let block = NonNull::new(block).expect("Block is null.");
-        let value = NonNull::new(LLVMBasicBlockAsValue(block.as_ptr())).expect("Value is null.");
+        let value =
+            NonNull::new(LLVMBasicBlockAsValue(block.cast().as_ptr())).expect("Value is null.");
         PyClassInitializer::from(Value { value, owner }).add_subclass(BasicBlock(block))
     }
 }
@@ -365,7 +376,7 @@ impl Constant {
     #[pyo3(text_signature = "(ty)")]
     fn null(py: Python, ty: &Type) -> PyResult<PyObject> {
         let context = ty.context().clone_ref(py);
-        unsafe { Value::from_raw(py, context.into(), LLVMConstNull(ty.as_ptr())) }
+        unsafe { Value::from_raw(py, context.into(), LLVMConstNull(ty.cast().as_ptr())) }
     }
 
     /// Whether this value is the null value for its type.
@@ -373,7 +384,7 @@ impl Constant {
     /// :type: bool
     #[getter]
     fn is_null(slf: PyRef<Self>) -> bool {
-        unsafe { LLVMIsNull(slf.into_super().as_ptr()) != 0 }
+        unsafe { LLVMIsNull(slf.into_super().cast().as_ptr()) != 0 }
     }
 }
 
@@ -384,11 +395,11 @@ impl Constant {
         value: LLVMValueRef,
     ) -> PyResult<PyObject> {
         let value = NonNull::new(value).expect("Value is null.");
-        if LLVMIsConstant(value.as_ptr()) == 0 {
+        if LLVMIsConstant(value.cast().as_ptr()) == 0 {
             Err(PyValueError::new_err("Value is not constant."))
         } else {
             let base = PyClassInitializer::from(Value { value, owner }).add_subclass(Constant);
-            match LLVMGetValueKind(value.as_ptr()) {
+            match LLVMGetValueKind(value.cast().as_ptr()) {
                 LLVMValueKind::LLVMConstantIntValueKind => {
                     Ok(Py::new(py, base.add_subclass(IntConstant))?.to_object(py))
                 }
@@ -415,7 +426,7 @@ impl IntConstant {
     /// :type: int
     #[getter]
     fn value(slf: PyRef<Self>) -> u64 {
-        unsafe { LLVMConstIntGetZExtValue(slf.into_super().into_super().as_ptr()) }
+        unsafe { LLVMConstIntGetZExtValue(slf.into_super().into_super().cast().as_ptr()) }
     }
 }
 
@@ -430,7 +441,7 @@ impl FloatConstant {
     /// :type: float
     #[getter]
     fn value(slf: PyRef<Self>) -> f64 {
-        unsafe { LLVMConstRealGetDouble(slf.into_super().into_super().as_ptr(), &mut 0) }
+        unsafe { LLVMConstRealGetDouble(slf.into_super().into_super().cast().as_ptr(), &mut 0) }
     }
 }
 
@@ -464,12 +475,12 @@ impl Function {
         let name = CString::new(name).unwrap();
         unsafe {
             let value = NonNull::new(LLVMAddFunction(
-                module.borrow(py).as_ptr(),
+                module.borrow(py).cast().as_ptr(),
                 name.as_ptr(),
-                ty.into_super().as_ptr(),
+                ty.into_super().cast().as_ptr(),
             ))
             .expect("Function is null.");
-            LLVMSetLinkage(value.as_ptr(), linkage.into());
+            LLVMSetLinkage(value.cast().as_ptr(), linkage.into());
 
             Ok(PyClassInitializer::from(Value { value, owner })
                 .add_subclass(Constant)
@@ -481,7 +492,7 @@ impl Function {
     fn r#type(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
         let slf = slf.into_super().into_super();
         unsafe {
-            let ty = LLVMGetElementType(LLVMTypeOf(slf.as_ptr()));
+            let ty = LLVMGetElementType(LLVMTypeOf(slf.cast().as_ptr()));
             Type::from_raw(py, slf.owner().context(py), ty)
         }
     }
@@ -493,9 +504,9 @@ impl Function {
     fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let slf = slf.into_super().into_super();
         unsafe {
-            let count = LLVMCountParams(slf.as_ptr()).try_into().unwrap();
+            let count = LLVMCountParams(slf.cast().as_ptr()).try_into().unwrap();
             let mut params = Vec::with_capacity(count);
-            LLVMGetParams(slf.as_ptr(), params.as_mut_ptr());
+            LLVMGetParams(slf.cast().as_ptr(), params.as_mut_ptr());
             params.set_len(count);
             params
                 .into_iter()
@@ -511,9 +522,11 @@ impl Function {
     fn basic_blocks(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
         let slf = slf.into_super().into_super();
         unsafe {
-            let count = LLVMCountBasicBlocks(slf.as_ptr()).try_into().unwrap();
+            let count = LLVMCountBasicBlocks(slf.cast().as_ptr())
+                .try_into()
+                .unwrap();
             let mut blocks = Vec::with_capacity(count);
-            LLVMGetBasicBlocks(slf.as_ptr(), blocks.as_mut_ptr());
+            LLVMGetBasicBlocks(slf.cast().as_ptr(), blocks.as_mut_ptr());
             blocks.set_len(count);
             blocks
                 .into_iter()
@@ -639,7 +652,7 @@ impl AttributeSet {
         let kind = CString::new(key).unwrap();
         let attr = unsafe {
             LLVMGetStringAttributeAtIndex(
-                function.as_ptr(),
+                function.cast().as_ptr(),
                 self.index,
                 kind.as_ptr(),
                 key.len().try_into().unwrap(),
@@ -657,7 +670,7 @@ impl AttributeSet {
         let function = slf.function.borrow(slf.py()).into_super().into_super();
 
         unsafe {
-            let attrs = qirlib::values::get_attributes(function.as_ptr(), slf.index);
+            let attrs = qirlib::values::get_attributes(function.cast().as_ptr(), slf.index);
             let items = attrs
                 .into_iter()
                 .map(|a| Py::new(slf.py(), Attribute(a)).expect("msg"));
@@ -705,7 +718,7 @@ impl Literal<'_> {
 #[pyo3(text_signature = "(ty, value)")]
 pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObject> {
     let owner = ty.context().clone_ref(py).into();
-    unsafe { Value::from_raw(py, owner, value.to_value(ty.as_ptr())?) }
+    unsafe { Value::from_raw(py, owner, value.to_value(ty.cast().as_ptr())?) }
 }
 
 /// Creates a static qubit value.
@@ -718,7 +731,7 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObjec
 #[pyo3(text_signature = "(context, id)")]
 pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
     unsafe {
-        let value = values::qubit(context.borrow(py).as_ptr(), id);
+        let value = values::qubit(context.borrow(py).cast().as_ptr(), id);
         Value::from_raw(py, context.into(), value)
     }
 }
@@ -731,7 +744,7 @@ pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObj
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
-    unsafe { values::qubit_id(value.as_ptr()) }
+    unsafe { values::qubit_id(value.cast().as_ptr()) }
 }
 
 /// Creates a static result value.
@@ -744,7 +757,7 @@ pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
 #[pyo3(text_signature = "(context, id)")]
 pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
     unsafe {
-        let value = values::result(context.borrow(py).as_ptr(), id);
+        let value = values::result(context.borrow(py).cast().as_ptr(), id);
         Value::from_raw(py, context.into(), value)
     }
 }
@@ -757,7 +770,7 @@ pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyOb
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn result_id(value: &Value) -> Option<u64> {
-    unsafe { values::result_id(value.as_ptr()) }
+    unsafe { values::result_id(value.cast().as_ptr()) }
 }
 
 /// Whether the function is an entry point.
@@ -768,7 +781,7 @@ pub(crate) fn result_id(value: &Value) -> Option<u64> {
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn is_entry_point(function: PyRef<Function>) -> bool {
-    unsafe { values::is_entry_point(function.into_super().into_super().as_ptr()) }
+    unsafe { values::is_entry_point(function.into_super().into_super().cast().as_ptr()) }
 }
 
 /// Whether the function is interop-friendly.
@@ -779,7 +792,7 @@ pub(crate) fn is_entry_point(function: PyRef<Function>) -> bool {
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn is_interop_friendly(function: PyRef<Function>) -> bool {
-    unsafe { values::is_interop_friendly(function.into_super().into_super().as_ptr()) }
+    unsafe { values::is_interop_friendly(function.into_super().into_super().cast().as_ptr()) }
 }
 
 /// If the function declares a required number of qubits, extracts it.
@@ -790,7 +803,7 @@ pub(crate) fn is_interop_friendly(function: PyRef<Function>) -> bool {
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn required_num_qubits(function: PyRef<Function>) -> Option<u64> {
-    unsafe { values::required_num_qubits(function.into_super().into_super().as_ptr()) }
+    unsafe { values::required_num_qubits(function.into_super().into_super().cast().as_ptr()) }
 }
 
 /// If the function declares a required number of results, extracts it.
@@ -801,7 +814,7 @@ pub(crate) fn required_num_qubits(function: PyRef<Function>) -> Option<u64> {
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn required_num_results(function: PyRef<Function>) -> Option<u64> {
-    unsafe { values::required_num_results(function.into_super().into_super().as_ptr()) }
+    unsafe { values::required_num_results(function.into_super().into_super().cast().as_ptr()) }
 }
 
 /// Creates a module with required QIR module flag metadata
@@ -827,7 +840,7 @@ pub(crate) fn qir_module(
     dynamic_result_management: Option<bool>,
 ) -> PyResult<PyObject> {
     let module = crate::module::Module::new(py, context, name);
-    let ptr = module.as_ptr();
+    let ptr = module.cast().as_ptr();
     unsafe {
         qirlib::module::set_qir_major_version(ptr, qir_major_version.unwrap_or(1));
     }
@@ -853,28 +866,28 @@ pub(crate) fn qir_module(
 #[pyfunction]
 #[pyo3(text_signature = "(module)")]
 pub(crate) fn qir_major_version(module: PyRef<Module>) -> Option<i32> {
-    unsafe { qirlib::module::qir_major_version(module.as_ptr()) }
+    unsafe { qirlib::module::qir_major_version(module.cast().as_ptr()) }
 }
 
 /// The QIR minor version this module is built for. None if unspecified.
 #[pyfunction]
 #[pyo3(text_signature = "(module)")]
 pub(crate) fn qir_minor_version(module: PyRef<Module>) -> Option<i32> {
-    unsafe { qirlib::module::qir_minor_version(module.as_ptr()) }
+    unsafe { qirlib::module::qir_minor_version(module.cast().as_ptr()) }
 }
 
 /// Whether this module supports dynamic qubit management. None if unspecified.
 #[pyfunction]
 #[pyo3(text_signature = "(module)")]
 pub(crate) fn dynamic_qubit_management(module: PyRef<Module>) -> Option<bool> {
-    unsafe { qirlib::module::dynamic_qubit_management(module.as_ptr()) }
+    unsafe { qirlib::module::dynamic_qubit_management(module.cast().as_ptr()) }
 }
 
 /// Whether this module supports dynamic result management. None if unspecified.
 #[pyfunction]
 #[pyo3(text_signature = "(module)")]
 pub(crate) fn dynamic_result_management(module: PyRef<Module>) -> Option<bool> {
-    unsafe { qirlib::module::dynamic_result_management(module.as_ptr()) }
+    unsafe { qirlib::module::dynamic_result_management(module.cast().as_ptr()) }
 }
 
 /// Creates a global null-terminated byte string constant in a module.
@@ -888,7 +901,7 @@ pub(crate) fn dynamic_result_management(module: PyRef<Module>) -> Option<bool> {
 pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> PyResult<PyObject> {
     let context = module.context().clone_ref(py);
     unsafe {
-        let string = values::global_string(module.as_ptr(), value);
+        let string = values::global_string(module.cast().as_ptr(), value);
         Value::from_raw(py, context.into(), string)
     }
 }
@@ -901,7 +914,7 @@ pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> P
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn extract_byte_string<'py>(py: Python<'py>, value: &Value) -> Option<&'py PyBytes> {
-    let string = unsafe { values::extract_string(value.as_ptr())? };
+    let string = unsafe { values::extract_string(value.cast().as_ptr())? };
     Some(PyBytes::new(py, &string))
 }
 
@@ -919,7 +932,7 @@ pub(crate) fn add_string_attribute<'py>(
     value: Option<&'py PyString>,
     index: Option<u32>,
 ) {
-    let function = function.into_super().into_super().as_ptr();
+    let function = function.into_super().into_super().cast().as_ptr();
     let key = key.to_string_lossy();
     let value = value.map(PyString::to_string_lossy);
     unsafe {

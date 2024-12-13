@@ -49,7 +49,7 @@ impl Module {
     pub(crate) fn new(py: Python, context: Py<Context>, name: &str) -> Self {
         let name = CString::new(name).unwrap();
         let module = unsafe {
-            LLVMModuleCreateWithNameInContext(name.as_ptr(), context.borrow(py).as_ptr())
+            LLVMModuleCreateWithNameInContext(name.as_ptr(), context.borrow(py).cast().as_ptr())
         };
         Self {
             module: NonNull::new(module).unwrap(),
@@ -76,7 +76,7 @@ impl Module {
         let mut module = ptr::null_mut();
         let mut error = ptr::null_mut();
         unsafe {
-            let context_ref = context.borrow(py).as_ptr();
+            let context_ref = context.borrow(py).cast().as_ptr();
             if LLVMParseIRInContext(context_ref, buffer, &mut module, &mut error) != 0 {
                 let error = Message::from_raw(error);
                 return Err(PyValueError::new_err(error.to_str().unwrap().to_string()));
@@ -115,11 +115,16 @@ impl Module {
 
         let mut module = ptr::null_mut();
         let mut error = ptr::null_mut();
-        let context_ref = context.borrow(py).as_ptr();
+        let context_ref = context.borrow(py).cast().as_ptr();
 
         unsafe {
             #[allow(deprecated)]
-            if LLVMParseBitcodeInContext(context_ref, buffer.as_ptr(), &mut module, &mut error) == 0
+            if LLVMParseBitcodeInContext(
+                context_ref,
+                buffer.cast().as_ptr(),
+                &mut module,
+                &mut error,
+            ) == 0
             {
                 Ok(Self {
                     module: NonNull::new(module).unwrap(),
@@ -139,7 +144,7 @@ impl Module {
     fn source_filename(&self) -> &str {
         unsafe {
             let mut len = 0;
-            let name = LLVMGetSourceFileName(self.as_ptr(), &mut len);
+            let name = LLVMGetSourceFileName(self.cast().as_ptr(), &mut len);
             str::from_utf8(slice::from_raw_parts(name.cast(), len)).unwrap()
         }
     }
@@ -147,7 +152,7 @@ impl Module {
     #[setter]
     fn set_source_filename(&self, value: &str) {
         unsafe {
-            LLVMSetSourceFileName(self.as_ptr(), value.as_ptr().cast(), value.len());
+            LLVMSetSourceFileName(self.cast().as_ptr(), value.as_ptr().cast(), value.len());
         }
     }
 
@@ -156,7 +161,7 @@ impl Module {
     /// :type: typing.List[Function]
     #[getter]
     fn functions(slf: Py<Module>, py: Python) -> PyResult<Vec<PyObject>> {
-        let module = slf.borrow(py).as_ptr();
+        let module = slf.borrow(py).cast().as_ptr();
         let mut functions = Vec::new();
         unsafe {
             let mut function = LLVMGetFirstFunction(module);
@@ -174,9 +179,10 @@ impl Module {
     #[getter]
     fn bitcode<'py>(&self, py: Python<'py>) -> &'py PyBytes {
         unsafe {
-            let buffer = MemoryBuffer::from_raw(LLVMWriteBitcodeToMemoryBuffer(self.as_ptr()));
-            let start = LLVMGetBufferStart(buffer.as_ptr());
-            let len = LLVMGetBufferSize(buffer.as_ptr());
+            let buffer =
+                MemoryBuffer::from_raw(LLVMWriteBitcodeToMemoryBuffer(self.cast().as_ptr()));
+            let start = LLVMGetBufferStart(buffer.cast().as_ptr());
+            let len = LLVMGetBufferSize(buffer.cast().as_ptr());
             PyBytes::new(py, slice::from_raw_parts(start.cast(), len))
         }
     }
@@ -207,11 +213,11 @@ impl Module {
         let context = self.context().clone_ref(py);
         let _owner = Owner::merge(py, [Owner::Context(context), flag.owner().clone_ref(py)])?;
         let md = match flag {
-            Flag::Constant(v) => unsafe { LLVMValueAsMetadata(v.into_super().as_ptr()) },
-            Flag::Metadata(m) => m.as_ptr(),
+            Flag::Constant(v) => unsafe { LLVMValueAsMetadata(v.into_super().cast().as_ptr()) },
+            Flag::Metadata(m) => m.cast().as_ptr(),
         };
         unsafe {
-            qirlib::module::add_flag(self.module.as_ptr(), behavior.into(), id, md);
+            qirlib::module::add_flag(self.module.cast().as_ptr(), behavior.into(), id, md);
         }
         Ok(())
     }
@@ -225,7 +231,7 @@ impl Module {
     /// :rtype: typing.Optional[Metadata]
     #[pyo3(text_signature = "(id)")]
     pub(crate) fn get_flag(slf: Py<Module>, py: Python, id: &str) -> Option<PyObject> {
-        let module = slf.borrow(py).module.as_ptr();
+        let module = slf.borrow(py).module.cast().as_ptr();
         let flag = unsafe { LLVMGetModuleFlag(module, id.as_ptr().cast(), id.len()) };
 
         if flag.is_null() {
@@ -245,7 +251,7 @@ impl Module {
         unsafe {
             let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
             let mut error = ptr::null_mut();
-            if LLVMVerifyModule(self.as_ptr(), action, &mut error) == 0 {
+            if LLVMVerifyModule(self.cast().as_ptr(), action, &mut error) == 0 {
                 None
             } else {
                 let error = Message::from_raw(error);
@@ -259,7 +265,7 @@ impl Module {
     /// :rtype: str
     fn __str__(&self) -> String {
         unsafe {
-            Message::from_raw(LLVMPrintModuleToString(self.as_ptr()))
+            Message::from_raw(LLVMPrintModuleToString(self.cast().as_ptr()))
                 .to_str()
                 .unwrap()
                 .to_string()
@@ -271,8 +277,8 @@ impl Module {
     ///
     /// :raises: An error if linking failed.
     pub fn link(&self, other: Py<Module>, py: Python) -> PyResult<()> {
-        let context = self.context.borrow(py).as_ptr();
-        if context != other.borrow(py).context.borrow(py).as_ptr() {
+        let context = self.context.borrow(py).cast().as_ptr();
+        if context != other.borrow(py).context.borrow(py).cast().as_ptr() {
             return Err(PyValueError::new_err(
                 "Cannot link modules from different contexts. Modules are untouched.".to_string(),
             ));
@@ -284,7 +290,10 @@ impl Module {
                 .cast::<::core::ffi::c_void>();
 
             set_diagnostic_handler(context, output);
-            let result = LLVMLinkModules2(self.module.as_ptr(), other.borrow(py).module.as_ptr());
+            let result = LLVMLinkModules2(
+                self.module.cast().as_ptr(),
+                other.borrow(py).module.cast().as_ptr(),
+            );
             // `forget` the other module. LLVM has destroyed it
             // and we'll get a segfault if we drop it.
             forget(other);
@@ -309,7 +318,7 @@ impl Deref for Module {
 impl Drop for Module {
     fn drop(&mut self) {
         unsafe {
-            LLVMDisposeModule(self.module.as_ptr());
+            LLVMDisposeModule(self.module.cast().as_ptr());
         }
     }
 }

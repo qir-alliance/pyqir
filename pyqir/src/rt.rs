@@ -26,7 +26,11 @@ pub(crate) fn array_record_output(
     let builder: PyRef<Builder> = builder.borrow(py);
     Owner::merge(py, [builder.owner(), num_elements.owner(), label.owner()])?;
     unsafe {
-        rt::build_array_record_output(builder.as_ptr(), num_elements.as_ptr(), label.as_ptr());
+        rt::build_array_record_output(
+            builder.cast().as_ptr(),
+            num_elements.cast().as_ptr(),
+            label.cast().as_ptr(),
+        );
     }
     Ok(())
 }
@@ -48,7 +52,11 @@ pub(crate) fn result_record_output(
     let builder = builder.borrow(py);
     Owner::merge(py, [builder.owner(), result.owner(), label.owner()])?;
     unsafe {
-        rt::build_result_record_output(builder.as_ptr(), result.as_ptr(), label.as_ptr());
+        rt::build_result_record_output(
+            builder.cast().as_ptr(),
+            result.cast().as_ptr(),
+            label.cast().as_ptr(),
+        );
     }
     Ok(())
 }
@@ -65,7 +73,7 @@ pub(crate) fn initialize(py: Python, builder: Py<Builder>, data: &Value) -> PyRe
     let builder = builder.borrow(py);
     Owner::merge(py, [builder.owner(), data.owner()])?;
     unsafe {
-        rt::build_initialize(builder.as_ptr(), data.as_ptr());
+        rt::build_initialize(builder.cast().as_ptr(), data.cast().as_ptr());
     }
     Ok(())
 }
@@ -88,7 +96,11 @@ pub(crate) fn tuple_record_output(
     let builder = builder.borrow(py);
     Owner::merge(py, [builder.owner(), num_elements.owner(), label.owner()])?;
     unsafe {
-        rt::build_tuple_record_output(builder.as_ptr(), num_elements.as_ptr(), label.as_ptr());
+        rt::build_tuple_record_output(
+            builder.cast().as_ptr(),
+            num_elements.cast().as_ptr(),
+            label.cast().as_ptr(),
+        );
     }
     Ok(())
 }
