@@ -397,22 +397,22 @@ class FloatPredicate(Enum):
 
     def __hash__(self) -> int: ...
 
-    FALSE: FloatPredicate
-    OEQ: FloatPredicate
-    OGT: FloatPredicate
-    OGE: FloatPredicate
-    OLT: FloatPredicate
-    OLE: FloatPredicate
-    ONE: FloatPredicate
-    ORD: FloatPredicate
-    UNO: FloatPredicate
-    UEQ: FloatPredicate
-    UGT: FloatPredicate
-    UGE: FloatPredicate
-    ULT: FloatPredicate
-    ULE: FloatPredicate
-    UNE: FloatPredicate
-    TRUE: FloatPredicate
+    FALSE = FloatPredicate
+    OEQ = FloatPredicate
+    OGT = FloatPredicate
+    OGE = FloatPredicate
+    OLT = FloatPredicate
+    OLE = FloatPredicate
+    ONE = FloatPredicate
+    ORD = FloatPredicate
+    UNO = FloatPredicate
+    UEQ = FloatPredicate
+    UGT = FloatPredicate
+    UGE = FloatPredicate
+    ULT = FloatPredicate
+    ULE = FloatPredicate
+    UNE = FloatPredicate
+    TRUE = FloatPredicate
 
 class Function(Constant):
     """A function value."""
@@ -532,16 +532,16 @@ class IntPredicate(Enum):
 
     def __hash__(self) -> int: ...
 
-    EQ: IntPredicate
-    NE: IntPredicate
-    UGT: IntPredicate
-    UGE: IntPredicate
-    ULT: IntPredicate
-    ULE: IntPredicate
-    SGT: IntPredicate
-    SGE: IntPredicate
-    SLT: IntPredicate
-    SLE: IntPredicate
+    EQ = IntPredicate
+    NE = IntPredicate
+    UGT = IntPredicate
+    UGE = IntPredicate
+    ULT = IntPredicate
+    ULE = IntPredicate
+    SGT = IntPredicate
+    SGE = IntPredicate
+    SLT = IntPredicate
+    SLE = IntPredicate
 
 class IntType(Type):
     """An integer type."""
@@ -576,17 +576,17 @@ class Linkage(Enum):
 
     def __hash__(self) -> int: ...
 
-    APPENDING: Linkage
-    AVAILABLE_EXTERNALLY: Linkage
-    COMMON: Linkage
-    EXTERNAL: Linkage
-    EXTERNAL_WEAK: Linkage
-    INTERNAL: Linkage
-    LINK_ONCE_ANY: Linkage
-    LINK_ONCE_ODR: Linkage
-    PRIVATE: Linkage
-    WEAK_ANY: Linkage
-    WEAK_ODR: Linkage
+    APPENDING = Linkage
+    AVAILABLE_EXTERNALLY = Linkage
+    COMMON = Linkage
+    EXTERNAL = Linkage
+    EXTERNAL_WEAK = Linkage
+    INTERNAL = Linkage
+    LINK_ONCE_ANY = Linkage
+    LINK_ONCE_ODR = Linkage
+    PRIVATE = Linkage
+    WEAK_ANY = Linkage
+    WEAK_ODR = Linkage
 
 class Module:
     """A module is a collection of global values."""
@@ -693,13 +693,13 @@ class Module:
 class ModuleFlagBehavior(Enum):
     """Module flag behavior choices"""
 
-    ERROR: ModuleFlagBehavior
-    WARNING: ModuleFlagBehavior
-    REQUIRE: ModuleFlagBehavior
-    OVERRIDE: ModuleFlagBehavior
-    APPEND: ModuleFlagBehavior
-    APPEND_UNIQUE: ModuleFlagBehavior
-    MAX: ModuleFlagBehavior
+    ERROR = ModuleFlagBehavior
+    WARNING = ModuleFlagBehavior
+    REQUIRE = ModuleFlagBehavior
+    OVERRIDE = ModuleFlagBehavior
+    APPEND = ModuleFlagBehavior
+    APPEND_UNIQUE = ModuleFlagBehavior
+    MAX = ModuleFlagBehavior
 
 class Opcode(Enum):
     """An instruction opcode."""
@@ -717,73 +717,73 @@ class Opcode(Enum):
 
     def __hash__(self) -> int: ...
 
-    ADD: Opcode
-    ADDR_SPACE_CAST: Opcode
-    ALLOCA: Opcode
-    AND: Opcode
-    ASHR: Opcode
-    ATOMIC_CMP_XCHG: Opcode
-    ATOMIC_RMW: Opcode
-    BIT_CAST: Opcode
-    BR: Opcode
-    CALL_BR: Opcode
-    CALL: Opcode
-    CATCH_PAD: Opcode
-    CATCH_RET: Opcode
-    CATCH_SWITCH: Opcode
-    CLEANUP_PAD: Opcode
-    CLEANUP_RET: Opcode
-    EXTRACT_ELEMENT: Opcode
-    EXTRACT_VALUE: Opcode
-    FADD: Opcode
-    FCMP: Opcode
-    FDIV: Opcode
-    FENCE: Opcode
-    FMUL: Opcode
-    FNEG: Opcode
-    FP_EXT: Opcode
-    FP_TO_SI: Opcode
-    FP_TO_UI: Opcode
-    FP_TRUNC: Opcode
-    FREEZE: Opcode
-    FREM: Opcode
-    FSUB: Opcode
-    GET_ELEMENT_PTR: Opcode
-    ICMP: Opcode
-    INDIRECT_BR: Opcode
-    INSERT_ELEMENT: Opcode
-    INSERT_VALUE: Opcode
-    INT_TO_PTR: Opcode
-    INVOKE: Opcode
-    LANDING_PAD: Opcode
-    LOAD: Opcode
-    LSHR: Opcode
-    MUL: Opcode
-    OR: Opcode
-    PHI: Opcode
-    PTR_TO_INT: Opcode
-    RESUME: Opcode
-    RET: Opcode
-    SDIV: Opcode
-    SELECT: Opcode
-    SEXT: Opcode
-    SHL: Opcode
-    SHUFFLE_VECTOR: Opcode
-    SI_TO_FP: Opcode
-    SREM: Opcode
-    STORE: Opcode
-    SUB: Opcode
-    SWITCH: Opcode
-    TRUNC: Opcode
-    UDIV: Opcode
-    UI_TO_FP: Opcode
-    UNREACHABLE: Opcode
-    UREM: Opcode
-    USER_OP_1: Opcode
-    USER_OP_2: Opcode
-    VA_ARG: Opcode
-    XOR: Opcode
-    ZEXT: Opcode
+    ADD = Opcode
+    ADDR_SPACE_CAST = Opcode
+    ALLOCA = Opcode
+    AND = Opcode
+    ASHR = Opcode
+    ATOMIC_CMP_XCHG = Opcode
+    ATOMIC_RMW = Opcode
+    BIT_CAST = Opcode
+    BR = Opcode
+    CALL_BR = Opcode
+    CALL = Opcode
+    CATCH_PAD = Opcode
+    CATCH_RET = Opcode
+    CATCH_SWITCH = Opcode
+    CLEANUP_PAD = Opcode
+    CLEANUP_RET = Opcode
+    EXTRACT_ELEMENT = Opcode
+    EXTRACT_VALUE = Opcode
+    FADD = Opcode
+    FCMP = Opcode
+    FDIV = Opcode
+    FENCE = Opcode
+    FMUL = Opcode
+    FNEG = Opcode
+    FP_EXT = Opcode
+    FP_TO_SI = Opcode
+    FP_TO_UI = Opcode
+    FP_TRUNC = Opcode
+    FREEZE = Opcode
+    FREM = Opcode
+    FSUB = Opcode
+    GET_ELEMENT_PTR = Opcode
+    ICMP = Opcode
+    INDIRECT_BR = Opcode
+    INSERT_ELEMENT = Opcode
+    INSERT_VALUE = Opcode
+    INT_TO_PTR = Opcode
+    INVOKE = Opcode
+    LANDING_PAD = Opcode
+    LOAD = Opcode
+    LSHR = Opcode
+    MUL = Opcode
+    OR = Opcode
+    PHI = Opcode
+    PTR_TO_INT = Opcode
+    RESUME = Opcode
+    RET = Opcode
+    SDIV = Opcode
+    SELECT = Opcode
+    SEXT = Opcode
+    SHL = Opcode
+    SHUFFLE_VECTOR = Opcode
+    SI_TO_FP = Opcode
+    SREM = Opcode
+    STORE = Opcode
+    SUB = Opcode
+    SWITCH = Opcode
+    TRUNC = Opcode
+    UDIV = Opcode
+    UI_TO_FP = Opcode
+    UNREACHABLE = Opcode
+    UREM = Opcode
+    USER_OP_1 = Opcode
+    USER_OP_2 = Opcode
+    VA_ARG = Opcode
+    XOR = Opcode
+    ZEXT = Opcode
 
 class Phi(Instruction):
     """A phi node instruction."""

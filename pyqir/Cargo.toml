@@ -26,6 +26,7 @@ llvm12-0 = ["llvm-sys-120", "qirlib/llvm12-0"]
 llvm13-0 = ["llvm-sys-130", "qirlib/llvm13-0"]
 llvm14-0 = ["llvm-sys-140", "qirlib/llvm14-0"]
 llvm15-0 = ["llvm-sys-150", "qirlib/llvm15-0"]
+default = ["llvm14-0"]
 
 [lib]
 crate-type = ["cdylib"]
