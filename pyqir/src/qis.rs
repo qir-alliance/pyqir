@@ -376,12 +376,12 @@ pub(crate) fn z(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
 /// :rtype: None
 #[pyfunction]
 #[pyo3(text_signature = "(builder, cond, one, zero)")]
-pub(crate) fn if_result(
-    py: Python,
+pub(crate) fn if_result<'py>(
+    py: Python<'py>,
     builder: &Builder,
     cond: &Value,
-    one: Option<&PyAny>,
-    zero: Option<&PyAny>,
+    one: Option<Bound<'py, PyAny>>,
+    zero: Option<Bound<'py, PyAny>>,
 ) -> PyResult<()> {
     Owner::merge(py, [builder.owner(), cond.owner()])?;
     unsafe {
