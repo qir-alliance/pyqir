@@ -300,20 +300,20 @@ impl Builder {
     /// :param typing.Callable[[], None] false:
     ///     A callable that inserts instructions for the branch where the condition is false.
     #[pyo3(text_signature = "(self, cond, true, false)")]
-    fn if_(
+    fn if_<'py>(
         &self,
-        py: Python,
+        py: Python<'py>,
         cond: &Value,
-        r#true: Option<&PyAny>,
-        r#false: Option<&PyAny>,
+        r#true: Option<Bound<'py, PyAny>>,
+        r#false: Option<Bound<'py, PyAny>>,
     ) -> PyResult<()> {
         Owner::merge(py, [&self.owner, cond.owner()])?;
         unsafe {
             try_build_if(
                 self.cast().as_ptr(),
                 cond.cast().as_ptr(),
-                || r#true.iter().try_for_each(|f| f.call0().map(|_| ())),
-                || r#false.iter().try_for_each(|f| f.call0().map(|_| ())),
+                || r#true.into_iter().try_for_each(|f| f.call0().map(|_| ())),
+                || r#false.into_iter().try_for_each(|f| f.call0().map(|_| ())),
             )
         }
     }

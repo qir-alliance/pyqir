@@ -177,13 +177,13 @@ impl Module {
     ///
     /// :type: bytes
     #[getter]
-    fn bitcode<'py>(&self, py: Python<'py>) -> &'py PyBytes {
+    fn bitcode<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
         unsafe {
             let buffer =
                 MemoryBuffer::from_raw(LLVMWriteBitcodeToMemoryBuffer(self.cast().as_ptr()));
             let start = LLVMGetBufferStart(buffer.cast().as_ptr());
             let len = LLVMGetBufferSize(buffer.cast().as_ptr());
-            PyBytes::new(py, slice::from_raw_parts(start.cast(), len))
+            PyBytes::new_bound(py, slice::from_raw_parts(start.cast(), len))
         }
     }
 

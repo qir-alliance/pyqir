@@ -687,7 +687,7 @@ impl AttributeSet {
 #[derive(FromPyObject)]
 pub(crate) enum Literal<'py> {
     Bool(bool),
-    Int(&'py PyLong),
+    Int(Bound<'py, PyLong>),
     Float(f64),
 }
 
@@ -697,7 +697,7 @@ impl Literal<'_> {
             (LLVMTypeKind::LLVMIntegerTypeKind, &Self::Bool(b)) => {
                 Ok(LLVMConstInt(ty, b.into(), 0))
             }
-            (LLVMTypeKind::LLVMIntegerTypeKind, &Self::Int(i)) => {
+            (LLVMTypeKind::LLVMIntegerTypeKind, &Self::Int(ref i)) => {
                 Ok(LLVMConstInt(ty, i.extract()?, 0))
             }
             (LLVMTypeKind::LLVMDoubleTypeKind, &Self::Float(f)) => Ok(LLVMConstReal(ty, f)),
@@ -913,9 +913,12 @@ pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> P
 /// :rtype: typing.Optional[bytes]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
-pub(crate) fn extract_byte_string<'py>(py: Python<'py>, value: &Value) -> Option<&'py PyBytes> {
+pub(crate) fn extract_byte_string<'py>(
+    py: Python<'py>,
+    value: &Value,
+) -> Option<Bound<'py, PyBytes>> {
     let string = unsafe { values::extract_string(value.cast().as_ptr())? };
-    Some(PyBytes::new(py, &string))
+    Some(PyBytes::new_bound(py, &string))
 }
 
 // Adds a string attribute to the given function.
@@ -928,13 +931,13 @@ pub(crate) fn extract_byte_string<'py>(py: Python<'py>, value: &Value) -> Option
 #[pyo3(text_signature = "(function, key, value, index)")]
 pub(crate) fn add_string_attribute<'py>(
     function: PyRef<Function>,
-    key: &'py PyString,
-    value: Option<&'py PyString>,
+    key: Bound<'py, PyString>,
+    value: Option<Bound<'py, PyString>>,
     index: Option<u32>,
 ) {
     let function = function.into_super().into_super().cast().as_ptr();
     let key = key.to_string_lossy();
-    let value = value.map(PyString::to_string_lossy);
+    let value = value.map(|x| x.to_string_lossy().to_string());
     unsafe {
         values::add_string_attribute(
             function,

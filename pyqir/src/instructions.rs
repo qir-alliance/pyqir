@@ -50,7 +50,7 @@ impl Instruction {
     ///
     /// :type: typing.List[BasicBlock]
     #[getter]
-    fn successors(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
+    fn successors<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyObject>>> {
         if unsafe { LLVMIsATerminatorInst(slf.as_ref().cast().as_ptr()) }.is_null() {
             Ok(Vec::new())
         } else {
