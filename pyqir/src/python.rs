@@ -29,7 +29,7 @@ use crate::{
 use pyo3::prelude::*;
 
 #[pymodule]
-fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
+fn _native<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
     m.add_class::<ArrayType>()?;
     m.add_class::<Attribute>()?;
     m.add_class::<AttributeList>()?;

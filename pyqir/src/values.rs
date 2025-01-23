@@ -249,7 +249,7 @@ pub(crate) struct BasicBlock(NonNull<LLVMBasicBlock>);
 #[pymethods]
 impl BasicBlock {
     #[new]
-    #[pyo3(text_signature = "(context, name, parent=None, before=None)")]
+    #[pyo3(signature = (context, name, parent=None, before=None))]
     fn new(
         py: Python,
         context: Py<Context>,
@@ -697,7 +697,7 @@ impl Literal<'_> {
             (LLVMTypeKind::LLVMIntegerTypeKind, &Self::Bool(b)) => {
                 Ok(LLVMConstInt(ty, b.into(), 0))
             }
-            (LLVMTypeKind::LLVMIntegerTypeKind, &Self::Int(ref i)) => {
+            (LLVMTypeKind::LLVMIntegerTypeKind, Self::Int(i)) => {
                 Ok(LLVMConstInt(ty, i.extract()?, 0))
             }
             (LLVMTypeKind::LLVMDoubleTypeKind, &Self::Float(f)) => Ok(LLVMConstReal(ty, f)),
@@ -828,7 +828,7 @@ pub(crate) fn required_num_results(function: PyRef<Function>) -> Option<u64> {
 /// :rtype: Module
 #[pyfunction]
 #[pyo3(
-    text_signature = "(context, name, qir_major_version, qir_minor_version, dynamic_qubit_management, dynamic_result_management)"
+    signature = (context, name, qir_major_version=None, qir_minor_version=None, dynamic_qubit_management=None, dynamic_result_management=None)
 )]
 pub(crate) fn qir_module(
     py: Python,
@@ -928,7 +928,7 @@ pub(crate) fn extract_byte_string<'py>(
 // :param value: The attribute value.
 // :param index: The optional attribute index, defaults to the function index.
 #[pyfunction]
-#[pyo3(text_signature = "(function, key, value, index)")]
+#[pyo3(signature = (function, key, value=None, index=None))]
 pub(crate) fn add_string_attribute<'py>(
     function: PyRef<Function>,
     key: Bound<'py, PyString>,

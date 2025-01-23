@@ -299,7 +299,7 @@ impl Builder {
     ///     A callable that inserts instructions for the branch where the condition is true.
     /// :param typing.Callable[[], None] false:
     ///     A callable that inserts instructions for the branch where the condition is false.
-    #[pyo3(text_signature = "(self, cond, true, false)")]
+    #[pyo3(signature = (cond, r#true = None, r#false = None))]
     fn if_<'py>(
         &self,
         py: Python<'py>,
@@ -389,7 +389,7 @@ impl Builder {
     /// :param Value value: The value to return. If `None`, returns void.
     /// :returns: The return instruction.
     /// :rtype: Instruction
-    #[pyo3(text_signature = "(value)")]
+    #[pyo3(signature = (value = None))]
     fn ret(&self, py: Python, value: Option<&Value>) -> PyResult<PyObject> {
         let (value, owner) = match value {
             None => (

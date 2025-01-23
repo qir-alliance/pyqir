@@ -21,7 +21,7 @@ use llvm_sys::{
     linker::LLVMLinkModules2,
     LLVMLinkage, LLVMModule,
 };
-use pyo3::{exceptions::PyValueError, prelude::*, pyclass::CompareOp, types::PyBytes};
+use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use qirlib::{context::set_diagnostic_handler, module::FlagBehavior};
 use std::{
     collections::hash_map::DefaultHasher,
@@ -64,7 +64,7 @@ impl Module {
     /// :returns: The module.
     /// :rtype: Module
     #[staticmethod]
-    #[pyo3(text_signature = "(context, ir, name=\"\")")]
+    #[pyo3(signature = (context, ir, name=""))]
     fn from_ir(py: Python, context: Py<Context>, ir: &str, name: Option<&str>) -> PyResult<Self> {
         let name = CString::new(name.unwrap_or_default()).unwrap();
 
@@ -96,7 +96,7 @@ impl Module {
     /// :returns: The module.
     /// :rtype: Module
     #[staticmethod]
-    #[pyo3(text_signature = "(context, bitcode, name=\"\")")]
+    #[pyo3(signature = (context, bitcode, name=""))]
     fn from_bitcode(
         py: Python,
         context: Py<Context>,
@@ -301,7 +301,7 @@ impl Module {
                 Ok(())
             } else {
                 let error = Message::from_raw(c_char_output);
-                return Err(PyValueError::new_err(error.to_str().unwrap().to_string()));
+                Err(PyValueError::new_err(error.to_str().unwrap().to_string()))
             }
         }
     }
@@ -332,8 +332,8 @@ impl PartialEq for Module {
 }
 
 /// The linkage kind for a global value in a module.
-#[pyclass]
-#[derive(Clone, Copy, PartialEq, Hash)]
+#[pyclass(eq, eq_int, ord)]
+#[derive(Clone, Copy, PartialEq, Hash, Eq, PartialOrd, Ord)]
 pub(crate) enum Linkage {
     #[pyo3(name = "APPENDING")]
     Appending,
@@ -362,16 +362,6 @@ pub(crate) enum Linkage {
 #[pymethods]
 #[allow(clippy::trivially_copy_pass_by_ref)]
 impl Linkage {
-    // In order to implement the comparison operators, we have to do
-    // it all in one impl of __richcmp__ for pyo3 to work.
-    fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
-        match op {
-            CompareOp::Eq => self.eq(other).into_py(py),
-            CompareOp::Ne => (!self.eq(other)).into_py(py),
-            _ => py.NotImplemented(),
-        }
-    }
-
     fn __hash__(&self) -> u64 {
         let mut hasher = DefaultHasher::new();
         self.hash(&mut hasher);
@@ -398,8 +388,8 @@ impl From<Linkage> for LLVMLinkage {
 }
 
 /// Module flag behavior choices
-#[pyclass]
-#[derive(Clone)]
+#[pyclass(eq, eq_int)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ModuleFlagBehavior {
     #[pyo3(name = "ERROR")]
     Error,
