@@ -375,7 +375,7 @@ pub(crate) fn z(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()> {
 ///     A callable that inserts instructions for the branch where the result is zero.
 /// :rtype: None
 #[pyfunction]
-#[pyo3(text_signature = "(builder, cond, one, zero)")]
+#[pyo3(signature = (builder, cond, one = None, zero = None))]
 pub(crate) fn if_result<'py>(
     py: Python<'py>,
     builder: &Builder,
