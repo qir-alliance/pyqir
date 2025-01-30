@@ -14,7 +14,7 @@ Properties {
     $VscodeSettingsJson = Join-Path $Root .vscode settings.json
     $DocsRoot = Join-Path $Root docs
     $DocsBuild = Join-Path $DocsRoot _build
-    $AuditWheelTag = "manylinux_2_31_x86_64"
+    $AuditWheelTag = "manylinux_2_28_x86_64"
     $Python = Resolve-Python
 }
 
