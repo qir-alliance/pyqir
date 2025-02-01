@@ -58,6 +58,40 @@ impl Builder {
         Ok(())
     }
 
+    /// Tells this builder to insert subsequent instructions before the given instruction.
+    ///
+    /// :param Value instr: The instruction to insert before.
+    /// :rtype: None
+    #[pyo3(text_signature = "(instr)")]
+    fn insert_before(&mut self, py: Python, instr: &Value) -> PyResult<()> {
+        let owner = Owner::merge(py, [&self.owner, instr.owner()])?;
+        if *owner.context(py).borrow(py) != *self.owner.context(py).borrow(py) {
+            Err(PyValueError::new_err(
+                "Instruction is not from the same context as builder.",
+            ))?;
+        }
+
+        unsafe {
+            LLVMPositionBuilderBefore(self.cast().as_ptr(), instr.cast().as_ptr());
+        }
+        Ok(())
+    }
+
+    /// Inserts the given instruction.
+    fn instr(&mut self, py: Python, instr: &Value) -> PyResult<()> {
+        let owner = Owner::merge(py, [&self.owner, instr.owner()])?;
+        if *owner.context(py).borrow(py) != *self.owner.context(py).borrow(py) {
+            Err(PyValueError::new_err(
+                "Instruction is not from the same context as builder.",
+            ))?;
+        }
+
+        unsafe {
+            LLVMInsertIntoBuilder(self.cast().as_ptr(), instr.cast().as_ptr());
+        }
+        Ok(())
+    }
+
     /// Inserts a bitwise logical and instruction.
     ///
     /// :param Value lhs: The left-hand side.
