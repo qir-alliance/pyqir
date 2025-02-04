@@ -540,6 +540,13 @@ impl Function {
     fn attributes(slf: Py<Function>) -> AttributeList {
         AttributeList(slf)
     }
+
+    /// Deletes this function, removing it from the parent module.
+    /// Warning: the function is no longer usable after this.
+    fn delete(slf: PyRef<Self>, _py: Python) {
+        let slf = slf.into_super().into_super();
+        unsafe { LLVMDeleteFunction(slf.cast().as_ptr()) }
+    }
 }
 
 /// An attribute.

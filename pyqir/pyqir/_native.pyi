@@ -463,6 +463,13 @@ class Function(Constant):
         """The attributes for this function."""
         ...
 
+    def delete(self):
+        """
+        Deletes this function from the parent module.
+        Warning: Using this function after deleting it is undefined behavior.
+        """
+        ...
+
 class FunctionType(Type):
     """A function type."""
 
