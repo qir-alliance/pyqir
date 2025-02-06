@@ -12,22 +12,22 @@ use std::sync::Once;
 static LLVM_INIT: Once = Once::new();
 
 pub(crate) fn ensure_init() {
-    LLVM_INIT.call_once(|| {
-        unsafe {
-            LLVMInitializeWebAssemblyTargetInfo();
-            LLVMInitializeWebAssemblyTarget();
-            LLVMInitializeWebAssemblyTargetMC();
-            LLVMInitializeWebAssemblyAsmPrinter();
-            LLVMInitializeWebAssemblyAsmParser();
-            LLVMInitializeWebAssemblyDisassembler();
-        }
+    LLVM_INIT.call_once(|| unsafe {
+        LLVMInitializeWebAssemblyTargetInfo();
+        LLVMInitializeWebAssemblyTarget();
+        LLVMInitializeWebAssemblyTargetMC();
+        LLVMInitializeWebAssemblyAsmPrinter();
+        LLVMInitializeWebAssemblyAsmParser();
+        LLVMInitializeWebAssemblyDisassembler();
     });
-} 
+}
 
 use llvm_sys::{
+    analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
     core::{
-        LLVMConstInt, LLVMConstIntGetZExtValue, LLVMGetModuleContext, LLVMGetModuleFlag,
-        LLVMInt1TypeInContext, LLVMInt32TypeInContext, LLVMMetadataAsValue, LLVMValueAsMetadata,
+        LLVMConstInt, LLVMConstIntGetZExtValue, LLVMDisposeMessage, LLVMGetModuleContext,
+        LLVMGetModuleFlag, LLVMInt1TypeInContext, LLVMInt32TypeInContext, LLVMMetadataAsValue,
+        LLVMValueAsMetadata,
     },
     prelude::{LLVMMetadataRef, LLVMModuleRef},
     target::{
@@ -187,9 +187,26 @@ fn to_c_str(mut s: &str) -> Cow<'_, CStr> {
     unsafe { Cow::from(CStr::from_ptr(s.as_ptr() as *const _)) }
 }
 
+pub unsafe fn verify(module: LLVMModuleRef) -> Option<String> {
+    let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
+    let mut error = std::ptr::null_mut();
+    if LLVMVerifyModule(module, action, &mut error) == 0 {
+        None
+    } else {
+        let error_cstr = CStr::from_ptr(error);
+        let string = error_cstr.to_str().unwrap().to_string();
+        LLVMDisposeMessage(error);
+        Some(string)
+    }
+}
+
 pub unsafe fn write_wasm_to_file(module: LLVMModuleRef, file_path: &str) -> Result<(), String> {
+    if let Some(error) = verify(module) {
+        return Err(error);
+    }
+
     ensure_init();
-    
+
     let level = LLVMCodeGenOptLevel::LLVMCodeGenLevelNone;
     let reloc_mode = LLVMRelocMode::LLVMRelocStatic;
     let code_model = LLVMCodeModel::LLVMCodeModelDefault;
@@ -199,10 +216,15 @@ pub unsafe fn write_wasm_to_file(module: LLVMModuleRef, file_path: &str) -> Resu
     let mut err_string = MaybeUninit::uninit();
     let success =
         LLVMGetTargetFromTriple(triple.as_ptr().cast(), &mut target, err_string.as_mut_ptr());
-        
+
     if success != 0 {
-        let message = CStr::from_ptr(err_string.assume_init()).to_str().expect("Failed to get error string");
-        return Err(message.to_string());
+        let error_ptr = err_string.assume_init();
+        let message = CStr::from_ptr(error_ptr)
+            .to_str()
+            .expect("Failed to get error string");
+        let message_string = message.to_string();
+        LLVMDisposeMessage(error_ptr);
+        return Err(message_string);
     }
 
     let target_machine = unsafe {
@@ -233,8 +255,13 @@ pub unsafe fn write_wasm_to_file(module: LLVMModuleRef, file_path: &str) -> Resu
     );
 
     if success != 0 {
-        let message = CStr::from_ptr(err_string.assume_init()).to_str().expect("Failed to get error string");
-        return Err(message.to_string());
+        let error_ptr = err_string.assume_init();
+        let message = CStr::from_ptr(error_ptr)
+            .to_str()
+            .expect("Failed to get error string");
+        let message_string = message.to_string();
+        LLVMDisposeMessage(error_ptr);
+        return Err(message_string);
     }
 
     // this is segfaulting for some reason, need to debug

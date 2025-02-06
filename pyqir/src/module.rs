@@ -188,15 +188,15 @@ impl Module {
         }
     }
 
-
     #[pyo3(text_signature = "()")]
     fn wasm<'py>(&self, py: Python<'py>) -> PyResult<&'py PyBytes> {
         use tempfile::NamedTempFile;
         let mut temp_file = NamedTempFile::new().unwrap();
         let temp_path = temp_file.path().to_string_lossy().into_owned();
-        
+
         unsafe {
-            qirlib::module::write_wasm_to_file(self.cast().as_ptr(), &temp_path).map_err(|error| PyValueError::new_err(error))?;
+            qirlib::module::write_wasm_to_file(self.cast().as_ptr(), &temp_path)
+                .map_err(|error| PyValueError::new_err(error))?;
             let mut buffer = Vec::new();
             temp_file.read_to_end(&mut buffer).unwrap();
             Ok(PyBytes::new(py, &buffer[..]))
@@ -264,16 +264,7 @@ impl Module {
     /// :returns: An error description if this module is invalid or `None` if this module is valid.
     /// :rtype: typing.Optional[str]
     fn verify(&self) -> Option<String> {
-        unsafe {
-            let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
-            let mut error = ptr::null_mut();
-            if LLVMVerifyModule(self.cast().as_ptr(), action, &mut error) == 0 {
-                None
-            } else {
-                let error = Message::from_raw(error);
-                Some(error.to_str().unwrap().to_string())
-            }
-        }
+        unsafe { qirlib::module::verify(self.cast().as_ptr()) }
     }
 
     /// Converts this module into an LLVM IR string.
