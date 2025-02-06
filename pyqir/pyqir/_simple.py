@@ -135,3 +135,14 @@ class SimpleModule:
             return self._module.bitcode
         finally:
             ret.erase()
+
+    def wasm(self) -> bytes:
+        """Emits the wasm for the module as a sequence of bytes."""
+        ret = self._builder.ret(None)
+        try:
+            error = self._module.verify()
+            if error is not None:
+                raise ValueError(error)
+            return self._module.wasm()
+        finally:
+            ret.erase()

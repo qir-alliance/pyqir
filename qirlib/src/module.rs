@@ -1,13 +1,29 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use std::{
+    borrow::Cow,
+    ffi::{CStr, CString},
+    mem::MaybeUninit,
+};
+
 use llvm_sys::{
     core::{
         LLVMConstInt, LLVMConstIntGetZExtValue, LLVMGetModuleContext, LLVMGetModuleFlag,
         LLVMInt1TypeInContext, LLVMInt32TypeInContext, LLVMMetadataAsValue, LLVMValueAsMetadata,
     },
     prelude::{LLVMMetadataRef, LLVMModuleRef},
+    target::{
+        LLVMInitializeWebAssemblyAsmParser, LLVMInitializeWebAssemblyAsmPrinter,
+        LLVMInitializeWebAssemblyDisassembler, LLVMInitializeWebAssemblyTarget,
+        LLVMInitializeWebAssemblyTargetInfo, LLVMInitializeWebAssemblyTargetMC,
+    },
+    target_machine::{
+        LLVMCodeGenFileType, LLVMCodeGenOptLevel, LLVMCodeModel, LLVMCreateTargetMachine,
+        LLVMGetTargetFromTriple, LLVMRelocMode, LLVMTargetMachineEmitToFile,
+    },
 };
+use std::ptr::null;
 
 use crate::{
     llvm_wrapper::{LLVMRustAddModuleFlag, LLVMRustModFlagBehavior},
@@ -141,4 +157,80 @@ pub unsafe fn add_flag(
         id.len().try_into().unwrap(),
         md,
     );
+}
+
+fn to_c_str(mut s: &str) -> Cow<'_, CStr> {
+    if s.is_empty() {
+        s = "\0";
+    }
+    if !s.chars().rev().any(|ch| ch == '\0') {
+        return Cow::from(CString::new(s).expect("CString::new failed"));
+    }
+
+    unsafe { Cow::from(CStr::from_ptr(s.as_ptr() as *const _)) }
+}
+
+pub unsafe fn write_wasm_to_file(module: LLVMModuleRef, file_path: &str) {
+    LLVMInitializeWebAssemblyTargetInfo();
+    LLVMInitializeWebAssemblyTarget();
+    LLVMInitializeWebAssemblyTargetMC();
+    LLVMInitializeWebAssemblyAsmPrinter();
+    LLVMInitializeWebAssemblyAsmParser();
+    LLVMInitializeWebAssemblyDisassembler();
+
+    let level = LLVMCodeGenOptLevel::LLVMCodeGenLevelNone;
+    let reloc_mode = LLVMRelocMode::LLVMRelocStatic;
+    let code_model = LLVMCodeModel::LLVMCodeModelDefault;
+
+    let triple = "wasm32-unknown-unknown";
+    let mut target = std::ptr::null_mut();
+    let mut err_string = MaybeUninit::uninit();
+    let success =
+        LLVMGetTargetFromTriple(triple.as_ptr().cast(), &mut target, err_string.as_mut_ptr());
+    if success != 0 {
+        panic!("Failed to create target");
+    }
+
+    let target_machine = unsafe {
+        LLVMCreateTargetMachine(
+            target,
+            triple.as_ptr().cast(),
+            null(),
+            null(),
+            level.into(),
+            reloc_mode.into(),
+            code_model.into(),
+        )
+    };
+
+    if target_machine.is_null() {
+        panic!("Failed to create target machine");
+    }
+    let mut err_string = MaybeUninit::uninit();
+    //let mut memory_buffer = std::ptr::null_mut();
+    //let res = LLVMTargetMachineEmitToMemoryBuffer(target_machine, module, LLVMCodeGenFileType::LLVMObjectFile, err_string.as_mut_ptr(), &mut memory_buffer);
+    let file = to_c_str(file_path);
+    let res = LLVMTargetMachineEmitToFile(
+        target_machine,
+        module,
+        file.as_ptr().cast_mut().cast(),
+        LLVMCodeGenFileType::LLVMObjectFile,
+        err_string.as_mut_ptr(),
+    );
+
+    if res == 1 {
+        panic!("Failed to emit to memory buffer");
+    }
+
+    // this is segfaulting for some reason, need to debug
+    // LLVMTargetMachineEmitToFile(
+    //         target_machine,
+    //         module,
+    //         file_type_ptr,
+    //         err_string.as_mut_ptr(),
+    //         &mut memory_buffer,
+    //     )
+    // };
+
+    //memory_buffer
 }

@@ -27,6 +27,7 @@ use std::{
     collections::hash_map::DefaultHasher,
     ffi::CString,
     hash::{Hash, Hasher},
+    io::Read,
     ops::Deref,
     ptr::{self, NonNull},
     str,
@@ -184,6 +185,21 @@ impl Module {
             let start = LLVMGetBufferStart(buffer.cast().as_ptr());
             let len = LLVMGetBufferSize(buffer.cast().as_ptr());
             PyBytes::new(py, slice::from_raw_parts(start.cast(), len))
+        }
+    }
+
+
+    #[pyo3(text_signature = "()")]
+    fn wasm<'py>(&self, py: Python<'py>) -> &'py PyBytes {
+        use tempfile::NamedTempFile;
+        let mut temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.path().to_string_lossy().into_owned();
+        
+        unsafe {
+            qirlib::module::write_wasm_to_file(self.cast().as_ptr(), &temp_path);
+            let mut buffer = Vec::new();
+            temp_file.read_to_end(&mut buffer).unwrap();
+            PyBytes::new(py, &buffer[..])
         }
     }
 

@@ -20,6 +20,8 @@ llvm-sys-140 = { package = "llvm-sys", version = "140.1", optional = true }
 llvm-sys-150 = { package = "llvm-sys", version = "150.2", optional = true }
 log = "0.4"
 mut_static = "5.0"
+tempfile = "3.3"
+
 
 [dev-dependencies]
 normalize-line-endings = "0.3"
