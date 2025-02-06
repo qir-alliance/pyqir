@@ -190,16 +190,16 @@ impl Module {
 
 
     #[pyo3(text_signature = "()")]
-    fn wasm<'py>(&self, py: Python<'py>) -> &'py PyBytes {
+    fn wasm<'py>(&self, py: Python<'py>) -> PyResult<&'py PyBytes> {
         use tempfile::NamedTempFile;
         let mut temp_file = NamedTempFile::new().unwrap();
         let temp_path = temp_file.path().to_string_lossy().into_owned();
         
         unsafe {
-            qirlib::module::write_wasm_to_file(self.cast().as_ptr(), &temp_path);
+            qirlib::module::write_wasm_to_file(self.cast().as_ptr(), &temp_path).map_err(|error| PyValueError::new_err(error))?;
             let mut buffer = Vec::new();
             temp_file.read_to_end(&mut buffer).unwrap();
-            PyBytes::new(py, &buffer[..])
+            Ok(PyBytes::new(py, &buffer[..]))
         }
     }
 

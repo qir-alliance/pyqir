@@ -7,6 +7,23 @@ use std::{
     mem::MaybeUninit,
 };
 
+use std::sync::Once;
+
+static LLVM_INIT: Once = Once::new();
+
+pub(crate) fn ensure_init() {
+    LLVM_INIT.call_once(|| {
+        unsafe {
+            LLVMInitializeWebAssemblyTargetInfo();
+            LLVMInitializeWebAssemblyTarget();
+            LLVMInitializeWebAssemblyTargetMC();
+            LLVMInitializeWebAssemblyAsmPrinter();
+            LLVMInitializeWebAssemblyAsmParser();
+            LLVMInitializeWebAssemblyDisassembler();
+        }
+    });
+} 
+
 use llvm_sys::{
     core::{
         LLVMConstInt, LLVMConstIntGetZExtValue, LLVMGetModuleContext, LLVMGetModuleFlag,
@@ -170,14 +187,9 @@ fn to_c_str(mut s: &str) -> Cow<'_, CStr> {
     unsafe { Cow::from(CStr::from_ptr(s.as_ptr() as *const _)) }
 }
 
-pub unsafe fn write_wasm_to_file(module: LLVMModuleRef, file_path: &str) {
-    LLVMInitializeWebAssemblyTargetInfo();
-    LLVMInitializeWebAssemblyTarget();
-    LLVMInitializeWebAssemblyTargetMC();
-    LLVMInitializeWebAssemblyAsmPrinter();
-    LLVMInitializeWebAssemblyAsmParser();
-    LLVMInitializeWebAssemblyDisassembler();
-
+pub unsafe fn write_wasm_to_file(module: LLVMModuleRef, file_path: &str) -> Result<(), String> {
+    ensure_init();
+    
     let level = LLVMCodeGenOptLevel::LLVMCodeGenLevelNone;
     let reloc_mode = LLVMRelocMode::LLVMRelocStatic;
     let code_model = LLVMCodeModel::LLVMCodeModelDefault;
@@ -187,8 +199,10 @@ pub unsafe fn write_wasm_to_file(module: LLVMModuleRef, file_path: &str) {
     let mut err_string = MaybeUninit::uninit();
     let success =
         LLVMGetTargetFromTriple(triple.as_ptr().cast(), &mut target, err_string.as_mut_ptr());
+        
     if success != 0 {
-        panic!("Failed to create target");
+        let message = CStr::from_ptr(err_string.assume_init()).to_str().expect("Failed to get error string");
+        return Err(message.to_string());
     }
 
     let target_machine = unsafe {
@@ -204,13 +218,13 @@ pub unsafe fn write_wasm_to_file(module: LLVMModuleRef, file_path: &str) {
     };
 
     if target_machine.is_null() {
-        panic!("Failed to create target machine");
+        return Err("Failed to create target machine".to_string());
     }
     let mut err_string = MaybeUninit::uninit();
     //let mut memory_buffer = std::ptr::null_mut();
     //let res = LLVMTargetMachineEmitToMemoryBuffer(target_machine, module, LLVMCodeGenFileType::LLVMObjectFile, err_string.as_mut_ptr(), &mut memory_buffer);
     let file = to_c_str(file_path);
-    let res = LLVMTargetMachineEmitToFile(
+    let success: i32 = LLVMTargetMachineEmitToFile(
         target_machine,
         module,
         file.as_ptr().cast_mut().cast(),
@@ -218,8 +232,9 @@ pub unsafe fn write_wasm_to_file(module: LLVMModuleRef, file_path: &str) {
         err_string.as_mut_ptr(),
     );
 
-    if res == 1 {
-        panic!("Failed to emit to memory buffer");
+    if success != 0 {
+        let message = CStr::from_ptr(err_string.assume_init()).to_str().expect("Failed to get error string");
+        return Err(message.to_string());
     }
 
     // this is segfaulting for some reason, need to debug
@@ -232,5 +247,5 @@ pub unsafe fn write_wasm_to_file(module: LLVMModuleRef, file_path: &str) {
     //     )
     // };
 
-    //memory_buffer
+    Ok(())
 }
