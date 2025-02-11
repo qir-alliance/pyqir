@@ -60,6 +60,16 @@ class BasicQisBuilder:
         """
         qis.reset(self._builder, qubit)
 
+    def r(self, theta: Union[Value, float], phi: Union[Value, float], qubit:Value) -> None:
+        """
+        Inserts a rotation gate by an amount θ about the cos(φ)x + sin(φ)y axis.
+
+        :param theta: The angle to rotate by
+        :param phi: The axis to rotate about.
+        :param qubit: The qubit to rotate.
+        """
+        qis.r(self._builder, theta, phi, qubit)
+
     def rx(self, theta: Union[Value, float], qubit: Value) -> None:
         """
         Inserts a rotation gate about the :math:`x` axis.
