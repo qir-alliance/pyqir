@@ -68,7 +68,7 @@ m = Function(
 # Create entry point
 num_qubits = 1
 num_results = 1
-entry_point = pyqir.entry_point(mod, "main", num_qubits, num_results)
+entry_point = pyqir.entry_point(mod, "ENTRYPOINT_main", num_qubits, num_results)
 builder.insert_at_end(BasicBlock(context, "entry", entry_point))
 
 # Define entry point body

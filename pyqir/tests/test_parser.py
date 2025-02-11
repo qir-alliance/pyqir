@@ -140,7 +140,7 @@ def test_global_string() -> None:
 
 def test_null_i8ptr_string() -> None:
     llvm_ir = """
-    define void @main() {
+    define void @ENTRYPOINT_main() {
       call void @a(i8* null)
       ret void
     }

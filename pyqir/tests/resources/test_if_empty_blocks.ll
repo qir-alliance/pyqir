@@ -3,7 +3,7 @@ source_filename = "test_if"
 
 %Result = type opaque
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
 entry:
   %0 = call i1 @__quantum__qis__read_result__body(%Result* null)
   br i1 %0, label %then, label %else

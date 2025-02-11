@@ -1,7 +1,7 @@
 ; ModuleID = 'tuple_record_output'
 source_filename = "tuple_record_output"
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
   call void @__quantum__rt__tuple_record_output(i64 0, i8* null)
   ret void
 }

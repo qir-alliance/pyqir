@@ -174,7 +174,7 @@ fn build_ir(
         let module = Module::new(&context, name);
         let entry_point = values::entry_point(
             module.as_ptr(),
-            cstr!("main"),
+            cstr!("ENTRYPOINT_main"),
             required_num_qubits,
             required_num_results,
             "custom",

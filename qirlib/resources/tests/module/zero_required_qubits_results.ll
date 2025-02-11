@@ -1,7 +1,7 @@
 ; ModuleID = 'zero_required_qubits_results'
 source_filename = "zero_required_qubits_results"
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
   ret void
 }
 

@@ -4,7 +4,7 @@ source_filename = "mz"
 %Qubit = type opaque
 %Result = type opaque
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
   ret void
 }

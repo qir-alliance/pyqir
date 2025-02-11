@@ -11,15 +11,11 @@ use crate::{
 };
 use core::mem::forget;
 use core::slice;
+
 #[allow(clippy::wildcard_imports, deprecated)]
 use llvm_sys::{
-    analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
-    bit_reader::LLVMParseBitcodeInContext,
-    bit_writer::LLVMWriteBitcodeToMemoryBuffer,
-    core::*,
-    ir_reader::LLVMParseIRInContext,
-    linker::LLVMLinkModules2,
-    LLVMLinkage, LLVMModule,
+    bit_reader::LLVMParseBitcodeInContext, bit_writer::LLVMWriteBitcodeToMemoryBuffer, core::*,
+    ir_reader::LLVMParseIRInContext, linker::LLVMLinkModules2, LLVMLinkage, LLVMModule,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, pyclass::CompareOp, types::PyBytes};
 use qirlib::{context::set_diagnostic_handler, module::FlagBehavior};
@@ -27,7 +23,6 @@ use std::{
     collections::hash_map::DefaultHasher,
     ffi::CString,
     hash::{Hash, Hasher},
-    io::Read,
     ops::Deref,
     ptr::{self, NonNull},
     str,
@@ -189,16 +184,21 @@ impl Module {
     }
 
     #[pyo3(text_signature = "()")]
-    fn wasm<'py>(&self, py: Python<'py>) -> PyResult<&'py PyBytes> {
-        use tempfile::NamedTempFile;
-        let mut temp_file = NamedTempFile::new().unwrap();
-        let temp_path = temp_file.path().to_string_lossy().into_owned();
-
+    fn raw_wasm<'py>(&self, py: Python<'py>) -> PyResult<&'py PyBytes> {
         unsafe {
-            qirlib::module::write_wasm_to_file(self.cast().as_ptr(), &temp_path)
+            let buffer = qirlib::module::raw_wasm(self.cast().as_ptr())
                 .map_err(|error| PyValueError::new_err(error))?;
-            let mut buffer = Vec::new();
-            temp_file.read_to_end(&mut buffer).unwrap();
+
+            Ok(PyBytes::new(py, &buffer[..]))
+        }
+    }
+
+    #[pyo3(text_signature = "()")]
+    fn wasm<'py>(&self, py: Python<'py>) -> PyResult<&'py PyBytes> {
+        unsafe {
+            let buffer = qirlib::module::compile_wasm(self.cast().as_ptr())
+                .map_err(|error| PyValueError::new_err(error))?;
+
             Ok(PyBytes::new(py, &buffer[..]))
         }
     }

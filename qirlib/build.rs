@@ -99,6 +99,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo:rerun-if-changed=llvm-wrapper/LLVMWrapper.h");
     println!("cargo:rerun-if-changed=llvm-wrapper/MetadataWrapper.cpp");
     println!("cargo:rerun-if-changed=llvm-wrapper/ModuleWrapper.cpp");
+    println!("cargo:rerun-if-changed=llvm-wrapper/LldWrapper.cpp");
 
     // Download vars passed to cmake
     println!("cargo:rerun-if-env-changed=QIRLIB_DOWNLOAD_LLVM");
@@ -134,7 +135,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else {
         println!("No LLVM linking");
     }
+    
     if !cfg!(feature = "no-llvm-linking") {
+        link_ldd();
         compile_llvm_wrapper()?;
     }
 
@@ -264,6 +267,14 @@ fn get_build_dir() -> Result<PathBuf, Box<dyn Error>> {
     Ok(normalized_build_dir)
 }
 
+fn link_ldd() {
+    let libdir = llvm_sys::llvm_config("--libdir");
+    println!("cargo:rustc-link-search=native={}", libdir);
+    println!("cargo:rustc-link-lib=static=lldCommon");
+    println!("cargo:rustc-link-lib=static=lldWasm");
+    println!("cargo:rustc-link-lib=static=LLVMLibDriver");
+}
+
 fn link_llvm() {
     let libdir = llvm_sys::llvm_config("--libdir");
 
@@ -308,6 +319,7 @@ fn compile_llvm_wrapper() -> Result<(), Box<dyn Error>> {
         .static_crt(true)
         .file("llvm-wrapper/MetadataWrapper.cpp")
         .file("llvm-wrapper/ModuleWrapper.cpp")
+        .file("llvm-wrapper/LldWrapper.cpp")
         .compile("llvm-wrapper");
     Ok(())
 }

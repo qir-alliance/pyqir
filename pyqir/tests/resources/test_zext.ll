@@ -1,7 +1,7 @@
 ; ModuleID = 'zext'
 source_filename = "zext"
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
 entry:
   %0 = call i16 @random_int(i16 0)
   %1 = zext i16 %0 to i32

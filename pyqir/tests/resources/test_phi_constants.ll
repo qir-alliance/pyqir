@@ -1,7 +1,7 @@
 ; ModuleID = 'phi_constants'
 source_filename = "phi_constants"
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
 entry:
   br i1 false, label %body, label %footer
 

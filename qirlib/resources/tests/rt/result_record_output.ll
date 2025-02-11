@@ -3,7 +3,7 @@ source_filename = "result_record_output"
 
 %Result = type opaque
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
   call void @__quantum__rt__result_record_output(%Result* null, i8* null)
   ret void
 }

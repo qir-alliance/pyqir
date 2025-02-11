@@ -4,7 +4,7 @@ source_filename = "if_then_else"
 %Qubit = type opaque
 %Result = type opaque
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 1 to %Result*))
   %1 = call i1 @__quantum__qis__read_result__body(%Result* null)

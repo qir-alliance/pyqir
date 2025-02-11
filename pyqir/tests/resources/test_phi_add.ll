@@ -1,7 +1,7 @@
 ; ModuleID = 'phi_add'
 source_filename = "phi_add"
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
 entry:
   br i1 true, label %body, label %footer
 

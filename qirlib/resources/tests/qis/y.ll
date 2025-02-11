@@ -3,7 +3,7 @@ source_filename = "y"
 
 %Qubit = type opaque
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
   call void @__quantum__qis__y__body(%Qubit* null)
   ret void
 }

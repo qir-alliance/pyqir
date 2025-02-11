@@ -4,10 +4,15 @@
 use std::{
     borrow::Cow,
     ffi::{CStr, CString},
+    fs::File,
+    io::Read,
     mem::MaybeUninit,
+    slice, str,
 };
 
 use std::sync::Once;
+
+use tempfile::NamedTempFile;
 
 static LLVM_INIT: Once = Once::new();
 
@@ -25,15 +30,21 @@ pub(crate) fn ensure_init() {
 use llvm_sys::{
     analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
     core::{
-        LLVMConstInt, LLVMConstIntGetZExtValue, LLVMDisposeMessage, LLVMGetModuleContext,
-        LLVMGetModuleFlag, LLVMInt1TypeInContext, LLVMInt32TypeInContext, LLVMMetadataAsValue,
-        LLVMValueAsMetadata,
+        LLVMConstInt, LLVMConstIntGetZExtValue, LLVMContextCreate,
+        LLVMCreateMemoryBufferWithMemoryRange, LLVMDisposeMessage, LLVMDisposeModule,
+        LLVMGetFirstFunction, LLVMGetModuleContext, LLVMGetModuleFlag, LLVMGetNextFunction,
+        LLVMGetValueName2, LLVMInt1TypeInContext, LLVMInt32TypeInContext, LLVMMetadataAsValue,
+        LLVMPrintModuleToFile, LLVMPrintModuleToString, LLVMValueAsMetadata,
     },
-    prelude::{LLVMMetadataRef, LLVMModuleRef},
+    ir_reader::LLVMParseIRInContext,
+    prelude::{LLVMContextRef, LLVMMetadataRef, LLVMModuleRef, LLVMValueRef},
     target::{
         LLVMInitializeWebAssemblyAsmParser, LLVMInitializeWebAssemblyAsmPrinter,
         LLVMInitializeWebAssemblyDisassembler, LLVMInitializeWebAssemblyTarget,
         LLVMInitializeWebAssemblyTargetInfo, LLVMInitializeWebAssemblyTargetMC,
+        LLVM_InitializeAllAsmParsers, LLVM_InitializeAllAsmPrinters,
+        LLVM_InitializeAllDisassemblers, LLVM_InitializeAllTargetInfos,
+        LLVM_InitializeAllTargetMCs, LLVM_InitializeAllTargets,
     },
     target_machine::{
         LLVMCodeGenFileType, LLVMCodeGenOptLevel, LLVMCodeModel, LLVMCreateTargetMachine,
@@ -43,8 +54,9 @@ use llvm_sys::{
 use std::ptr::null;
 
 use crate::{
-    llvm_wrapper::{LLVMRustAddModuleFlag, LLVMRustModFlagBehavior},
+    llvm_wrapper::{LLVMRustAddModuleFlag, LLVMRustModFlagBehavior, SafeReturn},
     metadata::extract_constant,
+    values::is_entry_point,
 };
 
 pub enum FlagBehavior {
@@ -200,7 +212,17 @@ pub unsafe fn verify(module: LLVMModuleRef) -> Option<String> {
     }
 }
 
-pub unsafe fn write_wasm_to_file(module: LLVMModuleRef, file_path: &str) -> Result<(), String> {
+pub unsafe fn raw_wasm(module: LLVMModuleRef) -> Result<Vec<u8>, String> {
+    use tempfile::NamedTempFile;
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let temp_path = temp_file.path().to_string_lossy().into_owned();
+    write_raw_wasm_to_file(module, &temp_path)?;
+    let mut buffer = Vec::new();
+    temp_file.read_to_end(&mut buffer).unwrap();
+    Ok(buffer)
+}
+
+pub unsafe fn write_raw_wasm_to_file(module: LLVMModuleRef, file_path: &str) -> Result<(), String> {
     if let Some(error) = verify(module) {
         return Err(error);
     }
@@ -275,4 +297,170 @@ pub unsafe fn write_wasm_to_file(module: LLVMModuleRef, file_path: &str) -> Resu
     // };
 
     Ok(())
+}
+
+pub unsafe fn compile_wasm(module: LLVMModuleRef) -> Result<Vec<u8>, String> {
+    // Write the wasm object file to disk, this will be input to the linking stage
+
+    let raw_wasm_file = NamedTempFile::new().unwrap();
+    let raw_wasm_path = raw_wasm_file.path().to_string_lossy().into_owned();
+    write_raw_wasm_to_file(module, &raw_wasm_path)?;
+
+    let entry_point = choose_entry_point(get_functions(module).into_iter(), None)?;
+    if entry_point == "main" {
+        // we can't have an entry point named "main" because it will conflict with llvm internals
+        return Err("Entry point cannot be named 'main'".to_string());
+    }
+    if entry_point == "" {
+        return Err("No entry point found".to_string());
+    }
+
+    let mut linked_wasm_file = NamedTempFile::new().unwrap();
+    //let linked_wasm_path = linked_wasm_file.path().to_string_lossy().into_owned();
+    let (mut linked_wasm_file_file, linked_wasm_path) = linked_wasm_file.keep().unwrap();
+
+    // build up and convert the args to a format that can be passed to the linker
+    let entry_arg = format!("--entry={entry_point}");
+    let args = [
+        "pyqir-wasm-ld",
+        "--verbose",
+        &entry_arg,
+        "--allow-undefined",
+        "-o",
+        linked_wasm_path.to_str().unwrap(),
+        raw_wasm_path.as_str(),
+    ];
+    let args = args
+        .iter()
+        .map(|arg| CString::new(*arg).unwrap())
+        .collect::<Vec<CString>>();
+    let args = args
+        .iter()
+        .map(|arg| arg.as_ptr())
+        .collect::<Vec<*const std::ffi::c_char>>();
+
+    // call the linker inproc
+    let (res, out, err) = link_wasm_wrapper(args.len() as i32, args.as_ptr());
+    if !out.is_empty() {
+        use std::io::Write;
+        std::io::stdout().write_all(out.to_bytes()).unwrap();
+    }
+
+    if res.ret != 0 {
+        if !res.can_run_again {
+            return Err(
+                "Failed to link wasm and memory was corrupted. Restart procssess/session."
+                    .to_string(),
+            );
+        }
+        let linker_err = err.to_string_lossy().to_string();
+        let linker_out = out.to_string_lossy().to_string();
+        let msg = format!(
+            "Failed to link wasm {res:?}: \nstdout:\n{}\n\nstderr:\n{}",
+            linker_out, linker_err
+        );
+        return Err(msg);
+    } else if !err.is_empty() {
+        use std::io::Write;
+        std::io::stderr().write_all(err.to_bytes()).unwrap();
+    }
+
+    let mut buffer = Vec::new();
+    let read = linked_wasm_file_file
+        .read_to_end(&mut buffer)
+        .map_err(|e| e.to_string())?;
+    let mut tt = File::open(linked_wasm_path).map_err(|e| e.to_string())?;
+    let read = tt.read_to_end(&mut buffer).map_err(|e| e.to_string())?;
+    if read == 0 {
+        return Err("No data written to file".to_string());
+    }
+
+    Ok(buffer)
+}
+
+pub unsafe fn link_wasm_wrapper(
+    argc: i32,
+    argv: *const *const std::ffi::c_char,
+) -> (SafeReturn, CString, CString) {
+    let mut stdout: *mut std::ffi::c_char = std::ptr::null_mut();
+    let mut stderr: *mut std::ffi::c_char = std::ptr::null_mut();
+    let res = crate::llvm_wrapper::safeLldMainWrapper(argc, argv, &mut stdout, &mut stderr);
+    let mut cstr_out = CString::new("").unwrap();
+    let mut cstr_err = CString::new("").unwrap();
+    if !stdout.is_null() {
+        cstr_out = std::ffi::CString::from_raw(stdout);
+    }
+    if !stderr.is_null() {
+        cstr_err = std::ffi::CString::from_raw(stderr);
+    }
+    (res, cstr_out, cstr_err)
+}
+
+unsafe fn choose_entry_point<'ctx>(
+    functions: impl Iterator<Item = LLVMValueRef>,
+    name: Option<&str>,
+) -> Result<String, String> {
+    fn get_name<'ctx>(f: LLVMValueRef) -> Result<String, String> {
+        let mut len = 0;
+        unsafe {
+            let name = LLVMGetValueName2(f, &mut len).cast();
+            let x = str::from_utf8(slice::from_raw_parts(name, len)).map_err(|e| e.to_string())?;
+            Ok(x.to_owned())
+        }
+    }
+    let mut entry_points = functions.filter(|f| {
+        is_entry_point(f.clone())
+            && name
+                .iter()
+                .all(|n| get_name(f.clone()) == Ok(n.to_string()))
+    });
+
+    let entry_point = entry_points
+        .next()
+        .ok_or_else(|| "No matching entry point found.".to_owned())?;
+
+    if entry_points.next().is_some() {
+        Err("Multiple matching entry points found.".to_owned())
+    } else {
+        get_name(entry_point)
+    }
+}
+
+fn get_functions(module: LLVMModuleRef) -> Vec<LLVMValueRef> {
+    let mut functions = Vec::new();
+    unsafe {
+        let mut function = LLVMGetFirstFunction(module);
+        while !function.is_null() {
+            functions.push(function);
+            function = LLVMGetNextFunction(function);
+        }
+    }
+    functions
+}
+
+unsafe fn load_ir(input: &str) -> Result<LLVMModuleRef, String> {
+    let name = CString::new("").unwrap();
+
+    // Don't dispose this buffer. LLVMParseIRInContext takes ownership.
+    let mut ir_buf = Vec::new();
+    let mut ir_file = File::open(input).map_err(|e| e.to_string())?;
+    ir_file
+        .read_to_end(&mut ir_buf)
+        .map_err(|e| e.to_string())?;
+    let buffer = LLVMCreateMemoryBufferWithMemoryRange(
+        ir_buf.as_ptr().cast(),
+        ir_buf.len(),
+        name.as_ptr(),
+        0,
+    );
+
+    let mut module = std::ptr::null_mut();
+    let mut error = std::ptr::null_mut();
+
+    let context_ref = LLVMContextCreate();
+    if LLVMParseIRInContext(context_ref, buffer, &mut module, &mut error) != 0 {
+        let error = std::ffi::CString::from_raw(error);
+        return Err(error.to_str().unwrap().to_string());
+    }
+    Ok(module)
 }

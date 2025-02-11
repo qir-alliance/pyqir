@@ -3,7 +3,7 @@ source_filename = "s_adj"
 
 %Qubit = type opaque
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
   call void @__quantum__qis__s__adj(%Qubit* null)
   ret void
 }

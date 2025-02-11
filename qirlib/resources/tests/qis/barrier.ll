@@ -1,7 +1,7 @@
 ; ModuleID = 'barrier'
 source_filename = "barrier"
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
   call void @__quantum__qis__barrier__body()
   ret void
 }

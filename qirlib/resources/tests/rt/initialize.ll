@@ -1,7 +1,7 @@
 ; ModuleID = 'initialize'
 source_filename = "initialize"
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
   call void @__quantum__rt__initialize(i8* null)
   ret void
 }

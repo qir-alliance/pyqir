@@ -4,7 +4,7 @@ source_filename = "if_else_continue"
 %Qubit = type opaque
 %Result = type opaque
 
-define void @main() #0 {
+define void @ENTRYPOINT_main() #0 {
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
   %1 = call i1 @__quantum__qis__read_result__body(%Result* null)
   br i1 %1, label %then, label %else

@@ -382,7 +382,7 @@ def test_record_output() -> None:
         mod,
     )
 
-    main = pyqir.entry_point(mod, "main", 0, 1)
+    main = pyqir.entry_point(mod, "ENTRYPOINT_main", 0, 1)
     builder = Builder(context)
     builder.insert_at_end(BasicBlock(context, "", main))
     builder.call(
