@@ -246,7 +246,7 @@ def test_builder_lifetime() -> None:
         c = Context()
         m = Module(c, "test")
         b = Builder(c)
-        b.insert_at_end(BasicBlock(c, "", pyqir.entry_point(m, "main", 0, 0)))
+        b.insert_at_end(BasicBlock(c, "", pyqir.entry_point(m, "ENTRYPOINT_main", 0, 0)))
         return b
 
     assert str(make_builder().ret(None)) == "  ret void"
