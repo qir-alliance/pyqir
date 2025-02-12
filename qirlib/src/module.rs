@@ -323,7 +323,6 @@ pub unsafe fn compile_wasm(module: LLVMModuleRef) -> Result<Vec<u8>, String> {
     let entry_arg = format!("--entry={entry_point}");
     let args = [
         "pyqir-wasm-ld",
-        "--verbose",
         &entry_arg,
         "--allow-undefined",
         "-o",

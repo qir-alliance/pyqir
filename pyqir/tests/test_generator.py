@@ -37,10 +37,6 @@ def test_bell() -> None:
     qis.mz(module.qubits[1], module.results[1])
 
     ir = module.ir()
-    wasm = module.link_wasm()
-    # write the wasm to a file bell.wasm
-    with open("bell.wasm", "wb") as f:
-        f.write(wasm)
     assert ir.startswith("; ModuleID = 'Bell circuit'")
 
 
