@@ -93,7 +93,6 @@ pub(crate) unsafe fn general_r_gate(module: LLVMModuleRef, name: &str) -> LLVMVa
         &mut [LLVMDoubleTypeInContext(context), LLVMDoubleTypeInContext(context), types::qubit(context)],
     );
     declare_qis(module, name, Functor::Body, ty)
-
 }
 
 pub(crate) unsafe fn function_type(ret: LLVMTypeRef, params: &mut [LLVMTypeRef]) -> LLVMTypeRef {
