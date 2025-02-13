@@ -90,7 +90,11 @@ pub(crate) unsafe fn general_r_gate(module: LLVMModuleRef, name: &str) -> LLVMVa
     let context = LLVMGetModuleContext(module);
     let ty = function_type(
         LLVMVoidTypeInContext(context),
-        &mut [LLVMDoubleTypeInContext(context), LLVMDoubleTypeInContext(context), types::qubit(context)],
+        &mut [
+            LLVMDoubleTypeInContext(context),
+            LLVMDoubleTypeInContext(context),
+            types::qubit(context),
+        ],
     );
     declare_qis(module, name, Functor::Body, ty)
 }

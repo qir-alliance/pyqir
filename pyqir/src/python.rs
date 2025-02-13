@@ -10,8 +10,8 @@ use crate::{
     metadata::{ConstantAsMetadata, Metadata, MetadataString},
     module::{Linkage, Module, ModuleFlagBehavior},
     qis::{
-        barrier, ccx, cx, cz, h, if_result, mz, reset, r,  rx, ry, rz, s, s_adj, swap, t, t_adj,
-        x, y, z,
+        barrier, ccx, cx, cz, h, if_result, mz, r, reset, rx, ry, rz, s, s_adj, swap, t, t_adj, x,
+        y, z,
     },
     rt::{array_record_output, initialize, result_record_output, tuple_record_output},
     types::{

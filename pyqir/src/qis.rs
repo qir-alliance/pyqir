@@ -181,12 +181,23 @@ pub(crate) fn reset(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()
 /// :rtype: None
 #[pyfunction]
 #[pyo3(text_signature = "(builder, theta, phi, qubit)")]
-pub(crate) fn r(py: Python, builder: &Builder, theta: Angle, phi: Angle, qubit: &Value) -> PyResult<()> {
+pub(crate) fn r(
+    py: Python,
+    builder: &Builder,
+    theta: Angle,
+    phi: Angle,
+    qubit: &Value,
+) -> PyResult<()> {
     Owner::merge(
         py,
-        [Some(builder.owner()), theta.owner(), phi.owner(), Some(qubit.owner())]
-            .into_iter()
-            .flatten(),
+        [
+            Some(builder.owner()),
+            theta.owner(),
+            phi.owner(),
+            Some(qubit.owner()),
+        ]
+        .into_iter()
+        .flatten(),
     )?;
 
     let context = builder.owner().context(py);
@@ -197,8 +208,7 @@ pub(crate) fn r(py: Python, builder: &Builder, theta: Angle, phi: Angle, qubit: 
             theta.to_value(context.cast().as_ptr()),
             phi.to_value(context.cast().as_ptr()),
             qubit.cast().as_ptr(),
-       );
-
+        );
     }
     Ok(())
 }
