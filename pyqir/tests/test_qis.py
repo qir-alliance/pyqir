@@ -141,6 +141,7 @@ def test_rotated(
     call = f"call void @__quantum__qis__{name}__body(double 1.000000e+00, %Qubit* null)"
     assert call in mod.ir()
 
+
 @pytest.mark.parametrize(
     "get_value",
     [
@@ -163,7 +164,6 @@ def test_r_gate(
     qis.r(get_value(mod.context), get_value(mod.context), mod.qubits[0])
     call = f"call void @__quantum__qis__r__body(double 1.000000e+00, double 1.000000e+00, %Qubit* null)"
     assert call in mod.ir()
-
 
 
 def test_mz() -> None:

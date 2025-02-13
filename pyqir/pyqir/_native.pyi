@@ -1246,7 +1246,9 @@ def reset(builder: Builder, qubit: Value) -> None:
     """
     ...
 
-def r(builder: Builder, theta: Union[Value, float], phi: Union[Value, float], qubit: Value) -> None:
+def r(
+    builder: Builder, theta: Union[Value, float], phi: Union[Value, float], qubit: Value
+) -> None:
     """
     Inserts a rotation gate by an amount θ about the cos(φ)x + sin(φ)y axis.
     :param builder: The underlying builder used to build QIS instructions.
