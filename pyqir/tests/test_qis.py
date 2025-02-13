@@ -148,14 +148,12 @@ def test_rotated(
         lambda _: 1.0,
     ],
 )
-
 @pytest.mark.parametrize(
     "get_gate",
     [
         (lambda qis: qis.r),
     ],
 )
-
 def test_r_gate(
     get_gate: Callable[[BasicQisBuilder], Callable[[Union[Value, float], Value], None]],
     get_value: Callable[[Context], Union[Value, float]],
