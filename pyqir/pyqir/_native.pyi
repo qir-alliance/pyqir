@@ -381,7 +381,7 @@ class FloatConstant(Constant):
         """The value."""
         ...
 
-class FloatPredicate(Enum):
+class FloatPredicate():
     """A floating-point comparison predicate."""
 
     def __richcmp__(self, other: Value, op: int) -> bool:
@@ -516,7 +516,7 @@ class IntConstant(Constant):
         """The value."""
         ...
 
-class IntPredicate(Enum):
+class IntPredicate():
     """An integer comparison predicate."""
 
     def __richcmp__(self, other: Value, op: int) -> bool:
@@ -560,7 +560,7 @@ class IntType(Type):
         """The number of bits in the integer."""
         ...
 
-class Linkage(Enum):
+class Linkage():
     """The linkage kind for a global value in a module."""
 
     def __richcmp__(self, other: Value, op: int) -> bool:
@@ -690,7 +690,7 @@ class Module:
         """
         ...
 
-class ModuleFlagBehavior(Enum):
+class ModuleFlagBehavior():
     """Module flag behavior choices"""
 
     ERROR: ModuleFlagBehavior
@@ -701,7 +701,7 @@ class ModuleFlagBehavior(Enum):
     APPEND_UNIQUE: ModuleFlagBehavior
     MAX: ModuleFlagBehavior
 
-class Opcode(Enum):
+class Opcode():
     """An instruction opcode."""
 
     def __richcmp__(self, other: Value, op: int) -> bool:
