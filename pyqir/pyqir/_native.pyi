@@ -143,6 +143,22 @@ class Builder:
         """
         ...
 
+    def insert_before(self, instr: Instruction) -> None:
+        """
+        Tells the builder to insert subsequent instructions before the given instruction.
+
+        :param inst: The instruction to insert before.
+        """
+        ...
+
+    def instr(self, instr: Instruction) -> None:
+        """
+        Inserts an instruction into the current block.
+
+        :param instr: The instruction to insert.
+        """
+        ...
+
     def and_(self, lhs: Value, rhs: Value) -> Value:
         """
         Inserts a bitwise logical and instruction.
@@ -447,6 +463,13 @@ class Function(Constant):
         """The attributes for this function."""
         ...
 
+    def delete(self):
+        """
+        Deletes this function from the parent module.
+        Warning: Using this function after deleting it is undefined behavior.
+        """
+        ...
+
 class FunctionType(Type):
     """A function type."""
 
@@ -495,6 +518,12 @@ class Instruction(Value):
         """
         The basic blocks that are successors to this instruction. If this is not a terminator, the
         list is empty.
+        """
+        ...
+
+    def remove(self) -> None:
+        """
+        Removes this instruction from its parent basic block, but keeps it alive so it can be used again.
         """
         ...
 

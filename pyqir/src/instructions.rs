@@ -63,6 +63,16 @@ impl Instruction {
         }
     }
 
+    /// Removes this instruction from its parent basic block.
+    /// The instruction is not deleted from memory, so it can be reused.
+    ///
+    /// :rtype: None
+    fn remove(slf: PyRef<Self>) {
+        unsafe {
+            LLVMInstructionRemoveFromParent(slf.into_super().cast().as_ptr());
+        }
+    }
+
     /// Removes this instruction from its parent basic block, then deletes it from memory.
     ///
     /// .. warning:: Using this instruction after erasing it is undefined behavior.
