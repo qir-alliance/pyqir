@@ -10,8 +10,8 @@ use crate::{
     metadata::{ConstantAsMetadata, Metadata, MetadataString},
     module::{Linkage, Module, ModuleFlagBehavior},
     qis::{
-        barrier, ccx, cx, cz, h, if_result, mz, reset, rx, ry, rz, s, s_adj, swap, t, t_adj, x, y,
-        z,
+        barrier, ccx, cx, cz, h, if_result, mz, r, reset, rx, ry, rz, s, s_adj, swap, t, t_adj, x,
+        y, z,
     },
     rt::{array_record_output, initialize, result_record_output, tuple_record_output},
     types::{
@@ -93,6 +93,7 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(h, m)?)?;
     m.add_function(wrap_pyfunction!(mz, m)?)?;
     m.add_function(wrap_pyfunction!(reset, m)?)?;
+    m.add_function(wrap_pyfunction!(r, m)?)?;
     m.add_function(wrap_pyfunction!(rx, m)?)?;
     m.add_function(wrap_pyfunction!(ry, m)?)?;
     m.add_function(wrap_pyfunction!(rz, m)?)?;

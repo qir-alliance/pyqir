@@ -142,6 +142,30 @@ def test_rotated(
     assert call in mod.ir()
 
 
+@pytest.mark.parametrize(
+    "get_value",
+    [
+        lambda context: pyqir.const(Type.double(context), 1.0),
+        lambda _: 1.0,
+    ],
+)
+@pytest.mark.parametrize(
+    "get_gate",
+    [
+        (lambda qis: qis.r),
+    ],
+)
+def test_r_gate(
+    get_gate: Callable[[BasicQisBuilder], Callable[[Union[Value, float], Value], None]],
+    get_value: Callable[[Context], Union[Value, float]],
+) -> None:
+    mod = SimpleModule("test_r_gate", 1, 0)
+    qis = BasicQisBuilder(mod.builder)
+    qis.r(get_value(mod.context), get_value(mod.context), mod.qubits[0])
+    call = f"call void @__quantum__qis__r__body(double 1.000000e+00, double 1.000000e+00, %Qubit* null)"
+    assert call in mod.ir()
+
+
 def test_mz() -> None:
     mod = SimpleModule("test_mz", 1, 1)
     qis = BasicQisBuilder(mod.builder)

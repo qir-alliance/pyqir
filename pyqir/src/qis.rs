@@ -172,6 +172,47 @@ pub(crate) fn reset(py: Python, builder: &Builder, qubit: &Value) -> PyResult<()
     Ok(())
 }
 
+/// Inserts a rotation gate by an amount θ about the cos(φ)x + sin(φ)y axis.
+///
+/// :param Builder builer: The IR Builder used to create the instructions
+/// :param :param theta: The angle to rotate by.
+/// :param phi: The axis to rotate about.
+/// :param qubit: The qubit to rotate.
+/// :rtype: None
+#[pyfunction]
+#[pyo3(text_signature = "(builder, theta, phi, qubit)")]
+pub(crate) fn r(
+    py: Python,
+    builder: &Builder,
+    theta: Angle,
+    phi: Angle,
+    qubit: &Value,
+) -> PyResult<()> {
+    Owner::merge(
+        py,
+        [
+            Some(builder.owner()),
+            theta.owner(),
+            phi.owner(),
+            Some(qubit.owner()),
+        ]
+        .into_iter()
+        .flatten(),
+    )?;
+
+    let context = builder.owner().context(py);
+    let context = context.borrow(py);
+    unsafe {
+        qis::build_r(
+            builder.cast().as_ptr(),
+            theta.to_value(context.cast().as_ptr()),
+            phi.to_value(context.cast().as_ptr()),
+            qubit.cast().as_ptr(),
+        );
+    }
+    Ok(())
+}
+
 /// Inserts a rotation gate about the :math:`x` axis.
 ///
 /// :param Builder builder: The IR Builder used to create the instructions

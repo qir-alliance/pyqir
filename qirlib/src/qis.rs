@@ -6,7 +6,8 @@ use crate::{
     types,
     utils::{
         build_call, builder_module, controlled_gate, declare_qis, doubly_controlled_gate,
-        function_type, no_param, rotation_gate, simple_gate, two_qubit_gate, Functor,
+        function_type, general_r_gate, no_param, rotation_gate, simple_gate, two_qubit_gate,
+        Functor,
     },
 };
 
@@ -121,6 +122,19 @@ pub unsafe fn build_z(builder: LLVMBuilderRef, qubit: LLVMValueRef) {
         builder,
         simple_gate(builder_module(builder), "z", Functor::Body),
         &mut [qubit],
+    );
+}
+
+pub unsafe fn build_r(
+    builder: LLVMBuilderRef,
+    theta: LLVMValueRef,
+    phi: LLVMValueRef,
+    qubit: LLVMValueRef,
+) {
+    build_call(
+        builder,
+        general_r_gate(builder_module(builder), "r"),
+        &mut [theta, phi, qubit],
     );
 }
 
@@ -353,6 +367,20 @@ mod tests {
         assert_reference_ir("qis/z", 1, 0, |builder| unsafe {
             let context = builder_context(builder).unwrap().as_ptr();
             build_z(builder, qubit(context, 0));
+        });
+    }
+
+    #[test]
+    fn r() {
+        assert_reference_ir("qis/r", 1, 0, |builder| unsafe {
+            let context = builder_context(builder).unwrap().as_ptr();
+            let double = LLVMDoubleTypeInContext(context);
+            build_r(
+                builder,
+                LLVMConstReal(double, 0.0),
+                LLVMConstReal(double, 0.0),
+                qubit(context, 0),
+            );
         });
     }
 
