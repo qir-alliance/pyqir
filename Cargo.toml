@@ -1,5 +1,5 @@
 [workspace]
-members = ["pyqir", "qirlib"]
+members = ["iqm_pyqir", "qirlib"]
 resolver = "2"
 
 [workspace.package]
@@ -7,6 +7,6 @@ authors = ["Microsoft"]
 version = "0.10.6"
 edition = "2021"
 license = "MIT"
-homepage = "https://github.com/qir-alliance/pyqir"
-repository = "https://github.com/qir-alliance/pyqir"
+homepage = "https://github.com/qir-alliance/iqm_pyqir"
+repository = "https://github.com/qir-alliance/iqm_pyqir"
 

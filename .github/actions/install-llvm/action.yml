@@ -53,7 +53,7 @@ runs:
       run: |
         Write-Output "QIRLIB_CACHE_DIR=${{ inputs.directory }}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
         Write-Output "LLVM_SYS_${{ inputs.version }}0_PREFIX=${{ inputs.directory }}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-        Write-Output "PYQIR_LLVM_FEATURE_VERSION=llvm${{ inputs.version }}-0" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+        Write-Output "iqm_pyqir_LLVM_FEATURE_VERSION=llvm${{ inputs.version }}-0" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
       shell: pwsh
 
     - name: Install LLVM

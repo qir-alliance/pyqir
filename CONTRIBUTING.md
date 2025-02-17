@@ -1,8 +1,8 @@
 # Contributing
 
-Thank you for your interest in contributing to PyQIR!
+Thank you for your interest in contributing to iqm_pyqir!
 
-There are many ways in which you can contribute to PyQIR, whether by
+There are many ways in which you can contribute to iqm_pyqir, whether by
 contributing a feature or by engaging in discussions; we value contributions in
 all shapes and sizes! The following sections may give some ideas for how you can
 get involved.
@@ -12,7 +12,7 @@ get involved.
 Have a question? This repository is a great place to ask questions about using
 QIR from both Rust and Python. Your question will serve as resource to others
 searching for help. Please file an issue to ask your question
-[here](https://github.com/qir-alliance/pyqir/issues/new).
+[here](https://github.com/qir-alliance/iqm_pyqir/issues/new).
 
 Or maybe you have figured out how that hard-to-understand concept works? Share
 your knowledge! If you are interested in contributing to the documentation
@@ -24,11 +24,11 @@ respective repository to improve the materials.
 Have you identified an issue or modification that would benefit the community?
 We want to hear about it! If you have feedback about the content in this
 repository, please let us know by filing a [new
-issue](https://github.com/qir-alliance/pyqir/issues/new)!
+issue](https://github.com/qir-alliance/iqm_pyqir/issues/new)!
 
 As for any active effort, there are always many ways in which we hope to evolve
 and improve the specification and tools. We encourage you to look at the list of
-currently [open issues](https://github.com/qir-alliance/pyqir/issues) to share
+currently [open issues](https://github.com/qir-alliance/iqm_pyqir/issues) to share
 your ideas and expertise.
 
 ## Contributing Code
@@ -49,7 +49,7 @@ similar functionality has already been requested. If so, consider contributing
 to the discussion around it rather than filing a separate issue. If no open or
 closed issue with such a request already exists, please file one following the
 [feature request
-template](https://github.com/qir-alliance/pyqir/issues/new?assignees=&labels=feature&template=feature_request.md&title=).
+template](https://github.com/qir-alliance/iqm_pyqir/issues/new?assignees=&labels=feature&template=feature_request.md&title=).
 We will respond to feature requests and follow up with a discussion around its
 feasibility, how one might go about implementing it, and whether that is
 something that makes sense to add. There are several reasons why we might not be
@@ -65,8 +65,8 @@ it requires more documentation or unit tests to better make use of it.
 
 If you are looking for a place to get started with contributing code, search for
 example for the
-[good-first-issue](https://github.com/qir-alliance/pyqir/labels/good%20first%20issue)
-or [help-wanted](https://github.com/qir-alliance/pyqir/labels/help%20wanted)
+[good-first-issue](https://github.com/qir-alliance/iqm_pyqir/labels/good%20first%20issue)
+or [help-wanted](https://github.com/qir-alliance/iqm_pyqir/labels/help%20wanted)
 labels. Also, look for issues that have already been discussed in more detail,
 and check if you can help someone who has already started working on it.
 

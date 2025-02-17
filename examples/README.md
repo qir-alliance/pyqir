@@ -1,6 +1,6 @@
-# PyQIR Examples
+# iqm_pyqir Examples
 
-PyQIR generates, evaluates, and parses
+iqm_pyqir generates, evaluates, and parses
 [Quantum Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec).
 
 Code generation easily integrates the QIR toolchain into existing Python-based
@@ -20,7 +20,7 @@ it to low-level Python-based lab software such as
 
 ## Installation
 
-For more information about how to install the PyQIR packages to run the examples, see the [docs](https://www.qir-alliance.org/pyqir/).
+For more information about how to install the iqm_pyqir packages to run the examples, see the [docs](https://www.qir-alliance.org/iqm_pyqir/).
 
 ## Generating Bernstein-Vazirani
 
@@ -58,7 +58,7 @@ python bernstein_vazirani.py
 ## Bell pair
 
 This examples consists of a [single file](bell_pair.py), and does not require
-any additional installation besides PyQIR itself. Please be aware that the PyQIR
+any additional installation besides iqm_pyqir itself. Please be aware that the iqm_pyqir
 API is not intended to directly express quantum applications; its purpose is to
 be easily usable for *compiler and frontend developers* rather than *application
 developers*.
@@ -72,13 +72,13 @@ python bell_pair.py >> bell_pair_output.txt
 
 ## Branching
 
-PyQIR supports branching on boolean conditions as shown in [if_bool.py](if_bool.py).
+iqm_pyqir supports branching on boolean conditions as shown in [if_bool.py](if_bool.py).
 It's also possible to use a measurement result as the condition as shown in [if_result.py](if_result.py).
 
 ## External functions
 
 [external_functions.py](external_functions.py) shows how to call external
-functions using PyQIR. The functions are declared in the module with the type of
+functions using iqm_pyqir. The functions are declared in the module with the type of
 its parameters and return value, but without an implementation, so it can be
 linked with a separate library at compile time.
 
@@ -90,7 +90,7 @@ function in subsequent instructions.
 [python2qir.py](python2qir.py) transforms a subset of the Python language into QIR, by using:
 
 - the built-in `ast` (Abstract Syntax Tree) library to parse the source code
-- PyQIR to generate and display QIR
+- iqm_pyqir to generate and display QIR
 
 Here, we transform a Qiskit circuit without using the Qiskit package.
 

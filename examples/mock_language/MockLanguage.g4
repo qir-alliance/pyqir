@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 // This grammar implements a Mock-language to illustrate 
-// the use of PyQIR as part of a compiler toolchain.
+// the use of iqm_pyqir as part of a compiler toolchain.
 
 grammar MockLanguage;
 

@@ -1,6 +1,6 @@
-name: pyqir-publish-$(BuildId)
+name: iqm-pyqir-publish-$(BuildId)
 
-# This pipeline is used to build and publish the PyQIR package
+# This pipeline is used to build and publish the iqm_pyqir package
 # It uses a Microsoft ADO template for additional security checks.
 
 # Run on merges to main to ensure that the latest code
@@ -137,7 +137,7 @@ extends:
               # Tell the build what llvm feature version to use
               $feature = "llvm$(LLVM_VERSION)-0"
               $variableName = "LLVM_SYS_$(LLVM_VERSION)0_PREFIX"
-              Write-Host "##vso[task.setvariable variable=PYQIR_LLVM_FEATURE_VERSION;]$feature"
+              Write-Host "##vso[task.setvariable variable=iqm_pyqir_LLVM_FEATURE_VERSION;]$feature"
 
               # Tell LLVM-SYS where LLVM is installed
               Write-Host "##vso[task.setvariable variable=$variableName;]$directory"
@@ -176,7 +176,7 @@ extends:
             displayName: Build and Install LLVM
             condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), eq(variables['Agent.OS'], 'Darwin'))
 
-          # Build PyQIR
+          # Build iqm_pyqir
           - pwsh: ./build.ps1 -t default
             displayName: Build
             condition: and(succeeded(), ne(variables['Agent.OS'], 'Darwin'))

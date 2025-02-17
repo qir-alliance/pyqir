@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir import BasicQisBuilder, SimpleModule, Value
+from iqm_pyqir import BasicQisBuilder, SimpleModule, Value
 from typing import List
 
 

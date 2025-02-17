@@ -3,5 +3,5 @@
 ```{toctree}
 :maxdepth: 2
 
-pyqir
+iqm_pyqir
 ```

@@ -201,8 +201,8 @@ function Get-LinuxTargetTriple {
 }
 
 function Get-LinuxContainerUserId {
-    if (Test-Path env:\PYQIR_CONTAINER_USERID) {
-        $env:PYQIR_CONTAINER_USERID
+    if (Test-Path env:\iqm_pyqir_CONTAINER_USERID) {
+        $env:iqm_pyqir_CONTAINER_USERID
     }
     else {
         id -u
@@ -210,8 +210,8 @@ function Get-LinuxContainerUserId {
 }
 
 function Get-LinuxContainerGroupId {
-    if (Test-Path env:\PYQIR_CONTAINER_GROUPID) {
-        $env:PYQIR_CONTAINER_GROUPID
+    if (Test-Path env:\iqm_pyqir_CONTAINER_GROUPID) {
+        $env:iqm_pyqir_CONTAINER_GROUPID
     }
     else {
         id -g
@@ -219,8 +219,8 @@ function Get-LinuxContainerGroupId {
 }
 
 function Get-LinuxContainerUserName {
-    if (Test-Path env:\PYQIR_CONTAINER_USERNAME) {
-        $env:PYQIR_CONTAINER_USERNAME
+    if (Test-Path env:\iqm_pyqir_CONTAINER_USERNAME) {
+        $env:iqm_pyqir_CONTAINER_USERNAME
     }
     else {
         [Environment]::UserName
@@ -241,8 +241,8 @@ function Write-CacheStats {
 }
 
 function Get-LLVMFeatureVersion {
-    if (Test-Path env:\PYQIR_LLVM_FEATURE_VERSION) {
-        $env:PYQIR_LLVM_FEATURE_VERSION
+    if (Test-Path env:\iqm_pyqir_LLVM_FEATURE_VERSION) {
+        $env:iqm_pyqir_LLVM_FEATURE_VERSION
     }
     else {
         # "llvm11-0", "llvm12-0", "llvm13-0", "llvm14-0", "llvm15-0"
@@ -284,7 +284,7 @@ function Resolve-Python() {
 function Resolve-PythonRequirements([string[]] $projects) {
     $report = pip --quiet install --dry-run --ignore-installed --report - @projects | ConvertFrom-Json
     $report.install.metadata `
-    | Where-Object { !$_.name.StartsWith("pyqir") } `
+    | Where-Object { !$_.name.StartsWith("iqm_pyqir") } `
     | ForEach-Object { "$($_.name)==$($_.version)" }
 }
 

@@ -1,9 +1,9 @@
-# PyQIR
+# iqm_pyqir
 
-PyQIR is a set of APIs for generating, parsing, and evaluating [Quantum Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec).
+iqm_pyqir is a set of APIs for generating, parsing, and evaluating [Quantum Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec).
 This repository contains:
 
-- [**pyqir**](pyqir) ([examples](examples))
+- [**iqm_pyqir**](iqm_pyqir) ([examples](examples))
 
   This package provides a Python API for parsing and generating QIR.
   It is intended to easily integrate the QIR toolchain into existing Python-based frontends.
@@ -13,21 +13,21 @@ This repository contains:
 
 - [**qirlib**](qirlib)
 
-  This is a Rust library wrapping [LLVM](https://llvm.org/) for working with QIR that is used by PyQIR.
+  This is a Rust library wrapping [LLVM](https://llvm.org/) for working with QIR that is used by iqm_pyqir.
 
 ## Documentation
 
-- [Getting Started](https://www.qir-alliance.org/pyqir/)
-- [Building from Source](https://www.qir-alliance.org/pyqir/building.html)
+- [Getting Started](https://www.qir-alliance.org/iqm_pyqir/)
+- [Building from Source](https://www.qir-alliance.org/iqm_pyqir/building.html)
 
 ## Feedback
 
 If you have feedback about the content in this repository, please let us know by
-filing a [new issue](https://github.com/qir-alliance/pyqir/issues/new)!
+filing a [new issue](https://github.com/qir-alliance/iqm_pyqir/issues/new)!
 
 ## Contributing
 
-There are many ways in which you can contribute to PyQIR, whether by
+There are many ways in which you can contribute to iqm_pyqir, whether by
 contributing a feature or by engaging in discussions; we value contributions in
 all shapes and sizes! We refer to [this document](CONTRIBUTING.md) for
 guidelines and ideas for how you can get involved.

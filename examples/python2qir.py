@@ -2,11 +2,11 @@
 
 # Transforms a subset of the Python language into QIR, by using:
 # - the built-in ast (Asbtract Syntax Tree) library to parse the source code
-# - the pyqir-generator package to generate and display QIR
+# - the iqm_pyqir-generator package to generate and display QIR
 # Here, we transform a Qiskit circuit without using the Qiskit package
 
 import ast
-from pyqir import BasicQisBuilder, SimpleModule
+from iqm_pyqir import BasicQisBuilder, SimpleModule
 
 
 def main() -> None:
@@ -14,7 +14,7 @@ def main() -> None:
     with open("python2qir_qiskit_input.py", "r") as source:
         tree = ast.parse(source.read())
 
-    # Walk the Abstract Syntax Tree (AST) and translate into QIR with pyqir-generator
+    # Walk the Abstract Syntax Tree (AST) and translate into QIR with iqm_pyqir-generator
     analyzer = Analyzer()
     analyzer.visit(tree)
 

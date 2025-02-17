@@ -3,7 +3,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from pyqir import BasicQisBuilder, SimpleModule
+from iqm_pyqir import BasicQisBuilder, SimpleModule
 
 # Create the module with two qubits and two results.
 bell = SimpleModule("bell", num_qubits=2, num_results=2)

@@ -39,7 +39,7 @@ RUN wget "https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-
 
 FROM $RELEASE
 
-ARG USERNAME=pyqir
+ARG USERNAME=iqm_pyqir
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 

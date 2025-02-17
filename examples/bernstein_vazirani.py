@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import List
 
-from pyqir import (
+from iqm_pyqir import (
     BasicQisBuilder,
     Call,
     Context,

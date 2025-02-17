@@ -1,0 +1,32 @@
+[package]
+name = "iqm-pyqir"
+description = "iqm-pyqir parses, generates and evaluates the Quantum Intermediate Representation."
+readme = "README.md"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+
+[dependencies]
+const-str = "0.5"
+llvm-sys-110 = { package = "llvm-sys", version = "110.0", optional = true }
+llvm-sys-120 = { package = "llvm-sys", version = "120.3", optional = true }
+llvm-sys-130 = { package = "llvm-sys", version = "130.1", optional = true }
+llvm-sys-140 = { package = "llvm-sys", version = "140.1", optional = true }
+llvm-sys-150 = { package = "llvm-sys", version = "150.2", optional = true }
+pyo3 = { version = "0.20.3", features = ["abi3-py38", "extension-module"] }
+qirlib = { path = "../qirlib" }
+
+[features]
+llvm11-0 = ["llvm-sys-110", "qirlib/llvm11-0"]
+llvm12-0 = ["llvm-sys-120", "qirlib/llvm12-0"]
+llvm13-0 = ["llvm-sys-130", "qirlib/llvm13-0"]
+llvm14-0 = ["llvm-sys-140", "qirlib/llvm14-0"]
+llvm15-0 = ["llvm-sys-150", "qirlib/llvm15-0"]
+
+[lib]
+crate-type = ["cdylib"]
+

@@ -1,4 +1,4 @@
-project = "PyQIR"
+project = "iqm-pyqir"
 copyright = "2021-2022 QIR Alliance"
 author = "QIR Alliance"
 html_theme = "furo"

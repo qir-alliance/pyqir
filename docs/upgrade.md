@@ -1,18 +1,18 @@
-# Upgrading PyQIR
+# Upgrading iqm_pyqir
 
-## PyQIR 0.8
+## iqm_pyqir 0.8
 
-PyQIR 0.7 was the last version of PyQIR to support QIR evaluation. Simulation of QIR is now available via the [`qir-runner`](https://github.com/qir-alliance/qir-runner) sparse simulator.
+iqm_pyqir 0.7 was the last version of iqm_pyqir to support QIR evaluation. Simulation of QIR is now available via the [`qir-runner`](https://github.com/qir-alliance/qir-runner) sparse simulator.
 
-## PyQIR 0.7
+## iqm_pyqir 0.7
 
 ### Packages
 
-PyQIR 0.6 was the last version of PyQIR to use three packages (`pyqir-evaluator`, `pyqir-generator`, and `pyqir-parser`) and a metapackage (`pyqir`).
-PyQIR 0.7 instead uses only a single package (`pyqir`) that has the functionality of all previous packages.
+iqm_pyqir 0.6 was the last version of iqm_pyqir to use three packages (`iqm_pyqir-evaluator`, `iqm_pyqir-generator`, and `iqm_pyqir-parser`) and a metapackage (`iqm_pyqir`).
+iqm_pyqir 0.7 instead uses only a single package (`iqm_pyqir`) that has the functionality of all previous packages.
 
-If you imported the `pyqir.generator` or `pyqir.parser` modules, then the same or an equivalent API is available in the `pyqir` module.
-If you imported the `pyqir.evaluator` module, it is still available under the same name with no API changes.
+If you imported the `iqm_pyqir.generator` or `iqm_pyqir.parser` modules, then the same or an equivalent API is available in the `iqm_pyqir` module.
+If you imported the `iqm_pyqir.evaluator` module, it is still available under the same name with no API changes.
 
 ## Generator
 
@@ -23,7 +23,7 @@ The functions `bitcode_to_ir` and `ir_to_bitcode` were removed because the new `
 For example, instead of:
 
 ```python
-from pyqir.generator import bitcode_to_ir, ir_to_bitcode
+from iqm_pyqir.generator import bitcode_to_ir, ir_to_bitcode
 
 ir = bitcode_to_ir(bitcode, "module_name")
 bitcode = ir_to_bitcode(ir, "module_name")
@@ -35,7 +35,7 @@ ir = bitcode_to_ir(bitcode, "module_name", "source_filename")
 Use this:
 
 ```python
-from pyqir import Context, Module
+from iqm_pyqir import Context, Module
 
 ir = str(Module.from_bitcode(Context(), bitcode, "name"))
 bitcode = Module.from_ir(Context(), ir, "name").bitcode
@@ -48,19 +48,19 @@ ir = str(m)
 
 ### Types
 
-If you generated programs with externally-linked functions, then you used the `pyqir.generator.types` module to describe the type of the functions.
+If you generated programs with externally-linked functions, then you used the `iqm_pyqir.generator.types` module to describe the type of the functions.
 This module has been removed.
 Types need to be created differently because they now directly contain LLVM type objects, which require an LLVM context.
 
-| PyQIR 0.6                                     | PyQIR 0.7                         |
+| iqm_pyqir 0.6                                     | iqm_pyqir 0.7                         |
 | --------------------------------------------- | --------------------------------- |
-| `pyqir.generator.types.VOID`                  | `pyqir.Type.void(context)`        |
-| `pyqir.generator.types.BOOL`                  | `pyqir.IntType(context, 1)`       |
-| `pyqir.generator.types.Int(width)`            | `pyqir.IntType(context, width)`   |
-| `pyqir.generator.types.DOUBLE`                | `pyqir.Type.double(context)`      |
-| `pyqir.generator.types.QUBIT`                 | `pyqir.qubit_type(context)`       |
-| `pyqir.generator.types.RESULT`                | `pyqir.result_type(context)`      |
-| `pyqir.generator.types.Function(params, ret)` | `pyqir.FunctionType(ret, params)` |
+| `iqm_pyqir.generator.types.VOID`                  | `iqm_pyqir.Type.void(context)`        |
+| `iqm_pyqir.generator.types.BOOL`                  | `iqm_pyqir.IntType(context, 1)`       |
+| `iqm_pyqir.generator.types.Int(width)`            | `iqm_pyqir.IntType(context, width)`   |
+| `iqm_pyqir.generator.types.DOUBLE`                | `iqm_pyqir.Type.double(context)`      |
+| `iqm_pyqir.generator.types.QUBIT`                 | `iqm_pyqir.qubit_type(context)`       |
+| `iqm_pyqir.generator.types.RESULT`                | `iqm_pyqir.result_type(context)`      |
+| `iqm_pyqir.generator.types.Function(params, ret)` | `iqm_pyqir.FunctionType(ret, params)` |
 
 There are two ways to get a `context` object:
 
@@ -68,7 +68,7 @@ There are two ways to get a `context` object:
    For example:
 
    ```python
-   from pyqir import SimpleModule, Type
+   from iqm_pyqir import SimpleModule, Type
    module = SimpleModule("name", num_qubits=1, num_results=1)
    void = Type.void(module.context)
    ```
@@ -78,7 +78,7 @@ There are two ways to get a `context` object:
    For example:
 
    ```python
-   from pyqir import Context, SimpleModule, Type
+   from iqm_pyqir import Context, SimpleModule, Type
    context = Context()
    module = SimpleModule("name", num_qubits=1, num_results=1, context=context)
    void = Type.void(context)
@@ -86,9 +86,9 @@ There are two ways to get a `context` object:
 
 ## Parser
 
-PyQIR 0.7 unified parsing and code generation into a single API that is designed to support both.
-This makes PyQIR much more powerful and will enable workflows that involve inspecting, running passes on, or otherwise transforming QIR that is parsed or generated using PyQIR.
-This means that the API for `pyqir-parser` had to be completely redesigned, which unfortunately makes upgrading challenging.
+iqm_pyqir 0.7 unified parsing and code generation into a single API that is designed to support both.
+This makes iqm_pyqir much more powerful and will enable workflows that involve inspecting, running passes on, or otherwise transforming QIR that is parsed or generated using iqm_pyqir.
+This means that the API for `iqm_pyqir-parser` had to be completely redesigned, which unfortunately makes upgrading challenging.
 Here are some tips.
 
 ### Modules
@@ -102,8 +102,8 @@ Instead of `QirModule.entrypoint_funcs`, `QirModule.interop_funcs`, or `QirModul
 For example:
 
 ```python
-entry_point = next(filter(pyqir.is_entry_point, module.functions))
-interops = filter(pyqir.is_interop_friendly, module.functions)
+entry_point = next(filter(iqm_pyqir.is_entry_point, module.functions))
+interops = filter(iqm_pyqir.is_interop_friendly, module.functions)
 ```
 
 ### Instructions
@@ -120,16 +120,16 @@ For example, if you have a terminator instruction `term`, then you can get the i
 
 ### Qubit and result IDs
 
-In PyQIR 0.6, `QirQubitConstant` and `QirResultConstant` were subclasses of `QirOperand`.
-Instead, you can try to extract a static qubit or result ID from any value using `pyqir.qubit_id(value)` and `pyqir.result_id(value)`.
+In iqm_pyqir 0.6, `QirQubitConstant` and `QirResultConstant` were subclasses of `QirOperand`.
+Instead, you can try to extract a static qubit or result ID from any value using `iqm_pyqir.qubit_id(value)` and `iqm_pyqir.result_id(value)`.
 If the value isn't the right kind, it will return `None`.
 
 ### Strings
 
-In PyQIR 0.6, you could read a global string constant from a string value using `QirModule.get_global_bytes_value(value)`.
-This is possible now using `pyqir.extract_byte_string(value)`.
+In iqm_pyqir 0.6, you could read a global string constant from a string value using `QirModule.get_global_bytes_value(value)`.
+This is possible now using `iqm_pyqir.extract_byte_string(value)`.
 
 ### Examples
 
-To see examples of how the new parser API can be used, take a look at [test_parser.py](https://github.com/qir-alliance/pyqir/blob/53e4aebfdb456e9603fae28543a8391075021a9f/pyqir/tests/test_parser.py).
-You can also compare it with [test_parser_api.py](https://github.com/qir-alliance/pyqir/blob/v0.6.2/pyqir-parser/tests/test_parser_api.py) from PyQIR 0.6 for a before-and-after view of the same test cases using both the old and new APIs.
+To see examples of how the new parser API can be used, take a look at [test_parser.py](https://github.com/qir-alliance/iqm_pyqir/blob/53e4aebfdb456e9603fae28543a8391075021a9f/iqm_pyqir/tests/test_parser.py).
+You can also compare it with [test_parser_api.py](https://github.com/qir-alliance/iqm_pyqir/blob/v0.6.2/iqm_pyqir-parser/tests/test_parser_api.py) from iqm_pyqir 0.6 for a before-and-after view of the same test cases using both the old and new APIs.

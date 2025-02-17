@@ -2,7 +2,7 @@
 
 `qirlib` is a set of APIs for generating, parsing, and evaluating [Quantum
 Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec). It
-is also the native implementation behind PyQIR.
+is also the native implementation behind iqm_pyqir.
 
 ## Requirements
 
@@ -108,13 +108,13 @@ the linking that is used. The `default` feature enables the `external-llvm-linki
 
 ```toml
 [dependencies]
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", features = "llvm11-0" }
+qirlib = { git = "https://github.com/qir-alliance/iqm_pyqir", branch = "main", features = "llvm11-0" }
 # or 
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", features = "llvm12-0" }
+qirlib = { git = "https://github.com/qir-alliance/iqm_pyqir", branch = "main", features = "llvm12-0" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", features = "llvm13-0" }
+qirlib = { git = "https://github.com/qir-alliance/iqm_pyqir", branch = "main", features = "llvm13-0" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", features = "llvm14-0" }
+qirlib = { git = "https://github.com/qir-alliance/iqm_pyqir", branch = "main", features = "llvm14-0" }
 ```
 
 [`llvm-sys`](https://github.com/tari/llvm-sys.rs) leveraged by `qirlib` and [`Inkwell`](https://github.com/thedan64/inkwell) will look for `llvm-config` on the path in order to determine how to link against LLVM. If this application is not found on the path, then the the `LLVM_SYS_<version>_PREFIX` environment variable is used to locate `llvm-config`.
@@ -135,13 +135,13 @@ To do this, we must disable the default behavior (`external-llvm-linking`)  usin
 
 ```toml
 [dependencies]
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm11-0-qirlib-llvm-linking,build-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/iqm_pyqir", branch = "main", default-features = false, features = "llvm11-0-qirlib-llvm-linking,build-llvm" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm12-0-qirlib-llvm-linking,build-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/iqm_pyqir", branch = "main", default-features = false, features = "llvm12-0-qirlib-llvm-linking,build-llvm" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm13-0-qirlib-llvm-linking,build-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/iqm_pyqir", branch = "main", default-features = false, features = "llvm13-0-qirlib-llvm-linking,build-llvm" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm14-0-qirlib-llvm-linking,build-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/iqm_pyqir", branch = "main", default-features = false, features = "llvm14-0-qirlib-llvm-linking,build-llvm" }
 ```
 
 Or via the terminal (adding -vv so we can see build progress of LLVM)
@@ -174,13 +174,13 @@ To do this, we must disable the default behavior (`external-llvm-linking`)  usin
 
 ```toml
 [dependencies]
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm11-0-qirlib-llvm-linking,download-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/iqm_pyqir", branch = "main", default-features = false, features = "llvm11-0-qirlib-llvm-linking,download-llvm" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm12-0-qirlib-llvm-linking,download-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/iqm_pyqir", branch = "main", default-features = false, features = "llvm12-0-qirlib-llvm-linking,download-llvm" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm13-0-qirlib-llvm-linking,download-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/iqm_pyqir", branch = "main", default-features = false, features = "llvm13-0-qirlib-llvm-linking,download-llvm" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm14-0-qirlib-llvm-linking,download-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/iqm_pyqir", branch = "main", default-features = false, features = "llvm14-0-qirlib-llvm-linking,download-llvm" }
 ```
 
 Or via the terminal (adding -vv so we can see download progress of LLVM)
@@ -197,9 +197,9 @@ qirlib> cargo build --release --no-default-features --features "llvm14-0-qirlib-
 
 ## Contributing
 
-There are many ways in which you can contribute to PyQIR, whether by
+There are many ways in which you can contribute to iqm_pyqir, whether by
 contributing a feature or by engaging in discussions; we value contributions in
-all shapes and sizes! We refer to [this document](https://github.com/qir-alliance/pyqir/blob/main/CONTRIBUTING.md) for
+all shapes and sizes! We refer to [this document](https://github.com/qir-alliance/iqm_pyqir/blob/main/CONTRIBUTING.md) for
 guidelines and ideas for how you can get involved.
 
 Contributing a pull request to this repo requires to agree to a [Contributor

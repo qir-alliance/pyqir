@@ -1,5 +1,5 @@
-# `pyqir`
+# `iqm_pyqir`
 
 ```{eval-rst}
-.. automodule:: pyqir
+.. automodule:: iqm_pyqir
 ```

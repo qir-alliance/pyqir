@@ -6,7 +6,7 @@ Include utils.ps1
 Properties {
     $Root = Resolve-Path (Split-Path -Parent $PSScriptRoot)
     $Qirlib = Join-Path $Root qirlib
-    $Pyqir = Join-Path $Root pyqir
+    $iqm_pyqir = Join-Path $Root iqm_pyqir
     $Examples = Join-Path $Root examples
     $Target = Join-Path $Root target
     $Wheels = Join-Path $Target wheels
@@ -19,7 +19,7 @@ Properties {
 }
 
 task default -depends build, test, run-examples
-task build -depends qirlib, pyqir
+task build -depends qirlib, iqm_pyqir
 task checks -depends cargo-fmt, cargo-clippy, black, mypy
 
 task cargo-fmt {
@@ -42,7 +42,7 @@ task black -depends check-environment {
 }
 
 task mypy -depends check-environment {
-    $reqs = Resolve-PythonRequirements "$Pyqir[test]"
+    $reqs = Resolve-PythonRequirements "$iqm_pyqir[test]"
     exec { & $Python -m pip install --requirement (Join-Path $Examples requirements.txt) @reqs mypy }
     Invoke-LoggedCommand -workingDirectory $Root -errorMessage "Please fix the above mypy errors" {
         mypy
@@ -54,17 +54,17 @@ task qirlib -depends init {
     Invoke-LoggedCommand -workingDirectory $Qirlib { cargo build --release @(Get-CliCargoArgs) }
 }
 
-task pyqir -depends init {
+task iqm_pyqir -depends init {
     $configSettings = @(Get-CliCargoArgs) -Join " "
-    Get-Wheels pyqir | Remove-Item
+    Get-Wheels iqm_pyqir | Remove-Item
 
-    Invoke-LoggedCommand { & $Python -m pip --verbose wheel --config-settings=build-args="$configSettings" --wheel-dir $Wheels $Pyqir }
+    Invoke-LoggedCommand { & $Python -m pip --verbose wheel --config-settings=build-args="$configSettings" --wheel-dir $Wheels $iqm_pyqir }
 
     if ($IsLinux) {
         Invoke-LoggedCommand { & $Python -m pip install auditwheel patchelf }
     }
     if (Test-CommandExists auditwheel) {
-        $unauditedWheels = Get-Wheels pyqir
+        $unauditedWheels = Get-Wheels iqm_pyqir
         Invoke-LoggedCommand { auditwheel show $unauditedWheels }
         Invoke-LoggedCommand { auditwheel repair --wheel-dir $Wheels --plat $AuditWheelTag $unauditedWheels }
         $unauditedWheels | Remove-Item
@@ -72,9 +72,9 @@ task pyqir -depends init {
 }
 
 task test {
-    $packages = Get-Wheels pyqir | ForEach-Object { "$_[test]" }
+    $packages = Get-Wheels iqm_pyqir | ForEach-Object { "$_[test]" }
     Invoke-LoggedCommand { & $Python -m pip install --force-reinstall $packages }
-    Invoke-LoggedCommand -workingDirectory $Pyqir { pytest }
+    Invoke-LoggedCommand -workingDirectory $iqm_pyqir { pytest }
 }
 
 task wheelhouse -precondition { -not (Test-Path (Join-Path $Wheels *.whl)) } {
@@ -90,7 +90,7 @@ task docs -depends check-environment, wheelhouse {
 
 task check-environment {
     $env_message = @(
-        "PyQIR requires a virtualenv or conda environment to build.",
+        "iqm_pyqir requires a virtualenv or conda environment to build.",
         "Neither the VIRTUAL_ENV nor CONDA_PREFIX environment variables are set.",
         "See https://virtualenv.pypa.io/en/latest/index.html on how to use virtualenv"
     )
@@ -200,7 +200,7 @@ task run-examples-in-containers {
                 --build-arg USERNAME=$user `
                 --build-arg USER_UID=$uid `
                 --build-arg USER_GID=$gid `
-                --tag pyqir-$release-examples `
+                --tag iqm_pyqir-$release-examples `
                 -
         }
 
@@ -208,7 +208,7 @@ task run-examples-in-containers {
             docker run --rm `
                 --user $user `
                 --volume ${Root}:/home/$user `
-                pyqir-$release-examples `
+                iqm_pyqir-$release-examples `
                 build.ps1 -t run-examples
         }
     }
@@ -218,7 +218,7 @@ task run-examples-in-containers {
 task run-examples {
     exec -workingDirectory $Examples {
         & $Python -m pip install --requirement requirements.txt --use-pep517
-        & $Python -m pip install --force-reinstall (Get-Wheel pyqir)
+        & $Python -m pip install --force-reinstall (Get-Wheel iqm_pyqir)
 
         & $Python bell_pair.py | Tee-Object -Variable output
         $head = $output | Select-Object -First 1
@@ -284,8 +284,8 @@ task update-noticefiles {
     # https://github.com/EmbarkStudios/cargo-about
     $config = Join-Path $Root notice.toml
     $template = Join-Path $Root notice.hbs
-    $notice = Join-Path $Pyqir NOTICE-WHEEL.txt
-    Invoke-LoggedCommand -workingDirectory $Pyqir {
+    $notice = Join-Path $iqm_pyqir NOTICE-WHEEL.txt
+    Invoke-LoggedCommand -workingDirectory $iqm_pyqir {
         cargo about generate --config $config --all-features --output-file $notice $template
         $contents = Get-Content -Raw $notice
         [System.Web.HttpUtility]::HtmlDecode($contents) | Out-File $notice

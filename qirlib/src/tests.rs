@@ -21,7 +21,7 @@ use std::{
     ptr::{self, NonNull},
 };
 
-const PYQIR_TEST_SAVE_REFERENCES: &str = "PYQIR_TEST_SAVE_REFERENCES";
+const iqm_pyqir_TEST_SAVE_REFERENCES: &str = "iqm_pyqir_TEST_SAVE_REFERENCES";
 
 pub(crate) struct Builder(NonNull<LLVMBuilder>);
 
@@ -129,7 +129,7 @@ impl Drop for Module {
 /// Compares generated IR against reference files in the "resources/tests" folder. If changes
 /// to code generation break the tests:
 ///
-/// 1. Run the tests with the `PYQIR_TEST_SAVE_REFERENCES` environment variable set to
+/// 1. Run the tests with the `iqm_pyqir_TEST_SAVE_REFERENCES` environment variable set to
 ///    regenerate the reference files.
 /// 2. Review the changes and make sure they look reasonable.
 /// 3. Unset the environment variable and run the tests again to confirm that they pass.
@@ -150,11 +150,11 @@ pub(crate) fn assert_reference_ir(
     path.push(name);
     path.set_extension("ll");
 
-    if env::var(PYQIR_TEST_SAVE_REFERENCES).is_ok() {
+    if env::var(iqm_pyqir_TEST_SAVE_REFERENCES).is_ok() {
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(&path, actual_ir.to_bytes()).unwrap();
         panic!(
-            "Saved reference IR. Run again without the {PYQIR_TEST_SAVE_REFERENCES} environment variable.",
+            "Saved reference IR. Run again without the {iqm_pyqir_TEST_SAVE_REFERENCES} environment variable.",
         )
     } else {
         let contents = fs::read_to_string(&path).unwrap();

@@ -1,6 +1,6 @@
-# PyQIR
+# iqm_pyqir
 
-PyQIR makes it easy to work with [Quantum Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec) using Python.
+iqm_pyqir makes it easy to work with [Quantum Intermediate Representation (QIR)](https://github.com/qir-alliance/qir-spec) using Python.
 You can use it to parse and evaluate existing QIR modules or generate new ones.
 
 ```{toctree}
@@ -14,17 +14,17 @@ building
 
 ## Installation
 
-PyQIR can be installed using pip:
+iqm_pyqir can be installed using pip:
 
 ```sh
-pip install pyqir
+pip install iqm_pyqir
 ```
 
-You can also {doc}`build PyQIR from source <building>`.
+You can also {doc}`build iqm_pyqir from source <building>`.
 
 ## Supported Systems
 
-PyQIR runs on most 64-bit x86 systems with Python 3.7 or newer.
+iqm_pyqir runs on most 64-bit x86 systems with Python 3.7 or newer.
 
 There are two tiers of support.
 Tier 1 systems are guaranteed to work and we publish official binaries for them.
