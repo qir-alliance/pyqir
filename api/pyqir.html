@@ -7,7 +7,7 @@
 
     <!-- Generated with Sphinx 7.1.2 and Furo 2024.08.06 -->
         <title>pyqir - PyQIR documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=302659d7" />
     
@@ -770,6 +770,26 @@ true and false callables should use this module’s builder to build instruction
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pyqir.Builder.insert_before">
+<span class="sig-name descname"><span class="pre">insert_before</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.insert_before" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tells this builder to insert subsequent instructions before the given instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>instr</strong> (<a class="reference internal" href="#pyqir.Value" title="pyqir.Value"><em>Value</em></a>) – The instruction to insert before.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.Builder.instr">
+<span class="sig-name descname"><span class="pre">instr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.instr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts the given instruction.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pyqir.Builder.lshr">
 <span class="sig-name descname"><span class="pre">lshr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.lshr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Inserts a logical (zero fill) shift right instruction.</p>
@@ -1206,6 +1226,13 @@ true and false callables should use this module’s builder to build instruction
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.Function.delete">
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Function.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes this function, removing it from the parent module.
+Warning: the function is no longer usable after this.</p>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyqir.Function.params">
 <span class="sig-name descname"><span class="pre">params</span></span><a class="headerlink" href="#pyqir.Function.params" title="Permalink to this definition">¶</a></dt>
@@ -1317,6 +1344,18 @@ true and false callables should use this module’s builder to build instruction
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><em>List</em></a>[<a class="reference internal" href="#pyqir.Value" title="pyqir.Value">Value</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.Instruction.remove">
+<span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Instruction.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes this instruction from its parent basic block.
+The instruction is not deleted from memory, so it can be reused.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2811,6 +2850,8 @@ Destroys the supplied module.</p>
 <li><a class="reference internal" href="#pyqir.Builder.icmp"><code class="docutils literal notranslate"><span class="pre">Builder.icmp()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.if_"><code class="docutils literal notranslate"><span class="pre">Builder.if_()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.insert_at_end"><code class="docutils literal notranslate"><span class="pre">Builder.insert_at_end()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.Builder.insert_before"><code class="docutils literal notranslate"><span class="pre">Builder.insert_before()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.Builder.instr"><code class="docutils literal notranslate"><span class="pre">Builder.instr()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.lshr"><code class="docutils literal notranslate"><span class="pre">Builder.lshr()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.mul"><code class="docutils literal notranslate"><span class="pre">Builder.mul()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.or_"><code class="docutils literal notranslate"><span class="pre">Builder.or_()</span></code></a></li>
@@ -2868,6 +2909,7 @@ Destroys the supplied module.</p>
 <li><a class="reference internal" href="#pyqir.Function"><code class="docutils literal notranslate"><span class="pre">Function</span></code></a><ul>
 <li><a class="reference internal" href="#pyqir.Function.attributes"><code class="docutils literal notranslate"><span class="pre">Function.attributes</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Function.basic_blocks"><code class="docutils literal notranslate"><span class="pre">Function.basic_blocks</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.Function.delete"><code class="docutils literal notranslate"><span class="pre">Function.delete()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Function.params"><code class="docutils literal notranslate"><span class="pre">Function.params</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Function.type"><code class="docutils literal notranslate"><span class="pre">Function.type</span></code></a></li>
 </ul>
@@ -2885,6 +2927,7 @@ Destroys the supplied module.</p>
 <li><a class="reference internal" href="#pyqir.Instruction.erase"><code class="docutils literal notranslate"><span class="pre">Instruction.erase()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Instruction.opcode"><code class="docutils literal notranslate"><span class="pre">Instruction.opcode</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Instruction.operands"><code class="docutils literal notranslate"><span class="pre">Instruction.operands</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.Instruction.remove"><code class="docutils literal notranslate"><span class="pre">Instruction.remove()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Instruction.successors"><code class="docutils literal notranslate"><span class="pre">Instruction.successors</span></code></a></li>
 </ul>
 </li>

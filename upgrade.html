@@ -7,7 +7,7 @@
 
     <!-- Generated with Sphinx 7.1.2 and Furo 2024.08.06 -->
         <title>Upgrading PyQIR - PyQIR documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=302659d7" />
     
@@ -268,7 +268,7 @@ If you imported the <code class="docutils literal notranslate"><span class="pre"
 <p>The functions <code class="docutils literal notranslate"><span class="pre">bitcode_to_ir</span></code> and <code class="docutils literal notranslate"><span class="pre">ir_to_bitcode</span></code> were removed because the new <code class="docutils literal notranslate"><span class="pre">Module</span></code> class has the same functionality.
 <code class="docutils literal notranslate"><span class="pre">Module</span></code> supports both parsing and generating QIR.
 For example, instead of:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyqir.generator</span> <span class="kn">import</span> <span class="n">bitcode_to_ir</span><span class="p">,</span> <span class="n">ir_to_bitcode</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyqir.generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">bitcode_to_ir</span><span class="p">,</span> <span class="n">ir_to_bitcode</span>
 
 <span class="n">ir</span> <span class="o">=</span> <span class="n">bitcode_to_ir</span><span class="p">(</span><span class="n">bitcode</span><span class="p">,</span> <span class="s2">&quot;module_name&quot;</span><span class="p">)</span>
 <span class="n">bitcode</span> <span class="o">=</span> <span class="n">ir_to_bitcode</span><span class="p">(</span><span class="n">ir</span><span class="p">,</span> <span class="s2">&quot;module_name&quot;</span><span class="p">)</span>
@@ -278,7 +278,7 @@ For example, instead of:</p>
 </pre></div>
 </div>
 <p>Use this:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyqir</span> <span class="kn">import</span> <span class="n">Context</span><span class="p">,</span> <span class="n">Module</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyqir</span><span class="w"> </span><span class="kn">import</span> <span class="n">Context</span><span class="p">,</span> <span class="n">Module</span>
 
 <span class="n">ir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Module</span><span class="o">.</span><span class="n">from_bitcode</span><span class="p">(</span><span class="n">Context</span><span class="p">(),</span> <span class="n">bitcode</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">))</span>
 <span class="n">bitcode</span> <span class="o">=</span> <span class="n">Module</span><span class="o">.</span><span class="n">from_ir</span><span class="p">(</span><span class="n">Context</span><span class="p">(),</span> <span class="n">ir</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">bitcode</span>
@@ -331,7 +331,7 @@ Types need to be created differently because they now directly contain LLVM type
 <ol class="arabic">
 <li><p>Use the <code class="docutils literal notranslate"><span class="pre">context</span></code> property on <code class="docutils literal notranslate"><span class="pre">SimpleModule</span></code>.
 For example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyqir</span> <span class="kn">import</span> <span class="n">SimpleModule</span><span class="p">,</span> <span class="n">Type</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyqir</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleModule</span><span class="p">,</span> <span class="n">Type</span>
 <span class="n">module</span> <span class="o">=</span> <span class="n">SimpleModule</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">num_qubits</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_results</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">void</span> <span class="o">=</span> <span class="n">Type</span><span class="o">.</span><span class="n">void</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
 </pre></div>
@@ -340,7 +340,7 @@ For example:</p>
 <li><p>Create one yourself.
 But you also need to give the context you created to <code class="docutils literal notranslate"><span class="pre">SimpleModule</span></code>.
 For example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyqir</span> <span class="kn">import</span> <span class="n">Context</span><span class="p">,</span> <span class="n">SimpleModule</span><span class="p">,</span> <span class="n">Type</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyqir</span><span class="w"> </span><span class="kn">import</span> <span class="n">Context</span><span class="p">,</span> <span class="n">SimpleModule</span><span class="p">,</span> <span class="n">Type</span>
 <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span>
 <span class="n">module</span> <span class="o">=</span> <span class="n">SimpleModule</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">num_qubits</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_results</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
 <span class="n">void</span> <span class="o">=</span> <span class="n">Type</span><span class="o">.</span><span class="n">void</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
