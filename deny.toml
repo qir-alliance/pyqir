@@ -4,16 +4,7 @@ multiple-versions = "warn"
 # Lint level for when a crate version requirement is `*`
 wildcards = "warn"
 
-[advisories]
-# The lint level for security vulnerabilities
-vulnerability = "deny"
-# The lint level for unmaintained crates
-unmaintained = "warn"
-
 [licenses]
-unlicensed = "deny"
-copyleft = "deny"
-default = "deny"
 confidence-threshold = 1.0
 
 # List of explicitly allowed licenses
