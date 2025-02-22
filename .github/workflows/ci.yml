@@ -22,44 +22,22 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {
-              os: "ubuntu-20.04",
-              arch: "amd64",
-              target: "checks",
-              env: {},
-            }
-          - {
-              os: "ubuntu-20.04",
-              arch: "amd64",
-              target: "default",
-              env: {},
-            }
-          - {
-              os: "windows-2019",
-              arch: "amd64",
-              target: "default",
-              env: {},
-            }
-          - {
-              os: "macos-14",
-              arch: "aarch64",
-              target: "default",
-              env: { },
-            }
+          - { os: "ubuntu-20.04", arch: "amd64", target: "checks", env: {} }
+          - { os: "ubuntu-20.04", arch: "amd64", target: "default", env: {} }
+          - { os: "windows-2019", arch: "amd64", target: "default", env: {} }
+          - { os: "macos-14", arch: "aarch64", target: "default", env: {} }
           - {
               os: "macos-14",
               arch: "universal",
               target: "default",
-              env: {
-                ARCHFLAGS: "-arch arm64 -arch x86_64"
-              },
+              env: { ARCHFLAGS: "-arch arm64 -arch x86_64" },
             }
     steps:
       - uses: actions/checkout@v4
       - name: Setup rust toolchain
         uses: ./.github/actions/rust-toolchain
         with:
-          toolchain: 1.80.1
+          toolchain: 1.84
           components: rustfmt clippy
       - shell: pwsh
         run: |
