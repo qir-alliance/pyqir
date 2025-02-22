@@ -6,7 +6,7 @@
 use crate::values::{BasicBlock, Owner, Value};
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{core::*, prelude::*, LLVMIntPredicate, LLVMOpcode, LLVMRealPredicate};
-use pyo3::{conversion::ToPyObject, prelude::*, PyRef};
+use pyo3::{prelude::*, IntoPyObjectExt, PyRef};
 use std::{
     collections::hash_map::DefaultHasher,
     convert::Into,
@@ -32,7 +32,7 @@ impl Instruction {
     ///
     /// :type: typing.List[Value]
     #[getter]
-    fn operands(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
+    fn operands<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
         let slf = slf.into_super();
         let owner = slf.owner();
         unsafe {
@@ -50,7 +50,7 @@ impl Instruction {
     ///
     /// :type: typing.List[BasicBlock]
     #[getter]
-    fn successors(slf: PyRef<Self>, py: Python<'_>) -> PyResult<Vec<PyObject>> {
+    fn successors<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
         if unsafe { LLVMIsATerminatorInst(slf.as_ref().cast().as_ptr()) }.is_null() {
             Ok(Vec::new())
         } else {
@@ -58,8 +58,7 @@ impl Instruction {
             #[allow(clippy::unnecessary_lazy_evaluations)]
             Self::operands(slf, py)?
                 .into_iter()
-                .filter_map(|o| {
-                    let bound = o.into_bound(py);
+                .filter_map(|bound| {
                     if bound.is_instance_of::<BasicBlock>() {
                         Some(Ok(bound.into()))
                     } else {
@@ -97,16 +96,24 @@ impl Instruction {
         py: Python,
         owner: Owner,
         value: LLVMValueRef,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Bound<PyAny>> {
         let value = NonNull::new(value).expect("Value is null.");
         let base = PyClassInitializer::from(Value::new(owner, value)).add_subclass(Self);
         match LLVMGetInstructionOpcode(value.cast().as_ptr()) {
-            LLVMOpcode::LLVMSwitch => Ok(Py::new(py, base.add_subclass(Switch))?.to_object(py)),
-            LLVMOpcode::LLVMICmp => Ok(Py::new(py, base.add_subclass(ICmp))?.to_object(py)),
-            LLVMOpcode::LLVMFCmp => Ok(Py::new(py, base.add_subclass(FCmp))?.to_object(py)),
-            LLVMOpcode::LLVMCall => Ok(Py::new(py, base.add_subclass(Call))?.to_object(py)),
-            LLVMOpcode::LLVMPHI => Ok(Py::new(py, base.add_subclass(Phi))?.to_object(py)),
-            _ => Ok(Py::new(py, base)?.to_object(py)),
+            LLVMOpcode::LLVMSwitch => {
+                Ok(Py::new(py, base.add_subclass(Switch))?.into_bound_py_any(py)?)
+            }
+            LLVMOpcode::LLVMICmp => {
+                Ok(Py::new(py, base.add_subclass(ICmp))?.into_bound_py_any(py)?)
+            }
+            LLVMOpcode::LLVMFCmp => {
+                Ok(Py::new(py, base.add_subclass(FCmp))?.into_bound_py_any(py)?)
+            }
+            LLVMOpcode::LLVMCall => {
+                Ok(Py::new(py, base.add_subclass(Call))?.into_bound_py_any(py)?)
+            }
+            LLVMOpcode::LLVMPHI => Ok(Py::new(py, base.add_subclass(Phi))?.into_bound_py_any(py)?),
+            _ => Ok(Py::new(py, base)?.into_bound_py_any(py)?),
         }
     }
 }
@@ -346,7 +353,7 @@ impl Switch {
     ///
     /// :type: Value
     #[getter]
-    fn cond(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
+    fn cond<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let slf = slf.into_super().into_super();
         unsafe {
             let value = LLVMGetCondition(slf.cast().as_ptr());
@@ -371,7 +378,10 @@ impl Switch {
     ///
     /// :type: typing.List[typing.Tuple[Value, BasicBlock]]
     #[getter]
-    fn cases(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(PyObject, PyObject)>> {
+    fn cases<'py>(
+        slf: PyRef<Self>,
+        py: Python<'py>,
+    ) -> PyResult<Vec<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> {
         let slf = slf.into_super().into_super();
         let owner = slf.owner();
         unsafe {
@@ -571,7 +581,7 @@ impl Call {
     ///
     /// :type: Value
     #[getter]
-    fn callee(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
+    fn callee<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let slf = slf.into_super().into_super();
         unsafe {
             let value = LLVMGetCalledValue(slf.cast().as_ptr());
@@ -583,7 +593,7 @@ impl Call {
     ///
     /// :type: typing.List[Value]
     #[getter]
-    fn args(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
+    fn args<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
         let mut args = Instruction::operands(slf.into_super(), py)?;
         args.pop().unwrap();
         Ok(args)
@@ -614,7 +624,10 @@ impl Phi {
     ///
     /// :type: typing.List[typing.Tuple[Value, BasicBlock]]
     #[getter]
-    fn incoming(slf: PyRef<Self>, py: Python) -> PyResult<Vec<(PyObject, PyObject)>> {
+    fn incoming<'py>(
+        slf: PyRef<Self>,
+        py: Python<'py>,
+    ) -> PyResult<Vec<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> {
         let slf = slf.into_super().into_super();
         let owner = slf.owner();
         unsafe {

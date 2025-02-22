@@ -13,7 +13,7 @@ use llvm_sys::{
     debuginfo::{LLVMGetMetadataKind, LLVMMetadataKind},
     LLVMOpaqueMetadata,
 };
-use pyo3::{conversion::ToPyObject, exceptions::PyValueError, prelude::*};
+use pyo3::{exceptions::PyValueError, prelude::*, IntoPyObjectExt};
 use std::{ffi::CString, ops::Deref, ptr::NonNull, slice, str};
 
 /// A metadata value or node.
@@ -38,21 +38,21 @@ impl Metadata {
 }
 
 impl Metadata {
-    pub(crate) unsafe fn from_raw(
-        py: Python,
+    pub(crate) unsafe fn from_raw<'py>(
+        py: Python<'py>,
         owner: Owner,
         md: LLVMMetadataRef,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         match LLVMGetMetadataKind(md) {
             LLVMMetadataKind::LLVMMDStringMetadataKind => {
-                Ok(Py::new(py, MetadataString::from_raw(py, owner, md)?)?.to_object(py))
+                Ok(Py::new(py, MetadataString::from_raw(py, owner, md)?)?.into_bound_py_any(py)?)
             }
             LLVMMetadataKind::LLVMConstantAsMetadataMetadataKind => {
                 ConstantAsMetadata::from_raw(py, owner, md)
             }
             _ => {
                 let value = NonNull::new(md).expect("Value is null.");
-                Ok(Py::new(py, Self { value, owner })?.to_object(py))
+                Ok(Py::new(py, Self { value, owner })?.into_bound_py_any(py)?)
             }
         }
     }
@@ -139,7 +139,7 @@ impl ConstantAsMetadata {
     ///
     /// :type: Constant
     #[getter]
-    fn value(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
+    fn value<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let slf = slf.into_super();
         let context = slf.owner.context(py).borrow(py).cast().as_ptr();
         let valueref = unsafe { LLVMMetadataAsValue(context, slf.cast().as_ptr()) };
@@ -152,14 +152,18 @@ impl ConstantAsMetadata {
 }
 
 impl ConstantAsMetadata {
-    unsafe fn from_raw(py: Python, owner: Owner, value: LLVMMetadataRef) -> PyResult<PyObject> {
+    unsafe fn from_raw<'py>(
+        py: Python<'py>,
+        owner: Owner,
+        value: LLVMMetadataRef,
+    ) -> PyResult<Bound<'py, PyAny>> {
         let value = NonNull::new(value).expect("Value is null.");
         let context = owner.context(py).borrow(py).cast().as_ptr();
         let valueref = LLVMMetadataAsValue(context, value.cast().as_ptr());
         if qirlib::metadata::extract_constant(valueref).is_some() {
             let initializer =
                 PyClassInitializer::from(Metadata { value, owner }).add_subclass(Self);
-            Ok(Py::new(py, initializer)?.to_object(py))
+            Ok(Py::new(py, initializer)?.into_bound_py_any(py)?)
         } else {
             Err(PyValueError::new_err("Could not extract constant."))
         }

@@ -6,7 +6,7 @@
 use crate::{core::Context, values::Owner};
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{core::*, prelude::*, LLVMType, LLVMTypeKind};
-use pyo3::{conversion::ToPyObject, prelude::*};
+use pyo3::{prelude::*, IntoPyObjectExt};
 use qirlib::types;
 use std::{ffi::CStr, ops::Deref, ptr::NonNull};
 
@@ -67,30 +67,30 @@ impl Type {
 }
 
 impl Type {
-    pub(crate) unsafe fn from_raw(
-        py: Python,
+    pub(crate) unsafe fn from_raw<'py>(
+        py: Python<'py>,
         context: Py<Context>,
         ty: LLVMTypeRef,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let ty = NonNull::new(ty).expect("Type is null.");
         let base = PyClassInitializer::from(Self { ty, context });
         match LLVMGetTypeKind(ty.cast().as_ptr()) {
             LLVMTypeKind::LLVMArrayTypeKind => {
-                Ok(Py::new(py, base.add_subclass(ArrayType))?.to_object(py))
+                Ok(Py::new(py, base.add_subclass(ArrayType))?.into_bound_py_any(py)?)
             }
             LLVMTypeKind::LLVMFunctionTypeKind => {
-                Ok(Py::new(py, base.add_subclass(FunctionType))?.to_object(py))
+                Ok(Py::new(py, base.add_subclass(FunctionType))?.into_bound_py_any(py)?)
             }
             LLVMTypeKind::LLVMIntegerTypeKind => {
-                Ok(Py::new(py, base.add_subclass(IntType))?.to_object(py))
+                Ok(Py::new(py, base.add_subclass(IntType))?.into_bound_py_any(py)?)
             }
             LLVMTypeKind::LLVMPointerTypeKind => {
-                Ok(Py::new(py, base.add_subclass(PointerType))?.to_object(py))
+                Ok(Py::new(py, base.add_subclass(PointerType))?.into_bound_py_any(py)?)
             }
             LLVMTypeKind::LLVMStructTypeKind => {
-                Ok(Py::new(py, base.add_subclass(StructType))?.to_object(py))
+                Ok(Py::new(py, base.add_subclass(StructType))?.into_bound_py_any(py)?)
             }
-            _ => Ok(Py::new(py, base)?.to_object(py)),
+            _ => Ok(Py::new(py, base)?.into_bound_py_any(py)?),
         }
     }
 
@@ -181,7 +181,7 @@ impl FunctionType {
     ///
     /// :type: Type
     #[getter]
-    fn ret(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
+    fn ret<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let slf = slf.into_super();
         let context = slf.context.clone_ref(py);
         unsafe { Type::from_raw(py, context, LLVMGetReturnType(slf.cast().as_ptr())) }
@@ -191,7 +191,7 @@ impl FunctionType {
     ///
     /// :type: typing.List[Type]
     #[getter]
-    fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
+    fn params<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
         let slf = slf.into_super();
         unsafe {
             let count = LLVMCountParamTypes(slf.cast().as_ptr()).try_into().unwrap();
@@ -229,7 +229,7 @@ impl StructType {
     ///
     /// :type: typing.List[Type]
     #[getter]
-    fn fields(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
+    fn fields<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
         let slf = slf.into_super();
         unsafe {
             let count = LLVMCountStructElementTypes(slf.cast().as_ptr())
@@ -256,7 +256,7 @@ impl ArrayType {
     ///
     /// :type: Type
     #[getter]
-    fn element(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
+    fn element<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let slf = slf.into_super();
         unsafe {
             let ty = LLVMGetElementType(slf.cast().as_ptr());
@@ -298,7 +298,7 @@ impl PointerType {
     ///
     /// :type: Type
     #[getter]
-    fn pointee(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
+    fn pointee<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let slf = slf.into_super();
         unsafe {
             let ty = LLVMGetElementType(slf.cast().as_ptr());
@@ -322,7 +322,10 @@ impl PointerType {
 /// :rtype: Type
 #[pyfunction]
 #[pyo3(text_signature = "(context)")]
-pub(crate) fn qubit_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
+pub(crate) fn qubit_type<'py>(
+    py: Python<'py>,
+    context: Py<Context>,
+) -> PyResult<Bound<'py, PyAny>> {
     unsafe {
         let ty = types::qubit(context.borrow(py).cast().as_ptr());
         Type::from_raw(py, context, ty)
@@ -347,7 +350,10 @@ pub(crate) fn is_qubit_type(ty: &Type) -> bool {
 /// :rtype: Type
 #[pyfunction]
 #[pyo3(text_signature = "(context)")]
-pub(crate) fn result_type(py: Python, context: Py<Context>) -> PyResult<PyObject> {
+pub(crate) fn result_type<'py>(
+    py: Python<'py>,
+    context: Py<Context>,
+) -> PyResult<Bound<'py, PyAny>> {
     unsafe {
         let ty = types::result(context.borrow(py).cast().as_ptr());
         Type::from_raw(py, context, ty)

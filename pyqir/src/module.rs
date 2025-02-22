@@ -68,10 +68,14 @@ impl Module {
     fn from_ir(py: Python, context: Py<Context>, ir: &str, name: Option<&str>) -> PyResult<Self> {
         let name = CString::new(name.unwrap_or_default()).unwrap();
 
+        // LLVMParseIRInContext takes a null-terminated string, so use a
+        // CString to ensure safety across the FFI boundary.
+        let len = ir.len();
+        let ir = CString::new(ir).unwrap();
+
         // Don't dispose this buffer. LLVMParseIRInContext takes ownership.
-        let buffer = unsafe {
-            LLVMCreateMemoryBufferWithMemoryRange(ir.as_ptr().cast(), ir.len(), name.as_ptr(), 0)
-        };
+        let buffer =
+            unsafe { LLVMCreateMemoryBufferWithMemoryRange(ir.as_ptr(), len, name.as_ptr(), 0) };
 
         let mut module = ptr::null_mut();
         let mut error = ptr::null_mut();
@@ -160,7 +164,7 @@ impl Module {
     ///
     /// :type: typing.List[Function]
     #[getter]
-    fn functions(slf: Py<Module>, py: Python) -> PyResult<Vec<PyObject>> {
+    fn functions<'py>(slf: Py<Module>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
         let module = slf.borrow(py).cast().as_ptr();
         let mut functions = Vec::new();
         unsafe {
@@ -183,7 +187,7 @@ impl Module {
                 MemoryBuffer::from_raw(LLVMWriteBitcodeToMemoryBuffer(self.cast().as_ptr()));
             let start = LLVMGetBufferStart(buffer.cast().as_ptr());
             let len = LLVMGetBufferSize(buffer.cast().as_ptr());
-            PyBytes::new_bound(py, slice::from_raw_parts(start.cast(), len))
+            PyBytes::new(py, slice::from_raw_parts(start.cast(), len))
         }
     }
 
@@ -230,7 +234,11 @@ impl Module {
     /// :returns: value of the flag if found, otherwise None
     /// :rtype: typing.Optional[Metadata]
     #[pyo3(text_signature = "(id)")]
-    pub(crate) fn get_flag(slf: Py<Module>, py: Python, id: &str) -> Option<PyObject> {
+    pub(crate) fn get_flag<'py>(
+        slf: Py<Module>,
+        py: Python<'py>,
+        id: &str,
+    ) -> Option<Bound<'py, PyAny>> {
         let module = slf.borrow(py).module.cast().as_ptr();
         let flag = unsafe { LLVMGetModuleFlag(module, id.as_ptr().cast(), id.len()) };
 
