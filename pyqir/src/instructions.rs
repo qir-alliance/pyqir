@@ -60,7 +60,7 @@ impl Instruction {
                 .into_iter()
                 .filter_map(|bound| {
                     if bound.is_instance_of::<BasicBlock>() {
-                        Some(Ok(bound.into()))
+                        Some(Ok(bound))
                     } else {
                         None
                     }

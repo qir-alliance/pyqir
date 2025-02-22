@@ -67,11 +67,11 @@ impl Type {
 }
 
 impl Type {
-    pub(crate) unsafe fn from_raw<'py>(
-        py: Python<'py>,
+    pub(crate) unsafe fn from_raw(
+        py: Python<'_>,
         context: Py<Context>,
         ty: LLVMTypeRef,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    ) -> PyResult<Bound<'_, PyAny>> {
         let ty = NonNull::new(ty).expect("Type is null.");
         let base = PyClassInitializer::from(Self { ty, context });
         match LLVMGetTypeKind(ty.cast().as_ptr()) {
@@ -322,10 +322,7 @@ impl PointerType {
 /// :rtype: Type
 #[pyfunction]
 #[pyo3(text_signature = "(context)")]
-pub(crate) fn qubit_type<'py>(
-    py: Python<'py>,
-    context: Py<Context>,
-) -> PyResult<Bound<'py, PyAny>> {
+pub(crate) fn qubit_type(py: Python<'_>, context: Py<Context>) -> PyResult<Bound<'_, PyAny>> {
     unsafe {
         let ty = types::qubit(context.borrow(py).cast().as_ptr());
         Type::from_raw(py, context, ty)
@@ -350,10 +347,7 @@ pub(crate) fn is_qubit_type(ty: &Type) -> bool {
 /// :rtype: Type
 #[pyfunction]
 #[pyo3(text_signature = "(context)")]
-pub(crate) fn result_type<'py>(
-    py: Python<'py>,
-    context: Py<Context>,
-) -> PyResult<Bound<'py, PyAny>> {
+pub(crate) fn result_type(py: Python<'_>, context: Py<Context>) -> PyResult<Bound<'_, PyAny>> {
     unsafe {
         let ty = types::result(context.borrow(py).cast().as_ptr());
         Type::from_raw(py, context, ty)

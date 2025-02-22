@@ -38,11 +38,11 @@ impl Metadata {
 }
 
 impl Metadata {
-    pub(crate) unsafe fn from_raw<'py>(
-        py: Python<'py>,
+    pub(crate) unsafe fn from_raw(
+        py: Python<'_>,
         owner: Owner,
         md: LLVMMetadataRef,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    ) -> PyResult<Bound<'_, PyAny>> {
         match LLVMGetMetadataKind(md) {
             LLVMMetadataKind::LLVMMDStringMetadataKind => {
                 Ok(Py::new(py, MetadataString::from_raw(py, owner, md)?)?.into_bound_py_any(py)?)
@@ -152,11 +152,11 @@ impl ConstantAsMetadata {
 }
 
 impl ConstantAsMetadata {
-    unsafe fn from_raw<'py>(
-        py: Python<'py>,
+    unsafe fn from_raw(
+        py: Python<'_>,
         owner: Owner,
         value: LLVMMetadataRef,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    ) -> PyResult<Bound<'_, PyAny>> {
         let value = NonNull::new(value).expect("Value is null.");
         let context = owner.context(py).borrow(py).cast().as_ptr();
         let valueref = LLVMMetadataAsValue(context, value.cast().as_ptr());

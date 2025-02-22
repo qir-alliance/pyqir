@@ -745,11 +745,7 @@ pub(crate) fn r#const<'py>(
 /// :rtype: Value
 #[pyfunction]
 #[pyo3(text_signature = "(context, id)")]
-pub(crate) fn qubit<'py>(
-    py: Python<'py>,
-    context: Py<Context>,
-    id: u64,
-) -> PyResult<Bound<'py, PyAny>> {
+pub(crate) fn qubit(py: Python<'_>, context: Py<Context>, id: u64) -> PyResult<Bound<'_, PyAny>> {
     unsafe {
         let value = values::qubit(context.borrow(py).cast().as_ptr(), id);
         Value::from_raw(py, context.into(), value)
@@ -775,11 +771,7 @@ pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
 /// :rtype: Value
 #[pyfunction]
 #[pyo3(text_signature = "(context, id)")]
-pub(crate) fn result<'py>(
-    py: Python<'py>,
-    context: Py<Context>,
-    id: u64,
-) -> PyResult<Bound<'py, PyAny>> {
+pub(crate) fn result(py: Python<'_>, context: Py<Context>, id: u64) -> PyResult<Bound<'_, PyAny>> {
     unsafe {
         let value = values::result(context.borrow(py).cast().as_ptr(), id);
         Value::from_raw(py, context.into(), value)
@@ -883,7 +875,7 @@ pub(crate) fn qir_module<'py>(
             dynamic_result_management.unwrap_or(false),
         );
     }
-    Ok(Py::new(py, module)?.into_bound_py_any(py)?)
+    Py::new(py, module)?.into_bound_py_any(py)
 }
 
 /// The QIR major version this module is built for. None if unspecified.

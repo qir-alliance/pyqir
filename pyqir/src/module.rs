@@ -164,7 +164,7 @@ impl Module {
     ///
     /// :type: typing.List[Function]
     #[getter]
-    fn functions<'py>(slf: Py<Module>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
+    fn functions(slf: Py<Module>, py: Python<'_>) -> PyResult<Vec<Bound<'_, PyAny>>> {
         let module = slf.borrow(py).cast().as_ptr();
         let mut functions = Vec::new();
         unsafe {
