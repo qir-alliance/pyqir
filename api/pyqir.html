@@ -739,7 +739,7 @@ and zero callables should use this module’s builder to build instructions.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.Builder.if_">
-<span class="sig-name descname"><span class="pre">if_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">false</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.if_" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">if_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Ellipsis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">false</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Ellipsis</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.if_" title="Permalink to this definition">¶</a></dt>
 <dd><p>Inserts a branch conditioned on a boolean.</p>
 <p>Instructions inserted when <code class="docutils literal notranslate"><span class="pre">true</span></code> is called will be inserted into the true branch.
 Instructions inserted when <code class="docutils literal notranslate"><span class="pre">false</span></code> is called will be inserted into the false branch. The
@@ -865,7 +865,7 @@ true and false callables should use this module’s builder to build instruction
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyqir.Builder.ret">
-<span class="sig-name descname"><span class="pre">ret</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.ret" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">ret</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.ret" title="Permalink to this definition">¶</a></dt>
 <dd><p>Inserts a return instruction.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -2406,7 +2406,7 @@ Destroys the supplied module.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pyqir.add_string_attribute">
-<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">add_string_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.add_string_attribute" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">add_string_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.add_string_attribute" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -2581,7 +2581,7 @@ Destroys the supplied module.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pyqir.qir_module">
-<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">qir_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qir_major_version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qir_minor_version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamic_qubit_management</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamic_result_management</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.qir_module" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">qir_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qir_major_version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qir_minor_version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamic_qubit_management</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamic_result_management</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.qir_module" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a module with required QIR module flag metadata</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
