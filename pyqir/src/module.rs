@@ -66,12 +66,13 @@ impl Module {
     #[staticmethod]
     #[pyo3(signature = (context, ir, name=""))]
     fn from_ir(py: Python, context: Py<Context>, ir: &str, name: Option<&str>) -> PyResult<Self> {
-        let name = CString::new(name.unwrap_or_default()).unwrap();
+        let name = CString::new(name.unwrap_or_default())
+            .expect("should be able to create CString for name");
 
         // LLVMParseIRInContext takes a null-terminated string, so use a
         // CString to ensure safety across the FFI boundary.
         let len = ir.len();
-        let ir = CString::new(ir).unwrap();
+        let ir = CString::new(ir).expect("should be able to create CString for ir");
 
         // Don't dispose this buffer. LLVMParseIRInContext takes ownership.
         let buffer =
@@ -83,12 +84,17 @@ impl Module {
             let context_ref = context.borrow(py).cast().as_ptr();
             if LLVMParseIRInContext(context_ref, buffer, &mut module, &mut error) != 0 {
                 let error = Message::from_raw(error);
-                return Err(PyValueError::new_err(error.to_str().unwrap().to_string()));
+                return Err(PyValueError::new_err(
+                    error
+                        .to_str()
+                        .expect("should be able to conver error to str")
+                        .to_string(),
+                ));
             }
         }
 
         Ok(Self {
-            module: NonNull::new(module).unwrap(),
+            module: NonNull::new(module).expect("module should not be null"),
             context,
         })
     }
