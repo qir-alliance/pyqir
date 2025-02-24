@@ -99,7 +99,7 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn and_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
+    fn and_<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildAnd(
@@ -119,7 +119,7 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn or_(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
+    fn or_<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildOr(
@@ -139,7 +139,7 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn xor(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
+    fn xor<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildXor(
@@ -159,7 +159,7 @@ impl Builder {
     /// :returns: The sum.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn add(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
+    fn add<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildAdd(
@@ -179,7 +179,7 @@ impl Builder {
     /// :returns: The difference.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn sub(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
+    fn sub<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildSub(
@@ -199,7 +199,7 @@ impl Builder {
     /// :returns: The product.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn mul(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
+    fn mul<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildMul(
@@ -219,7 +219,7 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn shl(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
+    fn shl<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildShl(
@@ -239,7 +239,7 @@ impl Builder {
     /// :returns: The result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, lhs, rhs)")]
-    fn lshr(&self, py: Python, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
+    fn lshr<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildLShr(
@@ -260,7 +260,13 @@ impl Builder {
     /// :returns: The boolean result.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, pred, lhs, rhs)")]
-    fn icmp(&self, py: Python, pred: IntPredicate, lhs: &Value, rhs: &Value) -> PyResult<PyObject> {
+    fn icmp<'py>(
+        &self,
+        py: Python<'py>,
+        pred: IntPredicate,
+        lhs: &Value,
+        rhs: &Value,
+    ) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
         unsafe {
             let value = LLVMBuildICmp(
@@ -282,7 +288,12 @@ impl Builder {
     /// :returns: The return value, or None if the function has a void return type.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, callee, args)")]
-    fn call(&self, py: Python, callee: &Value, args: Vec<Argument>) -> PyResult<PyObject> {
+    fn call<'py>(
+        &self,
+        py: Python<'py>,
+        callee: &Value,
+        args: Vec<Argument>,
+    ) -> PyResult<Bound<'py, PyAny>> {
         let arg_owners = args.iter().filter_map(Argument::owner);
         let owner = Owner::merge(py, arg_owners.chain([&self.owner, callee.owner()]))?;
 
@@ -333,21 +344,21 @@ impl Builder {
     ///     A callable that inserts instructions for the branch where the condition is true.
     /// :param typing.Callable[[], None] false:
     ///     A callable that inserts instructions for the branch where the condition is false.
-    #[pyo3(text_signature = "(self, cond, true, false)")]
-    fn if_(
+    #[pyo3(signature = (cond, r#true = None, r#false = None))]
+    fn if_<'py>(
         &self,
-        py: Python,
+        py: Python<'py>,
         cond: &Value,
-        r#true: Option<&PyAny>,
-        r#false: Option<&PyAny>,
+        r#true: Option<Bound<'py, PyAny>>,
+        r#false: Option<Bound<'py, PyAny>>,
     ) -> PyResult<()> {
         Owner::merge(py, [&self.owner, cond.owner()])?;
         unsafe {
             try_build_if(
                 self.cast().as_ptr(),
                 cond.cast().as_ptr(),
-                || r#true.iter().try_for_each(|f| f.call0().map(|_| ())),
-                || r#false.iter().try_for_each(|f| f.call0().map(|_| ())),
+                || r#true.into_iter().try_for_each(|f| f.call0().map(|_| ())),
+                || r#false.into_iter().try_for_each(|f| f.call0().map(|_| ())),
             )
         }
     }
@@ -358,7 +369,7 @@ impl Builder {
     /// :returns: The branch instruction.
     /// :rtype: Instruction
     #[pyo3(text_signature = "(dest)")]
-    fn br(&self, py: Python, dest: PyRef<BasicBlock>) -> PyResult<PyObject> {
+    fn br<'py>(&self, py: Python<'py>, dest: PyRef<BasicBlock>) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, dest.as_ref().owner()])?;
         unsafe {
             let value = LLVMBuildBr(self.builder.cast().as_ptr(), dest.cast().as_ptr());
@@ -374,13 +385,13 @@ impl Builder {
     /// :returns: The branch instruction.
     /// :rtype: Instruction
     #[pyo3(text_signature = "(if_, then, else_)")]
-    fn condbr(
+    fn condbr<'py>(
         &self,
-        py: Python,
+        py: Python<'py>,
         if_: &Value,
         then: PyRef<BasicBlock>,
         else_: PyRef<BasicBlock>,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(
             py,
             [
@@ -406,7 +417,7 @@ impl Builder {
     /// :returns: The phi node.
     /// :rtype: Instruction
     #[pyo3(text_signature = "(type)")]
-    fn phi(&self, py: Python, r#type: &Type) -> PyResult<PyObject> {
+    fn phi<'py>(&self, py: Python<'py>, r#type: &Type) -> PyResult<Bound<'py, PyAny>> {
         unsafe {
             let owner = self.owner.clone_ref(py);
             let value = LLVMBuildPhi(
@@ -423,8 +434,8 @@ impl Builder {
     /// :param Value value: The value to return. If `None`, returns void.
     /// :returns: The return instruction.
     /// :rtype: Instruction
-    #[pyo3(text_signature = "(value)")]
-    fn ret(&self, py: Python, value: Option<&Value>) -> PyResult<PyObject> {
+    #[pyo3(signature = (value = None))]
+    fn ret<'py>(&self, py: Python<'py>, value: Option<&Value>) -> PyResult<Bound<'py, PyAny>> {
         let (value, owner) = match value {
             None => (
                 unsafe { LLVMBuildRetVoid(self.cast().as_ptr()) },
@@ -446,7 +457,7 @@ impl Builder {
     /// :returns: The zext instruction.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, val, ty)")]
-    fn zext(&self, py: Python, val: &Value, ty: &Type) -> PyResult<PyObject> {
+    fn zext<'py>(&self, py: Python<'py>, val: &Value, ty: &Type) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, val.owner()])?;
         unsafe {
             let value = LLVMBuildZExt(
@@ -466,7 +477,7 @@ impl Builder {
     /// :returns: The trunc instruction.
     /// :rtype: Value
     #[pyo3(text_signature = "(self, val, ty)")]
-    fn trunc(&self, py: Python, val: &Value, ty: &Type) -> PyResult<PyObject> {
+    fn trunc<'py>(&self, py: Python<'py>, val: &Value, ty: &Type) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, val.owner()])?;
         unsafe {
             let value = LLVMBuildTrunc(

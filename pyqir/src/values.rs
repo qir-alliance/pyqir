@@ -16,11 +16,11 @@ use llvm_sys::{
     LLVMBasicBlock, LLVMTypeKind, LLVMValue, LLVMValueKind,
 };
 use pyo3::{
-    conversion::ToPyObject,
+    conversion::IntoPyObjectExt,
     exceptions::{PyKeyError, PyTypeError, PyValueError},
     prelude::*,
     pyclass::CompareOp,
-    types::{PyBytes, PyLong, PyString},
+    types::{PyBytes, PyInt, PyString},
     PyRef,
 };
 use qirlib::values::{self, get_string_attribute_kind, get_string_attribute_value};
@@ -61,11 +61,16 @@ impl std::cmp::PartialEq for Value {
 impl Value {
     // In order to implement the comparison operators, we have to do
     // it all in one impl of __richcmp__ for pyo3 to work.
-    fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
+    fn __richcmp__<'py>(&self, other: &Self, op: CompareOp, py: Python<'py>) -> Bound<'py, PyAny> {
         match op {
-            CompareOp::Eq => self.eq(other).into_py(py),
-            CompareOp::Ne => (!self.eq(other)).into_py(py),
-            _ => py.NotImplemented(),
+            CompareOp::Eq => self
+                .eq(other)
+                .into_bound_py_any(py)
+                .expect("converting into Python bool should succeed"),
+            CompareOp::Ne => (!self.eq(other))
+                .into_bound_py_any(py)
+                .expect("converting into Python bool should succeed"),
+            _ => py.NotImplemented().into_bound(py),
         }
     }
 
@@ -79,7 +84,7 @@ impl Value {
     ///
     /// :type: Type
     #[getter]
-    fn r#type(&self, py: Python) -> PyResult<PyObject> {
+    fn r#type<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         unsafe { Type::from_raw(py, self.owner.context(py), LLVMTypeOf(self.cast().as_ptr())) }
     }
 
@@ -124,17 +129,17 @@ impl Value {
         py: Python,
         owner: Owner,
         value: LLVMValueRef,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Bound<PyAny>> {
         match LLVMGetValueKind(value) {
             LLVMValueKind::LLVMInstructionValueKind => Instruction::from_raw(py, owner, value),
             LLVMValueKind::LLVMBasicBlockValueKind => {
                 let block = BasicBlock::from_raw(owner, LLVMValueAsBasicBlock(value));
-                Ok(Py::new(py, block)?.to_object(py))
+                Ok(Py::new(py, block)?.into_bound_py_any(py)?)
             }
             _ if LLVMIsConstant(value) != 0 => Constant::from_raw(py, owner, value),
             _ => {
                 let value = NonNull::new(value).expect("Value is null.");
-                Ok(Py::new(py, Self { value, owner })?.to_object(py))
+                Ok(Py::new(py, Self { value, owner })?.into_bound_py_any(py)?)
             }
         }
     }
@@ -249,7 +254,7 @@ pub(crate) struct BasicBlock(NonNull<LLVMBasicBlock>);
 #[pymethods]
 impl BasicBlock {
     #[new]
-    #[pyo3(text_signature = "(context, name, parent=None, before=None)")]
+    #[pyo3(signature = (context, name, parent=None, before=None))]
     fn new(
         py: Python,
         context: Py<Context>,
@@ -311,7 +316,7 @@ impl BasicBlock {
     ///
     /// :type: typing.List[Instruction]
     #[getter]
-    fn instructions(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
+    fn instructions<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
         let mut insts = Vec::new();
         unsafe {
             let mut inst = LLVMGetFirstInstruction(slf.cast().as_ptr());
@@ -328,7 +333,7 @@ impl BasicBlock {
     ///
     /// :type: typing.Optional[Instruction]
     #[getter]
-    fn terminator(slf: PyRef<Self>, py: Python) -> PyResult<Option<PyObject>> {
+    fn terminator<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Option<Bound<'py, PyAny>>> {
         unsafe {
             let term = LLVMGetBasicBlockTerminator(slf.cast().as_ptr());
             if term.is_null() {
@@ -374,7 +379,7 @@ impl Constant {
     /// :rtype: Constant
     #[staticmethod]
     #[pyo3(text_signature = "(ty)")]
-    fn null(py: Python, ty: &Type) -> PyResult<PyObject> {
+    fn null<'py>(py: Python<'py>, ty: &Type) -> PyResult<Bound<'py, PyAny>> {
         let context = ty.context().clone_ref(py);
         unsafe { Value::from_raw(py, context.into(), LLVMConstNull(ty.cast().as_ptr())) }
     }
@@ -393,7 +398,7 @@ impl Constant {
         py: Python,
         owner: Owner,
         value: LLVMValueRef,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Bound<PyAny>> {
         let value = NonNull::new(value).expect("Value is null.");
         if LLVMIsConstant(value.cast().as_ptr()) == 0 {
             Err(PyValueError::new_err("Value is not constant."))
@@ -401,15 +406,15 @@ impl Constant {
             let base = PyClassInitializer::from(Value { value, owner }).add_subclass(Constant);
             match LLVMGetValueKind(value.cast().as_ptr()) {
                 LLVMValueKind::LLVMConstantIntValueKind => {
-                    Ok(Py::new(py, base.add_subclass(IntConstant))?.to_object(py))
+                    Ok(Py::new(py, base.add_subclass(IntConstant))?.into_bound_py_any(py)?)
                 }
                 LLVMValueKind::LLVMConstantFPValueKind => {
-                    Ok(Py::new(py, base.add_subclass(FloatConstant))?.to_object(py))
+                    Ok(Py::new(py, base.add_subclass(FloatConstant))?.into_bound_py_any(py)?)
                 }
                 LLVMValueKind::LLVMFunctionValueKind => {
-                    Ok(Py::new(py, base.add_subclass(Function))?.to_object(py))
+                    Ok(Py::new(py, base.add_subclass(Function))?.into_bound_py_any(py)?)
                 }
-                _ => Ok(Py::new(py, base)?.to_object(py)),
+                _ => Ok(Py::new(py, base)?.into_bound_py_any(py)?),
             }
         }
     }
@@ -489,7 +494,7 @@ impl Function {
     }
 
     #[getter]
-    fn r#type(slf: PyRef<Self>, py: Python) -> PyResult<PyObject> {
+    fn r#type<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let slf = slf.into_super().into_super();
         unsafe {
             let ty = LLVMGetElementType(LLVMTypeOf(slf.cast().as_ptr()));
@@ -501,7 +506,7 @@ impl Function {
     ///
     /// :type: typing.List[Value]
     #[getter]
-    fn params(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
+    fn params<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
         let slf = slf.into_super().into_super();
         unsafe {
             let count = LLVMCountParams(slf.cast().as_ptr()).try_into().unwrap();
@@ -519,7 +524,7 @@ impl Function {
     ///
     /// :type: typing.List[BasicBlock]
     #[getter]
-    fn basic_blocks(slf: PyRef<Self>, py: Python) -> PyResult<Vec<PyObject>> {
+    fn basic_blocks<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
         let slf = slf.into_super().into_super();
         unsafe {
             let count = LLVMCountBasicBlocks(slf.cast().as_ptr())
@@ -694,7 +699,7 @@ impl AttributeSet {
 #[derive(FromPyObject)]
 pub(crate) enum Literal<'py> {
     Bool(bool),
-    Int(&'py PyLong),
+    Int(Bound<'py, PyInt>),
     Float(f64),
 }
 
@@ -704,7 +709,7 @@ impl Literal<'_> {
             (LLVMTypeKind::LLVMIntegerTypeKind, &Self::Bool(b)) => {
                 Ok(LLVMConstInt(ty, b.into(), 0))
             }
-            (LLVMTypeKind::LLVMIntegerTypeKind, &Self::Int(i)) => {
+            (LLVMTypeKind::LLVMIntegerTypeKind, Self::Int(i)) => {
                 Ok(LLVMConstInt(ty, i.extract()?, 0))
             }
             (LLVMTypeKind::LLVMDoubleTypeKind, &Self::Float(f)) => Ok(LLVMConstReal(ty, f)),
@@ -723,7 +728,11 @@ impl Literal<'_> {
 /// :rtype: Value
 #[pyfunction]
 #[pyo3(text_signature = "(ty, value)")]
-pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObject> {
+pub(crate) fn r#const<'py>(
+    py: Python<'py>,
+    ty: &Type,
+    value: Literal,
+) -> PyResult<Bound<'py, PyAny>> {
     let owner = ty.context().clone_ref(py).into();
     unsafe { Value::from_raw(py, owner, value.to_value(ty.cast().as_ptr())?) }
 }
@@ -736,7 +745,7 @@ pub(crate) fn r#const(py: Python, ty: &Type, value: Literal) -> PyResult<PyObjec
 /// :rtype: Value
 #[pyfunction]
 #[pyo3(text_signature = "(context, id)")]
-pub(crate) fn qubit(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
+pub(crate) fn qubit(py: Python<'_>, context: Py<Context>, id: u64) -> PyResult<Bound<'_, PyAny>> {
     unsafe {
         let value = values::qubit(context.borrow(py).cast().as_ptr(), id);
         Value::from_raw(py, context.into(), value)
@@ -762,7 +771,7 @@ pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
 /// :rtype: Value
 #[pyfunction]
 #[pyo3(text_signature = "(context, id)")]
-pub(crate) fn result(py: Python, context: Py<Context>, id: u64) -> PyResult<PyObject> {
+pub(crate) fn result(py: Python<'_>, context: Py<Context>, id: u64) -> PyResult<Bound<'_, PyAny>> {
     unsafe {
         let value = values::result(context.borrow(py).cast().as_ptr(), id);
         Value::from_raw(py, context.into(), value)
@@ -835,17 +844,17 @@ pub(crate) fn required_num_results(function: PyRef<Function>) -> Option<u64> {
 /// :rtype: Module
 #[pyfunction]
 #[pyo3(
-    text_signature = "(context, name, qir_major_version, qir_minor_version, dynamic_qubit_management, dynamic_result_management)"
+    signature = (context, name, qir_major_version=None, qir_minor_version=None, dynamic_qubit_management=None, dynamic_result_management=None)
 )]
-pub(crate) fn qir_module(
-    py: Python,
+pub(crate) fn qir_module<'py>(
+    py: Python<'py>,
     context: Py<Context>,
     name: &str,
     qir_major_version: Option<i32>,
     qir_minor_version: Option<i32>,
     dynamic_qubit_management: Option<bool>,
     dynamic_result_management: Option<bool>,
-) -> PyResult<PyObject> {
+) -> PyResult<Bound<'py, PyAny>> {
     let module = crate::module::Module::new(py, context, name);
     let ptr = module.cast().as_ptr();
     unsafe {
@@ -866,7 +875,7 @@ pub(crate) fn qir_module(
             dynamic_result_management.unwrap_or(false),
         );
     }
-    Ok(Py::new(py, module)?.to_object(py))
+    Py::new(py, module)?.into_bound_py_any(py)
 }
 
 /// The QIR major version this module is built for. None if unspecified.
@@ -905,7 +914,11 @@ pub(crate) fn dynamic_result_management(module: PyRef<Module>) -> Option<bool> {
 /// :rtype: Constant
 #[pyfunction]
 #[pyo3(text_signature = "(module, value)")]
-pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> PyResult<PyObject> {
+pub(crate) fn global_byte_string<'py>(
+    py: Python<'py>,
+    module: &Module,
+    value: &[u8],
+) -> PyResult<Bound<'py, PyAny>> {
     let context = module.context().clone_ref(py);
     unsafe {
         let string = values::global_string(module.cast().as_ptr(), value);
@@ -920,7 +933,10 @@ pub(crate) fn global_byte_string(py: Python, module: &Module, value: &[u8]) -> P
 /// :rtype: typing.Optional[bytes]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
-pub(crate) fn extract_byte_string<'py>(py: Python<'py>, value: &Value) -> Option<&'py PyBytes> {
+pub(crate) fn extract_byte_string<'py>(
+    py: Python<'py>,
+    value: &Value,
+) -> Option<Bound<'py, PyBytes>> {
     let string = unsafe { values::extract_string(value.cast().as_ptr())? };
     Some(PyBytes::new(py, &string))
 }
@@ -932,16 +948,16 @@ pub(crate) fn extract_byte_string<'py>(py: Python<'py>, value: &Value) -> Option
 // :param value: The attribute value.
 // :param index: The optional attribute index, defaults to the function index.
 #[pyfunction]
-#[pyo3(text_signature = "(function, key, value, index)")]
+#[pyo3(signature = (function, key, value=None, index=None))]
 pub(crate) fn add_string_attribute<'py>(
     function: PyRef<Function>,
-    key: &'py PyString,
-    value: Option<&'py PyString>,
+    key: Bound<'py, PyString>,
+    value: Option<Bound<'py, PyString>>,
     index: Option<u32>,
 ) {
     let function = function.into_super().into_super().cast().as_ptr();
     let key = key.to_string_lossy();
-    let value = value.map(PyString::to_string_lossy);
+    let value = value.map(|x| x.to_string_lossy().to_string());
     unsafe {
         values::add_string_attribute(
             function,
