@@ -23,7 +23,7 @@ schedules:
 
 variables:
   CARGO_TERM_COLOR: always
-  RUST_TOOLCHAIN_VERSION: "1.80.1"
+  RUST_TOOLCHAIN_VERSION: "1.84"
   PYTHON_VERSION: "3.11"
   LLVM_VERSION: 14
 
@@ -43,6 +43,11 @@ parameters:
     imageName: 'ubuntu-20.04'
     os: linux
     arch: x86_64
+  - name: linux_aarch64
+    poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
+    imageName: 'mariner-2.0-arm64'
+    os: linux
+    arch: aarch64
   - name: mac_universal
     poolName: 'Azure Pipelines'
     imageName: 'macOS-latest'
@@ -74,6 +79,8 @@ extends:
             name: ${{ target.poolName }}
             image: ${{ target.imageName }}
             os: ${{ target.os }}
+            ${{ if eq(target.arch, 'aarch64') }}:
+              hostArchitecture: Arm64
           variables:
             arch: ${{ target.arch }}
             ${{ if target.ARCHFLAGS }}:
@@ -109,8 +116,7 @@ extends:
           - task: UsePythonVersion@0
             inputs:
               versionSpec: $(PYTHON_VERSION)
-            condition: succeeded()
-
+            condition: ne(variables['arch'], 'aarch64')
           # Build or restore LLVM
           - pwsh: New-Item -ItemType Directory -Path $(LLVM_DIRECTORY) -Force
             displayName: Ensure cache dir exists
@@ -152,7 +158,17 @@ extends:
           - script: |
               sudo apt-get install -y ninja-build
             displayName: Install build dependencies
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), ne(variables.CACHE_RESTORED, 'true'))
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
+
+          # on mariner we need to install:
+          # ld with binutils
+          # crt1.o and others with glibc-devel
+          # std lib headers with kernel-headers
+          # ninja and cmake for building LLVM
+          - script: |
+              sudo tdnf install binutils glibc-devel kernel-headers ninja-build cmake -y
+            displayName: Install c++ build tools on mariner
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
               brew install ninja
