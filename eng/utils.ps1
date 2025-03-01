@@ -317,3 +317,16 @@ function install-llvm {
         }
     }
 }
+
+function Get-AuditWheelTag($python) {
+    $arch = & $python -c "import platform; print(platform.machine())"
+    if ($arch -eq "x86_64") {
+        return "manylinux_2_31_x86_64"
+    }
+    elseif ($arch -eq "arm64" -or $arch -eq "aarch64") {
+        return "manylinux_2_34_aarch64"
+    }
+    else {
+        throw "Unsupported architecture $arch"
+    }
+}
