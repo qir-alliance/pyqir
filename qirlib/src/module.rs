@@ -315,9 +315,9 @@ pub unsafe fn compile_wasm(module: LLVMModuleRef) -> Result<Vec<u8>, String> {
         return Err("No entry point found".to_string());
     }
 
-    let mut linked_wasm_file = NamedTempFile::new().unwrap();
+    let linked_wasm_file = NamedTempFile::new().unwrap();
     //let linked_wasm_path = linked_wasm_file.path().to_string_lossy().into_owned();
-    let (mut linked_wasm_file_file, linked_wasm_path) = linked_wasm_file.keep().unwrap();
+    let (_, linked_wasm_path) = linked_wasm_file.keep().unwrap();
 
     // build up and convert the args to a format that can be passed to the linker
     let entry_arg = format!("--entry={entry_point}");
@@ -365,9 +365,6 @@ pub unsafe fn compile_wasm(module: LLVMModuleRef) -> Result<Vec<u8>, String> {
     }
 
     let mut buffer = Vec::new();
-    let read = linked_wasm_file_file
-        .read_to_end(&mut buffer)
-        .map_err(|e| e.to_string())?;
     let mut tt = File::open(linked_wasm_path).map_err(|e| e.to_string())?;
     let read = tt.read_to_end(&mut buffer).map_err(|e| e.to_string())?;
     if read == 0 {
