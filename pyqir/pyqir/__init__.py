@@ -60,6 +60,7 @@ from pyqir._simple import SimpleModule
 from pyqir._entry_point import entry_point
 from pyqir._basicqis import BasicQisBuilder
 from pyqir._constants import ATTR_FUNCTION_INDEX, ATTR_RETURN_INDEX
+from pyqir._passes import QIRPass
 
 __all__ = [
     "ArrayType",
@@ -120,4 +121,5 @@ __all__ = [
     "result",
     "ATTR_FUNCTION_INDEX",
     "ATTR_RETURN_INDEX",
+    "QIRPass",
 ]
