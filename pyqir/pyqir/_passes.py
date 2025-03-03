@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-from typing import Optional, Union, List, OrderedDict
+from typing import Optional, List, OrderedDict
 from pyqir._native import (
     Builder,
     Module,
@@ -15,10 +15,10 @@ from pyqir._native import (
 )
 
 
-class QIRPass:
+class QirModuleVisitor:
     """
-    Base class for all QIR passes.
-    A QIR pass can be used to analyze or transform a QIR module. It is implemented using a visitor pattern,
+    Base class for all QIR passes that visits each ofthe underlying components of the module.
+    A QIR visitor can be used to analyze or transform a QIR module. Each method in the visitor pattern
     where each method corresponds to a specific QIR construct that it can handle. A specific pass can be
     implemented by subclassing this class and overriding the methods of interest. The default implementation
     of each method does nothing besides calling the corresponding methods on its constituent parts, traversing
@@ -28,7 +28,7 @@ class QIRPass:
     can be used to create new instructions and types for use in transformations on the module.
     """
 
-    _builder: Builder
+    _builder: Optional[Builder] = None
     """
     The builder instance used to create new instructions and types for the current module, if any.
     """
@@ -38,6 +38,16 @@ class QIRPass:
         Initializes the QIR pass. Base implementation does nothing.
         """
         pass
+
+    @property
+    def builder(self) -> Builder:
+        """
+        Returns the builder instance used to create new instructions and types for the current module.
+
+        :return: The builder instance.
+        """
+        assert self._builder is not None
+        return self._builder
 
     def run(self, qir: Module) -> None:
         """
@@ -72,6 +82,7 @@ class QIRPass:
         for function in filter(lambda f: is_entry_point(f), module.functions):
             self._on_function(function)
         module.verify()
+        self._builder = None
 
     def _on_function(self, function: Function) -> None:
         """

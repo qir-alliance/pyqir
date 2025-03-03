@@ -19,8 +19,8 @@ def test_elimination_pass() -> None:
     ir_before = read_file("resources/test_passes_before.ll")
     module = pyqir.Module.from_ir(pyqir.Context(), ir_before)
 
-    # Create a pass by inheriting from QIRPass
-    class RemoveH(pyqir.QIRPass):
+    # Create a pass by inheriting from QirModuleVisitor
+    class RemoveH(pyqir.QirModuleVisitor):
         def _on_qis_h(self, call: pyqir.Call, target: pyqir.Value) -> None:
             call.erase()
 
@@ -34,11 +34,11 @@ def test_duplicate_gate_with_builder() -> None:
     ir_before = read_file("resources/test_passes_before.ll")
     module = pyqir.Module.from_ir(pyqir.Context(), ir_before)
 
-    # Create a pass by inheriting from QIRPass
-    class DuplicateH(pyqir.QIRPass):
+    # Create a pass by inheriting from QirModuleVisitor
+    class DuplicateH(pyqir.QirModuleVisitor):
         def _on_qis_h(self, call: pyqir.Call, target: pyqir.Value) -> None:
-            self._builder.insert_before(call)
-            self._builder.call(call.callee, call.args)
+            self.builder.insert_before(call)
+            self.builder.call(call.callee, call.args)
 
     DuplicateH().run(module)
     ir_transformed = str(module)
@@ -50,14 +50,14 @@ def test_reorder_gates_with_builder() -> None:
     ir_before = read_file("resources/test_passes_before.ll")
     module = pyqir.Module.from_ir(pyqir.Context(), ir_before)
 
-    # Create a pass by inheriting from QIRPass
-    class ReverseOrder(pyqir.QIRPass):
+    # Create a pass by inheriting from QirModuleVisitor
+    class ReverseOrder(pyqir.QirModuleVisitor):
         def _on_block(self, block: pyqir.BasicBlock) -> None:
             self.gates: List[pyqir.Call] = []
             super()._on_block(block)
-            self._builder.insert_before(block.instructions[0])
+            self.builder.insert_before(block.instructions[0])
             for gate in reversed(self.gates):
-                self._builder.instr(gate)
+                self.builder.instr(gate)
 
         def _on_qis_h(self, call: pyqir.Call, target: pyqir.Value) -> None:
             self.gates.append(call)
