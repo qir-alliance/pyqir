@@ -28,12 +28,12 @@ class QIRPass:
     can be used to create new instructions and types for use in transformations on the module.
     """
 
-    _builder: Optional[Builder] = None
+    _builder: Builder
     """
     The builder instance used to create new instructions and types for the current module, if any.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initializes the QIR pass. Base implementation does nothing.
         """
@@ -72,7 +72,6 @@ class QIRPass:
         for function in filter(lambda f: is_entry_point(f), module.functions):
             self._on_function(function)
         module.verify()
-        self._builder = None
 
     def _on_function(self, function: Function) -> None:
         """
@@ -109,6 +108,7 @@ class QIRPass:
         """
         opcode = instruction.opcode
         if opcode == Opcode.CALL:
+            assert isinstance(instruction, Call)
             self._on_call_instr(instruction)
         else:
             pass
