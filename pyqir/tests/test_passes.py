@@ -73,3 +73,33 @@ def test_reorder_gates_with_builder() -> None:
     ir_transformed = str(module)
     ir_after = read_file("resources/test_passes_reverse_after.ll")
     assert ir_transformed == ir_after
+
+
+def test_multtiple_blocks_traversed_in_order() -> None:
+    context = pyqir.Context()
+    module = pyqir.SimpleModule("test_multiple_blocks", 1, 1, context=context)
+    qis = pyqir.BasicQisBuilder(module.builder)
+    qis.mz(module.qubits[0], module.results[0])
+    qis.if_result(
+        module.results[0],
+        one=lambda: qis.x(module.qubits[0]),
+        zero=lambda: qis.y(module.qubits[0]),
+    )
+
+    class VisitBlocks(pyqir.QirModuleVisitor):
+        def __init__(self) -> None:
+            self.visited_blocks: List[pyqir.BasicBlock] = []
+            super().__init__()
+
+        def _on_block(self, block: pyqir.BasicBlock) -> None:
+            self.visited_blocks.append(block)
+
+    visitor = VisitBlocks()
+    visitor.run(pyqir.Module.from_bitcode(context, module.bitcode()))
+    assert len(visitor.visited_blocks) == 4
+    assert [block.name for block in visitor.visited_blocks] == [
+        "entry",
+        "then",
+        "else",
+        "continue",
+    ]
