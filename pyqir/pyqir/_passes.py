@@ -98,6 +98,9 @@ class QirModuleVisitor:
         for block in blocks:
             to_visit[block] = block
             if block.terminator is not None:
+                # Note: successors are in reverse order in the QIR, so to visit in a
+                # topological order for programs that happen to be a Directed Acyclic Graph,
+                # we need to reverse the order of successors.
                 for b in reversed(block.terminator.successors):
                     if b not in to_visit:
                         blocks.append(b)
