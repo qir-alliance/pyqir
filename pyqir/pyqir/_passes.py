@@ -141,6 +141,8 @@ class QirModuleVisitor:
             self._on_qis_cy(call, call.args[0], call.args[1])
         elif callee_name == "__quantum__qis__cz__body":
             self._on_qis_cz(call, call.args[0], call.args[1])
+        elif callee_name == "__quantum__qis__swap__body":
+            self._on_qis_swap(call, call.args[0], call.args[1])
         elif callee_name == "__quantum__qis__rx__body":
             self._on_qis_rx(call, call.args[0], call.args[1])
         elif callee_name == "__quantum__qis__rxx__body":
@@ -215,6 +217,12 @@ class QirModuleVisitor:
     def _on_qis_cz(self, call: Call, ctrl: Value, target: Value) -> None:
         """
         Invoked for each call instruction to a CZ gate in a basic block.
+        """
+        pass
+
+    def _on_qis_swap(self, call: Call, target1: Value, target2: Value) -> None:
+        """
+        Invoked for each call instruction to a SWAP gate in a basic block.
         """
         pass
 
