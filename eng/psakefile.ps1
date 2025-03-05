@@ -14,7 +14,6 @@ Properties {
     $VscodeSettingsJson = Join-Path $Root .vscode settings.json
     $DocsRoot = Join-Path $Root docs
     $DocsBuild = Join-Path $DocsRoot _build
-    $AuditWheelTag = "manylinux_2_31_x86_64"
     $Python = Resolve-Python
 }
 
@@ -66,7 +65,7 @@ task pyqir -depends init {
     if (Test-CommandExists auditwheel) {
         $unauditedWheels = Get-Wheels pyqir
         Invoke-LoggedCommand { auditwheel show $unauditedWheels }
-        Invoke-LoggedCommand { auditwheel repair --wheel-dir $Wheels --plat $AuditWheelTag $unauditedWheels }
+        Invoke-LoggedCommand { auditwheel repair --wheel-dir $Wheels --plat (Get-AuditWheelTag($Python)) $unauditedWheels }
         $unauditedWheels | Remove-Item
     }
 }

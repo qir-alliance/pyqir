@@ -10,6 +10,7 @@ use crate::{
     },
 };
 
+use core::ffi::c_char;
 use llvm_sys::LLVMAttributeFunctionIndex;
 
 #[allow(clippy::wildcard_imports)]
@@ -194,7 +195,8 @@ unsafe fn mz(module: LLVMModuleRef) -> LLVMValueRef {
 
     let function = declare_qis(module, "mz", Functor::Body, ty);
     let attr_name = "writeonly";
-    let kind_id = LLVMGetEnumAttributeKindForName(attr_name.as_ptr().cast::<i8>(), attr_name.len());
+    let kind_id =
+        LLVMGetEnumAttributeKindForName(attr_name.as_ptr().cast::<c_char>(), attr_name.len());
     let attr = LLVMCreateEnumAttribute(context, kind_id, 0);
     let result_param_index = 2; // indices are 1 based.
     LLVMAddAttributeAtIndex(function, result_param_index, attr);
@@ -208,9 +210,9 @@ unsafe fn add_irreversible_attr(context: LLVMContextRef, function: LLVMValueRef)
     let irreversable = "irreversible";
     let irreversable_attr = LLVMCreateStringAttribute(
         context,
-        irreversable.as_ptr().cast::<i8>(),
+        irreversable.as_ptr().cast::<c_char>(),
         irreversable.len() as u32,
-        "".as_ptr().cast::<i8>(),
+        "".as_ptr().cast::<c_char>(),
         0,
     );
     LLVMAddAttributeAtIndex(function, LLVMAttributeFunctionIndex, irreversable_attr);
