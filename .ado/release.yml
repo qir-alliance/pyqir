@@ -162,13 +162,8 @@ extends:
             displayName: Install build dependencies
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
 
-          # on mariner we need to install:
-          # ld with binutils
-          # crt1.o and others with glibc-devel
-          # std lib headers with kernel-headers
-          # ninja and cmake for building LLVM
           - script: |
-              sudo tdnf install binutils glibc-devel kernel-headers ninja-build cmake -y
+              sudo tdnf ninja-build cmake -y
             displayName: Install c++ build tools on mariner
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
 
@@ -181,6 +176,16 @@ extends:
               choco install --accept-license -y ninja
             displayName: Install build dependencies
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), ne(variables.CACHE_RESTORED, 'true'))
+
+          # on mariner we need to install:
+          # ld with binutils
+          # crt1.o and others with glibc-devel
+          # std lib headers with kernel-headers
+          # ninja and cmake for building LLVM
+          - script: |
+              sudo tdnf install binutils glibc-devel kernel-headers -y
+            displayName: Install c++ build tools on mariner
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
 
           # build and install LLVM
 
