@@ -81,7 +81,9 @@ class QirModuleVisitor:
             self._on_function(function)
         for function in filter(lambda f: is_entry_point(f), module.functions):
             self._on_function(function)
-        module.verify()
+        err = module.verify()
+        if err is not None:
+            raise ValueError(err)
         self._builder = None
 
     def _on_function(self, function: Function) -> None:
