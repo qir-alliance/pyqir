@@ -2164,6 +2164,42 @@ Destroys the supplied module.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="pyqir.QirModuleVisitor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">QirModuleVisitor</span></span><a class="headerlink" href="#pyqir.QirModuleVisitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Base class for all QIR passes that visits each ofthe underlying components of the module.
+A QIR visitor can be used to analyze or transform a QIR module. Each method in the visitor pattern
+where each method corresponds to a specific QIR construct that it can handle. A specific pass can be
+implemented by subclassing this class and overriding the methods of interest. The default implementation
+of each method does nothing besides calling the corresponding methods on its constituent parts, traversing
+the remainder of the module.</p>
+<p>When invoked on a module, this base class initializes a <cite>Builder</cite> instance in the <cite>_builder</cite> member that
+can be used to create new instructions and types for use in transformations on the module.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyqir.QirModuleVisitor.builder">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">builder</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pyqir.Builder" title="pyqir.Builder"><span class="pre">Builder</span></a></em><a class="headerlink" href="#pyqir.QirModuleVisitor.builder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the builder instance used to create new instructions and types for the current module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The builder instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyqir.QirModuleVisitor.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyqir.Module" title="pyqir.Module"><span class="pre">Module</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#pyqir.QirModuleVisitor.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies this pass to the given QIR. The pass is applied in-place to the given module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>qir</strong> – The QIR to apply the pass to as a <cite>Module</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="pyqir.SimpleModule">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">SimpleModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_qubits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyqir.Context" title="pyqir.Context"><span class="pre">Context</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entry_point_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'main'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.SimpleModule" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
@@ -3072,6 +3108,11 @@ Destroys the supplied module.</p>
 <li><a class="reference internal" href="#pyqir.PointerType"><code class="docutils literal notranslate"><span class="pre">PointerType</span></code></a><ul>
 <li><a class="reference internal" href="#pyqir.PointerType.address_space"><code class="docutils literal notranslate"><span class="pre">PointerType.address_space</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.PointerType.pointee"><code class="docutils literal notranslate"><span class="pre">PointerType.pointee</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pyqir.QirModuleVisitor"><code class="docutils literal notranslate"><span class="pre">QirModuleVisitor</span></code></a><ul>
+<li><a class="reference internal" href="#pyqir.QirModuleVisitor.builder"><code class="docutils literal notranslate"><span class="pre">QirModuleVisitor.builder</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.QirModuleVisitor.run"><code class="docutils literal notranslate"><span class="pre">QirModuleVisitor.run()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#pyqir.SimpleModule"><code class="docutils literal notranslate"><span class="pre">SimpleModule</span></code></a><ul>
