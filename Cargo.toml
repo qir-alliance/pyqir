@@ -4,7 +4,7 @@ resolver = "2"
 
 [workspace.package]
 authors = ["Microsoft"]
-version = "0.10.6"
+version = "0.10.7"
 edition = "2021"
 license = "MIT"
 homepage = "https://github.com/qir-alliance/pyqir"
