@@ -67,7 +67,9 @@ class QirModuleVisitor:
         for the module's context. This `Builder` instance can be used to create new instructions and types
         for use in transformations on the module.
         """
-        module.verify()
+        err = module.verify()
+        if err is not None:
+            raise ValueError(err)
         self._builder = Builder(module.context)
         for function in filter(
             lambda f: not is_entry_point(f) and len(f.basic_blocks) == 0,
