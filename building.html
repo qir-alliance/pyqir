@@ -252,11 +252,11 @@
 <section id="requirements">
 <h3>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
-<li><p><a class="reference external" href="https://rustup.rs/">Rust 1.64+</a></p></li>
-<li><p><a class="reference external" href="https://www.python.org">Python 3.7+</a></p></li>
+<li><p><a class="reference external" href="https://rustup.rs/">Rust 1.84+</a></p></li>
+<li><p><a class="reference external" href="https://www.python.org">Python 3.8+</a></p></li>
 <li><p><a class="reference external" href="https://github.com/powershell/powershell#get-powershell">PowerShell 7+
 (Core)</a></p></li>
-<li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 13.0.1</a> - See <a class="reference internal" href="#installing-llvm"><span class="std std-ref">Installing LLVM</span></a></p></li>
+<li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 14.0.6</a> - See <a class="reference internal" href="#installing-llvm"><span class="std std-ref">Installing LLVM</span></a></p></li>
 <li><p>If compiling LLVM from source:</p>
 <ul>
 <li><p><a class="reference external" href="https://github.com/Kitware/CMake/releases/tag/v3.10.3">CMake 3.10+</a></p></li>
@@ -302,7 +302,7 @@ path.</p>
 </section>
 <section id="macos">
 <h3>MacOS<a class="headerlink" href="#macos" title="Permalink to this heading">¶</a></h3>
-<p>Install Python 3.7+ from <a class="reference external" href="https://www.python.org/downloads/macos/">Python.org</a>.</p>
+<p>Install Python 3.8+ from <a class="reference external" href="https://www.python.org/downloads/">Python.org</a>.</p>
 <p>or brew:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;python@3.9&#39;</span>
 python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>maturin~<span class="o">=</span><span class="m">1</span>.7.8
@@ -316,14 +316,14 @@ python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </sp
 <ul>
 <li><p>Linux (Ubuntu 22.04)</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>apt-get<span class="w"> </span>update
-apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>clang-13<span class="w"> </span>lldb-13<span class="w"> </span>lld-11<span class="w"> </span>clangd-13
-apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>--no-install-recommends<span class="w"> </span>ninja-build<span class="w"> </span>clang-tidy-13<span class="w"> </span>build-essential
+apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>clang-14<span class="w"> </span>lldb-14<span class="w"> </span>lld-14<span class="w"> </span>clangd-14
+apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>--no-install-recommends<span class="w"> </span>ninja-build<span class="w"> </span>clang-tidy-14<span class="w"> </span>cmake<span class="w"> </span>build-essential
 </pre></div>
 </div>
 </li>
 <li><p>Windows</p>
 <ul class="simple">
-<li><p>Download and install the <code class="docutils literal notranslate"><span class="pre">LLVM-13.0.1-win64.exe</span></code> from the <a class="reference external" href="https://github.com/llvm/llvm-project/releases/tag/llvmorg-13.0.1">13.0.1
+<li><p>Download and install the <code class="docutils literal notranslate"><span class="pre">LLVM-14.0.6-win64.exe</span></code> from the <a class="reference external" href="https://github.com/llvm/llvm-project/releases/tag/llvmorg-14.0.6">14.0.6
 Release</a>
 page.</p></li>
 <li><p>This package only contains the Clang components. There is no package that
@@ -401,7 +401,7 @@ be linked into the rest of the build.</p>
 <h3>Packaging<a class="headerlink" href="#packaging" title="Permalink to this heading">¶</a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">build.ps1</span></code>, <code class="docutils literal notranslate"><span class="pre">maturin</span></code> builds all generate Python wheels to the
 <code class="docutils literal notranslate"><span class="pre">target/wheels</span></code> folder. The default Python3 installation will be used targeting
-Python ABI 3.7.</p>
+Python ABI 3.8.</p>
 </section>
 </section>
 </section>
