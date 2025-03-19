@@ -4,11 +4,11 @@
 
 ### Requirements
 
-- [Rust 1.64+](https://rustup.rs/)
-- [Python 3.7+](https://www.python.org)
+- [Rust 1.84+](https://rustup.rs/)
+- [Python 3.8+](https://www.python.org)
 - [PowerShell 7+
   (Core)](https://github.com/powershell/powershell#get-powershell)
-- [LLVM/Clang 13.0.1](https://llvm.org/) - See [](#installing-llvm)
+- [LLVM/Clang 14.0.6](https://llvm.org/) - See [](#installing-llvm)
 - If compiling LLVM from source:
   - [CMake 3.10+](https://github.com/Kitware/CMake/releases/tag/v3.10.3)
   - [Ninja 1.10.0+](https://ninja-build.org/)
@@ -49,7 +49,7 @@ Install Rust from [rustup](https://rustup.rs/).
 
 ### MacOS
 
-Install Python 3.7+ from [Python.org](https://www.python.org/downloads/macos/).
+Install Python 3.8+ from [Python.org](https://www.python.org/downloads/).
 
 or brew:
 
@@ -68,13 +68,13 @@ You can install Clang manually:
 
   ```bash
   apt-get update
-  apt-get install -y clang-13 lldb-13 lld-11 clangd-13
-  apt-get install -y --no-install-recommends ninja-build clang-tidy-13 build-essential
+  apt-get install -y clang-14 lldb-14 lld-14 clangd-14
+  apt-get install -y --no-install-recommends ninja-build clang-tidy-14 cmake build-essential
   ```
 
 - Windows
-  - Download and install the `LLVM-13.0.1-win64.exe` from the [13.0.1
-    Release](https://github.com/llvm/llvm-project/releases/tag/llvmorg-13.0.1)
+  - Download and install the `LLVM-14.0.6-win64.exe` from the [14.0.6
+    Release](https://github.com/llvm/llvm-project/releases/tag/llvmorg-14.0.6)
     page.
   - This package only contains the Clang components. There is no package that
     contains Clang and LLVM.
@@ -150,4 +150,4 @@ be linked into the rest of the build.
 
 The `build.ps1`, `maturin` builds all generate Python wheels to the
 `target/wheels` folder. The default Python3 installation will be used targeting
-Python ABI 3.7.
+Python ABI 3.8.
