@@ -103,3 +103,29 @@ def test_multtiple_blocks_traversed_in_order() -> None:
         "else",
         "continue",
     ]
+
+
+def test_distinguishing_m_vs_mz() -> None:
+    ir = read_file("resources/test_passes_distinguish_m.ll")
+    module = pyqir.Module.from_ir(pyqir.Context(), ir)
+
+    class CountMeas(pyqir.QirModuleVisitor):
+        def __init__(self) -> None:
+            self.m_count = 0
+            self.mz_count = 0
+            super().__init__()
+
+        def _on_qis_m(
+            self, call: pyqir.Call, target: pyqir.Value, result: pyqir.Value
+        ) -> None:
+            self.m_count += 1
+
+        def _on_qis_mz(
+            self, call: pyqir.Call, target: pyqir.Value, result: pyqir.Value
+        ) -> None:
+            self.mz_count += 1
+
+    visitor = CountMeas()
+    visitor.run(module)
+    assert visitor.m_count == 2
+    assert visitor.mz_count == 1
