@@ -187,32 +187,6 @@ task package-llvm {
     }
 }
 
-task run-examples-in-containers {
-    $user = Get-LinuxContainerUserName
-    $uid = Get-LinuxContainerUserId
-    $gid = Get-LinuxContainerGroupId
-
-    foreach ($release in @("bullseye", "bookworm", "focal", "jammy")) {
-        exec -workingDirectory (Join-Path $Root eng) {
-            Get-Content Dockerfile.examples | docker build `
-                --build-arg RELEASE=$release `
-                --build-arg USERNAME=$user `
-                --build-arg USER_UID=$uid `
-                --build-arg USER_GID=$gid `
-                --tag pyqir-$release-examples `
-                -
-        }
-
-        exec {
-            docker run --rm `
-                --user $user `
-                --volume ${Root}:/home/$user `
-                pyqir-$release-examples `
-                build.ps1 -t run-examples
-        }
-    }
-}
-
 # run-examples assumes the wheels have already been installed locally
 task run-examples {
     exec -workingDirectory $Examples {

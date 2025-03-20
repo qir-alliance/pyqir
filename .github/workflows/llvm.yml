@@ -19,7 +19,7 @@ jobs:
       matrix:
         config:
           - {
-              os: "ubuntu-20.04",
+              os: "ubuntu-22.04",
               arch: "amd64",
               env: {},
             }
@@ -46,7 +46,7 @@ jobs:
           submodules: 'recursive'
       - name: Linux - Install build dependencies, ccache, ninja
         run: sudo apt-get install -y ccache ninja-build
-        if: ${{ matrix.config.os == 'ubuntu-20.04' }}
+        if: ${{ matrix.config.os == 'ubuntu-22.04' }}
       - name: Windows - Install build dependencies, sccache, ninja
         run: choco install --accept-license -y sccache ninja
         if: ${{ matrix.config.os == 'windows-2019' }}
