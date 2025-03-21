@@ -32,7 +32,7 @@ runs:
     - name: Linux - Install build dependencies, ninja
       run: sudo apt-get install -y ninja-build
       shell: pwsh
-      if: ${{ (inputs.os == 'ubuntu-20.04') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
+      if: ${{ (inputs.os == 'ubuntu-22.04') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
     - name: Windows - Install build dependencies, ninja
       run: |
         choco install --accept-license -y ninja

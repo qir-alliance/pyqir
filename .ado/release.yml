@@ -40,7 +40,7 @@ parameters:
   default:
   - name: linux_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
-    imageName: 'ubuntu-20.04'
+    imageName: 'ubuntu-22.04'
     os: linux
     arch: x86_64
   - name: linux_aarch64

@@ -60,7 +60,7 @@ task pyqir -depends init {
     Invoke-LoggedCommand { & $Python -m pip --verbose wheel --config-settings=build-args="$configSettings" --wheel-dir $Wheels $Pyqir }
 
     if ($IsLinux) {
-        Invoke-LoggedCommand { & $Python -m pip install auditwheel patchelf }
+        Invoke-LoggedCommand { & $Python -m pip install auditwheel==6.3.0 patchelf==0.17.2.2 }
     }
     if (Test-CommandExists auditwheel) {
         $unauditedWheels = Get-Wheels pyqir
@@ -183,32 +183,6 @@ task package-llvm {
     finally {
         if ($clear_pkg_dest_var) {
             Remove-Item -Path Env:QIRLIB_PKG_DEST
-        }
-    }
-}
-
-task run-examples-in-containers {
-    $user = Get-LinuxContainerUserName
-    $uid = Get-LinuxContainerUserId
-    $gid = Get-LinuxContainerGroupId
-
-    foreach ($release in @("bullseye", "bookworm", "focal", "jammy")) {
-        exec -workingDirectory (Join-Path $Root eng) {
-            Get-Content Dockerfile.examples | docker build `
-                --build-arg RELEASE=$release `
-                --build-arg USERNAME=$user `
-                --build-arg USER_UID=$uid `
-                --build-arg USER_GID=$gid `
-                --tag pyqir-$release-examples `
-                -
-        }
-
-        exec {
-            docker run --rm `
-                --user $user `
-                --volume ${Root}:/home/$user `
-                pyqir-$release-examples `
-                build.ps1 -t run-examples
         }
     }
 }

@@ -5,7 +5,7 @@
 ### Requirements
 
 - [Rust 1.84+](https://rustup.rs/)
-- [Python 3.8+](https://www.python.org)
+- [Python 3.9+](https://www.python.org)
 - [PowerShell 7+
   (Core)](https://github.com/powershell/powershell#get-powershell)
 - [LLVM/Clang 14.0.6](https://llvm.org/) - See [](#installing-llvm)
@@ -26,7 +26,7 @@ Install python and libs:
 ```bash
 sudo apt-get install -y --no-install-recommends python3-dev python3-pip
 python3 -m pip install --user -U pip
-python3 -m pip install --user maturin~=1.7.8
+python3 -m pip install --user maturin~=1.8.3
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
@@ -42,20 +42,20 @@ path.
 In a command prompt:
 
 ```bash
-python -m pip install --user maturin~=1.7.8
+python -m pip install --user maturin~=1.8.3
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
 
 ### MacOS
 
-Install Python 3.8+ from [Python.org](https://www.python.org/downloads/).
+Install Python 3.9+ from [Python.org](https://www.python.org/downloads/).
 
 or brew:
 
 ```bash
 brew install 'python@3.9'
-python -m pip install --user maturin~=1.7.8
+python -m pip install --user maturin~=1.8.3
 ```
 
 Install Rust from [rustup](https://rustup.rs/).
@@ -150,4 +150,4 @@ be linked into the rest of the build.
 
 The `build.ps1`, `maturin` builds all generate Python wheels to the
 `target/wheels` folder. The default Python3 installation will be used targeting
-Python ABI 3.8.
+Python ABI 3.9.
