@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="./">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="pyqir" href="api/pyqir.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2024.08.06 -->
+    <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
         <title>Building from Source - PyQIR documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=354aac6f" />
@@ -246,14 +246,14 @@
         </div>
         <article role="main" id="furo-main-content">
           <section id="building-from-source">
-<h1>Building from Source<a class="headerlink" href="#building-from-source" title="Permalink to this heading">¶</a></h1>
+<h1>Building from Source<a class="headerlink" href="#building-from-source" title="Link to this heading">¶</a></h1>
 <section id="local-environment">
-<h2>Local Environment<a class="headerlink" href="#local-environment" title="Permalink to this heading">¶</a></h2>
+<h2>Local Environment<a class="headerlink" href="#local-environment" title="Link to this heading">¶</a></h2>
 <section id="requirements">
-<h3>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading">¶</a></h3>
+<h3>Requirements<a class="headerlink" href="#requirements" title="Link to this heading">¶</a></h3>
 <ul class="simple">
 <li><p><a class="reference external" href="https://rustup.rs/">Rust 1.84+</a></p></li>
-<li><p><a class="reference external" href="https://www.python.org">Python 3.8+</a></p></li>
+<li><p><a class="reference external" href="https://www.python.org">Python 3.9+</a></p></li>
 <li><p><a class="reference external" href="https://github.com/powershell/powershell#get-powershell">PowerShell 7+
 (Core)</a></p></li>
 <li><p><a class="reference external" href="https://llvm.org/">LLVM/Clang 14.0.6</a> - See <a class="reference internal" href="#installing-llvm"><span class="std std-ref">Installing LLVM</span></a></p></li>
@@ -266,7 +266,7 @@
 </ul>
 </section>
 <section id="optional">
-<h3>Optional<a class="headerlink" href="#optional" title="Permalink to this heading">¶</a></h3>
+<h3>Optional<a class="headerlink" href="#optional" title="Link to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>If building LLVM from source, either of these is highly recommended:</p>
 <ul>
@@ -277,17 +277,17 @@
 </ul>
 </section>
 <section id="linux-ubuntu">
-<h3>Linux (Ubuntu)<a class="headerlink" href="#linux-ubuntu" title="Permalink to this heading">¶</a></h3>
+<h3>Linux (Ubuntu)<a class="headerlink" href="#linux-ubuntu" title="Link to this heading">¶</a></h3>
 <p>Install python and libs:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>--no-install-recommends<span class="w"> </span>python3-dev<span class="w"> </span>python3-pip
 python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>-U<span class="w"> </span>pip
-python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>maturin~<span class="o">=</span><span class="m">1</span>.7.8
+python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>maturin~<span class="o">=</span><span class="m">1</span>.8.3
 </pre></div>
 </div>
 <p>Install Rust from <a class="reference external" href="https://rustup.rs/">rustup</a>.</p>
 </section>
 <section id="windows">
-<h3>Windows<a class="headerlink" href="#windows" title="Permalink to this heading">¶</a></h3>
+<h3>Windows<a class="headerlink" href="#windows" title="Link to this heading">¶</a></h3>
 <p>Install Python 3.7+ from one of the following and make sure it is added to the
 path.</p>
 <ul class="simple">
@@ -295,23 +295,23 @@ path.</p>
 <li><p><a class="reference external" href="https://www.python.org/downloads/">Python.org</a></p></li>
 </ul>
 <p>In a command prompt:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>maturin~<span class="o">=</span><span class="m">1</span>.7.8
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>maturin~<span class="o">=</span><span class="m">1</span>.8.3
 </pre></div>
 </div>
 <p>Install Rust from <a class="reference external" href="https://rustup.rs/">rustup</a>.</p>
 </section>
 <section id="macos">
-<h3>MacOS<a class="headerlink" href="#macos" title="Permalink to this heading">¶</a></h3>
-<p>Install Python 3.8+ from <a class="reference external" href="https://www.python.org/downloads/">Python.org</a>.</p>
+<h3>MacOS<a class="headerlink" href="#macos" title="Link to this heading">¶</a></h3>
+<p>Install Python 3.9+ from <a class="reference external" href="https://www.python.org/downloads/">Python.org</a>.</p>
 <p>or brew:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;python@3.9&#39;</span>
-python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>maturin~<span class="o">=</span><span class="m">1</span>.7.8
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>maturin~<span class="o">=</span><span class="m">1</span>.8.3
 </pre></div>
 </div>
 <p>Install Rust from <a class="reference external" href="https://rustup.rs/">rustup</a>.</p>
 </section>
 <section id="installing-clang-and-ninja">
-<h3>Installing Clang and Ninja<a class="headerlink" href="#installing-clang-and-ninja" title="Permalink to this heading">¶</a></h3>
+<h3>Installing Clang and Ninja<a class="headerlink" href="#installing-clang-and-ninja" title="Link to this heading">¶</a></h3>
 <p>You can install Clang manually:</p>
 <ul>
 <li><p>Linux (Ubuntu 22.04)</p>
@@ -338,14 +338,14 @@ contains Clang and LLVM.</p></li>
 </ul>
 </section>
 <section id="installing-llvm">
-<h3>Installing LLVM<a class="headerlink" href="#installing-llvm" title="Permalink to this heading">¶</a></h3>
+<h3>Installing LLVM<a class="headerlink" href="#installing-llvm" title="Link to this heading">¶</a></h3>
 <p>The build scripts will automatically download an LLVM toolchain which is
 detailed in the <a class="reference internal" href="#development"><span class="std std-ref">Development</span></a> section. The build installs the toolchain to
 <code class="docutils literal notranslate"><span class="pre">target/llvm-&lt;version&gt;</span></code>.</p>
 </section>
 </section>
 <section id="development">
-<h2>Development<a class="headerlink" href="#development" title="Permalink to this heading">¶</a></h2>
+<h2>Development<a class="headerlink" href="#development" title="Link to this heading">¶</a></h2>
 <p>To initialize your local environment and build
 the solution, run</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./build.ps1
@@ -378,7 +378,7 @@ build the project and run Rust tests.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">test</span> <span class="pre">--release</span> <span class="pre">&lt;features&gt;</span></code>: Build and run the Rust cdylib tests in release mode</p></li>
 </ul>
 <section id="environment-variables">
-<h3>Environment Variables<a class="headerlink" href="#environment-variables" title="Permalink to this heading">¶</a></h3>
+<h3>Environment Variables<a class="headerlink" href="#environment-variables" title="Link to this heading">¶</a></h3>
 <p>For those directly consuming <code class="docutils literal notranslate"><span class="pre">qirlib</span></code>, refer to the
 <a class="reference external" href="https://github.com/qir-alliance/pyqir/blob/main/qirlib/README.md#environment-variables">Environment variables</a>
 section of it’s README as the following constraints do not apply.</p>
@@ -398,10 +398,10 @@ according to what the environment has configured. This will allow LLVM to
 be linked into the rest of the build.</p>
 </section>
 <section id="packaging">
-<h3>Packaging<a class="headerlink" href="#packaging" title="Permalink to this heading">¶</a></h3>
+<h3>Packaging<a class="headerlink" href="#packaging" title="Link to this heading">¶</a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">build.ps1</span></code>, <code class="docutils literal notranslate"><span class="pre">maturin</span></code> builds all generate Python wheels to the
 <code class="docutils literal notranslate"><span class="pre">target/wheels</span></code> folder. The default Python3 installation will be used targeting
-Python ABI 3.8.</p>
+Python ABI 3.9.</p>
 </section>
 </section>
 </section>
@@ -480,9 +480,9 @@ Python ABI 3.8.</p>
       
     </aside>
   </div>
-</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=b3ba4146"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+</div><script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=5fa4622c"></script>
     </body>
 </html>

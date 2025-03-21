@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="./">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="API Reference" href="api/index.html" /><link rel="prev" title="PyQIR" href="index.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2024.08.06 -->
+    <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
         <title>Upgrading PyQIR - PyQIR documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=354aac6f" />
@@ -246,15 +246,15 @@
         </div>
         <article role="main" id="furo-main-content">
           <section id="upgrading-pyqir">
-<h1>Upgrading PyQIR<a class="headerlink" href="#upgrading-pyqir" title="Permalink to this heading">¶</a></h1>
+<h1>Upgrading PyQIR<a class="headerlink" href="#upgrading-pyqir" title="Link to this heading">¶</a></h1>
 <section id="pyqir-0-8">
-<h2>PyQIR 0.8<a class="headerlink" href="#pyqir-0-8" title="Permalink to this heading">¶</a></h2>
+<h2>PyQIR 0.8<a class="headerlink" href="#pyqir-0-8" title="Link to this heading">¶</a></h2>
 <p>PyQIR 0.7 was the last version of PyQIR to support QIR evaluation. Simulation of QIR is now available via the <a class="reference external" href="https://github.com/qir-alliance/qir-runner"><code class="docutils literal notranslate"><span class="pre">qir-runner</span></code></a> sparse simulator.</p>
 </section>
 <section id="pyqir-0-7">
-<h2>PyQIR 0.7<a class="headerlink" href="#pyqir-0-7" title="Permalink to this heading">¶</a></h2>
+<h2>PyQIR 0.7<a class="headerlink" href="#pyqir-0-7" title="Link to this heading">¶</a></h2>
 <section id="packages">
-<h3>Packages<a class="headerlink" href="#packages" title="Permalink to this heading">¶</a></h3>
+<h3>Packages<a class="headerlink" href="#packages" title="Link to this heading">¶</a></h3>
 <p>PyQIR 0.6 was the last version of PyQIR to use three packages (<code class="docutils literal notranslate"><span class="pre">pyqir-evaluator</span></code>, <code class="docutils literal notranslate"><span class="pre">pyqir-generator</span></code>, and <code class="docutils literal notranslate"><span class="pre">pyqir-parser</span></code>) and a metapackage (<code class="docutils literal notranslate"><span class="pre">pyqir</span></code>).
 PyQIR 0.7 instead uses only a single package (<code class="docutils literal notranslate"><span class="pre">pyqir</span></code>) that has the functionality of all previous packages.</p>
 <p>If you imported the <code class="docutils literal notranslate"><span class="pre">pyqir.generator</span></code> or <code class="docutils literal notranslate"><span class="pre">pyqir.parser</span></code> modules, then the same or an equivalent API is available in the <code class="docutils literal notranslate"><span class="pre">pyqir</span></code> module.
@@ -262,9 +262,9 @@ If you imported the <code class="docutils literal notranslate"><span class="pre"
 </section>
 </section>
 <section id="generator">
-<h2>Generator<a class="headerlink" href="#generator" title="Permalink to this heading">¶</a></h2>
+<h2>Generator<a class="headerlink" href="#generator" title="Link to this heading">¶</a></h2>
 <section id="ir-and-bitcode-conversion">
-<h3>IR and bitcode conversion<a class="headerlink" href="#ir-and-bitcode-conversion" title="Permalink to this heading">¶</a></h3>
+<h3>IR and bitcode conversion<a class="headerlink" href="#ir-and-bitcode-conversion" title="Link to this heading">¶</a></h3>
 <p>The functions <code class="docutils literal notranslate"><span class="pre">bitcode_to_ir</span></code> and <code class="docutils literal notranslate"><span class="pre">ir_to_bitcode</span></code> were removed because the new <code class="docutils literal notranslate"><span class="pre">Module</span></code> class has the same functionality.
 <code class="docutils literal notranslate"><span class="pre">Module</span></code> supports both parsing and generating QIR.
 For example, instead of:</p>
@@ -291,7 +291,7 @@ For example, instead of:</p>
 </div>
 </section>
 <section id="types">
-<h3>Types<a class="headerlink" href="#types" title="Permalink to this heading">¶</a></h3>
+<h3>Types<a class="headerlink" href="#types" title="Link to this heading">¶</a></h3>
 <p>If you generated programs with externally-linked functions, then you used the <code class="docutils literal notranslate"><span class="pre">pyqir.generator.types</span></code> module to describe the type of the functions.
 This module has been removed.
 Types need to be created differently because they now directly contain LLVM type objects, which require an LLVM context.</p>
@@ -351,18 +351,18 @@ For example:</p>
 </section>
 </section>
 <section id="parser">
-<h2>Parser<a class="headerlink" href="#parser" title="Permalink to this heading">¶</a></h2>
+<h2>Parser<a class="headerlink" href="#parser" title="Link to this heading">¶</a></h2>
 <p>PyQIR 0.7 unified parsing and code generation into a single API that is designed to support both.
 This makes PyQIR much more powerful and will enable workflows that involve inspecting, running passes on, or otherwise transforming QIR that is parsed or generated using PyQIR.
 This means that the API for <code class="docutils literal notranslate"><span class="pre">pyqir-parser</span></code> had to be completely redesigned, which unfortunately makes upgrading challenging.
 Here are some tips.</p>
 <section id="modules">
-<h3>Modules<a class="headerlink" href="#modules" title="Permalink to this heading">¶</a></h3>
+<h3>Modules<a class="headerlink" href="#modules" title="Link to this heading">¶</a></h3>
 <p>Use <code class="docutils literal notranslate"><span class="pre">Module.from_bitcode</span></code> or <code class="docutils literal notranslate"><span class="pre">Module.from_ir</span></code> instead of the <code class="docutils literal notranslate"><span class="pre">QirModule</span></code> constructor.
 See <a class="reference internal" href="#ir-and-bitcode-conversion">IR and bitcode conversion</a>.</p>
 </section>
 <section id="entry-points-and-interop-friendly-functions">
-<h3>Entry points and interop-friendly functions<a class="headerlink" href="#entry-points-and-interop-friendly-functions" title="Permalink to this heading">¶</a></h3>
+<h3>Entry points and interop-friendly functions<a class="headerlink" href="#entry-points-and-interop-friendly-functions" title="Link to this heading">¶</a></h3>
 <p>Instead of <code class="docutils literal notranslate"><span class="pre">QirModule.entrypoint_funcs</span></code>, <code class="docutils literal notranslate"><span class="pre">QirModule.interop_funcs</span></code>, or <code class="docutils literal notranslate"><span class="pre">QirModule.get_funcs_by_attr</span></code>, filter the <code class="docutils literal notranslate"><span class="pre">Module.functions</span></code> list instead.
 For example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">entry_point</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="n">pyqir</span><span class="o">.</span><span class="n">is_entry_point</span><span class="p">,</span> <span class="n">module</span><span class="o">.</span><span class="n">functions</span><span class="p">))</span>
@@ -371,7 +371,7 @@ For example:</p>
 </div>
 </section>
 <section id="instructions">
-<h3>Instructions<a class="headerlink" href="#instructions" title="Permalink to this heading">¶</a></h3>
+<h3>Instructions<a class="headerlink" href="#instructions" title="Link to this heading">¶</a></h3>
 <p>The instruction class hierarchy was trimmed down significantly.
 Most subclasses of <code class="docutils literal notranslate"><span class="pre">QirInstr</span></code> were removed.
 The surviving subclasses are <code class="docutils literal notranslate"><span class="pre">Call</span></code>, <code class="docutils literal notranslate"><span class="pre">FCmp</span></code>, <code class="docutils literal notranslate"><span class="pre">ICmp</span></code>, <code class="docutils literal notranslate"><span class="pre">Phi</span></code> and <code class="docutils literal notranslate"><span class="pre">Switch</span></code>.</p>
@@ -381,18 +381,18 @@ Use the <code class="docutils literal notranslate"><span class="pre">opcode</spa
 For example, if you have a terminator instruction <code class="docutils literal notranslate"><span class="pre">term</span></code>, then you can get the instructions of its first successor with <code class="docutils literal notranslate"><span class="pre">term.successors[0].instructions</span></code>.</p>
 </section>
 <section id="qubit-and-result-ids">
-<h3>Qubit and result IDs<a class="headerlink" href="#qubit-and-result-ids" title="Permalink to this heading">¶</a></h3>
+<h3>Qubit and result IDs<a class="headerlink" href="#qubit-and-result-ids" title="Link to this heading">¶</a></h3>
 <p>In PyQIR 0.6, <code class="docutils literal notranslate"><span class="pre">QirQubitConstant</span></code> and <code class="docutils literal notranslate"><span class="pre">QirResultConstant</span></code> were subclasses of <code class="docutils literal notranslate"><span class="pre">QirOperand</span></code>.
 Instead, you can try to extract a static qubit or result ID from any value using <code class="docutils literal notranslate"><span class="pre">pyqir.qubit_id(value)</span></code> and <code class="docutils literal notranslate"><span class="pre">pyqir.result_id(value)</span></code>.
 If the value isn’t the right kind, it will return <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
 </section>
 <section id="strings">
-<h3>Strings<a class="headerlink" href="#strings" title="Permalink to this heading">¶</a></h3>
+<h3>Strings<a class="headerlink" href="#strings" title="Link to this heading">¶</a></h3>
 <p>In PyQIR 0.6, you could read a global string constant from a string value using <code class="docutils literal notranslate"><span class="pre">QirModule.get_global_bytes_value(value)</span></code>.
 This is possible now using <code class="docutils literal notranslate"><span class="pre">pyqir.extract_byte_string(value)</span></code>.</p>
 </section>
 <section id="examples">
-<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h3>
+<h3>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h3>
 <p>To see examples of how the new parser API can be used, take a look at <a class="reference external" href="https://github.com/qir-alliance/pyqir/blob/53e4aebfdb456e9603fae28543a8391075021a9f/pyqir/tests/test_parser.py">test_parser.py</a>.
 You can also compare it with <a class="reference external" href="https://github.com/qir-alliance/pyqir/blob/v0.6.2/pyqir-parser/tests/test_parser_api.py">test_parser_api.py</a> from PyQIR 0.6 for a before-and-after view of the same test cases using both the old and new APIs.</p>
 </section>
@@ -485,9 +485,9 @@ You can also compare it with <a class="reference external" href="https://github.
       
     </aside>
   </div>
-</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=b3ba4146"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+</div><script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=5fa4622c"></script>
     </body>
 </html>
