@@ -150,6 +150,35 @@ pub unsafe fn required_num_results(function: LLVMValueRef) -> Option<u64> {
     }
 }
 
+#[cfg(feature = "llvm18-1")]
+pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef {
+    let context = LLVMGetModuleContext(module);
+    let string = LLVMConstStringInContext(
+        context,
+        value.as_ptr().cast(),
+        value.len().try_into().unwrap(),
+        0,
+    );
+
+    let len = LLVMGetArrayLength2(LLVMTypeOf(string));
+    let i8_ty = LLVMInt8TypeInContext(context);
+    let ty = LLVMArrayType2(LLVMInt8TypeInContext(context), len);
+    let global = LLVMAddGlobal(module, ty, raw_cstr!(""));
+    LLVMSetLinkage(global, LLVMLinkage::LLVMInternalLinkage);
+    LLVMSetGlobalConstant(global, 1);
+    LLVMSetInitializer(global, string);
+
+    let zero = LLVMConstNull(LLVMInt32TypeInContext(context));
+    let mut indices = [zero, zero];
+    LLVMConstGEP2(
+        i8_ty,
+        global,
+        indices.as_mut_ptr(),
+        indices.len().try_into().unwrap(),
+    )
+}
+
+#[cfg(feature = "llvm19-1")]
 pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let string = LLVMConstStringInContext2(context, value.as_ptr().cast(), value.len(), 0);
