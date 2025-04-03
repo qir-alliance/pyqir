@@ -44,8 +44,13 @@ pub mod llvm_sys {
     /// Lazily searches for or compiles LLVM as configured by the environment
     /// variables.
     pub fn llvm_config(arg: &str) -> String {
-        llvm_config_ex(&*LLVM_CONFIG_PATH.clone().unwrap(), arg)
-            .expect("Surprising failure from llvm-config")
+        llvm_config_ex(
+            &*LLVM_CONFIG_PATH
+                .clone()
+                .expect("should have configured location of llvm-config"),
+            arg,
+        )
+        .expect("Surprising failure from llvm-config")
     }
 
     /// Invoke the specified binary as llvm-config.
