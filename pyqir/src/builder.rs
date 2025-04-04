@@ -77,6 +77,31 @@ impl Builder {
         Ok(())
     }
 
+    /// Tells this builder to insert subsequent instructions after the given instruction.
+    ///
+    /// :param Value instr: The instruction to insert after.
+    /// :rtype: None
+    #[pyo3(text_signature = "(instr)")]
+    fn insert_after(&mut self, py: Python, instr: &Value) -> PyResult<()> {
+        let owner = Owner::merge(py, [&self.owner, instr.owner()])?;
+        if *owner.context(py).borrow(py) != *self.owner.context(py).borrow(py) {
+            Err(PyValueError::new_err(
+                "Instruction is not from the same context as builder.",
+            ))?;
+        }
+
+        unsafe {
+            let next_instr = LLVMGetNextInstruction(instr.cast().as_ptr());
+            if next_instr.is_null() {
+                let block = LLVMGetInstructionParent(instr.cast().as_ptr());
+                LLVMPositionBuilderAtEnd(self.cast().as_ptr(), block);
+            } else {
+                LLVMPositionBuilderBefore(self.cast().as_ptr(), next_instr);
+            }
+        }
+        Ok(())
+    }
+
     /// Inserts the given instruction.
     fn instr(&mut self, py: Python, instr: &Value) -> PyResult<()> {
         let owner = Owner::merge(py, [&self.owner, instr.owner()])?;

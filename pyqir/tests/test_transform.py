@@ -28,13 +28,14 @@ def test_reordering_instrs() -> None:
     x_instr = module.entry_block.instructions[0]
     y_instr = module.entry_block.instructions[1]
     z_instr = module.entry_block.instructions[2]
-    builder.insert_before(x_instr)
-    y_instr.remove()
-    builder.instr(y_instr)
     builder.insert_before(y_instr)
     z_instr.remove()
     builder.instr(z_instr)
-    builder.insert_at_end(module.entry_block)
+    builder.insert_after(y_instr)
+    x_instr.remove()
+    builder.instr(x_instr)
+    # Inserting after the last instruction will be equivalent to `insert_at_end` on the block.
+    builder.insert_after(x_instr)
     after_ir = module.ir()
     file = os.path.join(os.path.dirname(__file__), "resources/test_reordering_after.ll")
     expected = Path(file).read_text()

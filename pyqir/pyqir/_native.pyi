@@ -151,6 +151,14 @@ class Builder:
         """
         ...
 
+    def insert_after(self, instr: Instruction) -> None:
+        """
+        Tells the builder to insert subsequent instructions after the given instruction.
+
+        :param inst: The instruction to insert after.
+        """
+        ...
+
     def instr(self, instr: Instruction) -> None:
         """
         Inserts an instruction into the current block.
