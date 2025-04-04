@@ -756,6 +756,20 @@ true and false callables should use this module’s builder to build instruction
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pyqir.Builder.insert_after">
+<span class="sig-name descname"><span class="pre">insert_after</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.insert_after" title="Link to this definition">¶</a></dt>
+<dd><p>Tells this builder to insert subsequent instructions after the given instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>instr</strong> (<a class="reference internal" href="#pyqir.Value" title="pyqir.Value"><em>Value</em></a>) – The instruction to insert after.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pyqir.Builder.insert_at_end">
 <span class="sig-name descname"><span class="pre">insert_at_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.Builder.insert_at_end" title="Link to this definition">¶</a></dt>
 <dd><p>Tells this builder to insert subsequent instructions at the end of the block.</p>
@@ -2885,6 +2899,7 @@ can be used to create new instructions and types for use in transformations on t
 <li><a class="reference internal" href="#pyqir.Builder.condbr"><code class="docutils literal notranslate"><span class="pre">Builder.condbr()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.icmp"><code class="docutils literal notranslate"><span class="pre">Builder.icmp()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.if_"><code class="docutils literal notranslate"><span class="pre">Builder.if_()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.Builder.insert_after"><code class="docutils literal notranslate"><span class="pre">Builder.insert_after()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.insert_at_end"><code class="docutils literal notranslate"><span class="pre">Builder.insert_at_end()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.insert_before"><code class="docutils literal notranslate"><span class="pre">Builder.insert_before()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.Builder.instr"><code class="docutils literal notranslate"><span class="pre">Builder.instr()</span></code></a></li>
