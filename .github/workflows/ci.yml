@@ -37,7 +37,7 @@ jobs:
       - name: Setup rust toolchain
         uses: ./.github/actions/rust-toolchain
         with:
-          toolchain: 1.84
+          toolchain: 1.86
           components: rustfmt clippy
       - shell: pwsh
         run: |

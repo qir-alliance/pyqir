@@ -343,7 +343,7 @@ impl Builder {
             let mut args = args
                 .iter()
                 .zip(param_types)
-                .map(|(arg, ty)| arg.to_value(ty).map_err(Into::into))
+                .map(|(arg, ty)| arg.to_value(ty))
                 .collect::<PyResult<Vec<_>>>()?;
 
             #[allow(deprecated)]
