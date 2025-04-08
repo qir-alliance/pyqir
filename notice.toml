@@ -5,5 +5,5 @@ accepted = [
     "Apache-2.0 WITH LLVM-exception",
     "BSD-3-Clause",
     "MIT",
-    "Unicode-DFS-2016",
+    "Unicode-3.0",
 ]
