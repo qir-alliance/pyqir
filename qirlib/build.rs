@@ -14,8 +14,6 @@ mod external;
 use external::llvm_sys;
 
 extern crate cc;
-#[macro_use]
-extern crate lazy_static;
 
 // Make sure one version of llvm features is used
 #[cfg(all(
@@ -270,7 +268,7 @@ fn link_llvm() {
     // Export information to other crates
     println!(
         "cargo:config_path={}",
-        llvm_sys::LLVM_CONFIG_PATH.clone().unwrap().display()
+        llvm_sys::llvm_config_path().clone().unwrap().display()
     ); // will be DEP_QIRLIB_CONFIG_PATH
     println!("cargo:libdir={}", libdir); // DEP_QIRLIB_LIBDIR
 
