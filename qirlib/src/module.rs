@@ -304,10 +304,10 @@ pub unsafe fn compile_wasm(module: LLVMModuleRef) -> Result<Vec<u8>, String> {
     write_raw_wasm_to_file(module, &raw_wasm_path)?;
 
     let entry_point = choose_entry_point(get_functions(module).into_iter(), None)?;
-    if entry_point == "main" {
-        // we can't have an entry point named "main" because it will conflict with llvm internals
-        return Err("Entry point cannot be named 'main'".to_string());
-    }
+    // if entry_point == "main" {
+    //     // we can't have an entry point named "main" because it will conflict with llvm internals
+    //     return Err("Entry point cannot be named 'main'".to_string());
+    // }
     if entry_point == "" {
         return Err("No entry point found".to_string());
     }
