@@ -16,6 +16,8 @@ llvm-sys-120 = { package = "llvm-sys", version = "120.3", optional = true }
 llvm-sys-130 = { package = "llvm-sys", version = "130.1", optional = true }
 llvm-sys-140 = { package = "llvm-sys", version = "140.1", optional = true }
 llvm-sys-150 = { package = "llvm-sys", version = "150.2", optional = true }
+tempfile = { workspace = true }
+
 
 [dev-dependencies]
 normalize-line-endings = "0.3"

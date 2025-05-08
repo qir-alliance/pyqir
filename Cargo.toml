@@ -13,3 +13,4 @@ repository = "https://github.com/qir-alliance/pyqir"
 [workspace.dependencies]
 const-str = "0.6"
 pyo3 = { version = "0.24", features = ["abi3-py39", "extension-module"] }
+tempfile = "3.19"

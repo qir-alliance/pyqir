@@ -679,6 +679,11 @@ class Module:
         """The LLVM bitcode for this module."""
         ...
 
+    def wasm(self) -> bytes:
+        """The web assembly for this module."""
+        ...
+
+
     @property
     def context(self) -> Context:
         """The LLVM context."""
