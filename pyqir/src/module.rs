@@ -196,8 +196,8 @@ impl Module {
     #[pyo3(text_signature = "()")]
     fn raw_wasm<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
         unsafe {
-            let buffer = qirlib::module::raw_wasm(self.cast().as_ptr())
-                .map_err(|error| PyValueError::new_err(error))?;
+            let buffer =
+                qirlib::module::raw_wasm(self.cast().as_ptr()).map_err(PyValueError::new_err)?;
 
             Ok(PyBytes::new(py, &buffer[..]))
         }
@@ -207,7 +207,7 @@ impl Module {
     fn wasm<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
         unsafe {
             let buffer = qirlib::module::compile_wasm(self.cast().as_ptr())
-                .map_err(|error| PyValueError::new_err(error))?;
+                .map_err(PyValueError::new_err)?;
 
             Ok(PyBytes::new(py, &buffer[..]))
         }

@@ -30,18 +30,15 @@ pub(crate) fn ensure_init() {
 use llvm_sys::{
     analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
     core::{
-        LLVMConstInt, LLVMConstIntGetZExtValue, 
-         LLVMDisposeMessage,
-        LLVMGetFirstFunction, LLVMGetModuleContext, LLVMGetModuleFlag, LLVMGetNextFunction,
-        LLVMGetValueName2, LLVMInt1TypeInContext, LLVMInt32TypeInContext, LLVMMetadataAsValue,
-         LLVMValueAsMetadata,
+        LLVMConstInt, LLVMConstIntGetZExtValue, LLVMDisposeMessage, LLVMGetFirstFunction,
+        LLVMGetModuleContext, LLVMGetModuleFlag, LLVMGetNextFunction, LLVMGetValueName2,
+        LLVMInt1TypeInContext, LLVMInt32TypeInContext, LLVMMetadataAsValue, LLVMValueAsMetadata,
     },
     prelude::{LLVMMetadataRef, LLVMModuleRef, LLVMValueRef},
     target::{
         LLVMInitializeWebAssemblyAsmParser, LLVMInitializeWebAssemblyAsmPrinter,
         LLVMInitializeWebAssemblyDisassembler, LLVMInitializeWebAssemblyTarget,
         LLVMInitializeWebAssemblyTargetInfo, LLVMInitializeWebAssemblyTargetMC,
-
     },
     target_machine::{
         LLVMCodeGenFileType, LLVMCodeGenOptLevel, LLVMCodeModel, LLVMCreateTargetMachine,
@@ -193,7 +190,7 @@ fn to_c_str(mut s: &str) -> Cow<'_, CStr> {
         return Cow::from(CString::new(s).expect("CString::new failed"));
     }
 
-    unsafe { Cow::from(CStr::from_ptr(s.as_ptr() as *const _)) }
+    unsafe { Cow::from(CStr::from_ptr(s.as_ptr().cast())) }
 }
 
 pub unsafe fn verify(module: LLVMModuleRef) -> Option<String> {
@@ -252,9 +249,9 @@ pub unsafe fn write_raw_wasm_to_file(module: LLVMModuleRef, file_path: &str) -> 
             triple.as_ptr().cast(),
             null(),
             null(),
-            level.into(),
-            reloc_mode.into(),
-            code_model.into(),
+            level,
+            reloc_mode,
+            code_model,
         )
     };
 
@@ -308,7 +305,7 @@ pub unsafe fn compile_wasm(module: LLVMModuleRef) -> Result<Vec<u8>, String> {
     //     // we can't have an entry point named "main" because it will conflict with llvm internals
     //     return Err("Entry point cannot be named 'main'".to_string());
     // }
-    if entry_point == "" {
+    if entry_point.is_empty() {
         return Err("No entry point found".to_string());
     }
 
@@ -318,7 +315,7 @@ pub unsafe fn compile_wasm(module: LLVMModuleRef) -> Result<Vec<u8>, String> {
 
     // build up and convert the args to a format that can be passed to the linker
     //let entry_arg = format!("--entry={entry_point}");
-    let entry_arg = format!("--no-entry");
+    let entry_arg = "--no-entry".to_string();
     let args = [
         "pyqir-wasm-ld",
         &entry_arg,
@@ -337,7 +334,10 @@ pub unsafe fn compile_wasm(module: LLVMModuleRef) -> Result<Vec<u8>, String> {
         .collect::<Vec<*const std::ffi::c_char>>();
 
     // call the linker inproc
-    let (res, out, err) = link_wasm_wrapper(args.len() as i32, args.as_ptr());
+    let (res, out, err) = link_wasm_wrapper(
+        i32::try_from(args.len()).expect("could not convert number of args"),
+        args.as_ptr(),
+    );
     if !out.is_empty() {
         use std::io::Write;
         std::io::stdout().write_all(out.as_bytes()).unwrap();
@@ -351,10 +351,7 @@ pub unsafe fn compile_wasm(module: LLVMModuleRef) -> Result<Vec<u8>, String> {
             );
         }
 
-        let msg = format!(
-            "Failed to link wasm {res:?}: \nstdout:\n{}\n\nstderr:\n{}",
-            out, err
-        );
+        let msg = format!("Failed to link wasm {res:?}: \nstdout:\n{out}\n\nstderr:\n{err}");
         return Err(msg);
     } else if !err.is_empty() {
         use std::io::Write;
@@ -371,6 +368,8 @@ pub unsafe fn compile_wasm(module: LLVMModuleRef) -> Result<Vec<u8>, String> {
     Ok(buffer)
 }
 
+#[must_use]
+#[allow(clippy::similar_names)]
 pub unsafe fn link_wasm_wrapper(
     argc: i32,
     argv: *const *const std::ffi::c_char,
@@ -385,22 +384,22 @@ pub unsafe fn link_wasm_wrapper(
 }
 
 unsafe fn extract_string_allocated_by_llvm(ptr: *mut i8) -> String {
-    let err_string = if !ptr.is_null() {
+    let err_string = if ptr.is_null() {
+        String::new()
+    } else {
         let err_cstr = CStr::from_ptr(ptr);
         let err_string = err_cstr.to_str().unwrap().to_string();
         LLVMDisposeMessage(ptr);
         err_string
-    } else {
-        String::new()
     };
     err_string
 }
 
-unsafe fn choose_entry_point<'ctx>(
+unsafe fn choose_entry_point(
     functions: impl Iterator<Item = LLVMValueRef>,
     name: Option<&str>,
 ) -> Result<String, String> {
-    fn get_name<'ctx>(f: LLVMValueRef) -> Result<String, String> {
+    fn get_name(f: LLVMValueRef) -> Result<String, String> {
         let mut len = 0;
         unsafe {
             let name = LLVMGetValueName2(f, &mut len).cast();
@@ -409,10 +408,7 @@ unsafe fn choose_entry_point<'ctx>(
         }
     }
     let mut entry_points = functions.filter(|f| {
-        is_entry_point(f.clone())
-            && name
-                .iter()
-                .all(|n| get_name(f.clone()) == Ok(n.to_string()))
+        is_entry_point(*f) && name.iter().all(|n| get_name(*f) == Ok((*n).to_string()))
     });
 
     let entry_point = entry_points

@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use std::io::stdout;
-
 use llvm_sys::prelude::{LLVMMetadataRef, LLVMModuleRef, LLVMValueRef};
 
 #[repr(C)]

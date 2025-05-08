@@ -133,7 +133,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else {
         println!("No LLVM linking");
     }
-    
+
     if !cfg!(feature = "no-llvm-linking") {
         link_ldd();
         compile_llvm_wrapper()?;
