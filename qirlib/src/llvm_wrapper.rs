@@ -17,6 +17,13 @@ pub enum LLVMRustModFlagBehavior {
     Min = 8,
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct SafeReturn {
+    pub ret: i32,
+    pub can_run_again: bool,
+}
+
 extern "C" {
     /// Add a module-level flag to the module-level flags metadata if it doesn't already exist.
     pub fn LLVMRustAddModuleFlag(
@@ -27,4 +34,10 @@ extern "C" {
         Val: LLVMMetadataRef,
     );
     pub fn LLVMRustExtractMDConstant(Val: LLVMValueRef) -> LLVMValueRef;
+    pub fn safeLldMainWrapper(
+        argc: i32,
+        argv: *const *const std::ffi::c_char,
+        stdout: *mut *mut std::ffi::c_char,
+        stderr: *mut *mut std::ffi::c_char,
+    ) -> SafeReturn;
 }

@@ -11,15 +11,11 @@ use crate::{
 };
 use core::mem::forget;
 use core::slice;
+
 #[allow(clippy::wildcard_imports, deprecated)]
 use llvm_sys::{
-    analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
-    bit_reader::LLVMParseBitcodeInContext,
-    bit_writer::LLVMWriteBitcodeToMemoryBuffer,
-    core::*,
-    ir_reader::LLVMParseIRInContext,
-    linker::LLVMLinkModules2,
-    LLVMLinkage, LLVMModule,
+    bit_reader::LLVMParseBitcodeInContext, bit_writer::LLVMWriteBitcodeToMemoryBuffer, core::*,
+    ir_reader::LLVMParseIRInContext, linker::LLVMLinkModules2, LLVMLinkage, LLVMModule,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use qirlib::{context::set_diagnostic_handler, module::FlagBehavior};
@@ -197,6 +193,26 @@ impl Module {
         }
     }
 
+    #[pyo3(text_signature = "()")]
+    fn raw_wasm<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        unsafe {
+            let buffer =
+                qirlib::module::raw_wasm(self.cast().as_ptr()).map_err(PyValueError::new_err)?;
+
+            Ok(PyBytes::new(py, &buffer[..]))
+        }
+    }
+
+    #[pyo3(text_signature = "()")]
+    fn wasm<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        unsafe {
+            let buffer = qirlib::module::compile_wasm(self.cast().as_ptr())
+                .map_err(PyValueError::new_err)?;
+
+            Ok(PyBytes::new(py, &buffer[..]))
+        }
+    }
+
     /// The LLVM context.
     ///
     /// :type: Context
@@ -262,16 +278,7 @@ impl Module {
     /// :returns: An error description if this module is invalid or `None` if this module is valid.
     /// :rtype: typing.Optional[str]
     fn verify(&self) -> Option<String> {
-        unsafe {
-            let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
-            let mut error = ptr::null_mut();
-            if LLVMVerifyModule(self.cast().as_ptr(), action, &mut error) == 0 {
-                None
-            } else {
-                let error = Message::from_raw(error);
-                Some(error.to_str().unwrap().to_string())
-            }
-        }
+        unsafe { qirlib::module::verify(self.cast().as_ptr()) }
     }
 
     /// Converts this module into an LLVM IR string.

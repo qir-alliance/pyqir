@@ -73,7 +73,7 @@ task pyqir -depends init {
 task test {
     $packages = Get-Wheels pyqir | ForEach-Object { "$_[test]" }
     Invoke-LoggedCommand { & $Python -m pip install --force-reinstall $packages }
-    Invoke-LoggedCommand -workingDirectory $Pyqir { pytest }
+    Invoke-LoggedCommand -workingDirectory $Pyqir { pytest -v -s }
 }
 
 task wheelhouse -precondition { -not (Test-Path (Join-Path $Wheels *.whl)) } {

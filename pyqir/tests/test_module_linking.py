@@ -15,10 +15,15 @@ from pyqir import (
     Module,
 )
 
+def read_bin_file(file_name: str) -> bytes:
+    return Path(current_dir / file_name).read_bytes()
+
 
 def read_file(file_name: str) -> str:
     return Path(current_dir / file_name).read_text(encoding="utf-8")
 
+def write_file(file_name: str, content: bytes) -> None:
+    Path(current_dir / file_name).write_bytes(content)
 
 def get_int_flag_value(module: Module, flag_name: str) -> int:
     flag = module.get_flag(flag_name)
@@ -28,6 +33,77 @@ def get_int_flag_value(module: Module, flag_name: str) -> int:
     return flag.value.value
 
 
+def test_compile_bv_to_raw_wasm() -> None:
+    context = Context()
+    ir = read_file("bv.ll")
+    dest = Module.from_ir(context, ir)
+    raw_wasm = dest.raw_wasm()
+
+    assert raw_wasm is not None
+   
+    write_file("bv_raw.wasm", raw_wasm)
+
+def test_compile_bv_to_wasm() -> None:
+    context = Context()
+    ir = read_file("bv.ll")
+    dest = Module.from_ir(context, ir)
+
+    wasm = dest.wasm()
+
+    assert wasm is not None
+  
+    write_file("bv.wasm", wasm)
+
+def test_compile_gate_calls_to_raw_wasm() -> None:
+    context = Context()
+    ir = read_file("gate_calls_10000.ll")
+    dest = Module.from_ir(context, ir)
+    msg = dest.verify()
+    print(msg)
+    raw_wasm = dest.raw_wasm()
+
+    assert raw_wasm is not None
+
+    write_file("gate_calls_raw_10000.wasm", raw_wasm)
+
+
+def test_compile_gate_calls_to_wasm() -> None:
+    context = Context()
+    ir = read_file("gate_calls_10000.ll")
+    dest = Module.from_ir(context, ir)
+    msg = dest.verify()
+    print(msg)
+    wasm = dest.wasm()
+
+    assert wasm is not None
+
+    write_file("gate_calls_10000.wasm", wasm)
+
+# def test_compile_gate_calls_to_raw_wasm() -> None:
+#     context = Context()
+#     ir = read_file("gate_calls.ll")
+#     dest = Module.from_ir(context, ir)
+#     msg = dest.verify()
+#     print(msg)
+#     raw_wasm = dest.raw_wasm()
+
+#     assert raw_wasm is not None
+
+#     write_file("gate_calls_raw.wasm", raw_wasm)
+
+
+# def test_compile_gate_calls_to_wasm() -> None:
+#     context = Context()
+#     ir = read_file("gate_calls.ll")
+#     dest = Module.from_ir(context, ir)
+#     msg = dest.verify()
+#     print(msg)
+#     wasm = dest.wasm()
+
+#     assert wasm is not None
+  
+#     write_file("gate_calls.wasm", wasm)
+    
 def test_link_modules_with_same_context() -> None:
     context = Context()
     ir = read_file("random_bit.ll")
