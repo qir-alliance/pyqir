@@ -38,7 +38,7 @@ runs:
         choco install --accept-license -y ninja
         choco uninstall -y llvm
       shell: pwsh
-      if: ${{ (inputs.os == 'windows-2019') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
+      if: ${{ (inputs.os == 'windows-2022') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
     - name: MacOS - Install build dependencies, ninja
       run: brew install ninja
       shell: pwsh

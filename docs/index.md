@@ -34,8 +34,8 @@ Tier 2 systems are likely to work and may be compatible with the binaries publis
 
 - Ubuntu 22.04
 - Debian 11
-- macOS 12
-- Windows Server 2019
+- macOS 14
+- Windows Server 2022
 
 ### Tier 2
 
