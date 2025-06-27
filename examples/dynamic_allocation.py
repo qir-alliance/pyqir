@@ -94,5 +94,13 @@ builder.if_(result_is_one, lambda: qis.reset(qubit))
 # Be sure to release any allocated qubits when you're done with them.
 builder.call(qubit_release, [qubit])
 
+# Add the termination of the entry point function.
+_ = builder.ret(None)
+
+# Verify the module and print it
+error = mod.verify()
+if error is not None:
+    raise ValueError(error)
+
 if __name__ == "__main__":
     print(str(mod))
