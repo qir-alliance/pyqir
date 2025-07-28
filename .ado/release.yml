@@ -10,7 +10,7 @@ trigger:
     include:
     - main
 
-# Run the pipeline every day at 6:00 AM to ensure
+# Run the pipeline every day at 5:00 AM to ensure
 # codeql and other governance checks are up-to-date.
 schedules:
 - cron: "0 5 * * *"
@@ -26,6 +26,9 @@ variables:
   RUST_TOOLCHAIN_VERSION: "1.86"
   PYTHON_VERSION: "3.11"
   LLVM_VERSION: 14
+  # use this to invalidate the cache. Any time we update the OS
+  # image, we should increment this to ensure that the cache is rebuilt.
+  CACHE_COUNTER: 0
 
 resources:
   repositories:
@@ -45,7 +48,7 @@ parameters:
     arch: x86_64
   - name: linux_aarch64
     poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
-    imageName: 'mariner-2.0-arm64'
+    imageName: 'azurelinux-3.0-arm64'
     os: linux
     arch: aarch64
   - name: mac_universal
@@ -118,7 +121,18 @@ extends:
           - task: UsePythonVersion@0
             inputs:
               versionSpec: $(PYTHON_VERSION)
+            displayName: Install Python $(PYTHON_VERSION)
             condition: ne(variables['arch'], 'aarch64')
+
+          # UsePythonVersion@0 does not support aarch64, so we install Python manually
+          # using tdnf on Azure Linux 3.0 aarch64
+          # We also need alias python3 as python
+          - script: |
+              sudo tdnf install python3-3.12.9 python3-pip-24.2 -y
+              sudo alternatives --install /usr/bin/python python /usr/bin/python3 1
+            displayName: Install Python on Azure Linux 3.0 aarch64
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
+
           # Build or restore LLVM
           - pwsh: New-Item -ItemType Directory -Path $(LLVM_DIRECTORY) -Force
             displayName: Ensure cache dir exists
@@ -126,8 +140,8 @@ extends:
 
           - task: Cache@2
             inputs:
-              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
-              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
+              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
+              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
               path: $(LLVM_DIRECTORY)
               cacheHitVar: CACHE_RESTORED
             displayName: Cache LLVM
@@ -163,8 +177,8 @@ extends:
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
-              sudo tdnf ninja-build cmake -y
-            displayName: Install c++ build tools on mariner
+              sudo tdnf install ninja-build cmake -y
+            displayName: Install c++ build tools on Azure Linux 3.0 aarch64
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
@@ -177,14 +191,15 @@ extends:
             displayName: Install build dependencies
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), ne(variables.CACHE_RESTORED, 'true'))
 
-          # on mariner we need to install:
+          # on Azure Linux 3.0 aarch64 we need to install:
           # ld with binutils
           # crt1.o and others with glibc-devel
           # std lib headers with kernel-headers
           # ninja and cmake for building LLVM
+          # Azure Linux 3.0 does not have cc so we need to install gcc
           - script: |
-              sudo tdnf install binutils glibc-devel kernel-headers -y
-            displayName: Install c++ build tools on mariner
+              sudo tdnf install binutils glibc-devel kernel-headers gcc -y
+            displayName: Install c++ build tools on Azure Linux 3.0 aarch64
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
 
           # build and install LLVM
