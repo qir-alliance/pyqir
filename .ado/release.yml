@@ -86,6 +86,8 @@ extends:
             os: ${{ target.os }}
             ${{ if eq(target.arch, 'aarch64') }}:
               hostArchitecture: Arm64
+            ${{ if eq(target.arch, 'universal') }}:
+              hostArchitecture: Arm64
           variables:
             arch: ${{ target.arch }}
             ${{ if target.ARCHFLAGS }}:
