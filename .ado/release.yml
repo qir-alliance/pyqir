@@ -57,7 +57,7 @@ parameters:
     os: macOS
     arch: universal
     ARCHFLAGS: '-arch arm64 -arch x86_64'
-    additionalRustTargets: aarch64-apple-darwin
+    additionalRustTargets: x86_64-apple-darwin
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
     imageName: 'windows-latest'
@@ -166,7 +166,7 @@ extends:
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
-              sudo tdnf ninja-build cmake -y
+              sudo tdnf install ninja-build cmake -y
             displayName: Install c++ build tools on mariner
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
 
