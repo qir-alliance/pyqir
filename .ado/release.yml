@@ -53,7 +53,7 @@ parameters:
     arch: aarch64
   - name: mac_universal
     poolName: 'Azure Pipelines'
-    imageName: 'macOS-latest'
+    imageName: 'macOS-15'
     os: macOS
     arch: universal
     ARCHFLAGS: '-arch arm64 -arch x86_64'
