@@ -197,6 +197,21 @@ extends:
             condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), ne(variables['Agent.OS'], 'Darwin'))
 
           - script: |
+              system_profiler SPSoftwareDataType SPHardwareDataType
+              sw_vers && sysctl -n machdep.cpu.brand_string && uname -m
+
+              sw_vers
+
+              sysctl -n machdep.cpu.brand_string
+              sysctl -n hw.ncpu
+              sysctl -n hw.physicalcpu
+              sysctl -n hw.logicalcpu
+
+              uname -a
+            displayName: Dump macos system information
+            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), eq(variables['Agent.OS'], 'Darwin'))
+
+          - script: |
               echo "env ARCHFLAGS='$(ARCHFLAGS)' ./build.ps1 -t install-llvm-from-source"
               env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t install-llvm-from-source
             displayName: Build and Install LLVM
