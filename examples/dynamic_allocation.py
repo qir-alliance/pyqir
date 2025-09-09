@@ -18,7 +18,7 @@ context = Context()
 mod = pyqir.qir_module(
     context,
     "dynamic_allocation",
-    qir_major_version=1,
+    qir_major_version=2,
     qir_minor_version=0,
     dynamic_qubit_management=True,
     dynamic_result_management=True,

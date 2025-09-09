@@ -1014,7 +1014,7 @@ def dynamic_result_management(module: Module) -> Optional[bool]:
 def qir_module(
     context: Context,
     name: str,
-    qir_major_version: int = 1,
+    qir_major_version: int = 2,
     qir_minor_version: int = 0,
     dynamic_qubit_management: bool = False,
     dynamic_result_management: bool = False,
