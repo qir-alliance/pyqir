@@ -307,6 +307,7 @@ function install-llvm {
         $env:QIRLIB_CACHE_DIR = $installationDirectory
     }
     try {
+        $env:RUST_BACKTRACE=1
         Invoke-LoggedCommand -wd $qirlibDir {
             cargo build --release --no-default-features --features "$operation-llvm,$feature-no-llvm-linking" -vv
         }
