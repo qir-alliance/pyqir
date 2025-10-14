@@ -179,6 +179,14 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
 
     let target = std::env::var("TARGET").unwrap();
     if target.contains("apple-darwin") {
+        // If the environment variable for LLVM_NATIVE_TOOL_DIR is set,
+        // forward it to cmake. This is useful when cross-compiling
+        // on macOS with a non-native toolchain.
+        if let Ok(tool_dir) = env::var("LLVM_NATIVE_TOOL_DIR") {
+            println!("LLVM_NATIVE_TOOL_DIR environment variable set to: {tool_dir}");
+            config.define("LLVM_NATIVE_TOOL_DIR", tool_dir);
+        }
+
         // On macOS, we need to set the CMAKE_OSX_ARCHITECTURES variable to
         // ensure that the correct architectures are built. This is usually
         // inferred from the target triple, but we need to set it explicitly
