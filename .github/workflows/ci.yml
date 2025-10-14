@@ -42,13 +42,13 @@ jobs:
       - shell: pwsh
         run: |
           rustup target add x86_64-apple-darwin
-        if: ${{ (matrix.config.os == 'macos-14') && (matrix.config.arch == 'universal') }}
+        if: ${{ (matrix.config.os == 'macos-15') && (matrix.config.arch == 'universal') }}
       - uses: actions/checkout@v4
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
           python-version: 3.9
-        if: ${{ matrix.config.os != 'macos-14' }}
+        if: ${{ matrix.config.os != 'macos-15' }}
 
       - name: Install LLVM
         uses: ./.github/actions/install-llvm

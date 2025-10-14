@@ -45,7 +45,7 @@ runs:
     - name: MacOS - Install build dependencies, ninja
       run: brew install ninja
       shell: pwsh
-      if: ${{ ((inputs.os == 'macos-14')) && (steps.cache-llvm.outputs.cache-hit != 'true') }}
+      if: ${{ ((inputs.os == 'macos-15')) && (steps.cache-llvm.outputs.cache-hit != 'true') }}
 
     - name: Configure long paths
       run: git config --global core.longpaths true

@@ -5,7 +5,7 @@ name: LLVM Weekly
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 0'
+    - cron: "0 0 * * 0"
 
 env:
   CARGO_TERM_COLOR: always
@@ -18,32 +18,18 @@ jobs:
       fail-fast: false
       matrix:
         config:
+          - { os: "ubuntu-22.04", arch: "amd64", env: {} }
+          - { os: "windows-2022", arch: "amd64", env: {} }
+          - { os: "macos-15", arch: "aarch64", env: {} }
           - {
-              os: "ubuntu-22.04",
-              arch: "amd64",
-              env: {},
-            }
-          - {
-              os: "windows-2022",
-              arch: "amd64",
-              env: {},
-            }
-          - {
-              os: "macos-14",
-              arch: "aarch64",
-              env: {},
-            }
-          - {
-              os: "macos-14",
+              os: "macos-15",
               arch: "universal",
-              env: {
-                ARCHFLAGS: "-arch arm64 -arch x86_64"
-              }
+              env: { ARCHFLAGS: "-arch arm64 -arch x86_64" },
             }
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
       - name: Linux - Install build dependencies, ccache, ninja
         run: sudo apt-get install -y ccache ninja-build
         if: ${{ matrix.config.os == 'ubuntu-22.04' }}
@@ -52,7 +38,7 @@ jobs:
         if: ${{ matrix.config.os == 'windows-2022' }}
       - name: MacOS - Install build dependencies, ccache, ninja
         run: brew install ccache ninja
-        if: ${{ matrix.config.os == 'macos-14' }}
+        if: ${{ matrix.config.os == 'macos-15' }}
       - name: Windows - Install LLVM 20.1.8
         run: choco install llvm --version=20.1.8 --allow-downgrade
         if: ${{ matrix.config.os == 'windows-2022' }}
