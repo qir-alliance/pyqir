@@ -162,10 +162,10 @@ extends:
             displayName: Install build dependencies
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
 
-          # - script: |
-          #     sudo tdnf ninja-build cmake -y
-          #   displayName: Install c++ build tools on mariner
-          #   condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
+          - script: |
+              sudo tdnf cmake -y
+            displayName: Install c++ build tools on mariner
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
               brew install ninja
