@@ -25,9 +25,9 @@ jobs:
           - { os: "ubuntu-22.04", arch: "amd64", target: "checks", env: {} }
           - { os: "ubuntu-22.04", arch: "amd64", target: "default", env: {} }
           - { os: "windows-2022", arch: "amd64", target: "default", env: {} }
-          - { os: "macos-14", arch: "aarch64", target: "default", env: {} }
+          - { os: "macos-15", arch: "aarch64", target: "default", env: {} }
           - {
-              os: "macos-14",
+              os: "macos-15",
               arch: "universal",
               target: "default",
               env: { ARCHFLAGS: "-arch arm64 -arch x86_64" },
