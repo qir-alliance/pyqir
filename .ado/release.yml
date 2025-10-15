@@ -194,6 +194,7 @@ extends:
             condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), ne(variables['Agent.OS'], 'Darwin'))
 
           - script: |
+              $(brew --prefix llvm@18)/bin/llvm-tblgen --help
               echo "env ARCHFLAGS='$(ARCHFLAGS)' LLVM_NATIVE_TOOL_DIR='$(brew --prefix llvm@18)/bin' ./build.ps1 -t install-llvm-from-source"
               env ARCHFLAGS="$(ARCHFLAGS)" LLVM_NATIVE_TOOL_DIR="$(brew --prefix llvm@18)/bin" ./build.ps1 -t install-llvm-from-source
             displayName: Build and Install LLVM
