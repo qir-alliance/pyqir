@@ -184,7 +184,8 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
         // on macOS with a non-native toolchain.
         if let Ok(tool_dir) = env::var("LLVM_NATIVE_TOOL_DIR") {
             println!("LLVM_NATIVE_TOOL_DIR environment variable set to: {tool_dir}");
-            config.define("LLVM_NATIVE_TOOL_DIR", tool_dir);
+            config.define("LLVM_NATIVE_TOOL_DIR", &tool_dir);
+            config.define("LLVM_TABLEGEN", format!("{tool_dir}/llvm-tblgen"));
         }
 
         // On macOS, we need to set the CMAKE_OSX_ARCHITECTURES variable to
