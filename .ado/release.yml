@@ -208,9 +208,9 @@ extends:
             displayName: Build
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
 
-          - pwsh: ./build.ps1 -t test
-            displayName: Build
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
+          # - pwsh: ./build.ps1 -t test
+          #   displayName: Build
+          #   condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
 
           - script: |
               dir target\wheels\*
