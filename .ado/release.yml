@@ -48,12 +48,12 @@ parameters:
     imageName: 'mariner-2.0-arm64'
     os: linux
     arch: aarch64
-  - name: mac_universal
+  - name: mac_arm64
     poolName: 'Azure Pipelines'
     imageName: 'macOS-15'
     os: macOS
-    arch: universal
-    ARCHFLAGS: '-arch x86_64 -arch arm64'
+    arch: arm64
+    ARCHFLAGS: '-arch arm64'
     additionalRustTargets: aarch64-apple-darwin
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
