@@ -26,6 +26,9 @@ variables:
   RUST_TOOLCHAIN_VERSION: "1.86"
   PYTHON_VERSION: "3.11"
   LLVM_VERSION: 20
+  # use this to invalidate the cache. Any time we update the OS
+  # image, we should increment this to ensure that the cache is rebuilt.
+  CACHE_COUNTER: 0
 
 resources:
   repositories:
@@ -53,7 +56,7 @@ parameters:
     imageName: 'macOS-15'
     os: macOS
     arch: arm64
-    ARCHFLAGS: '-arch arm64'
+    ARCHFLAGS: '-arch x86_64 -arch arm64'
     additionalRustTargets: aarch64-apple-darwin
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
@@ -126,8 +129,8 @@ extends:
 
           - task: Cache@2
             inputs:
-              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
-              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
+              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
+              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
               path: $(LLVM_DIRECTORY)
               cacheHitVar: CACHE_RESTORED
             displayName: Cache LLVM

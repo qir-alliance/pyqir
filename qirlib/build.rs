@@ -200,11 +200,8 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
                 .join(";");
             if !arches.is_empty() {
                 println!("Setting CMAKE_OSX_ARCHITECTURES to: {arches}");
-                // config.define("CMAKE_OSX_ARCHITECTURES", arches.clone());
-                config.define(
-                    "LLVM_HOST_TRIPLE",
-                    format!("{}-apple-darwin", arches.split(';').next().unwrap()),
-                );
+                config.define("CMAKE_OSX_ARCHITECTURES", arches.clone());
+                config.define("LLVM_HOST_TRIPLE", "arm64-apple-darwin");
             } else {
                 println!(
                     "cargo:warning=ARCHFLAGS environment variable set, but no architectures found."
