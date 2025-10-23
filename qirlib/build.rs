@@ -200,7 +200,7 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
                 .join(";");
             if !arches.is_empty() {
                 println!("Setting CMAKE_OSX_ARCHITECTURES to: {arches}");
-                config.define("CMAKE_OSX_ARCHITECTURES", arches.clone());
+                config.define("CMAKE_OSX_ARCHITECTURES", arches);
                 config.define("LLVM_HOST_TRIPLE", "arm64-apple-darwin");
             } else {
                 println!(
