@@ -55,8 +55,6 @@ parameters:
     poolName: 'AcesShared'
     os: macOS
     arch: arm64
-    demands:
-    - ImageOverride -equals ACES_VM_SharedPool_Sequoia
     ARCHFLAGS: '-arch arm64'
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
@@ -86,6 +84,9 @@ extends:
             os: ${{ target.os }}
             ${{ if eq(target.arch, 'aarch64') }}:
               hostArchitecture: Arm64
+            ${{ if eq(target.os, 'macOS') }}:
+              demands:
+              - ImageOverride -equals ACES_VM_SharedPool_Sequoia
           variables:
             arch: ${{ target.arch }}
             ${{ if target.ARCHFLAGS }}:
