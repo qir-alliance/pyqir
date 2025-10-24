@@ -52,12 +52,12 @@ parameters:
     os: linux
     arch: aarch64
   - name: mac_arm64
-    poolName: 'Azure Pipelines'
-    imageName: 'macOS-15'
+    poolName: 'AcesShared'
     os: macOS
     arch: arm64
-    ARCHFLAGS: '-arch x86_64 -arch arm64'
-    additionalRustTargets: aarch64-apple-darwin
+    demands:
+    - ImageOverride -equals ACES_VM_SharedPool_Sequoia
+    ARCHFLAGS: '-arch arm64'
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
     imageName: 'windows-2022'
