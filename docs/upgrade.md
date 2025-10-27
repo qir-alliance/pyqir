@@ -1,18 +1,18 @@
 # Upgrading PyQIR
 
-## PyQIR 0.11
+## PyQIR 0.12
 
-PyQIR 0.11 is the first version to support LLVM opaque pointers via dependency on LLVM version 18 or higher.
+PyQIR 0.12 is the first version to support LLVM opaque pointers via dependency on LLVM version 18 or higher.
 This version of PyQIR can parse IR or bitcode (.ll or .bc) with either style of pointers, but will always produce
-opaque pointers in any QIR output. Given that, PyQIR 0.11 also produces QIR with major version 2 by default.
+opaque pointers in any QIR output. Given that, PyQIR 0.12 also produces QIR with major version 2 by default.
 If you have need to produce QIR output with major version 1 that uses typed pointers, use PyQIR 0.11 or earlier.
 
 The following table describes the compatibility of PyQIR versions:
 Input | Output | Tooling
 -- | -- | --
-Typed Pointer QIR | Typed Pointer QIR | Use PyQIR 0.10 or earlier
-Typed Pointer QIR | Opaque Pointer QIR | Use PyQIR 0.11 or later
-Opaque Pointer QIR | Opaque Pointer QIR | Use PyQIR 0.11 or later
+Typed Pointer QIR | Typed Pointer QIR | Use PyQIR 0.11 or earlier
+Typed Pointer QIR | Opaque Pointer QIR | Use PyQIR 0.12 or later
+Opaque Pointer QIR | Opaque Pointer QIR | Use PyQIR 0.12 or later
 Opaque Pointer QIR | Typed Pointer QIR | NOT SUPPORTED
 
 ### API Changes
