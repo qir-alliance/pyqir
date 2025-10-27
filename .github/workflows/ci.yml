@@ -48,7 +48,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.9
-        if: ${{ matrix.config.os != 'macos-15' }}
 
       - name: Install LLVM
         uses: ./.github/actions/install-llvm

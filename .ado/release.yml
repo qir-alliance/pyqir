@@ -55,7 +55,7 @@ parameters:
     poolName: 'AcesShared'
     os: macOS
     arch: arm64
-    ARCHFLAGS: '-arch arm64'
+    ARCHFLAGS: '-arch arm64 -arch x86_64'
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
     imageName: 'windows-2022'
@@ -212,9 +212,9 @@ extends:
             displayName: Build
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
 
-          # - pwsh: ./build.ps1 -t test
-          #   displayName: Build
-          #   condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
+          - pwsh: ./build.ps1 -t test
+            displayName: Build
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
 
           - script: |
               dir target\wheels\*
