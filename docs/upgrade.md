@@ -32,7 +32,7 @@ type-generic fashion. The below example (from [examples/bernstein_vazirani.py](.
 demonstrates how to use the existing `PointerType` to check the type of an argument and process its identifier with
 `ptr_id`.
 
-Before update (0.10 or earlier):
+Before update (0.11 or earlier):
 
 ```python
 for arg in inst.args:
@@ -44,7 +44,7 @@ for arg in inst.args:
       args.append(str(arg))
 ```
 
-After update (0.11 or later):
+After update (0.12 or later):
 
 ```python
 for arg in inst.args:

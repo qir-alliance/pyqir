@@ -51,10 +51,10 @@ parameters:
     imageName: 'mariner-2.0-arm64'
     os: linux
     arch: aarch64
-  - name: mac_arm64
+  - name: mac_universal
     poolName: 'AcesShared'
     os: macOS
-    arch: arm64
+    arch: universal
     ARCHFLAGS: '-arch arm64 -arch x86_64'
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
