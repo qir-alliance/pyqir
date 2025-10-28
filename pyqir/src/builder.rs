@@ -346,7 +346,6 @@ impl Builder {
                 .map(|(arg, ty)| arg.to_value(ty))
                 .collect::<PyResult<Vec<_>>>()?;
 
-            #[allow(deprecated)]
             let value = LLVMBuildCall2(
                 self.as_ptr(),
                 fn_type,

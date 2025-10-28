@@ -11,10 +11,10 @@ use crate::{
 };
 use core::mem::forget;
 use core::slice;
-#[allow(clippy::wildcard_imports, deprecated)]
+#[allow(clippy::wildcard_imports)]
 use llvm_sys::{
     analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
-    bit_reader::LLVMParseBitcodeInContext,
+    bit_reader::LLVMParseBitcodeInContext2,
     bit_writer::LLVMWriteBitcodeToMemoryBuffer,
     core::*,
     ir_reader::LLVMParseIRInContext,
@@ -124,24 +124,23 @@ impl Module {
         };
 
         let mut module = ptr::null_mut();
-        let mut error = ptr::null_mut();
         let context_ref = context.borrow(py).cast().as_ptr();
 
         unsafe {
-            #[allow(deprecated)]
-            if LLVMParseBitcodeInContext(
-                context_ref,
-                buffer.cast().as_ptr(),
-                &raw mut module,
-                &raw mut error,
-            ) == 0
+            let mut c_char_output: *mut ::core::ffi::c_char = ptr::null_mut();
+            let output = ::core::ptr::from_mut::<*mut ::core::ffi::c_char>(&mut c_char_output)
+                .cast::<*mut ::core::ffi::c_void>()
+                .cast::<::core::ffi::c_void>();
+
+            set_diagnostic_handler(context_ref, output);
+            if LLVMParseBitcodeInContext2(context_ref, buffer.cast().as_ptr(), &raw mut module) == 0
             {
                 Ok(Self {
                     module: NonNull::new(module).unwrap(),
                     context,
                 })
             } else {
-                let error = Message::from_raw(error);
+                let error = Message::from_raw(c_char_output);
                 Err(PyValueError::new_err(error.to_str().unwrap().to_string()))
             }
         }
