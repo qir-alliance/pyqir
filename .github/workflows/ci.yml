@@ -47,7 +47,7 @@ jobs:
           arch: ${{ matrix.config.arch }}
           directory: ${{ github.workspace }}/target/llvm
           target: ${{ matrix.config.target }}
-          cache_counter: "1"
+          cache_counter: "2"
       - name: "Build ${{ matrix.config.target }}"
         run: ./build.ps1 -t ${{ matrix.config.target }}
         shell: pwsh
