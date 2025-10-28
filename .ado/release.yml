@@ -208,15 +208,17 @@ extends:
           # Build PyQIR
           - pwsh: ./build.ps1 -t default
             displayName: Build
-            condition: and(succeeded(), ne(variables['Agent.OS'], 'Darwin'))
+            # condition: and(succeeded(), ne(variables['Agent.OS'], 'Darwin'))
 
-          - pwsh: env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t build
-            displayName: Build
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
-
-          - pwsh: ./build.ps1 -t test
-            displayName: Build
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
+          # On macOS, we use ARCHFLAGS to ensure that
+          # LLVM is built for the correct architecture.
+          # This and the condition above are only needed for cross-compiling, which for now we are skipping.
+          # - pwsh: env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t build
+          #   displayName: Build
+          #   condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
+          # - pwsh: ./build.ps1 -t test
+          #   displayName: Build
+          #   condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
 
           - script: |
               dir target\wheels\*
