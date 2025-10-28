@@ -26,12 +26,6 @@ jobs:
           - { os: "ubuntu-22.04", arch: "amd64", target: "default", env: {} }
           - { os: "windows-2022", arch: "amd64", target: "default", env: {} }
           - { os: "macos-15", arch: "aarch64", target: "default", env: {} }
-          - {
-              os: "macos-15",
-              arch: "universal",
-              target: "default",
-              env: { ARCHFLAGS: "-arch arm64 -arch x86_64" },
-            }
     steps:
       - uses: actions/checkout@v4
       - name: Setup rust toolchain
@@ -39,10 +33,6 @@ jobs:
         with:
           toolchain: 1.86
           components: rustfmt clippy
-      - shell: pwsh
-        run: |
-          rustup target add x86_64-apple-darwin
-        if: ${{ (matrix.config.os == 'macos-15') && (matrix.config.arch == 'universal') }}
       - uses: actions/checkout@v4
       - name: Set up Python 3.9
         uses: actions/setup-python@v5

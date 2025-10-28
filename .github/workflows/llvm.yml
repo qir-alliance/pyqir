@@ -21,11 +21,6 @@ jobs:
           - { os: "ubuntu-22.04", arch: "amd64", env: {} }
           - { os: "windows-2022", arch: "amd64", env: {} }
           - { os: "macos-15", arch: "aarch64", env: {} }
-          - {
-              os: "macos-15",
-              arch: "universal",
-              env: { ARCHFLAGS: "-arch arm64 -arch x86_64" },
-            }
     steps:
       - uses: actions/checkout@v4
         with:
