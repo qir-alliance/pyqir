@@ -194,13 +194,16 @@ extends:
 
           - pwsh: ./build.ps1 -t install-llvm-from-source
             displayName: Build and Install LLVM
-            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), ne(variables['Agent.OS'], 'Darwin'))
+            # condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), ne(variables['Agent.OS'], 'Darwin'))
 
-          - script: |
-              echo "env ARCHFLAGS='$(ARCHFLAGS)' ./build.ps1 -t install-llvm-from-source"
-              env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t install-llvm-from-source
-            displayName: Build and Install LLVM
-            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), eq(variables['Agent.OS'], 'Darwin'))
+          # On macOS, we use ARCHFLAGS to ensure that
+          # LLVM is built for the correct architecture.
+          # This and the condition above are only needed for cross-compiling, which for now we are skipping.
+          # - script: |
+          #     echo "env ARCHFLAGS='$(ARCHFLAGS)' ./build.ps1 -t install-llvm-from-source"
+          #     env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t install-llvm-from-source
+          #   displayName: Build and Install LLVM
+          #   condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), eq(variables['Agent.OS'], 'Darwin'))
 
           # Build PyQIR
           - pwsh: ./build.ps1 -t default
