@@ -1,5 +1,59 @@
 # Upgrading PyQIR
 
+## PyQIR 0.12
+
+PyQIR 0.12 is the first version to support LLVM opaque pointers via dependency on LLVM version 18 or higher.
+This version of PyQIR can parse IR or bitcode (.ll or .bc) with either style of pointers, but will always produce
+opaque pointers in any QIR output. Given that, PyQIR 0.12 also produces QIR with major version 2 by default.
+If you have need to produce QIR output with major version 1 that uses typed pointers, use PyQIR 0.11 or earlier.
+
+The following table describes the compatibility of PyQIR versions:
+Input | Output | Tooling
+-- | -- | --
+Typed Pointer QIR | Typed Pointer QIR | Use PyQIR 0.11 or earlier
+Typed Pointer QIR | Opaque Pointer QIR | Use PyQIR 0.12 or later
+Opaque Pointer QIR | Opaque Pointer QIR | Use PyQIR 0.12 or later
+Opaque Pointer QIR | Typed Pointer QIR | NOT SUPPORTED
+
+### API Changes
+
+The change to support opaque pointers included the removal of `%Qubit*` and `%Result*` typed pointer utility functions.
+Specifically, the following functions have been removed:
+
+- `is_qubit_type`
+- `is_result_type`
+- `qubit_id`
+- `result_id`
+- `qubit_type`
+- `result_type`
+
+A new function, `ptr_id`, has been added that replaces the functionality provided by `qubit_id` and `result_id` in a
+type-generic fashion. The below example (from [examples/bernstein_vazirani.py](../examples/bernstein_vazirani.py))
+demonstrates how to use the existing `PointerType` to check the type of an argument and process its identifier with
+`ptr_id`.
+
+Before update (0.11 or earlier):
+
+```python
+for arg in inst.args:
+   if is_qubit_type(arg.type):
+      args.append(str(qubit_id(arg)))
+   elif is_result_type(arg.type):
+      args.append(str(result_id(arg)))
+   else:
+      args.append(str(arg))
+```
+
+After update (0.12 or later):
+
+```python
+for arg in inst.args:
+   if isinstance(arg.type, PointerType):
+      args.append(str(ptr_id(arg)))
+   else:
+      args.append(str(arg))
+```
+
 ## PyQIR 0.8
 
 PyQIR 0.7 was the last version of PyQIR to support QIR evaluation. Simulation of QIR is now available via the [`qir-runner`](https://github.com/qir-alliance/qir-runner) sparse simulator.

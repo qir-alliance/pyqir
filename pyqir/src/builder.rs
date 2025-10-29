@@ -346,10 +346,10 @@ impl Builder {
                 .map(|(arg, ty)| arg.to_value(ty))
                 .collect::<PyResult<Vec<_>>>()?;
 
-            #[allow(deprecated)]
-            let value = LLVMBuildCall(
-                self.cast().as_ptr(),
-                callee.cast().as_ptr(),
+            let value = LLVMBuildCall2(
+                self.as_ptr(),
+                fn_type,
+                callee.as_ptr(),
                 args.as_mut_ptr(),
                 args.len().try_into().unwrap(),
                 raw_cstr!(""),
@@ -565,7 +565,7 @@ unsafe fn callable_fn_type(value: LLVMValueRef) -> Option<NonNull<LLVMType>> {
     match LLVMGetTypeKind(ty) {
         LLVMTypeKind::LLVMFunctionTypeKind => Some(NonNull::new(ty).unwrap()),
         LLVMTypeKind::LLVMPointerTypeKind => {
-            let pointee = LLVMGetElementType(ty);
+            let pointee = LLVMGlobalGetValueType(value);
             if LLVMGetTypeKind(pointee) == LLVMTypeKind::LLVMFunctionTypeKind {
                 Some(NonNull::new(pointee).unwrap())
             } else {

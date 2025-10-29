@@ -25,7 +25,10 @@ variables:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN_VERSION: "1.86"
   PYTHON_VERSION: "3.11"
-  LLVM_VERSION: 14
+  LLVM_VERSION: 20
+  # use this to invalidate the cache. Any time we update the OS
+  # image, we should increment this to ensure that the cache is rebuilt.
+  CACHE_COUNTER: 3
 
 resources:
   repositories:
@@ -48,16 +51,13 @@ parameters:
     imageName: 'mariner-2.0-arm64'
     os: linux
     arch: aarch64
-  - name: mac_universal
-    poolName: 'Azure Pipelines'
-    imageName: 'macOS-latest'
+  - name: mac_arm64
+    poolName: 'AcesShared'
     os: macOS
-    arch: universal
-    ARCHFLAGS: '-arch arm64 -arch x86_64'
-    additionalRustTargets: aarch64-apple-darwin
+    arch: arm64
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
-    imageName: 'windows-latest'
+    imageName: 'windows-2022'
     os: windows
     arch: x86_64
 
@@ -83,6 +83,9 @@ extends:
             os: ${{ target.os }}
             ${{ if eq(target.arch, 'aarch64') }}:
               hostArchitecture: Arm64
+            ${{ if eq(target.os, 'macOS') }}:
+              demands:
+              - ImageOverride -equals ACES_VM_SharedPool_Sequoia
           variables:
             arch: ${{ target.arch }}
             ${{ if target.ARCHFLAGS }}:
@@ -126,8 +129,8 @@ extends:
 
           - task: Cache@2
             inputs:
-              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
-              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
+              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
+              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
               path: $(LLVM_DIRECTORY)
               cacheHitVar: CACHE_RESTORED
             displayName: Cache LLVM
@@ -143,8 +146,8 @@ extends:
               Write-Host "##vso[task.setvariable variable=QIRLIB_LLVM_EXTERNAL_DIR;]$directory"
 
               # Tell the build what llvm feature version to use
-              $feature = "llvm$(LLVM_VERSION)-0"
-              $variableName = "LLVM_SYS_$(LLVM_VERSION)0_PREFIX"
+              $feature = "llvm$(LLVM_VERSION)-1"
+              $variableName = "LLVM_SYS_$(LLVM_VERSION)1_PREFIX"
               Write-Host "##vso[task.setvariable variable=PYQIR_LLVM_FEATURE_VERSION;]$feature"
 
               # Tell LLVM-SYS where LLVM is installed
@@ -163,12 +166,12 @@ extends:
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
-              sudo tdnf ninja-build cmake -y
+              sudo tdnf install ninja-build cmake -y
             displayName: Install c++ build tools on mariner
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
-              brew install ninja
+              brew install cmake ninja ccache
             displayName: Install build dependencies
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables.CACHE_RESTORED, 'true'))
 
@@ -191,26 +194,31 @@ extends:
 
           - pwsh: ./build.ps1 -t install-llvm-from-source
             displayName: Build and Install LLVM
-            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), ne(variables['Agent.OS'], 'Darwin'))
+            # condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), ne(variables['Agent.OS'], 'Darwin'))
 
-          - script: |
-              echo "env ARCHFLAGS='$(ARCHFLAGS)' ./build.ps1 -t install-llvm-from-source"
-              env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t install-llvm-from-source
-            displayName: Build and Install LLVM
-            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), eq(variables['Agent.OS'], 'Darwin'))
+          # On macOS, we use ARCHFLAGS to ensure that
+          # LLVM is built for the correct architecture.
+          # This and the condition above are only needed for cross-compiling, which for now we are skipping.
+          # - script: |
+          #     echo "env ARCHFLAGS='$(ARCHFLAGS)' ./build.ps1 -t install-llvm-from-source"
+          #     env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t install-llvm-from-source
+          #   displayName: Build and Install LLVM
+          #   condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), eq(variables['Agent.OS'], 'Darwin'))
 
           # Build PyQIR
           - pwsh: ./build.ps1 -t default
             displayName: Build
-            condition: and(succeeded(), ne(variables['Agent.OS'], 'Darwin'))
+            # condition: and(succeeded(), ne(variables['Agent.OS'], 'Darwin'))
 
-          - pwsh: env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t build
-            displayName: Build
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
-
-          - pwsh: ./build.ps1 -t test
-            displayName: Build
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
+          # On macOS, we use ARCHFLAGS to ensure that
+          # LLVM is built for the correct architecture.
+          # This and the condition above are only needed for cross-compiling, which for now we are skipping.
+          # - pwsh: env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t build
+          #   displayName: Build
+          #   condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
+          # - pwsh: ./build.ps1 -t test
+          #   displayName: Build
+          #   condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
 
           - script: |
               dir target\wheels\*

@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-#include "LLVMWrapper.h"
-
+#include "llvm-c/Core.h"
+#include "llvm/Support/CBindingWrapping.h"
 #include "llvm/IR/Module.h"
 
 #ifdef _WIN32
@@ -24,17 +24,11 @@ extern "C"
     Append = 5,
     AppendUnique = 6,
     Max = 7,
-#if LLVM_VERSION_GE(15, 0)
     Min = 8,
-#endif
 
     // Markers:
     ModFlagBehaviorFirstVal = LLVMRustModFlagBehavior::Error,
-#if LLVM_VERSION_GE(15, 0)
     ModFlagBehaviorLastVal = Min
-#else
-    ModFlagBehaviorLastVal = Max
-#endif
   };
 
   static llvm::Module::ModFlagBehavior
@@ -56,10 +50,8 @@ extern "C"
       return llvm::Module::ModFlagBehavior::AppendUnique;
     case LLVMRustModFlagBehavior::Max:
       return llvm::Module::ModFlagBehavior::Max;
-#if LLVM_VERSION_GE(15, 0)
     case LLVMRustModFlagBehavior::Min:
       return llvm::Module::ModFlagBehavior::Min;
-#endif
     }
     llvm_unreachable("Unknown LLVMRustModFlagBehavior");
   }

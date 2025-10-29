@@ -11,11 +11,9 @@ repository.workspace = true
 
 [dependencies]
 const-str = { workspace = true }
-llvm-sys-110 = { package = "llvm-sys", version = "110.0", optional = true }
-llvm-sys-120 = { package = "llvm-sys", version = "120.3", optional = true }
-llvm-sys-130 = { package = "llvm-sys", version = "130.1", optional = true }
-llvm-sys-140 = { package = "llvm-sys", version = "140.1", optional = true }
-llvm-sys-150 = { package = "llvm-sys", version = "150.2", optional = true }
+llvm-sys-181 = { package = "llvm-sys", version = "181", optional = true }
+llvm-sys-191 = { package = "llvm-sys", version = "191", optional = true }
+llvm-sys-201 = { package = "llvm-sys", version = "201", optional = true }
 
 [dev-dependencies]
 normalize-line-endings = "0.3"
@@ -28,11 +26,9 @@ cc = "1.0"
 name = "qirlib"
 
 [features]
-llvm11-0 = ["llvm-sys-110"]
-llvm12-0 = ["llvm-sys-120"]
-llvm13-0 = ["llvm-sys-130"]
-llvm14-0 = ["llvm-sys-140"]
-llvm15-0 = ["llvm-sys-150"]
+llvm18-1 = ["llvm-sys-181"]
+llvm19-1 = ["llvm-sys-191"]
+llvm20-1 = ["llvm-sys-201"]
 
 # default to use llvm-sys for llvm linking
 default = ["external-llvm-linking"]
@@ -40,21 +36,17 @@ external-llvm-linking = []
 
 # disable linking for local installation or packaging
 # no-llvm-linking is marker used in the cfg checks
-llvm11-0-no-llvm-linking = ["llvm11-0", "no-llvm-linking", "llvm-sys-110/disable-alltargets-init", "llvm-sys-110/no-llvm-linking"]
-llvm12-0-no-llvm-linking = ["llvm12-0", "no-llvm-linking", "llvm-sys-120/disable-alltargets-init", "llvm-sys-120/no-llvm-linking"]
-llvm13-0-no-llvm-linking = ["llvm13-0", "no-llvm-linking", "llvm-sys-130/disable-alltargets-init", "llvm-sys-130/no-llvm-linking"]
-llvm14-0-no-llvm-linking = ["llvm14-0", "no-llvm-linking", "llvm-sys-140/disable-alltargets-init", "llvm-sys-140/no-llvm-linking"]
-llvm15-0-no-llvm-linking = ["llvm15-0", "no-llvm-linking", "llvm-sys-150/disable-alltargets-init", "llvm-sys-150/no-llvm-linking"]
+llvm18-1-no-llvm-linking = ["llvm18-1", "no-llvm-linking", "llvm-sys-181/disable-alltargets-init", "llvm-sys-181/no-llvm-linking"]
+llvm19-1-no-llvm-linking = ["llvm19-1", "no-llvm-linking", "llvm-sys-191/disable-alltargets-init", "llvm-sys-191/no-llvm-linking"]
+llvm20-1-no-llvm-linking = ["llvm20-1", "no-llvm-linking", "llvm-sys-201/disable-alltargets-init", "llvm-sys-201/no-llvm-linking"]
 
 no-llvm-linking = []
 
 # let qirlib do the llvm linking
 # qirlib-llvm-linking is marker used in the cfg checks
-llvm11-0-qirlib-llvm-linking = ["llvm11-0", "qirlib-llvm-linking", "llvm-sys-110/disable-alltargets-init", "llvm-sys-110/no-llvm-linking"]
-llvm12-0-qirlib-llvm-linking = ["llvm12-0", "qirlib-llvm-linking", "llvm-sys-120/disable-alltargets-init", "llvm-sys-120/no-llvm-linking"]
-llvm13-0-qirlib-llvm-linking = ["llvm13-0", "qirlib-llvm-linking", "llvm-sys-130/disable-alltargets-init", "llvm-sys-130/no-llvm-linking"]
-llvm14-0-qirlib-llvm-linking = ["llvm14-0", "qirlib-llvm-linking", "llvm-sys-140/disable-alltargets-init", "llvm-sys-140/no-llvm-linking"]
-llvm15-0-qirlib-llvm-linking = ["llvm15-0", "qirlib-llvm-linking", "llvm-sys-150/disable-alltargets-init", "llvm-sys-150/no-llvm-linking"]
+llvm18-1-qirlib-llvm-linking = ["llvm18-1", "qirlib-llvm-linking", "llvm-sys-181/disable-alltargets-init", "llvm-sys-181/no-llvm-linking"]
+llvm19-1-qirlib-llvm-linking = ["llvm19-1", "qirlib-llvm-linking", "llvm-sys-191/disable-alltargets-init", "llvm-sys-191/no-llvm-linking"]
+llvm20-1-qirlib-llvm-linking = ["llvm20-1", "qirlib-llvm-linking", "llvm-sys-201/disable-alltargets-init", "llvm-sys-201/no-llvm-linking"]
 
 qirlib-llvm-linking = []
 

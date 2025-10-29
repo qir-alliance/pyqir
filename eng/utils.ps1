@@ -58,7 +58,7 @@ function Use-LlvmInstallation {
     Write-BuildLog "Found llvm-config : $llvm_config"
 
     $version = [Version]::Parse("$(&$llvm_config --version)")
-    $prefix = "LLVM_SYS_$($version.Major)0_PREFIX"
+    $prefix = "LLVM_SYS_$($version.Major)1_PREFIX"
 
     Write-BuildLog "Setting $prefix set to: $path"
 
@@ -245,7 +245,8 @@ function Get-LLVMFeatureVersion {
         $env:PYQIR_LLVM_FEATURE_VERSION
     }
     else {
-        "llvm14-0"
+        # "llvm18-1", "llvm19-1", or "llvm20-1"
+        "llvm20-1"
     }
 }
 
@@ -295,7 +296,7 @@ function install-llvm {
         [ValidateSet("download", "build")]
         [string]$operation,
         [Parameter(Mandatory)]
-        [ValidateSet("llvm11-0", "llvm12-0", "llvm13-0", "llvm14-0", "llvm15-0")]
+        [ValidateSet("llvm18-1", "llvm19-1", "llvm20-1")]
         [string]$feature
     )
 

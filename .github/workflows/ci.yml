@@ -25,13 +25,7 @@ jobs:
           - { os: "ubuntu-22.04", arch: "amd64", target: "checks", env: {} }
           - { os: "ubuntu-22.04", arch: "amd64", target: "default", env: {} }
           - { os: "windows-2022", arch: "amd64", target: "default", env: {} }
-          - { os: "macos-14", arch: "aarch64", target: "default", env: {} }
-          - {
-              os: "macos-14",
-              arch: "universal",
-              target: "default",
-              env: { ARCHFLAGS: "-arch arm64 -arch x86_64" },
-            }
+          - { os: "macos-15", arch: "aarch64", target: "default", env: {} }
     steps:
       - uses: actions/checkout@v4
       - name: Setup rust toolchain
@@ -39,25 +33,21 @@ jobs:
         with:
           toolchain: 1.86
           components: rustfmt clippy
-      - shell: pwsh
-        run: |
-          rustup target add x86_64-apple-darwin
-        if: ${{ (matrix.config.os == 'macos-14') && (matrix.config.arch == 'universal') }}
       - uses: actions/checkout@v4
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
           python-version: 3.9
-        if: ${{ matrix.config.os != 'macos-14' }}
 
       - name: Install LLVM
         uses: ./.github/actions/install-llvm
         with:
-          version: "14"
+          version: "20"
           os: ${{ matrix.config.os }}
           arch: ${{ matrix.config.arch }}
           directory: ${{ github.workspace }}/target/llvm
           target: ${{ matrix.config.target }}
+          cache_counter: "2"
       - name: "Build ${{ matrix.config.target }}"
         run: ./build.ps1 -t ${{ matrix.config.target }}
         shell: pwsh

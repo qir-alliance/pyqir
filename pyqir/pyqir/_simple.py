@@ -50,7 +50,7 @@ class SimpleModule:
         self._module = pyqir.qir_module(
             context,
             name,
-            qir_major_version=1,
+            qir_major_version=2,
             qir_minor_version=0,
             dynamic_qubit_management=False,
             dynamic_result_management=False,
