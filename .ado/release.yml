@@ -28,7 +28,7 @@ variables:
   LLVM_VERSION: 20
   # use this to invalidate the cache. Any time we update the OS
   # image, we should increment this to ensure that the cache is rebuilt.
-  CACHE_COUNTER: 3
+  CACHE_COUNTER: 4
 
 resources:
   repositories:
