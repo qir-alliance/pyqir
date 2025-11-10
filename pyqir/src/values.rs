@@ -93,7 +93,7 @@ impl Value {
     fn name(&self) -> &str {
         let mut len = 0;
         unsafe {
-            let name = LLVMGetValueName2(self.cast().as_ptr(), &mut len).cast();
+            let name = LLVMGetValueName2(self.cast().as_ptr(), &raw mut len).cast();
             str::from_utf8(slice::from_raw_parts(name, len)).unwrap()
         }
     }
@@ -497,7 +497,7 @@ impl Function {
     fn r#type<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let slf = slf.into_super().into_super();
         unsafe {
-            let ty = LLVMGetElementType(LLVMTypeOf(slf.cast().as_ptr()));
+            let ty = LLVMGlobalGetValueType(slf.cast().as_ptr());
             Type::from_raw(py, slf.owner().context(py), ty)
         }
     }
@@ -752,15 +752,15 @@ pub(crate) fn qubit(py: Python<'_>, context: Py<Context>, id: u64) -> PyResult<B
     }
 }
 
-/// If the value is a static qubit ID, extracts it.
+/// If the value is a static ptr, extracts the integer value.
 ///
 /// :param Value value: The value.
-/// :returns: The static qubit ID.
+/// :returns: The static integer.
 /// :rtype: typing.Optional[int]
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
-pub(crate) fn qubit_id(value: &Value) -> Option<u64> {
-    unsafe { values::qubit_id(value.cast().as_ptr()) }
+pub(crate) fn ptr_id(value: &Value) -> Option<u64> {
+    unsafe { values::ptr_id(value.as_ptr()) }
 }
 
 /// Creates a static result value.
@@ -776,17 +776,6 @@ pub(crate) fn result(py: Python<'_>, context: Py<Context>, id: u64) -> PyResult<
         let value = values::result(context.borrow(py).cast().as_ptr(), id);
         Value::from_raw(py, context.into(), value)
     }
-}
-
-/// If the value is a static result ID, extracts it.
-///
-/// :param Value value: The value.
-/// :returns: The static result ID.
-/// :rtype: typing.Optional[int]
-#[pyfunction]
-#[pyo3(text_signature = "(value)")]
-pub(crate) fn result_id(value: &Value) -> Option<u64> {
-    unsafe { values::result_id(value.cast().as_ptr()) }
 }
 
 /// Whether the function is an entry point.

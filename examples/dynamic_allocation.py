@@ -8,6 +8,8 @@ from pyqir import (
     Context,
     Function,
     Linkage,
+    PointerType,
+    Type,
     Module,
     ModuleFlagBehavior,
 )
@@ -16,7 +18,7 @@ context = Context()
 mod = pyqir.qir_module(
     context,
     "dynamic_allocation",
-    qir_major_version=1,
+    qir_major_version=2,
     qir_minor_version=0,
     dynamic_qubit_management=True,
     dynamic_result_management=True,
@@ -24,8 +26,8 @@ mod = pyqir.qir_module(
 builder = Builder(context)
 
 # define external calls and type definitions
-qubit_type = pyqir.qubit_type(context)
-result_type = pyqir.result_type(context)
+qubit_type = PointerType(Type.void(context))
+result_type = PointerType(Type.void(context))
 
 # PyQIR assumes you want to use static allocation for qubits and results, but
 # you can still use dynamic allocation by manually calling the appropriate

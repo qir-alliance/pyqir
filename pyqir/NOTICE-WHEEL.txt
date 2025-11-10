@@ -2605,7 +2605,7 @@ limitations under the License.
 
 
 
-qirlib 0.11.0 - SPDX: MIT - MIT License
+qirlib 0.12.0 - SPDX: MIT - MIT License
 https://github.com/qir-alliance/pyqir
 
 /*
@@ -2855,7 +2855,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-pyqir 0.11.0 - SPDX: MIT - MIT License
+pyqir 0.12.0 - SPDX: MIT - MIT License
 https://github.com/qir-alliance/pyqir
 
 MIT License
@@ -2928,10 +2928,10 @@ authorization of the copyright holder.
 
 
 
-LLVM 13.0 - Apache-2.0 WITH LLVM-exception - Apache License v2.0 with LLVM Exceptions
+LLVM 20.1 - Apache-2.0 WITH LLVM-exception - Apache License v2.0 with LLVM Exceptions
 https://github.com/llvm/llvm-project
 
-https://github.com/llvm/llvm-project/blob/llvmorg-13.0.1/llvm/LICENSE.TXT
+https://github.com/llvm/llvm-project/blob/llvmorg-20.1.0/llvm/LICENSE.TXT
 
 ==============================================================================
 The LLVM Project is under the Apache License v2.0 with LLVM Exceptions:

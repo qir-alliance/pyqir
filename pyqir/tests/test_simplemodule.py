@@ -18,7 +18,7 @@ def test_default_attributes_are_set() -> None:
     assert required_num_results(entry) == 5
 
     assert mod.get_flag("qir_major_version") is not None
-    assert str(mod.get_flag("qir_major_version")) == "i32 1"
+    assert str(mod.get_flag("qir_major_version")) == "i32 2"
 
     assert mod.get_flag("qir_minor_version") is not None
     assert str(mod.get_flag("qir_minor_version")) == "i32 0"
