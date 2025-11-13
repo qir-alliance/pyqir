@@ -130,7 +130,10 @@ extends:
                 architecture: "arm64"
             condition: not(and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64')))
           # Build or restore LLVM
-          - pwsh: New-Item -ItemType Directory -Path $(LLVM_DIRECTORY) -Force
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              script: New-Item -ItemType Directory -Path $(LLVM_DIRECTORY) -Force
             displayName: Ensure cache dir exists
             condition: succeeded()
 
