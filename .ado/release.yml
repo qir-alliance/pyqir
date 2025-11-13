@@ -60,6 +60,11 @@ parameters:
     imageName: 'windows-2022'
     os: windows
     arch: x86_64
+  - name: windows_aarch64
+    poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
+    imageName: 'Windows-2022-ARM64'
+    os: windows
+    arch: aarch64
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
@@ -121,7 +126,7 @@ extends:
           - task: UsePythonVersion@0
             inputs:
               versionSpec: $(PYTHON_VERSION)
-            condition: ne(variables['arch'], 'aarch64')
+            condition: not(and(variables['Agent.OS'], 'Linux'), ne(variables['arch'], 'aarch64')))
           # Build or restore LLVM
           - pwsh: New-Item -ItemType Directory -Path $(LLVM_DIRECTORY) -Force
             displayName: Ensure cache dir exists
