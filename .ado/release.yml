@@ -191,7 +191,7 @@ extends:
           - script: |
               choco install --accept-license -y ninja
             displayName: Install build dependencies
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), ne(variables.CACHE_RESTORED, 'true'))
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables['arch'], 'x864_64'), ne(variables.CACHE_RESTORED, 'true'))
 
           # on mariner we need to install:
           # ld with binutils
