@@ -143,29 +143,26 @@ extends:
             displayName: Cache LLVM
             condition: succeeded()
 
-          - task: PowerShell@2
-            inputs:
-              targetType: 'inline'
-              script: |
-                git config --global core.longpaths true
+          - pwsh: |
+              git config --global core.longpaths true
 
-                $directory = Resolve-Path $(LLVM_DIRECTORY)
+              $directory = Resolve-Path $(LLVM_DIRECTORY)
 
-                # Tell the build where LLVM is installed
-                # This is usually automatic, but we are using a different directory than the default
-                Write-Host "##vso[task.setvariable variable=QIRLIB_LLVM_EXTERNAL_DIR;]$directory"
+              # Tell the build where LLVM is installed
+              # This is usually automatic, but we are using a different directory than the default
+              Write-Host "##vso[task.setvariable variable=QIRLIB_LLVM_EXTERNAL_DIR;]$directory"
 
-                # Tell the build what llvm feature version to use
-                $feature = "llvm$(LLVM_VERSION)-1"
-                $variableName = "LLVM_SYS_$(LLVM_VERSION)1_PREFIX"
-                Write-Host "##vso[task.setvariable variable=PYQIR_LLVM_FEATURE_VERSION;]$feature"
+              # Tell the build what llvm feature version to use
+              $feature = "llvm$(LLVM_VERSION)-1"
+              $variableName = "LLVM_SYS_$(LLVM_VERSION)1_PREFIX"
+              Write-Host "##vso[task.setvariable variable=PYQIR_LLVM_FEATURE_VERSION;]$feature"
 
-                # Tell LLVM-SYS where LLVM is installed
-                Write-Host "##vso[task.setvariable variable=$variableName;]$directory"
+              # Tell LLVM-SYS where LLVM is installed
+              Write-Host "##vso[task.setvariable variable=$variableName;]$directory"
 
-                # Tell the qirlib build where to cache the LLVM directory and to not download LLVM
-                Write-Host "##vso[task.setvariable variable=QIRLIB_CACHE_DIR;]$directory"
-                Write-Host "##vso[task.setvariable variable=QIRLIB_DOWNLOAD_LLVM;]false"
+              # Tell the qirlib build where to cache the LLVM directory and to not download LLVM
+              Write-Host "##vso[task.setvariable variable=QIRLIB_CACHE_DIR;]$directory"
+              Write-Host "##vso[task.setvariable variable=QIRLIB_DOWNLOAD_LLVM;]false"
             displayName: Configure Environment
             condition: succeeded()
 
@@ -202,11 +199,7 @@ extends:
 
           # build and install LLVM
 
-          - task: PowerShell@2
-            inputs:
-              targetType: 'filePath'
-              filePath: build.ps1
-              arguments: -t install-llvm-from-source
+          - pwsh: ./build.ps1 -t install-llvm-from-source
             displayName: Build and Install LLVM
             condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'))
 
@@ -220,11 +213,7 @@ extends:
           #   condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), eq(variables['Agent.OS'], 'Darwin'))
 
           # Build PyQIR
-          - task: PowerShell@2
-            inputs:
-              targetType: 'filePath'
-              filePath: build.ps1
-              arguments: -t default
+          - pwsh: ./build.ps1 -t default
             displayName: Build
             # condition: and(succeeded(), ne(variables['Agent.OS'], 'Darwin'))
 
