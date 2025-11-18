@@ -158,7 +158,7 @@ task install-llvm-from-archive {
 
 task install-llvm-from-source -depends configure-sccache -postaction { Write-CacheStats } {
     if ($IsWindows) {
-        Include vcvars.ps1
+        . .\vcvars.ps1
     }
     install-llvm $Qirlib build (Get-LLVMFeatureVersion)
     $installationDirectory = Resolve-InstallationDirectory
@@ -167,7 +167,7 @@ task install-llvm-from-source -depends configure-sccache -postaction { Write-Cac
 
 task package-llvm {
     if ($IsWindows) {
-        Include vcvars.ps1
+        . .\vcvars.ps1
     }
     $clear_pkg_dest_var = $false
     if (!(Test-Path env:\QIRLIB_PKG_DEST)) {
