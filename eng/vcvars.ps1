@@ -22,6 +22,7 @@ if ($IsWindows) {
     # Call vcvars<arm?>64.bat and write the set calls to file
     cmd.exe /c "call `"$varsBatPath`" && set > %temp%\vcvars.txt"
 
+    . .\debug_env.ps1
     # Read the set calls and set the corresponding pwsh env vars
     Get-Content "$Env:temp\vcvars.txt" | Foreach-Object {
         if ($_ -match "^(.*?)=(.*)$") {
@@ -29,4 +30,5 @@ if ($IsWindows) {
             Write-BuildLog "setting env: $($matches[1]) = $($matches[2])"
         }
     }
+    . .\debug_env.ps1
 }
