@@ -187,11 +187,11 @@ extends:
             displayName: Install build dependencies
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
 
-          - script: |
-              winget install Kitware.CMake --version 4.1.2 --accept-package-agreements --accept-source-agreements --silent
-              winget install Ninja-build.Ninja --version 1.13.1 --accept-package-agreements --accept-source-agreements --silent
-            displayName: Install build dependencies
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
+          # - script: |
+          #     winget install Kitware.CMake --version 4.1.2 --accept-package-agreements --accept-source-agreements --silent
+          #     winget install Ninja-build.Ninja --version 1.13.1 --accept-package-agreements --accept-source-agreements --silent
+          #   displayName: Install build dependencies
+          #   condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
 
           # on mariner we need to install:
           # ld with binutils
