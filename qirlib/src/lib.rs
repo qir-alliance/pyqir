@@ -20,10 +20,13 @@ pub mod builder;
 #[cfg(not(feature = "no-llvm-linking"))]
 pub mod context;
 #[cfg(not(feature = "no-llvm-linking"))]
+#[cfg(not(feature = "no-module-metadata"))]
 pub(crate) mod llvm_wrapper;
 #[cfg(not(feature = "no-llvm-linking"))]
+#[cfg(not(feature = "no-module-metadata"))]
 pub mod metadata;
 #[cfg(not(feature = "no-llvm-linking"))]
+#[cfg(not(feature = "no-module-metadata"))]
 pub mod module;
 #[cfg(not(feature = "no-llvm-linking"))]
 pub mod qis;
