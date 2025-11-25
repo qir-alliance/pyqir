@@ -51,13 +51,15 @@ parameters:
     imageName: 'mariner-2.0-arm64'
     os: linux
     arch: aarch64
-  - name: mac_universal
+  - name: mac_x86_64
     poolName: 'Azure Pipelines'
     imageName: 'macOS-latest'
     os: macOS
-    arch: universal
-    ARCHFLAGS: '-arch arm64 -arch x86_64'
-    additionalRustTargets: aarch64-apple-darwin
+    arch: x86_64
+  - name: mac_aarch64
+    poolName: 'AcesShared'
+    os: macOS
+    arch: aarch64
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
     imageName: 'windows-2022'
@@ -91,10 +93,11 @@ extends:
             os: ${{ target.os }}
             ${{ if eq(target.arch, 'aarch64') }}:
               hostArchitecture: Arm64
+            ${{ if eq(target.poolName, 'AcesShared') }}:
+              demands:
+              - ImageOverride -equals ACES_VM_SharedPool_Sequoia
           variables:
             arch: ${{ target.arch }}
-            ${{ if target.ARCHFLAGS }}:
-              ARCHFLAGS: ${{ target.ARCHFLAGS }}
             ${{ if eq(target.os, 'windows') }}:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)\target\llvm
             ${{ else }}:
@@ -231,7 +234,7 @@ extends:
 
           - pwsh: ./build.ps1 -t test
             displayName: Build
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
+            condition: succeeded()
 
           - script: |
               dir target\wheels\*
