@@ -28,7 +28,7 @@ variables:
   LLVM_VERSION: 14
   # use this to invalidate the cache. Any time we update the OS
   # image, we should increment this to ensure that the cache is rebuilt.
-  CACHE_COUNTER: 6
+  CACHE_COUNTER: 7
 
 resources:
   repositories:
@@ -53,7 +53,7 @@ parameters:
     arch: aarch64
   - name: mac_x86_64
     poolName: 'Azure Pipelines'
-    imageName: 'macOS-latest'
+    imageName: 'macOS-14'
     os: macOS
     arch: x86_64
   - name: mac_aarch64
@@ -215,24 +215,10 @@ extends:
 
           - pwsh: ./build.ps1 -t install-llvm-from-source
             displayName: Build and Install LLVM
-            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), ne(variables['Agent.OS'], 'Darwin'))
-
-          - script: |
-              echo "env ARCHFLAGS='$(ARCHFLAGS)' ./build.ps1 -t install-llvm-from-source"
-              env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t install-llvm-from-source
-            displayName: Build and Install LLVM
-            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), eq(variables['Agent.OS'], 'Darwin'))
+            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'))
 
           # Build PyQIR
-          - pwsh: ./build.ps1 -t default
-            displayName: Build
-            condition: and(succeeded(), ne(variables['Agent.OS'], 'Darwin'))
-
-          - pwsh: env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t build
-            displayName: Build
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
-
-          - pwsh: ./build.ps1 -t test
+          - pwsh: ./build.ps1
             displayName: Build
             condition: succeeded()
 

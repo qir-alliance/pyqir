@@ -95,6 +95,7 @@ task pyqir -depends init {
 task test {
     $packages = Get-Wheels pyqir | ForEach-Object { "$_[test]" }
     Invoke-LoggedCommand { & $Python -m pip install --force-reinstall $packages }
+    Invoke-LoggedCommand { & $Python -m pip install --force-reinstall pytest }
     Invoke-LoggedCommand -workingDirectory $Pyqir { pytest }
 }
 
