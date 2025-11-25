@@ -26,6 +26,9 @@ variables:
   RUST_TOOLCHAIN_VERSION: "1.86"
   PYTHON_VERSION: "3.11"
   LLVM_VERSION: 14
+  # use this to invalidate the cache. Any time we update the OS
+  # image, we should increment this to ensure that the cache is rebuilt.
+  CACHE_COUNTER: 6
 
 resources:
   repositories:
@@ -57,9 +60,14 @@ parameters:
     additionalRustTargets: aarch64-apple-darwin
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
-    imageName: 'windows-latest'
+    imageName: 'windows-2022'
     os: windows
     arch: x86_64
+  - name: windows_aarch64
+    poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
+    imageName: 'Windows-2022-ARM64'
+    os: windows
+    arch: aarch64
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
@@ -118,7 +126,9 @@ extends:
           - task: UsePythonVersion@0
             inputs:
               versionSpec: $(PYTHON_VERSION)
-            condition: ne(variables['arch'], 'aarch64')
+              ${{ if eq(target.arch, 'aarch64') }}:
+                architecture: "arm64"
+            condition: not(and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64')))
           # Build or restore LLVM
           - pwsh: New-Item -ItemType Directory -Path $(LLVM_DIRECTORY) -Force
             displayName: Ensure cache dir exists
@@ -126,8 +136,8 @@ extends:
 
           - task: Cache@2
             inputs:
-              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
-              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
+              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
+              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
               path: $(LLVM_DIRECTORY)
               cacheHitVar: CACHE_RESTORED
             displayName: Cache LLVM
@@ -163,19 +173,30 @@ extends:
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
-              sudo tdnf ninja-build cmake -y
+              sudo tdnf install ninja-build cmake -y
             displayName: Install c++ build tools on mariner
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
-              brew install ninja
+              brew install cmake ninja ccache
             displayName: Install build dependencies
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables.CACHE_RESTORED, 'true'))
 
+          # on windows x86_64 we can install ninja via chocolatey. The cmake is pre-installed on the image.
           - script: |
               choco install --accept-license -y ninja
             displayName: Install build dependencies
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), ne(variables.CACHE_RESTORED, 'true'))
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
+
+          # ninja is not available on windows aarch64 images, so we install it from its github releases
+          - pwsh: ./build.ps1 -t install-ninja
+            displayName: Install build dependencies
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
+
+          # all platforms: verify ninja is installed
+          - pwsh: ./build.ps1 -t verify-ninja
+            displayName: Verify ninja build dependencie
+            condition: and(succeeded(), ne(variables.CACHE_RESTORED, 'true'))
 
           # on mariner we need to install:
           # ld with binutils
@@ -215,12 +236,12 @@ extends:
           - script: |
               dir target\wheels\*
             displayName: List Py Packages on Win
-            condition: eq(variables['Agent.OS'], 'Windows_NT')
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
           - script: |
               ls target/wheels/*
             displayName: List Py Packages on non-Win
-            condition: ne(variables['Agent.OS'], 'Windows_NT')
+            condition: and(succeeded(), ne(variables['Agent.OS'], 'Windows_NT'))
 
     - stage: approval
       displayName: Approval
