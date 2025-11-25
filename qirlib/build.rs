@@ -124,7 +124,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else {
         println!("No LLVM linking");
     }
-    if !cfg!(feature = "no-llvm-linking") {
+    if !cfg!(feature = "no-llvm-linking") && !cfg!(feature = "no-module-metadata") {
         compile_llvm_wrapper()?;
     }
 

@@ -26,6 +26,7 @@ cc = "1.0"
 name = "qirlib"
 
 [features]
+no-module-metadata = []
 llvm18-1 = ["llvm-sys-181"]
 llvm19-1 = ["llvm-sys-191"]
 llvm20-1 = ["llvm-sys-201"]
