@@ -1751,11 +1751,6 @@ Destroys the supplied module.</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="pyqir.ModuleFlagBehavior.MIN">
-<span class="sig-name descname"><span class="pre">MIN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">ModuleFlagBehavior.MIN</span></em><a class="headerlink" href="#pyqir.ModuleFlagBehavior.MIN" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="pyqir.ModuleFlagBehavior.OVERRIDE">
 <span class="sig-name descname"><span class="pre">OVERRIDE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">ModuleFlagBehavior.OVERRIDE</span></em><a class="headerlink" href="#pyqir.ModuleFlagBehavior.OVERRIDE" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -2162,7 +2157,7 @@ Destroys the supplied module.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyqir.PointerType.pointee">
 <span class="sig-name descname"><span class="pre">pointee</span></span><a class="headerlink" href="#pyqir.PointerType.pointee" title="Link to this definition">¶</a></dt>
-<dd><p>The type being pointed to. With opaque pointers, always treat this as void.</p>
+<dd><p>The type being pointed to.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#pyqir.Type" title="pyqir.Type">Type</a></p>
@@ -2579,18 +2574,35 @@ can be used to create new instructions and types for use in transformations on t
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pyqir.ptr_id">
-<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">ptr_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.ptr_id" title="Link to this definition">¶</a></dt>
-<dd><p>If the value is a static ptr, extracts the integer value.</p>
+<dt class="sig sig-object py" id="pyqir.is_qubit_type">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">is_qubit_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.is_qubit_type" title="Link to this definition">¶</a></dt>
+<dd><p>Whether the type is the QIR qubit type.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> (<a class="reference internal" href="#pyqir.Value" title="pyqir.Value"><em>Value</em></a>) – The value.</p>
+<dd class="field-odd"><p><strong>ty</strong> (<a class="reference internal" href="#pyqir.Type" title="pyqir.Type"><em>Type</em></a>) – The type.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The static integer.</p>
+<dd class="field-even"><p>True if the type is the QIR qubit type.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><em>Optional</em></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyqir.is_result_type">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">is_result_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ty</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.is_result_type" title="Link to this definition">¶</a></dt>
+<dd><p>Whether the type is the QIR result type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ty</strong> (<a class="reference internal" href="#pyqir.Type" title="pyqir.Type"><em>Type</em></a>) – The type.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the type is the QIR result type.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)">bool</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2649,6 +2661,40 @@ can be used to create new instructions and types for use in transformations on t
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="pyqir.qubit_id">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">qubit_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.qubit_id" title="Link to this definition">¶</a></dt>
+<dd><p>If the value is a static qubit ID, extracts it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<a class="reference internal" href="#pyqir.Value" title="pyqir.Value"><em>Value</em></a>) – The value.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The static qubit ID.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><em>Optional</em></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyqir.qubit_type">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">qubit_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.qubit_type" title="Link to this definition">¶</a></dt>
+<dd><p>The QIR qubit type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>context</strong> (<a class="reference internal" href="#pyqir.Context" title="pyqir.Context"><em>Context</em></a>) – The LLVM context.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The qubit type.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Type" title="pyqir.Type">Type</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="pyqir.required_num_qubits">
 <span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">required_num_qubits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.required_num_qubits" title="Link to this definition">¶</a></dt>
 <dd><p>If the function declares a required number of qubits, extracts it.</p>
@@ -2698,6 +2744,40 @@ can be used to create new instructions and types for use in transformations on t
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#pyqir.Value" title="pyqir.Value">Value</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyqir.result_id">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">result_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.result_id" title="Link to this definition">¶</a></dt>
+<dd><p>If the value is a static result ID, extracts it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<a class="reference internal" href="#pyqir.Value" title="pyqir.Value"><em>Value</em></a>) – The value.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The static result ID.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><em>Optional</em></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyqir.result_type">
+<span class="sig-prename descclassname"><span class="pre">pyqir.</span></span><span class="sig-name descname"><span class="pre">result_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqir.result_type" title="Link to this definition">¶</a></dt>
+<dd><p>The QIR result type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>context</strong> (<a class="reference internal" href="#pyqir.Context" title="pyqir.Context"><em>Context</em></a>) – The LLVM context.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The result type.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyqir.Type" title="pyqir.Type">Type</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2950,7 +3030,6 @@ can be used to create new instructions and types for use in transformations on t
 <li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.APPEND_UNIQUE"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.APPEND_UNIQUE</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.ERROR"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.ERROR</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.MAX"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.MAX</span></code></a></li>
-<li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.MIN"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.MIN</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.OVERRIDE"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.OVERRIDE</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.REQUIRE"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.REQUIRE</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.ModuleFlagBehavior.WARNING"><code class="docutils literal notranslate"><span class="pre">ModuleFlagBehavior.WARNING</span></code></a></li>
@@ -3086,14 +3165,19 @@ can be used to create new instructions and types for use in transformations on t
 <li><a class="reference internal" href="#pyqir.global_byte_string"><code class="docutils literal notranslate"><span class="pre">global_byte_string()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.is_entry_point"><code class="docutils literal notranslate"><span class="pre">is_entry_point()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.is_interop_friendly"><code class="docutils literal notranslate"><span class="pre">is_interop_friendly()</span></code></a></li>
-<li><a class="reference internal" href="#pyqir.ptr_id"><code class="docutils literal notranslate"><span class="pre">ptr_id()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.is_qubit_type"><code class="docutils literal notranslate"><span class="pre">is_qubit_type()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.is_result_type"><code class="docutils literal notranslate"><span class="pre">is_result_type()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.qir_major_version"><code class="docutils literal notranslate"><span class="pre">qir_major_version()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.qir_minor_version"><code class="docutils literal notranslate"><span class="pre">qir_minor_version()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.qir_module"><code class="docutils literal notranslate"><span class="pre">qir_module()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.qubit"><code class="docutils literal notranslate"><span class="pre">qubit()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.qubit_id"><code class="docutils literal notranslate"><span class="pre">qubit_id()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.qubit_type"><code class="docutils literal notranslate"><span class="pre">qubit_type()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.required_num_qubits"><code class="docutils literal notranslate"><span class="pre">required_num_qubits()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.required_num_results"><code class="docutils literal notranslate"><span class="pre">required_num_results()</span></code></a></li>
 <li><a class="reference internal" href="#pyqir.result"><code class="docutils literal notranslate"><span class="pre">result()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.result_id"><code class="docutils literal notranslate"><span class="pre">result_id()</span></code></a></li>
+<li><a class="reference internal" href="#pyqir.result_type"><code class="docutils literal notranslate"><span class="pre">result_type()</span></code></a></li>
 </ul>
 </li>
 </ul>

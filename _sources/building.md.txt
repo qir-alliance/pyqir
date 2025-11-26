@@ -8,7 +8,7 @@
 - [Python 3.9+](https://www.python.org)
 - [PowerShell 7+
   (Core)](https://github.com/powershell/powershell#get-powershell)
-- [LLVM/Clang 20.1.0](https://llvm.org/) - See [](#installing-llvm)
+- [LLVM/Clang 14.0.6](https://llvm.org/) - See [](#installing-llvm)
 - If compiling LLVM from source:
   - [CMake 3.10+](https://github.com/Kitware/CMake/releases/tag/v3.10.3)
   - [Ninja 1.10.0+](https://ninja-build.org/)
@@ -106,7 +106,7 @@ Within each project folder, the build can be run specifically for that project.
 
 For any of these commands, the LLVM version must be added via features.
 
-- `<features>` is a placeholder for `--features (llvm18-1 | llvm19-1 | llvm20-1)`
+- `<features>` is a placeholder for `--features (llvm11-0 | llvm12-0 | llvm13-0 | llvm14-0)`
 
 Build commands:
 
