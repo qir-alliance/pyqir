@@ -26,6 +26,9 @@ variables:
   RUST_TOOLCHAIN_VERSION: "1.86"
   PYTHON_VERSION: "3.11"
   LLVM_VERSION: 14
+  # use this to invalidate the cache. Any time we update the OS
+  # image, we should increment this to ensure that the cache is rebuilt.
+  CACHE_COUNTER: 7
 
 resources:
   repositories:
@@ -48,18 +51,25 @@ parameters:
     imageName: 'mariner-2.0-arm64'
     os: linux
     arch: aarch64
-  - name: mac_universal
+  - name: mac_x86_64
     poolName: 'Azure Pipelines'
-    imageName: 'macOS-latest'
+    imageName: 'macOS-14'
     os: macOS
-    arch: universal
-    ARCHFLAGS: '-arch arm64 -arch x86_64'
-    additionalRustTargets: aarch64-apple-darwin
+    arch: x86_64
+  - name: mac_aarch64
+    poolName: 'AcesShared'
+    os: macOS
+    arch: aarch64
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
-    imageName: 'windows-latest'
+    imageName: 'windows-2022'
     os: windows
     arch: x86_64
+  - name: windows_aarch64
+    poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
+    imageName: 'Windows-2022-ARM64'
+    os: windows
+    arch: aarch64
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
@@ -83,10 +93,11 @@ extends:
             os: ${{ target.os }}
             ${{ if eq(target.arch, 'aarch64') }}:
               hostArchitecture: Arm64
+            ${{ if eq(target.poolName, 'AcesShared') }}:
+              demands:
+              - ImageOverride -equals ACES_VM_SharedPool_Sequoia
           variables:
             arch: ${{ target.arch }}
-            ${{ if target.ARCHFLAGS }}:
-              ARCHFLAGS: ${{ target.ARCHFLAGS }}
             ${{ if eq(target.os, 'windows') }}:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)\target\llvm
             ${{ else }}:
@@ -118,7 +129,9 @@ extends:
           - task: UsePythonVersion@0
             inputs:
               versionSpec: $(PYTHON_VERSION)
-            condition: ne(variables['arch'], 'aarch64')
+              ${{ if eq(target.arch, 'aarch64') }}:
+                architecture: "arm64"
+            condition: not(and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64')))
           # Build or restore LLVM
           - pwsh: New-Item -ItemType Directory -Path $(LLVM_DIRECTORY) -Force
             displayName: Ensure cache dir exists
@@ -126,8 +139,8 @@ extends:
 
           - task: Cache@2
             inputs:
-              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
-              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
+              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
+              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
               path: $(LLVM_DIRECTORY)
               cacheHitVar: CACHE_RESTORED
             displayName: Cache LLVM
@@ -163,19 +176,30 @@ extends:
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
-              sudo tdnf ninja-build cmake -y
+              sudo tdnf install ninja-build cmake -y
             displayName: Install c++ build tools on mariner
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
-              brew install ninja
+              brew install cmake ninja ccache
             displayName: Install build dependencies
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables.CACHE_RESTORED, 'true'))
 
+          # on windows x86_64 we can install ninja via chocolatey. The cmake is pre-installed on the image.
           - script: |
               choco install --accept-license -y ninja
             displayName: Install build dependencies
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), ne(variables.CACHE_RESTORED, 'true'))
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
+
+          # ninja is not available on windows aarch64 images, so we install it from its github releases
+          - pwsh: ./build.ps1 -t install-ninja
+            displayName: Install build dependencies
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
+
+          # all platforms: verify ninja is installed
+          - pwsh: ./build.ps1 -t verify-ninja
+            displayName: Verify ninja build dependencie
+            condition: and(succeeded(), ne(variables.CACHE_RESTORED, 'true'))
 
           # on mariner we need to install:
           # ld with binutils
@@ -191,36 +215,22 @@ extends:
 
           - pwsh: ./build.ps1 -t install-llvm-from-source
             displayName: Build and Install LLVM
-            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), ne(variables['Agent.OS'], 'Darwin'))
-
-          - script: |
-              echo "env ARCHFLAGS='$(ARCHFLAGS)' ./build.ps1 -t install-llvm-from-source"
-              env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t install-llvm-from-source
-            displayName: Build and Install LLVM
-            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), eq(variables['Agent.OS'], 'Darwin'))
+            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'))
 
           # Build PyQIR
-          - pwsh: ./build.ps1 -t default
+          - pwsh: ./build.ps1
             displayName: Build
-            condition: and(succeeded(), ne(variables['Agent.OS'], 'Darwin'))
-
-          - pwsh: env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t build
-            displayName: Build
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
-
-          - pwsh: ./build.ps1 -t test
-            displayName: Build
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
+            condition: succeeded()
 
           - script: |
               dir target\wheels\*
             displayName: List Py Packages on Win
-            condition: eq(variables['Agent.OS'], 'Windows_NT')
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
           - script: |
               ls target/wheels/*
             displayName: List Py Packages on non-Win
-            condition: ne(variables['Agent.OS'], 'Windows_NT')
+            condition: and(succeeded(), ne(variables['Agent.OS'], 'Windows_NT'))
 
     - stage: approval
       displayName: Approval

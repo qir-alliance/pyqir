@@ -21,6 +21,28 @@ task default -depends build, test, run-examples
 task build -depends qirlib, pyqir
 task checks -depends cargo-fmt, cargo-clippy, black, mypy
 
+task install-ninja {
+    . .\install-ninja.ps1
+}
+
+task verify-ninja {
+    Write-BuildLog "`nTesting ninja availability..."
+    
+    try {
+        $ninjaCommand = Get-Command ninja -ErrorAction Stop
+        Write-BuildLog "Success! ninja found at: $($ninjaCommand.Source)"
+        
+        # Get version info
+        $versionOutput = & ninja --version 2>&1
+        Write-BuildLog "Ninja version: $versionOutput"
+    } catch {
+        throw "Failed to find ninja in PATH. Error: $($_.Exception.Message)`n"
+    }
+
+    Write-BuildLog "`n✅ Ninja build tool installation completed successfully!"
+    Write-BuildLog "You can now use 'ninja' command from any location."
+}
+
 task cargo-fmt {
     Invoke-LoggedCommand -workingDirectory $Root -errorMessage "Please run 'cargo fmt --all' before pushing" {
         cargo fmt --all -- --check
@@ -73,6 +95,7 @@ task pyqir -depends init {
 task test {
     $packages = Get-Wheels pyqir | ForEach-Object { "$_[test]" }
     Invoke-LoggedCommand { & $Python -m pip install --force-reinstall $packages }
+    Invoke-LoggedCommand { & $Python -m pip install --force-reinstall pytest }
     Invoke-LoggedCommand -workingDirectory $Pyqir { pytest }
 }
 
@@ -158,7 +181,7 @@ task install-llvm-from-archive {
 
 task install-llvm-from-source -depends configure-sccache -postaction { Write-CacheStats } {
     if ($IsWindows) {
-        Include vcvars.ps1
+        . .\vcvars.ps1
     }
     install-llvm $Qirlib build (Get-LLVMFeatureVersion)
     $installationDirectory = Resolve-InstallationDirectory
@@ -167,7 +190,7 @@ task install-llvm-from-source -depends configure-sccache -postaction { Write-Cac
 
 task package-llvm {
     if ($IsWindows) {
-        Include vcvars.ps1
+        . .\vcvars.ps1
     }
     $clear_pkg_dest_var = $false
     if (!(Test-Path env:\QIRLIB_PKG_DEST)) {
