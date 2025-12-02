@@ -170,46 +170,18 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
     let build_dir = get_build_dir()?;
     let mut config = Config::new(build_dir);
 
+    if cfg!(target_os = "windows") {
+        config
+            .define("CMAKE_C_COMPILER", "clang-cl")
+            .define("CMAKE_CXX_COMPILER", "clang-cl");
+    }
+
     config
         .generator("Ninja")
         .build_target(get_llvm_compile_target().as_str())
         .env("QIRLIB_LLVM_TAG", get_llvm_tag())
         .define("CPACK_PACKAGE_FILE_NAME", get_package_name()?)
         .define("CMAKE_INSTALL_PREFIX", get_llvm_install_dir());
-
-    let target = std::env::var("TARGET").unwrap();
-    if target.contains("apple-darwin") {
-        // On macOS, we need to set the CMAKE_OSX_ARCHITECTURES variable to
-        // ensure that the correct architectures are built. This is usually
-        // inferred from the target triple, but we need to set it explicitly
-        // when cross-compiling for universal binaries.
-        if let Ok(arch_flags) = env::var("ARCHFLAGS") {
-            println!("ARCHFLAGS environment variable set to: {arch_flags}");
-            config.env("ARCHFLAGS", &arch_flags);
-            let arches = arch_flags
-                .split("-arch")
-                .filter_map(|arch| {
-                    let arch = arch.trim();
-                    if arch.is_empty() {
-                        None
-                    } else {
-                        Some(arch)
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join(";");
-            if !arches.is_empty() {
-                println!("Setting CMAKE_OSX_ARCHITECTURES to: {arches}");
-                config.define("CMAKE_OSX_ARCHITECTURES", arches);
-            } else {
-                println!(
-                    "cargo:warning=ARCHFLAGS environment variable set, but no architectures found."
-                );
-            }
-        } else {
-            println!("ARCHFLAGS environment variable not set. Building for the host architecture.");
-        }
-    }
 
     let _ = config.build();
 
@@ -279,7 +251,10 @@ fn link_llvm() {
 fn compile_target_wrappers(build_dir: &Path) -> Result<(), Box<dyn Error>> {
     let target_c = build_dir.join("target.c").canonicalize()?;
     env::set_var("CFLAGS", llvm_sys::get_llvm_cflags());
-    Build::new().file(target_c).compile("targetwrappers");
+    Build::new()
+        .file(target_c)
+        .prefer_clang_cl_over_msvc(true)
+        .compile("targetwrappers");
     Ok(())
 }
 
@@ -298,6 +273,7 @@ fn compile_llvm_wrapper() -> Result<(), Box<dyn Error>> {
         .static_crt(true)
         .file("llvm-wrapper/MetadataWrapper.cpp")
         .file("llvm-wrapper/ModuleWrapper.cpp")
+        .prefer_clang_cl_over_msvc(true)
         .compile("llvm-wrapper");
     Ok(())
 }
