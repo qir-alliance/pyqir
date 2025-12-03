@@ -324,7 +324,7 @@ function Get-AuditWheelTag($python) {
         return "manylinux_2_35_x86_64"
     }
     elseif ($arch -eq "arm64" -or $arch -eq "aarch64") {
-        return "manylinux_2_34_aarch64"
+        return "manylinux_2_38_aarch64"
     }
     else {
         throw "Unsupported architecture $arch"
