@@ -237,6 +237,77 @@
         <article role="main" id="furo-main-content">
           <section id="upgrading-pyqir">
 <h1>Upgrading PyQIR<a class="headerlink" href="#upgrading-pyqir" title="Link to this heading">¶</a></h1>
+<section id="pyqir-0-12">
+<h2>PyQIR 0.12<a class="headerlink" href="#pyqir-0-12" title="Link to this heading">¶</a></h2>
+<p>PyQIR 0.12 is the first version to support LLVM opaque pointers via dependency on LLVM version 18 or higher.
+This version of PyQIR can parse IR or bitcode (.ll or .bc) with either style of pointers, but will always produce
+opaque pointers in any QIR output. Given that, PyQIR 0.12 also produces QIR with major version 2 by default.
+If you have need to produce QIR output with major version 1 that uses typed pointers, use PyQIR 0.11 or earlier.</p>
+<p>The following table describes the compatibility of PyQIR versions:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Input</p></th>
+<th class="head"><p>Output</p></th>
+<th class="head"><p>Tooling</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Typed Pointer QIR</p></td>
+<td><p>Typed Pointer QIR</p></td>
+<td><p>Use PyQIR 0.11 or earlier</p></td>
+</tr>
+<tr class="row-odd"><td><p>Typed Pointer QIR</p></td>
+<td><p>Opaque Pointer QIR</p></td>
+<td><p>Use PyQIR 0.12 or later</p></td>
+</tr>
+<tr class="row-even"><td><p>Opaque Pointer QIR</p></td>
+<td><p>Opaque Pointer QIR</p></td>
+<td><p>Use PyQIR 0.12 or later</p></td>
+</tr>
+<tr class="row-odd"><td><p>Opaque Pointer QIR</p></td>
+<td><p>Typed Pointer QIR</p></td>
+<td><p>NOT SUPPORTED</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="api-changes">
+<h3>API Changes<a class="headerlink" href="#api-changes" title="Link to this heading">¶</a></h3>
+<p>The change to support opaque pointers included the removal of <code class="docutils literal notranslate"><span class="pre">%Qubit*</span></code> and <code class="docutils literal notranslate"><span class="pre">%Result*</span></code> typed pointer utility functions.
+Specifically, the following functions have been removed:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">is_qubit_type</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">is_result_type</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">qubit_id</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">result_id</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">qubit_type</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">result_type</span></code></p></li>
+</ul>
+<p>A new function, <code class="docutils literal notranslate"><span class="pre">ptr_id</span></code>, has been added that replaces the functionality provided by <code class="docutils literal notranslate"><span class="pre">qubit_id</span></code> and <code class="docutils literal notranslate"><span class="pre">result_id</span></code> in a
+type-generic fashion. The below example (from <a class="reference download internal" download="" href="_downloads/6821d892e0ab3bc06c0e0df8ad926777/bernstein_vazirani.py"><span class="xref download myst">examples/bernstein_vazirani.py</span></a>)
+demonstrates how to use the existing <code class="docutils literal notranslate"><span class="pre">PointerType</span></code> to check the type of an argument and process its identifier with
+<code class="docutils literal notranslate"><span class="pre">ptr_id</span></code>.</p>
+<p>Before update (0.11 or earlier):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">inst</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+   <span class="k">if</span> <span class="n">is_qubit_type</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">type</span><span class="p">):</span>
+      <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">qubit_id</span><span class="p">(</span><span class="n">arg</span><span class="p">)))</span>
+   <span class="k">elif</span> <span class="n">is_result_type</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">type</span><span class="p">):</span>
+      <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">result_id</span><span class="p">(</span><span class="n">arg</span><span class="p">)))</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>After update (0.12 or later):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">inst</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+   <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">PointerType</span><span class="p">):</span>
+      <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ptr_id</span><span class="p">(</span><span class="n">arg</span><span class="p">)))</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+</section>
 <section id="pyqir-0-8">
 <h2>PyQIR 0.8<a class="headerlink" href="#pyqir-0-8" title="Link to this heading">¶</a></h2>
 <p>PyQIR 0.7 was the last version of PyQIR to support QIR evaluation. Simulation of QIR is now available via the <a class="reference external" href="https://github.com/qir-alliance/qir-runner"><code class="docutils literal notranslate"><span class="pre">qir-runner</span></code></a> sparse simulator.</p>
@@ -445,6 +516,10 @@ You can also compare it with <a class="reference external" href="https://github.
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Upgrading PyQIR</a><ul>
+<li><a class="reference internal" href="#pyqir-0-12">PyQIR 0.12</a><ul>
+<li><a class="reference internal" href="#api-changes">API Changes</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#pyqir-0-8">PyQIR 0.8</a></li>
 <li><a class="reference internal" href="#pyqir-0-7">PyQIR 0.7</a><ul>
 <li><a class="reference internal" href="#packages">Packages</a></li>
