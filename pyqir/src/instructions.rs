@@ -22,7 +22,7 @@ pub(crate) struct Instruction;
 impl Instruction {
     /// The instruction opcode.
     ///
-    /// :type: Opcode
+    /// :type: `Opcode`
     #[getter]
     fn opcode(slf: PyRef<Self>) -> Opcode {
         unsafe { LLVMGetInstructionOpcode(slf.into_super().cast().as_ptr()) }.into()
@@ -30,7 +30,7 @@ impl Instruction {
 
     /// The operands to the instruction.
     ///
-    /// :type: typing.List[Value]
+    /// :type: `typing.List[Value]`
     #[getter]
     fn operands<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
         let slf = slf.into_super();
@@ -48,7 +48,7 @@ impl Instruction {
     /// The basic blocks that are successors to this instruction. If this is not a terminator, the
     /// list is empty.
     ///
-    /// :type: typing.List[BasicBlock]
+    /// :type: `typing.List[BasicBlock]`
     #[getter]
     fn successors<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
         if unsafe { LLVMIsATerminatorInst(slf.as_ref().cast().as_ptr()) }.is_null() {
@@ -72,7 +72,7 @@ impl Instruction {
     /// Removes this instruction from its parent basic block.
     /// The instruction is not deleted from memory, so it can be reused.
     ///
-    /// :rtype: None
+    /// :rtype: `None`
     fn remove(slf: PyRef<Self>) {
         unsafe {
             LLVMInstructionRemoveFromParent(slf.into_super().cast().as_ptr());
@@ -81,9 +81,9 @@ impl Instruction {
 
     /// Removes this instruction from its parent basic block, then deletes it from memory.
     ///
-    /// .. warning:: Using this instruction after erasing it is undefined behavior.
+    /// .. `warning::` Using this instruction after erasing it is undefined behavior.
     ///
-    /// :rtype: None
+    /// :rtype: `None`
     fn erase(slf: PyRef<Self>) {
         unsafe {
             LLVMInstructionEraseFromParent(slf.into_super().cast().as_ptr());
@@ -351,7 +351,7 @@ pub(crate) struct Switch;
 impl Switch {
     /// The condition of the switch.
     ///
-    /// :type: Value
+    /// :type: `Value`
     #[getter]
     fn cond<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let slf = slf.into_super().into_super();
@@ -363,7 +363,7 @@ impl Switch {
 
     /// The default successor block if none of the cases match.
     ///
-    /// :type: BasicBlock
+    /// :type: `BasicBlock`
     #[getter]
     fn default(slf: PyRef<Self>, py: Python) -> PyResult<Py<BasicBlock>> {
         let slf = slf.into_super().into_super();
@@ -376,7 +376,7 @@ impl Switch {
 
     /// The switch cases.
     ///
-    /// :type: typing.List[typing.Tuple[Value, BasicBlock]]
+    /// :type: `typing.List[typing.Tuple[Value, BasicBlock]]`
     #[getter]
     fn cases<'py>(
         slf: PyRef<Self>,
@@ -408,7 +408,7 @@ pub(crate) struct ICmp;
 impl ICmp {
     /// The comparison predicate.
     ///
-    /// :type: IntPredicate
+    /// :type: `IntPredicate`
     #[getter]
     fn predicate(slf: PyRef<Self>) -> IntPredicate {
         unsafe { LLVMGetICmpPredicate(slf.into_super().into_super().cast().as_ptr()) }.into()
@@ -493,7 +493,7 @@ pub(crate) struct FCmp;
 impl FCmp {
     /// The comparison predicate.
     ///
-    /// :type: FloatPredicate
+    /// :type: `FloatPredicate`
     #[getter]
     fn predicate(slf: PyRef<Self>) -> FloatPredicate {
         unsafe { LLVMGetFCmpPredicate(slf.into_super().into_super().cast().as_ptr()) }.into()
@@ -579,7 +579,7 @@ pub(crate) struct Call;
 impl Call {
     /// The value being called.
     ///
-    /// :type: Value
+    /// :type: `Value`
     #[getter]
     fn callee<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let slf = slf.into_super().into_super();
@@ -591,7 +591,7 @@ impl Call {
 
     /// The arguments to the call.
     ///
-    /// :type: typing.List[Value]
+    /// :type: `typing.List[Value]`
     #[getter]
     fn args<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
         let mut args = Instruction::operands(slf.into_super(), py)?;
@@ -622,7 +622,7 @@ impl Phi {
 
     /// The incoming values and their preceding basic blocks.
     ///
-    /// :type: typing.List[typing.Tuple[Value, BasicBlock]]
+    /// :type: `typing.List[typing.Tuple[Value, BasicBlock]]`
     #[getter]
     fn incoming<'py>(
         slf: PyRef<Self>,

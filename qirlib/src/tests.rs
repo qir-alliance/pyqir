@@ -146,7 +146,9 @@ pub(crate) fn assert_reference_ir(
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("resources");
     path.push("tests");
-    prefix.iter().for_each(|p| path.push(p));
+    for p in &prefix {
+        path.push(p);
+    }
     path.push(name);
     path.set_extension("ll");
 

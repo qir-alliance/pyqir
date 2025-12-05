@@ -319,14 +319,11 @@ function install-llvm {
 }
 
 function Get-AuditWheelTag($python) {
-    $arch = & $python -c "import platform; print(platform.machine())"
-    if ($arch -eq "x86_64") {
-        return "manylinux_2_35_x86_64"
-    }
-    elseif ($arch -eq "arm64" -or $arch -eq "aarch64") {
-        return "manylinux_2_38_aarch64"
-    }
-    else {
-        throw "Unsupported architecture $arch"
+    $tag = & $python -c "from packaging.tags import sys_tags; print(next(t.platform for t in sys_tags() if t.platform.startswith('manylinux')))"
+    if ($tag.StartsWith("manylinux")) {
+        Write-BuildLog "Using tag [$tag] for auditwheel"
+        return $tag
+    } else {
+        throw "Unsupported tag [$tag]"
     }
 }

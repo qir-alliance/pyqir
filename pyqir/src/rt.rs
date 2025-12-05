@@ -8,12 +8,13 @@ use crate::{
 use pyo3::prelude::*;
 use qirlib::rt;
 
+#[allow(clippy::doc_markdown)]
 /// Inserts a marker in the generated output that indicates the start
 /// of an array and how many array elements it has.
 ///
-/// :param Builder builder: The IR Builder used to create the instructions
-/// :param Value num_elements: How many array elements the array has
-/// :param Value label: A string label for the array. Depending on the output schema, the label is included in the output or omitted.
+/// :param `Builder` builder: The IR Builder used to create the instructions
+/// :param `Value` num_elements: How many array elements the array has
+/// :param `Value` label: A string label for the array. Depending on the output schema, the label is included in the output or omitted.
 #[pyfunction]
 #[pyo3(text_signature = "(builder, num_elements, label)")]
 #[allow(clippy::needless_pass_by_value)]
@@ -37,9 +38,9 @@ pub(crate) fn array_record_output(
 
 /// Adds a measurement result to the generated output.
 ///
-/// :param Builder builder: The IR Builder used to create the instructions
-/// :param Value result: A result measurement to record
-/// :param Value label: A string label for the result value. Depending on the output schema, the label is included in the output or omitted.
+/// :param `Builder` builder: The IR Builder used to create the instructions
+/// :param `Value` result: A result measurement to record
+/// :param `Value` label: A string label for the result value. Depending on the output schema, the label is included in the output or omitted.
 #[pyfunction]
 #[pyo3(text_signature = "(builder, result, label)")]
 #[allow(clippy::needless_pass_by_value)]
@@ -64,8 +65,8 @@ pub(crate) fn result_record_output(
 /// Initializes the execution environment. Sets all qubits to a zero-state
 /// if they are not dynamically managed.
 ///
-/// :param Builder builder: The IR Builder used to create the instructions
-/// :param Value data: For base profile QIR, a const null ptr Value should be passed.
+/// :param `Builder` builder: The IR Builder used to create the instructions
+/// :param `Value` data: For base profile QIR, a const null ptr Value should be passed.
 #[pyfunction]
 #[pyo3(text_signature = "(builder, data)")]
 #[allow(clippy::needless_pass_by_value)]
@@ -78,12 +79,13 @@ pub(crate) fn initialize(py: Python, builder: Py<Builder>, data: &Value) -> PyRe
     Ok(())
 }
 
+#[allow(clippy::doc_markdown)]
 /// Inserts a marker in the generated output that indicates the start
 /// of a tuple and how many tuple elements it has.
 ///
-/// :param Builder builder: The IR Builder used to create the instructions
-/// :param Value num_elements: How many tuple elements the tuple has
-/// :param Value label: A string label for the tuple. Depending on the output schema, the label is included in the output or omitted.
+/// :param `Builder` builder: The IR Builder used to create the instructions
+/// :param `Value` num_elements: How many tuple elements the tuple has
+/// :param `Value` label: A string label for the tuple. Depending on the output schema, the label is included in the output or omitted.
 #[pyfunction]
 #[pyo3(text_signature = "(builder, num_elements, label)")]
 #[allow(clippy::needless_pass_by_value)]

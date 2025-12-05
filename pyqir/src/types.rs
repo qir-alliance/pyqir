@@ -213,7 +213,7 @@ pub(crate) struct StructType;
 impl StructType {
     /// The name of the structure or the empty string if the structure is anonymous.
     #[getter]
-    fn name(slf: PyRef<Self>) -> Option<&str> {
+    fn name(slf: PyRef<'_, Self>) -> Option<&str> {
         unsafe {
             let name = LLVMGetStructName(slf.into_super().cast().as_ptr());
             if name.is_null() {

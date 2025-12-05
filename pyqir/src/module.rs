@@ -34,8 +34,8 @@ use std::{
 
 /// A module is a collection of global values.
 ///
-/// :param Context context: The LLVM context.
-/// :param str name: The module name.
+/// :param `Context` context: The LLVM context.
+/// :param `str` name: The module name.
 #[pyclass(unsendable)]
 pub(crate) struct Module {
     module: NonNull<LLVMModule>,
@@ -59,10 +59,10 @@ impl Module {
 
     /// Creates a module from LLVM IR.
     ///
-    /// :param str ir: The LLVM IR for a module.
-    /// :param typing.Optional[str] name: The name of the module.
+    /// :param `str` ir: The LLVM IR for a module.
+    /// :param `typing.Optional[str]` name: The name of the module.
     /// :returns: The module.
-    /// :rtype: Module
+    /// :rtype: `Module`
     #[staticmethod]
     #[pyo3(signature = (context, ir, name=""))]
     fn from_ir(py: Python, context: Py<Context>, ir: &str, name: Option<&str>) -> PyResult<Self> {
@@ -101,10 +101,10 @@ impl Module {
 
     /// Creates a module from LLVM bitcode.
     ///
-    /// :param bytes bitcode: The LLVM bitcode for a module.
-    /// :param typing.Optional[str] name: The name of the module.
+    /// :param `bytes` bitcode: The LLVM bitcode for a module.
+    /// :param `typing.Optional[str]` name: The name of the module.
     /// :returns: The module.
-    /// :rtype: Module
+    /// :rtype: `Module`
     #[staticmethod]
     #[pyo3(signature = (context, bitcode, name=""))]
     fn from_bitcode(
@@ -148,7 +148,7 @@ impl Module {
 
     /// The name of the original source file that this module was compiled from.
     ///
-    /// :type: str
+    /// :type: `str`
     #[getter]
     fn source_filename(&self) -> &str {
         unsafe {
@@ -167,7 +167,7 @@ impl Module {
 
     /// The functions declared in this module.
     ///
-    /// :type: typing.List[Function]
+    /// :type: `typing.List[Function]`
     #[getter]
     fn functions(slf: Py<Module>, py: Python<'_>) -> PyResult<Vec<Bound<'_, PyAny>>> {
         let module = slf.borrow(py).cast().as_ptr();
@@ -198,7 +198,7 @@ impl Module {
 
     /// The LLVM context.
     ///
-    /// :type: Context
+    /// :type: `Context`
     #[getter]
     pub(crate) fn context(&self) -> &Py<Context> {
         &self.context
@@ -206,11 +206,11 @@ impl Module {
 
     /// Adds a flag to the llvm.module.flags metadata
     ///
-    /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
+    /// See <https://llvm.org/docs/LangRef.html#module-flags-metadata>
     ///
-    /// :param ModuleFlagBehavior behavior: flag specifying the behavior when two (or more) modules are merged together
-    /// :param str id: string that is a unique ID for the metadata.
-    /// :param Union[Metadata, Value] flag: value of the flag
+    /// :param `ModuleFlagBehavior` behavior: flag specifying the behavior when two (or more) modules are merged together
+    /// :param `str` id: string that is a unique ID for the metadata.
+    /// :param `Union[Metadata, Value]` flag: value of the flag
     #[pyo3(text_signature = "(behavior, id, flag)")]
     pub(crate) fn add_flag(
         &self,
@@ -233,11 +233,11 @@ impl Module {
 
     /// Gets the flag value from the llvm.module.flags metadata for a given id
     ///
-    /// See https://llvm.org/docs/LangRef.html#module-flags-metadata
+    /// See <https://llvm.org/docs/LangRef.html#module-flags-metadata>
     ///
-    /// :param str id: metadata string that is a unique ID for the metadata.
-    /// :returns: value of the flag if found, otherwise None
-    /// :rtype: typing.Optional[Metadata]
+    /// :param `str` id: metadata string that is a unique ID for the metadata.
+    /// :returns: value of the flag if found, otherwise `None`
+    /// :rtype: `typing.Optional[Metadata]`
     #[pyo3(text_signature = "(id)")]
     pub(crate) fn get_flag<'py>(
         slf: Py<Module>,
@@ -259,7 +259,7 @@ impl Module {
     /// Verifies that this module is valid.
     ///
     /// :returns: An error description if this module is invalid or `None` if this module is valid.
-    /// :rtype: typing.Optional[str]
+    /// :rtype: `typing.Optional[str]`
     fn verify(&self) -> Option<String> {
         unsafe {
             let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
@@ -275,7 +275,7 @@ impl Module {
 
     /// Converts this module into an LLVM IR string.
     ///
-    /// :rtype: str
+    /// :rtype: `str`
     fn __str__(&self) -> String {
         unsafe {
             Message::from_raw(LLVMPrintModuleToString(self.cast().as_ptr()))

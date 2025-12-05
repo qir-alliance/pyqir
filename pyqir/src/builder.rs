@@ -40,7 +40,7 @@ impl Builder {
 
     /// Tells this builder to insert subsequent instructions at the end of the block.
     ///
-    /// :param BasicBlock block: The block to insert into.
+    /// :param `BasicBlock` block: The block to insert into.
     /// :rtype: None
     #[pyo3(text_signature = "(block)")]
     fn insert_at_end(&mut self, py: Python, block: PyRef<BasicBlock>) -> PyResult<()> {
@@ -60,8 +60,8 @@ impl Builder {
 
     /// Tells this builder to insert subsequent instructions before the given instruction.
     ///
-    /// :param Value instr: The instruction to insert before.
-    /// :rtype: None
+    /// :param `Value` instr: The instruction to insert before.
+    /// :rtype: `None`
     #[pyo3(text_signature = "(instr)")]
     fn insert_before(&mut self, py: Python, instr: &Value) -> PyResult<()> {
         let owner = Owner::merge(py, [&self.owner, instr.owner()])?;
@@ -79,8 +79,8 @@ impl Builder {
 
     /// Tells this builder to insert subsequent instructions after the given instruction.
     ///
-    /// :param Value instr: The instruction to insert after.
-    /// :rtype: None
+    /// :param `Value` instr: The instruction to insert after.
+    /// :rtype: `None`
     #[pyo3(text_signature = "(instr)")]
     fn insert_after(&mut self, py: Python, instr: &Value) -> PyResult<()> {
         let owner = Owner::merge(py, [&self.owner, instr.owner()])?;
@@ -119,10 +119,10 @@ impl Builder {
 
     /// Inserts a bitwise logical and instruction.
     ///
-    /// :param Value lhs: The left-hand side.
-    /// :param Value rhs: The right-hand side.
+    /// :param `Value` lhs: The left-hand side.
+    /// :param `Value` rhs: The right-hand side.
     /// :returns: The result.
-    /// :rtype: Value
+    /// :rtype: `Value`
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn and_<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
@@ -139,10 +139,10 @@ impl Builder {
 
     /// Inserts a bitwise logical or instruction.
     ///
-    /// :param Value lhs: The left-hand side.
-    /// :param Value rhs: The right-hand side.
+    /// :param `Value` lhs: The left-hand side.
+    /// :param `Value` rhs: The right-hand side.
     /// :returns: The result.
-    /// :rtype: Value
+    /// :rtype: `Value`
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn or_<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
@@ -159,10 +159,10 @@ impl Builder {
 
     /// Inserts a bitwise logical exclusive or instruction.
     ///
-    /// :param Value lhs: The left-hand side.
-    /// :param Value rhs: The right-hand side.
+    /// :param `Value` lhs: The left-hand side.
+    /// :param `Value` rhs: The right-hand side.
     /// :returns: The result.
-    /// :rtype: Value
+    /// :rtype: `Value`
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn xor<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
@@ -179,10 +179,10 @@ impl Builder {
 
     /// Inserts an addition instruction.
     ///
-    /// :param Value lhs: The left-hand side.
-    /// :param Value rhs: The right-hand side.
+    /// :param `Value` lhs: The left-hand side.
+    /// :param `Value` rhs: The right-hand side.
     /// :returns: The sum.
-    /// :rtype: Value
+    /// :rtype: `Value`
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn add<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
@@ -199,10 +199,10 @@ impl Builder {
 
     /// Inserts a subtraction instruction.
     ///
-    /// :param Value lhs: The left-hand side.
-    /// :param Value rhs: The right-hand side.
+    /// :param `Value` lhs: The left-hand side.
+    /// :param `Value` rhs: The right-hand side.
     /// :returns: The difference.
-    /// :rtype: Value
+    /// :rtype: `Value`
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn sub<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
@@ -219,10 +219,10 @@ impl Builder {
 
     /// Inserts a multiplication instruction.
     ///
-    /// :param Value lhs: The left-hand side.
-    /// :param Value rhs: The right-hand side.
+    /// :param `Value` lhs: The left-hand side.
+    /// :param `Value` rhs: The right-hand side.
     /// :returns: The product.
-    /// :rtype: Value
+    /// :rtype: `Value`
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn mul<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
@@ -239,10 +239,10 @@ impl Builder {
 
     /// Inserts a shift left instruction.
     ///
-    /// :param Value lhs: The value to shift.
-    /// :param Value rhs: The number of bits to shift by.
+    /// :param `Value` lhs: The value to shift.
+    /// :param `Value` rhs: The number of bits to shift by.
     /// :returns: The result.
-    /// :rtype: Value
+    /// :rtype: `Value`
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn shl<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
@@ -259,10 +259,10 @@ impl Builder {
 
     /// Inserts a logical (zero fill) shift right instruction.
     ///
-    /// :param Value lhs: The value to shift.
-    /// :param Value rhs: The number of bits to shift by.
+    /// :param `Value` lhs: The value to shift.
+    /// :param `Value` rhs: The number of bits to shift by.
     /// :returns: The result.
-    /// :rtype: Value
+    /// :rtype: `Value`
     #[pyo3(text_signature = "(self, lhs, rhs)")]
     fn lshr<'py>(&self, py: Python<'py>, lhs: &Value, rhs: &Value) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, lhs.owner(), rhs.owner()])?;
@@ -279,11 +279,11 @@ impl Builder {
 
     /// Inserts an integer comparison instruction.
     ///
-    /// :param IntPredicate pred: The predicate to compare by.
-    /// :param Value lhs: The left-hand side.
-    /// :param Value rhs: The right-hand side.
+    /// :param `IntPredicate` pred: The predicate to compare by.
+    /// :param `Value` lhs: The left-hand side.
+    /// :param `Value` rhs: The right-hand side.
     /// :returns: The boolean result.
-    /// :rtype: Value
+    /// :rtype: `Value`
     #[pyo3(text_signature = "(self, pred, lhs, rhs)")]
     fn icmp<'py>(
         &self,
@@ -307,11 +307,11 @@ impl Builder {
 
     /// Inserts a call instruction.
     ///
-    /// :param Value value: The value to call.
-    /// :param typing.Sequence[typing.Union[Value, bool, int, float]] args:
+    /// :param `Value` value: The value to call.
+    /// :param `typing.Sequence[typing.Union[Value, bool, int, float]]` args:
     ///     The arguments to the function.
-    /// :returns: The return value, or None if the function has a void return type.
-    /// :rtype: Value
+    /// :returns: The return value, or `None` if the function has a void return type.
+    /// :rtype: `Value`
     #[pyo3(text_signature = "(self, callee, args)")]
     fn call<'py>(
         &self,
@@ -364,10 +364,10 @@ impl Builder {
     /// Instructions inserted when ``false`` is called will be inserted into the false branch. The
     /// true and false callables should use this module's builder to build instructions.
     ///
-    /// :param Value cond: The boolean condition to branch on.
-    /// :param typing.Callable[[], None] true:
+    /// :param `Value` cond: The boolean condition to branch on.
+    /// :param `typing.Callable[[], None]` true:
     ///     A callable that inserts instructions for the branch where the condition is true.
-    /// :param typing.Callable[[], None] false:
+    /// :param `typing.Callable[[], None]` false:
     ///     A callable that inserts instructions for the branch where the condition is false.
     #[pyo3(signature = (cond, r#true = None, r#false = None))]
     fn if_<'py>(
@@ -390,9 +390,9 @@ impl Builder {
 
     /// Inserts an unconditional branch instruction.
     ///
-    /// :param BasicBlock dest: The destination block.
+    /// :param `BasicBlock` dest: The destination block.
     /// :returns: The branch instruction.
-    /// :rtype: Instruction
+    /// :rtype: `Instruction`
     #[pyo3(text_signature = "(dest)")]
     fn br<'py>(&self, py: Python<'py>, dest: PyRef<BasicBlock>) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, dest.as_ref().owner()])?;
@@ -404,11 +404,11 @@ impl Builder {
 
     /// Inserts an conditional branch instruction.
     ///
-    /// :param BasicBlock if_: The condition
-    /// :param BasicBlock then: The destination block if condition is 1
-    /// :param BasicBlock else_: The destination block if condition is 0
+    /// :param `BasicBlock` if_: The condition
+    /// :param `BasicBlock` then: The destination block if condition is 1
+    /// :param `BasicBlock` else_: The destination block if condition is 0
     /// :returns: The branch instruction.
-    /// :rtype: Instruction
+    /// :rtype: `Instruction`
     #[pyo3(text_signature = "(if_, then, else_)")]
     fn condbr<'py>(
         &self,
@@ -440,7 +440,7 @@ impl Builder {
     /// Inserts a phi node.
     ///
     /// :returns: The phi node.
-    /// :rtype: Instruction
+    /// :rtype: `Instruction`
     #[pyo3(text_signature = "(type)")]
     fn phi<'py>(&self, py: Python<'py>, r#type: &Type) -> PyResult<Bound<'py, PyAny>> {
         unsafe {
@@ -456,9 +456,9 @@ impl Builder {
 
     /// Inserts a return instruction.
     ///
-    /// :param Value value: The value to return. If `None`, returns void.
+    /// :param `Value` value: The value to return. If `None`, returns void.
     /// :returns: The return instruction.
-    /// :rtype: Instruction
+    /// :rtype: `Instruction`
     #[pyo3(signature = (value = None))]
     fn ret<'py>(&self, py: Python<'py>, value: Option<&Value>) -> PyResult<Bound<'py, PyAny>> {
         let (value, owner) = match value {
@@ -497,10 +497,10 @@ impl Builder {
 
     /// The ‘trunc’ instruction truncates its operand to the given type.
     ///
-    /// :param Value val: Value to be converted.
-    /// :param Type ty: Target type.
+    /// :param `Value` val: Value to be converted.
+    /// :param `Type` ty: Target type.
     /// :returns: The trunc instruction.
-    /// :rtype: Value
+    /// :rtype: `Value`
     #[pyo3(text_signature = "(self, val, ty)")]
     fn trunc<'py>(&self, py: Python<'py>, val: &Value, ty: &Type) -> PyResult<Bound<'py, PyAny>> {
         let owner = Owner::merge(py, [&self.owner, val.owner()])?;
