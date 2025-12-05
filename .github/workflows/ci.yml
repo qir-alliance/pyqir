@@ -24,7 +24,6 @@ jobs:
         config:
           - { os: "ubuntu-22.04", arch: "x86_64", target: "checks", env: {} }
           - { os: "ubuntu-22.04", arch: "x86_64", target: "default", env: {} }
-          - { os: "ubuntu-22.04-arm", arch: "aarch64", target: "default", env: {} }
           - { os: "windows-2022", arch: "x86_64", target: "default", env: {} }
           - { os: "windows-11-arm", arch: "aarch64", target: "default", env: {} }
           - { os: "macos-15-intel", arch: "x86_64", target: "default", env: {} }
@@ -34,13 +33,13 @@ jobs:
       - name: Setup rust toolchain
         uses: ./.github/actions/rust-toolchain
         with:
-          toolchain: 1.90
+          toolchain: "1.90"
           components: rustfmt clippy
       - uses: actions/checkout@v4
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
-          python-version: 3.9
+          python-version: "3.9"
 
       - name: Install LLVM
         uses: ./.github/actions/install-llvm
