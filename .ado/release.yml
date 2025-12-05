@@ -23,7 +23,7 @@ schedules:
 
 variables:
   CARGO_TERM_COLOR: always
-  RUST_TOOLCHAIN_VERSION: "1.86"
+  RUST_TOOLCHAIN_VERSION: "1.90"
   PYTHON_VERSION: "3.11"
   LLVM_VERSION: 20
   # use this to invalidate the cache. Any time we update the OS

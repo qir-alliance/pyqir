@@ -22,16 +22,19 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - { os: "ubuntu-22.04", arch: "amd64", target: "checks", env: {} }
-          - { os: "ubuntu-22.04", arch: "amd64", target: "default", env: {} }
-          - { os: "windows-2022", arch: "amd64", target: "default", env: {} }
+          - { os: "ubuntu-22.04", arch: "x86_64", target: "checks", env: {} }
+          - { os: "ubuntu-22.04", arch: "x86_64", target: "default", env: {} }
+          - { os: "ubuntu-22.04-arm", arch: "aarch64", target: "default", env: {} }
+          - { os: "windows-2022", arch: "x86_64", target: "default", env: {} }
+          - { os: "windows-11-arm", arch: "aarch64", target: "default", env: {} }
+          - { os: "macos-15-intel", arch: "x86_64", target: "default", env: {} }
           - { os: "macos-15", arch: "aarch64", target: "default", env: {} }
     steps:
       - uses: actions/checkout@v4
       - name: Setup rust toolchain
         uses: ./.github/actions/rust-toolchain
         with:
-          toolchain: 1.86
+          toolchain: 1.90
           components: rustfmt clippy
       - uses: actions/checkout@v4
       - name: Set up Python 3.9
@@ -56,13 +59,13 @@ jobs:
         with:
           name: manylinux-artifacts
           path: target/wheels/*manylinux_2_*.whl
-        if: ${{ matrix.config.os == 'ubuntu-22.04' }}
+        if: ${{ startsWith(matrix.config.os, 'ubuntu-22.04') }}
       - name: Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.config.os }}-${{ matrix.config.arch }}-artifacts
           path: target/wheels/*
-        if: ${{ matrix.config.os != 'ubuntu-22.04' }}
+        if: ${{ !startsWith(matrix.config.os, 'ubuntu-22.04') }}
   docs:
     runs-on: "ubuntu-22.04"
     needs: build

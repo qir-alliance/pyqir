@@ -244,10 +244,10 @@ impl From<Py<Module>> for Owner {
 /// block is given, a `parent` function must be given, and this basic block is appended to the end
 /// of that function.
 ///
-/// :param Context context: The LLVM context.
-/// :param str name: The block name.
-/// :param typing.Optional[Function] parent: The parent function.
-/// :param typing.Optional[BasicBlock] before: The block to insert this block before.
+/// :param `Context` context: The LLVM context.
+/// :param `str` name: The block name.
+/// :param `typing.Optional[Function]` parent: The parent function.
+/// :param `typing.Optional[BasicBlock]` before: The block to insert this block before.
 #[pyclass(extends = Value, unsendable)]
 pub(crate) struct BasicBlock(NonNull<LLVMBasicBlock>);
 
@@ -331,7 +331,7 @@ impl BasicBlock {
 
     /// The terminating instruction of this basic block if there is one.
     ///
-    /// :type: typing.Optional[Instruction]
+    /// :type: `typing.Optional[Instruction]`
     #[getter]
     fn terminator<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Option<Bound<'py, PyAny>>> {
         unsafe {
@@ -374,9 +374,9 @@ pub(crate) struct Constant;
 impl Constant {
     /// Creates the null or zero constant for the given type.
     ///
-    /// :param Type type: The type of the constant.
+    /// :param `Type` type: The type of the constant.
     /// :returns: The null or zero constant.
-    /// :rtype: Constant
+    /// :rtype: `Constant`
     #[staticmethod]
     #[pyo3(text_signature = "(ty)")]
     fn null<'py>(py: Python<'py>, ty: &Type) -> PyResult<Bound<'py, PyAny>> {
@@ -386,7 +386,7 @@ impl Constant {
 
     /// Whether this value is the null value for its type.
     ///
-    /// :type: bool
+    /// :type: `bool`
     #[getter]
     fn is_null(slf: PyRef<Self>) -> bool {
         unsafe { LLVMIsNull(slf.into_super().cast().as_ptr()) != 0 }
@@ -443,7 +443,7 @@ pub(crate) struct FloatConstant;
 impl FloatConstant {
     /// The value.
     ///
-    /// :type: float
+    /// :type: `float`
     #[getter]
     fn value(slf: PyRef<Self>) -> f64 {
         unsafe { LLVMConstRealGetDouble(slf.into_super().into_super().cast().as_ptr(), &mut 0) }
@@ -452,10 +452,10 @@ impl FloatConstant {
 
 /// A function value.
 ///
-/// :param FunctionType ty: The function type.
-/// :param Linkage linkage: The linkage kind.
-/// :param str name: The function name.
-/// :param Module module: The parent module.
+/// :param `FunctionType` ty: The function type.
+/// :param `Linkage` linkage: The linkage kind.
+/// :param `str` name: The function name.
+/// :param `Module` module: The parent module.
 #[pyclass(extends = Constant)]
 pub(crate) struct Function;
 
@@ -522,7 +522,7 @@ impl Function {
 
     /// The basic blocks in this function.
     ///
-    /// :type: typing.List[BasicBlock]
+    /// :type: `typing.List[BasicBlock]`
     #[getter]
     fn basic_blocks<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
         let slf = slf.into_super().into_super();
@@ -562,7 +562,7 @@ pub(crate) struct Attribute(LLVMAttributeRef);
 impl Attribute {
     /// The id of this attribute as a string.
     ///
-    /// :type: str
+    /// :type: `str`
     #[getter]
     fn string_kind(&self) -> String {
         unsafe { get_string_attribute_kind(self.0) }
@@ -570,7 +570,7 @@ impl Attribute {
 
     /// The value of this attribute as a string, or `None` if this is not a string attribute.
     ///
-    /// :type: typing.Optional[str]
+    /// :type: `typing.Optional[str]`
     #[getter]
     fn string_value(&self) -> Option<String> {
         unsafe { get_string_attribute_value(self.0) }
@@ -585,9 +585,9 @@ pub(crate) struct AttributeList(Py<Function>);
 impl AttributeList {
     /// The attributes for a parameter.
     ///
-    /// :param int n: The parameter number, starting from zero.
+    /// :param `int` n: The parameter number, starting from zero.
     /// :returns: The parameter attributes.
-    /// :rtype: AttributeDict
+    /// :rtype: `AttributeDict`
     fn param(&self, py: Python, n: u32) -> AttributeSet {
         AttributeSet {
             function: self.0.clone_ref(py),
@@ -597,7 +597,7 @@ impl AttributeList {
 
     /// The attributes for the return type.
     ///
-    /// :type: AttributeDict
+    /// :type: `AttributeDict`
     #[getter]
     fn ret(&self, py: Python) -> AttributeSet {
         AttributeSet {
@@ -608,7 +608,7 @@ impl AttributeList {
 
     /// The attributes for the function itself.
     ///
-    /// :type: AttributeDict
+    /// :type: `AttributeDict`
     #[getter]
     fn func(&self, py: Python) -> AttributeSet {
         AttributeSet {
@@ -722,10 +722,10 @@ impl Literal<'_> {
 
 /// Creates a constant value.
 ///
-/// :param Type ty: The type of the value.
-/// :param typing.Union[bool, int, float] value: The value of the constant.
+/// :param `Type` ty: The type of the value.
+/// :param `typing.Union[bool, int, float]` value: The value of the constant.
 /// :returns: The constant value.
-/// :rtype: Value
+/// :rtype: `Value`
 #[pyfunction]
 #[pyo3(text_signature = "(ty, value)")]
 pub(crate) fn r#const<'py>(
@@ -739,10 +739,10 @@ pub(crate) fn r#const<'py>(
 
 /// Creates a static qubit value.
 ///
-/// :param Context context: The LLVM context.
-/// :param int id: The static qubit ID.
+/// :param `Context` context: The LLVM context.
+/// :param `int` id: The static qubit ID.
 /// :returns: A static qubit value.
-/// :rtype: Value
+/// :rtype: `Value`
 #[pyfunction]
 #[pyo3(text_signature = "(context, id)")]
 pub(crate) fn qubit(py: Python<'_>, context: Py<Context>, id: u64) -> PyResult<Bound<'_, PyAny>> {
@@ -754,9 +754,9 @@ pub(crate) fn qubit(py: Python<'_>, context: Py<Context>, id: u64) -> PyResult<B
 
 /// If the value is a static ptr, extracts the integer value.
 ///
-/// :param Value value: The value.
+/// :param `Value` value: The value.
 /// :returns: The static integer.
-/// :rtype: typing.Optional[int]
+/// :rtype: `typing.Optional[int]`
 #[pyfunction]
 #[pyo3(text_signature = "(value)")]
 pub(crate) fn ptr_id(value: &Value) -> Option<u64> {
@@ -765,10 +765,10 @@ pub(crate) fn ptr_id(value: &Value) -> Option<u64> {
 
 /// Creates a static result value.
 ///
-/// :param Context context: The LLVM context.
-/// :param int id: The static result ID.
+/// :param `Context` context: The LLVM context.
+/// :param `int` id: The static result ID.
 /// :returns: A static result value.
-/// :rtype: Value
+/// :rtype: `Value`
 #[pyfunction]
 #[pyo3(text_signature = "(context, id)")]
 pub(crate) fn result(py: Python<'_>, context: Py<Context>, id: u64) -> PyResult<Bound<'_, PyAny>> {
@@ -780,9 +780,9 @@ pub(crate) fn result(py: Python<'_>, context: Py<Context>, id: u64) -> PyResult<
 
 /// Whether the function is an entry point.
 ///
-/// :param Function function: The function.
-/// :returns: True if the function is an entry point.
-/// :rtype: bool
+/// :param `Function` function: The function.
+/// :returns: `True` if the function is an entry point.
+/// :rtype: `bool`
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn is_entry_point(function: PyRef<Function>) -> bool {
@@ -791,9 +791,9 @@ pub(crate) fn is_entry_point(function: PyRef<Function>) -> bool {
 
 /// Whether the function is interop-friendly.
 ///
-/// :param Function function: The function.
-/// :returns: True if the function is interop-friendly.
-/// :rtype: bool
+/// :param `Function` function: The function.
+/// :returns: `True` if the function is interop-friendly.
+/// :rtype: `bool`
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn is_interop_friendly(function: PyRef<Function>) -> bool {
@@ -802,9 +802,9 @@ pub(crate) fn is_interop_friendly(function: PyRef<Function>) -> bool {
 
 /// If the function declares a required number of qubits, extracts it.
 ///
-/// :param Function function: The function.
+/// :param `Function` function: The function.
 /// :returns: The required number of qubits.
-/// :rtype: typing.Optional[int]
+/// :rtype: `typing.Optional[int]`
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn required_num_qubits(function: PyRef<Function>) -> Option<u64> {
@@ -813,24 +813,25 @@ pub(crate) fn required_num_qubits(function: PyRef<Function>) -> Option<u64> {
 
 /// If the function declares a required number of results, extracts it.
 ///
-/// :param Function function: The function.
+/// :param `Function` function: The function.
 /// :returns: The required number of results.
-/// :rtype: Optional[int]
+/// :rtype: `typing.Optional[int]`
 #[pyfunction]
 #[pyo3(text_signature = "(function)")]
 pub(crate) fn required_num_results(function: PyRef<Function>) -> Option<u64> {
     unsafe { values::required_num_results(function.into_super().into_super().cast().as_ptr()) }
 }
 
+#[allow(clippy::doc_markdown)]
 /// Creates a module with required QIR module flag metadata
 ///
-/// :param Context context: The parent context.
-/// :param str name: The module name.
-/// :param int qir_major_version: The QIR major version this module is built for. Default 1.
-/// :param int qir_minor_version: The QIR minor version this module is built for. Default 0.
-/// :param bool dynamic_qubit_management: Whether this module supports dynamic qubit management. Default False.
-/// :param bool dynamic_result_management: Whether this module supports dynamic result management. Default False.
-/// :rtype: Module
+/// :param `Context` context: The parent context.
+/// :param `str` name: The module name.
+/// :param `int` qir_major_version: The QIR major version this module is built for. Default 1.
+/// :param `int` qir_minor_version: The QIR minor version this module is built for. Default 0.
+/// :param `bool` dynamic_qubit_management: Whether this module supports dynamic qubit management. Default False.
+/// :param `bool` dynamic_result_management: Whether this module supports dynamic result management. Default False.
+/// :rtype: `Module`
 #[pyfunction]
 #[pyo3(
     signature = (context, name, qir_major_version=None, qir_minor_version=None, dynamic_qubit_management=None, dynamic_result_management=None)
