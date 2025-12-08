@@ -57,7 +57,7 @@ jobs:
       - name: Artifacts - manylinux
         uses: actions/upload-artifact@v4
         with:
-          name: manylinux-artifacts
+          name: ${{ matrix.config.os }}-${{ matrix.config.arch }}-artifacts
           path: target/wheels/*manylinux_2_*.whl
         if: ${{ startsWith(matrix.config.os, 'ubuntu-22.04') }}
       - name: Artifacts
