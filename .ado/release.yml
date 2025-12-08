@@ -113,7 +113,7 @@ extends:
           steps:
           - task: RustInstaller@1
             inputs:
-              rustVersion: ms-$(RUST_TOOLCHAIN_VERSION)
+              rustVersion: ms-prod-$(RUST_TOOLCHAIN_VERSION)
               ${{ if target.additionalRustTargets }}:
                 additionalTargets: ${{ target.additionalRustTargets }}
               cratesIoFeedOverride: $(cratesIoFeedOverride)
