@@ -14,38 +14,29 @@ mod external;
 use external::llvm_sys;
 
 extern crate cc;
-#[macro_use]
-extern crate lazy_static;
 
 // Make sure one version of llvm features is used
 #[cfg(all(
-    not(any(feature = "llvm11-0")),
-    not(any(feature = "llvm12-0")),
-    not(any(feature = "llvm13-0")),
-    not(any(feature = "llvm14-0")),
+    not(any(feature = "llvm18-1")),
+    not(any(feature = "llvm19-1")),
+    not(any(feature = "llvm20-1"))
 ))]
-compile_error!("One of the features `qirlib/llvm11-0`, `qirlib/llvm12-0`, `qirlib/llvm13-0`, and `qirlib/llvm14-0` must be used exclusive.");
+compile_error!(
+    "One of the features `qirlib/llvm18-1`, `qirlib/llvm19-1`, and `qirlib/llvm20-1` must be used exclusive."
+);
 
 // Make sure only one llvm option is used.
 #[cfg(any(
-    all(
-        feature = "llvm11-0",
-        any(feature = "llvm12-0", feature = "llvm13-0", feature = "llvm14-0")
-    ),
-    all(
-        feature = "llvm12-0",
-        any(feature = "llvm11-0", feature = "llvm13-0", feature = "llvm14-0")
-    ),
-    all(
-        feature = "llvm13-0",
-        any(feature = "llvm11-0", feature = "llvm12-0", feature = "llvm14-0")
-    ),
-    all(
-        feature = "llvm14-0",
-        any(feature = "llvm11-0", feature = "llvm12-0", feature = "llvm13-0")
-    ),
+    all(feature = "llvm18-1", feature = "llvm19-1"),
+    all(feature = "llvm19-1", feature = "llvm18-1"),
+    all(feature = "llvm18-1", feature = "llvm20-1"),
+    all(feature = "llvm19-1", feature = "llvm20-1"),
+    all(feature = "llvm20-1", feature = "llvm18-1"),
+    all(feature = "llvm20-1", feature = "llvm19-1"),
 ))]
-compile_error!("Features `qirlib/llvm11-0`, `qirlib/llvm12-0`, `qirlib/llvm13-0`, and `qirlib/llvm14-0` must be used exclusive.");
+compile_error!(
+    "Features `qirlib/llvm18-1`, `qirlib/llvm19-1`, and `qirlib/llvm20-1` must be used exclusive."
+);
 
 // Make sure one of the linking features is used
 #[cfg(all(
@@ -91,12 +82,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo:rerun-if-changed=CMakeLists.txt");
 
     let install_dir = get_llvm_install_dir();
-    println!("cargo:rerun-if-changed={:?}", install_dir);
+    println!("cargo:rerun-if-changed={install_dir:?}");
 
     // llvm-sys components
     println!("cargo:rerun-if-changed=external.rs");
     println!("cargo:rerun-if-changed=target.c");
-    println!("cargo:rerun-if-changed=llvm-wrapper/LLVMWrapper.h");
     println!("cargo:rerun-if-changed=llvm-wrapper/MetadataWrapper.cpp");
     println!("cargo:rerun-if-changed=llvm-wrapper/ModuleWrapper.cpp");
 
@@ -134,7 +124,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else {
         println!("No LLVM linking");
     }
-    if !cfg!(feature = "no-llvm-linking") {
+    if !cfg!(feature = "no-llvm-linking") && !cfg!(feature = "no-module-metadata") {
         compile_llvm_wrapper()?;
     }
 
@@ -180,46 +170,18 @@ fn compile_llvm() -> Result<(), Box<dyn Error>> {
     let build_dir = get_build_dir()?;
     let mut config = Config::new(build_dir);
 
+    if cfg!(target_os = "windows") {
+        config
+            .define("CMAKE_C_COMPILER", "clang-cl")
+            .define("CMAKE_CXX_COMPILER", "clang-cl");
+    }
+
     config
         .generator("Ninja")
         .build_target(get_llvm_compile_target().as_str())
         .env("QIRLIB_LLVM_TAG", get_llvm_tag())
         .define("CPACK_PACKAGE_FILE_NAME", get_package_name()?)
         .define("CMAKE_INSTALL_PREFIX", get_llvm_install_dir());
-
-    let target = std::env::var("TARGET").unwrap();
-    if target.contains("apple-darwin") {
-        // On macOS, we need to set the CMAKE_OSX_ARCHITECTURES variable to
-        // ensure that the correct architectures are built. This is usually
-        // inferred from the target triple, but we need to set it explicitly
-        // when cross-compiling for universal binaries.
-        if let Ok(arch_flags) = env::var("ARCHFLAGS") {
-            println!("ARCHFLAGS environment variable set to: {}", arch_flags);
-            config.env("ARCHFLAGS", &arch_flags);
-            let arches = arch_flags
-                .split("-arch")
-                .filter_map(|arch| {
-                    let arch = arch.trim();
-                    if arch.is_empty() {
-                        None
-                    } else {
-                        Some(arch)
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join(";");
-            if !arches.is_empty() {
-                println!("Setting CMAKE_OSX_ARCHITECTURES to: {}", arches);
-                config.define("CMAKE_OSX_ARCHITECTURES", arches);
-            } else {
-                println!(
-                    "cargo:warning=ARCHFLAGS environment variable set, but no architectures found."
-                );
-            }
-        } else {
-            println!("ARCHFLAGS environment variable not set. Building for the host architecture.");
-        }
-    }
 
     let _ = config.build();
 
@@ -270,26 +232,29 @@ fn link_llvm() {
     // Export information to other crates
     println!(
         "cargo:config_path={}",
-        llvm_sys::LLVM_CONFIG_PATH.clone().unwrap().display()
+        llvm_sys::llvm_config_path().clone().unwrap().display()
     ); // will be DEP_QIRLIB_CONFIG_PATH
-    println!("cargo:libdir={}", libdir); // DEP_QIRLIB_LIBDIR
+    println!("cargo:libdir={libdir}"); // DEP_QIRLIB_LIBDIR
 
     // Link LLVM libraries
-    println!("cargo:rustc-link-search=native={}", libdir);
+    println!("cargo:rustc-link-search=native={libdir}");
     for name in llvm_sys::get_link_libraries() {
-        println!("cargo:rustc-link-lib=static={}", name);
+        println!("cargo:rustc-link-lib=static={name}");
     }
 
     // Link system libraries
     for name in llvm_sys::get_system_libraries() {
-        println!("cargo:rustc-link-lib=dylib={}", name);
+        println!("cargo:rustc-link-lib=dylib={name}");
     }
 }
 
 fn compile_target_wrappers(build_dir: &Path) -> Result<(), Box<dyn Error>> {
     let target_c = build_dir.join("target.c").canonicalize()?;
     env::set_var("CFLAGS", llvm_sys::get_llvm_cflags());
-    Build::new().file(target_c).compile("targetwrappers");
+    Build::new()
+        .file(target_c)
+        .prefer_clang_cl_over_msvc(true)
+        .compile("targetwrappers");
     Ok(())
 }
 
@@ -308,6 +273,7 @@ fn compile_llvm_wrapper() -> Result<(), Box<dyn Error>> {
         .static_crt(true)
         .file("llvm-wrapper/MetadataWrapper.cpp")
         .file("llvm-wrapper/ModuleWrapper.cpp")
+        .prefer_clang_cl_over_msvc(true)
         .compile("llvm-wrapper");
     Ok(())
 }
@@ -327,14 +293,12 @@ fn get_package_file_name() -> Result<String, Box<dyn Error>> {
 fn get_llvm_tag() -> String {
     if let Ok(tag) = env::var("QIRLIB_LLVM_TAG") {
         tag
-    } else if cfg!(feature = "llvm11-0") {
-        "llvmorg-11.1.0".to_owned() // 1fdec59bf
-    } else if cfg!(feature = "llvm12-0") {
-        "llvmorg-12.0.1".to_owned() // fed4134
-    } else if cfg!(feature = "llvm13-0") {
-        "llvmorg-13.0.1".to_owned() // 75e33f7
-    } else if cfg!(feature = "llvm14-0") {
-        "llvmorg-14.0.6".to_owned() // 28c006
+    } else if cfg!(feature = "llvm18-1") {
+        "llvmorg-18.1.2".to_owned() // 26a1d66
+    } else if cfg!(feature = "llvm19-1") {
+        "llvmorg-19.1.0".to_owned() // a4bf6cd
+    } else if cfg!(feature = "llvm20-1") {
+        "llvmorg-20.1.0".to_owned() // 24a30da
     } else {
         panic!("Unsupported LLVM version. The LLVM feature flags or QIRLIB_LLVM_TAG must be set.")
     }
@@ -346,7 +310,7 @@ fn get_package_name() -> Result<String, Box<dyn Error>> {
     } else {
         let tag = get_llvm_tag();
         let triple = get_target_triple()?;
-        let package_name = format!("qirlib-llvm-{}-{}", triple, tag);
+        let package_name = format!("qirlib-llvm-{triple}-{tag}");
         Ok(package_name)
     }
 }
@@ -374,14 +338,12 @@ fn get_llvm_install_dir() -> PathBuf {
 }
 
 fn locate_llvm_config() -> Option<PathBuf> {
-    let major = if cfg!(feature = "llvm11-0") {
-        "11"
-    } else if cfg!(feature = "llvm12-0") {
-        "12"
-    } else if cfg!(feature = "llvm13-0") {
-        "13"
-    } else if cfg!(feature = "llvm14-0") {
-        "14"
+    let major = if cfg!(feature = "llvm18-1") {
+        "18"
+    } else if cfg!(feature = "llvm19-1") {
+        "19"
+    } else if cfg!(feature = "llvm20-1") {
+        "20"
     } else {
         "unknown"
     };
@@ -389,7 +351,7 @@ fn locate_llvm_config() -> Option<PathBuf> {
         Some(PathBuf::from(path))
     } else {
         let dir = get_llvm_install_dir();
-        println!("Looking in {:?}", dir);
+        println!("Looking in {dir:?}");
         let prefix = dir.join("bin");
         let binary_name = llvm_config_name();
         let binary_path = prefix.join(binary_name);

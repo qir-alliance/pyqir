@@ -1,16 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::types;
 use const_str::raw_cstr;
 use core::slice;
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{
     core::*, prelude::*, LLVMAttributeFunctionIndex, LLVMAttributeIndex, LLVMLinkage,
-    LLVMOpaqueAttributeRef, LLVMOpcode, LLVMTypeKind, LLVMValueKind,
+    LLVMOpaqueAttributeRef, LLVMTypeKind, LLVMValueKind,
 };
 use std::{
-    convert::TryFrom,
     ffi::CStr,
     mem::{ManuallyDrop, MaybeUninit},
     ptr::NonNull,
@@ -20,11 +18,11 @@ use std::{
 pub unsafe fn qubit(context: LLVMContextRef, id: u64) -> LLVMValueRef {
     let i64 = LLVMInt64TypeInContext(context);
     let value = LLVMConstInt(i64, id, 0);
-    LLVMConstIntToPtr(value, types::qubit(context))
+    LLVMConstIntToPtr(value, LLVMPointerTypeInContext(context, 0))
 }
 
-pub unsafe fn qubit_id(value: LLVMValueRef) -> Option<u64> {
-    if types::is_qubit(LLVMTypeOf(value)) {
+pub unsafe fn ptr_id(value: LLVMValueRef) -> Option<u64> {
+    if LLVMPointerTypeIsOpaque(LLVMTypeOf(value)) == 1 {
         pointer_to_int(value)
     } else {
         None
@@ -34,16 +32,9 @@ pub unsafe fn qubit_id(value: LLVMValueRef) -> Option<u64> {
 pub unsafe fn result(context: LLVMContextRef, id: u64) -> LLVMValueRef {
     let i64 = LLVMInt64TypeInContext(context);
     let value = LLVMConstInt(i64, id, 0);
-    LLVMConstIntToPtr(value, types::result(context))
+    LLVMConstIntToPtr(value, LLVMPointerTypeInContext(context, 0))
 }
 
-pub unsafe fn result_id(value: LLVMValueRef) -> Option<u64> {
-    if types::is_result(LLVMTypeOf(value)) {
-        pointer_to_int(value)
-    } else {
-        None
-    }
-}
 pub unsafe fn entry_point(
     module: LLVMModuleRef,
     name: &CStr,
@@ -124,7 +115,7 @@ pub unsafe fn required_num_qubits(function: LLVMValueRef) -> Option<u64> {
                 })?;
 
         let mut len = 0;
-        let value = LLVMGetStringAttributeValue(required_qubits.as_ptr(), &mut len);
+        let value = LLVMGetStringAttributeValue(required_qubits.as_ptr(), &raw mut len);
         let value = slice::from_raw_parts(value.cast(), len.try_into().unwrap());
         str::from_utf8(value).ok()?.parse().ok()
     } else {
@@ -151,7 +142,7 @@ pub unsafe fn required_num_results(function: LLVMValueRef) -> Option<u64> {
                     )
                 })?;
         let mut len = 0;
-        let value = LLVMGetStringAttributeValue(required_results.as_ptr(), &mut len);
+        let value = LLVMGetStringAttributeValue(required_results.as_ptr(), &raw mut len);
         let value = slice::from_raw_parts(value.cast(), len.try_into().unwrap());
         str::from_utf8(value).ok()?.parse().ok()
     } else {
@@ -159,6 +150,7 @@ pub unsafe fn required_num_results(function: LLVMValueRef) -> Option<u64> {
     }
 }
 
+#[cfg(feature = "llvm18-1")]
 pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let string = LLVMConstStringInContext(
@@ -168,8 +160,9 @@ pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef
         0,
     );
 
-    let len = LLVMGetArrayLength(LLVMTypeOf(string));
-    let ty = LLVMArrayType(LLVMInt8TypeInContext(context), len);
+    let len = LLVMGetArrayLength2(LLVMTypeOf(string));
+    let i8_ty = LLVMInt8TypeInContext(context);
+    let ty = LLVMArrayType2(LLVMInt8TypeInContext(context), len);
     let global = LLVMAddGlobal(module, ty, raw_cstr!(""));
     LLVMSetLinkage(global, LLVMLinkage::LLVMInternalLinkage);
     LLVMSetGlobalConstant(global, 1);
@@ -177,8 +170,31 @@ pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef
 
     let zero = LLVMConstNull(LLVMInt32TypeInContext(context));
     let mut indices = [zero, zero];
-    #[allow(deprecated)]
-    LLVMConstGEP(
+    LLVMConstGEP2(
+        i8_ty,
+        global,
+        indices.as_mut_ptr(),
+        indices.len().try_into().unwrap(),
+    )
+}
+
+#[cfg(any(feature = "llvm19-1", feature = "llvm20-1"))]
+pub unsafe fn global_string(module: LLVMModuleRef, value: &[u8]) -> LLVMValueRef {
+    let context = LLVMGetModuleContext(module);
+    let string = LLVMConstStringInContext2(context, value.as_ptr().cast(), value.len(), 0);
+
+    let len = LLVMGetArrayLength2(LLVMTypeOf(string));
+    let i8_ty = LLVMInt8TypeInContext(context);
+    let ty = LLVMArrayType2(LLVMInt8TypeInContext(context), len);
+    let global = LLVMAddGlobal(module, ty, raw_cstr!(""));
+    LLVMSetLinkage(global, LLVMLinkage::LLVMInternalLinkage);
+    LLVMSetGlobalConstant(global, 1);
+    LLVMSetInitializer(global, string);
+
+    let zero = LLVMConstNull(LLVMInt32TypeInContext(context));
+    let mut indices = [zero, zero];
+    LLVMConstGEP2(
+        i8_ty,
         global,
         indices.as_mut_ptr(),
         indices.len().try_into().unwrap(),
@@ -190,28 +206,15 @@ pub unsafe fn extract_string(value: LLVMValueRef) -> Option<Vec<u8>> {
         return None;
     }
 
-    if !is_byte_string(LLVMTypeOf(value)) {
+    if LLVMIsGlobalConstant(value) == 0 {
         return None;
     }
 
-    let expr = LLVMIsAConstantExpr(value);
-    let opcode = LLVMGetConstOpcode(expr);
-    if opcode != LLVMOpcode::LLVMGetElementPtr {
-        return None;
-    }
-
-    let element = LLVMGetOperand(expr, 0);
-    let offset = LLVMConstIntGetZExtValue(LLVMGetOperand(expr, 1));
-    let offset = usize::try_from(offset).expect("Pointer offset larger than usize.");
-    let init = LLVMIsAConstantDataSequential(LLVMGetInitializer(element));
-    if init.is_null() {
-        return None;
-    }
-
+    let element = LLVMGetOperand(value, 0);
     let mut len = 0;
-    let data = LLVMGetAsString(init, &mut len);
+    let data = LLVMGetAsString(element, &raw mut len);
     let data = slice::from_raw_parts(data.cast(), len);
-    Some(data[offset..].to_vec())
+    Some(data[..].to_vec())
 }
 
 pub unsafe fn add_string_attribute(
@@ -252,7 +255,7 @@ pub unsafe fn get_attribute_count(function: LLVMValueRef, index: LLVMAttributeIn
 
 pub unsafe fn get_string_attribute_kind(attr: *mut LLVMOpaqueAttributeRef) -> String {
     let mut len = 0;
-    let value = LLVMGetStringAttributeKind(attr, &mut len).cast();
+    let value = LLVMGetStringAttributeKind(attr, &raw mut len).cast();
     let value = slice::from_raw_parts(value, len.try_into().unwrap());
     str::from_utf8(value)
         .expect("Attribute kind is not valid UTF-8.")
@@ -264,7 +267,7 @@ pub unsafe fn get_string_attribute_value(attr: *mut LLVMOpaqueAttributeRef) -> O
         None
     } else {
         let mut len = 0;
-        let value = LLVMGetStringAttributeValue(attr, &mut len).cast();
+        let value = LLVMGetStringAttributeValue(attr, &raw mut len).cast();
         let value = slice::from_raw_parts(value, len.try_into().unwrap());
         Some(
             str::from_utf8(value)
@@ -301,16 +304,6 @@ unsafe fn pointer_to_int(value: LLVMValueRef) -> Option<u64> {
         Some(LLVMConstIntGetZExtValue(int))
     } else {
         None
-    }
-}
-
-unsafe fn is_byte_string(ty: LLVMTypeRef) -> bool {
-    if LLVMGetTypeKind(ty) == LLVMTypeKind::LLVMPointerTypeKind {
-        let pointee = LLVMGetElementType(ty);
-        LLVMGetTypeKind(pointee) == LLVMTypeKind::LLVMIntegerTypeKind
-            && LLVMGetIntTypeWidth(pointee) == 8
-    } else {
-        false
     }
 }
 

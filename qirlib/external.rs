@@ -34,9 +34,10 @@ pub mod llvm_sys {
         process::Command,
     };
 
-    lazy_static! {
-        /// Filesystem path to an llvm-config binary for the correct version.
-        pub static ref LLVM_CONFIG_PATH: Option<PathBuf> = crate::locate_llvm_config();
+    /// Filesystem path to an llvm-config binary for the correct version.
+    pub fn llvm_config_path() -> &'static Option<PathBuf> {
+        static LLVM_CONFIG_PATH: std::sync::OnceLock<Option<PathBuf>> = std::sync::OnceLock::new();
+        LLVM_CONFIG_PATH.get_or_init(crate::locate_llvm_config)
     }
 
     /// Get the output from running `llvm-config` with the given argument.
@@ -44,8 +45,13 @@ pub mod llvm_sys {
     /// Lazily searches for or compiles LLVM as configured by the environment
     /// variables.
     pub fn llvm_config(arg: &str) -> String {
-        llvm_config_ex(&*LLVM_CONFIG_PATH.clone().unwrap(), arg)
-            .expect("Surprising failure from llvm-config")
+        llvm_config_ex(
+            &*llvm_config_path()
+                .clone()
+                .expect("should have configured location of llvm-config"),
+            arg,
+        )
+        .expect("Surprising failure from llvm-config")
     }
 
     /// Invoke the specified binary as llvm-config.

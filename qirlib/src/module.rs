@@ -22,6 +22,7 @@ pub enum FlagBehavior {
     Append,
     AppendUnique,
     Max,
+    Min,
 }
 
 impl From<LLVMRustModFlagBehavior> for FlagBehavior {
@@ -34,6 +35,7 @@ impl From<LLVMRustModFlagBehavior> for FlagBehavior {
             LLVMRustModFlagBehavior::Append => FlagBehavior::Append,
             LLVMRustModFlagBehavior::AppendUnique => FlagBehavior::AppendUnique,
             LLVMRustModFlagBehavior::Max => FlagBehavior::Max,
+            LLVMRustModFlagBehavior::Min => FlagBehavior::Min,
         }
     }
 }
@@ -48,6 +50,7 @@ impl From<FlagBehavior> for LLVMRustModFlagBehavior {
             FlagBehavior::Append => LLVMRustModFlagBehavior::Append,
             FlagBehavior::AppendUnique => LLVMRustModFlagBehavior::AppendUnique,
             FlagBehavior::Max => LLVMRustModFlagBehavior::Max,
+            FlagBehavior::Min => LLVMRustModFlagBehavior::Min,
         }
     }
 }

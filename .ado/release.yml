@@ -23,9 +23,12 @@ schedules:
 
 variables:
   CARGO_TERM_COLOR: always
-  RUST_TOOLCHAIN_VERSION: "1.84"
+  RUST_TOOLCHAIN_VERSION: "1.86"
   PYTHON_VERSION: "3.11"
-  LLVM_VERSION: 14
+  LLVM_VERSION: 20
+  # use this to invalidate the cache. Any time we update the OS
+  # image, we should increment this to ensure that the cache is rebuilt.
+  CACHE_COUNTER: 8
 
 resources:
   repositories:
@@ -40,26 +43,33 @@ parameters:
   default:
   - name: linux_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
-    imageName: 'ubuntu-20.04'
+    imageName: 'ubuntu-22.04'
     os: linux
     arch: x86_64
   - name: linux_aarch64
     poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
-    imageName: 'mariner-2.0-arm64'
+    imageName: 'azurelinux-3.0-arm64'
     os: linux
     arch: aarch64
-  - name: mac_universal
+  - name: mac_x86_64
     poolName: 'Azure Pipelines'
-    imageName: 'macOS-latest'
+    imageName: 'macOS-15'
     os: macOS
-    arch: universal
-    ARCHFLAGS: '-arch arm64 -arch x86_64'
-    additionalRustTargets: aarch64-apple-darwin
+    arch: x86_64
+  - name: mac_aarch64
+    poolName: 'AcesShared'
+    os: macOS
+    arch: aarch64
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
-    imageName: 'windows-latest'
+    imageName: 'windows-2022'
     os: windows
     arch: x86_64
+  - name: windows_aarch64
+    poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
+    imageName: 'Windows-2022-ARM64'
+    os: windows
+    arch: aarch64
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
@@ -83,10 +93,11 @@ extends:
             os: ${{ target.os }}
             ${{ if eq(target.arch, 'aarch64') }}:
               hostArchitecture: Arm64
+            ${{ if eq(target.poolName, 'AcesShared') }}:
+              demands:
+              - ImageOverride -equals ACES_VM_SharedPool_Sequoia
           variables:
             arch: ${{ target.arch }}
-            ${{ if target.ARCHFLAGS }}:
-              ARCHFLAGS: ${{ target.ARCHFLAGS }}
             ${{ if eq(target.os, 'windows') }}:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)\target\llvm
             ${{ else }}:
@@ -118,7 +129,19 @@ extends:
           - task: UsePythonVersion@0
             inputs:
               versionSpec: $(PYTHON_VERSION)
-            condition: ne(variables['arch'], 'aarch64')
+              ${{ if eq(target.arch, 'aarch64') }}:
+                architecture: "arm64"
+            condition: and(succeeded(), not(and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))))
+
+          # UsePythonVersion@0 does not support aarch64, so we install Python manually
+          # using tdnf on Azure Linux 3.0 aarch64
+          # We also need alias python3 as python
+          - script: |
+              sudo tdnf install python3-3.12.9 python3-pip-24.2 -y
+              sudo alternatives --install /usr/bin/python python /usr/bin/python3 1
+            displayName: Install Python on Azure Linux 3.0 aarch64
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
+
           # Build or restore LLVM
           - pwsh: New-Item -ItemType Directory -Path $(LLVM_DIRECTORY) -Force
             displayName: Ensure cache dir exists
@@ -126,8 +149,8 @@ extends:
 
           - task: Cache@2
             inputs:
-              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
-              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}"'
+              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
+              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
               path: $(LLVM_DIRECTORY)
               cacheHitVar: CACHE_RESTORED
             displayName: Cache LLVM
@@ -143,8 +166,8 @@ extends:
               Write-Host "##vso[task.setvariable variable=QIRLIB_LLVM_EXTERNAL_DIR;]$directory"
 
               # Tell the build what llvm feature version to use
-              $feature = "llvm$(LLVM_VERSION)-0"
-              $variableName = "LLVM_SYS_$(LLVM_VERSION)0_PREFIX"
+              $feature = "llvm$(LLVM_VERSION)-1"
+              $variableName = "LLVM_SYS_$(LLVM_VERSION)1_PREFIX"
               Write-Host "##vso[task.setvariable variable=PYQIR_LLVM_FEATURE_VERSION;]$feature"
 
               # Tell LLVM-SYS where LLVM is installed
@@ -163,64 +186,60 @@ extends:
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
-              sudo tdnf ninja-build cmake -y
-            displayName: Install c++ build tools on mariner
+              sudo tdnf install ninja-build cmake -y
+            displayName: Install c++ build tools on Azure Linux 3.0 aarch64
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
-              brew install ninja
+              brew install cmake ninja ccache
             displayName: Install build dependencies
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables.CACHE_RESTORED, 'true'))
 
           - script: |
               choco install --accept-license -y ninja
             displayName: Install build dependencies
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), ne(variables.CACHE_RESTORED, 'true'))
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
 
-          # on mariner we need to install:
+          # ninja is not available on windows aarch64 images, so we install it from its github releases
+          - pwsh: ./build.ps1 -t install-ninja
+            displayName: Install build dependencies
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
+
+          # all platforms: verify ninja is installed
+          - pwsh: ./build.ps1 -t verify-ninja
+            displayName: Verify ninja build dependencie
+            condition: and(succeeded(), ne(variables.CACHE_RESTORED, 'true'))
+
+          # on Azure Linux 3.0 aarch64 we need to install:
           # ld with binutils
           # crt1.o and others with glibc-devel
           # std lib headers with kernel-headers
           # ninja and cmake for building LLVM
           - script: |
-              sudo tdnf install binutils glibc-devel kernel-headers -y
-            displayName: Install c++ build tools on mariner
+              sudo tdnf install binutils glibc-devel kernel-headers gcc -y
+            displayName: Install c++ build tools on Azure Linux 3.0 aarch64
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
 
           # build and install LLVM
 
           - pwsh: ./build.ps1 -t install-llvm-from-source
             displayName: Build and Install LLVM
-            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), ne(variables['Agent.OS'], 'Darwin'))
-
-          - script: |
-              echo "env ARCHFLAGS='$(ARCHFLAGS)' ./build.ps1 -t install-llvm-from-source"
-              env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t install-llvm-from-source
-            displayName: Build and Install LLVM
-            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'), eq(variables['Agent.OS'], 'Darwin'))
+            condition: and(succeeded(), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'))
 
           # Build PyQIR
-          - pwsh: ./build.ps1 -t default
+          - pwsh: ./build.ps1
             displayName: Build
-            condition: and(succeeded(), ne(variables['Agent.OS'], 'Darwin'))
-
-          - pwsh: env ARCHFLAGS="$(ARCHFLAGS)" ./build.ps1 -t build
-            displayName: Build
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
-
-          - pwsh: ./build.ps1 -t test
-            displayName: Build
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables['arch'], 'aarch64'))
+            condition: succeeded()
 
           - script: |
               dir target\wheels\*
             displayName: List Py Packages on Win
-            condition: eq(variables['Agent.OS'], 'Windows_NT')
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
           - script: |
               ls target/wheels/*
             displayName: List Py Packages on non-Win
-            condition: ne(variables['Agent.OS'], 'Windows_NT')
+            condition: and(succeeded(), ne(variables['Agent.OS'], 'Windows_NT'))
 
     - stage: approval
       displayName: Approval
@@ -266,22 +285,19 @@ extends:
             ls $(System.DefaultWorkingDirectory)/target/wheels
           displayName: Display Py Artifacts in Publishing Dir
 
-        - task: EsrpRelease@7
+        - task: EsrpRelease@9
           condition: succeeded()
           displayName: Publish Py Packages
           inputs:
-            ConnectedServiceName: 'ESRP Signing Connection'
-            KeyVaultName: 'kv-aqua-esrp-001'
-            AuthCertName: 'EsrpAuthCert'
-            SignCertName: 'EsrpSignCert'
-            ClientId: '832c049d-cd07-4c1c-bfa5-c07250d190cb'
-            Intent: 'PackageDistribution'
-            ContentType: 'PyPi'
-            FolderLocation: '$(System.DefaultWorkingDirectory)/target/wheels'
-            WaitForReleaseCompletion: true
-            Owners: '$(OwnerPersonalAlias)@microsoft.com'  # NB: Group email here fails the task with non-actionable output.
-            Approvers: 'billti@microsoft.com'
-            # Auto-inserted Debugging defaults:
-            ServiceEndpointUrl: 'https://api.esrp.microsoft.com'
-            MainPublisher: 'ESRPRELPACMAN' # Default ESRP v7 publisher. Do not change.
-            DomainTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
+            connectedservicename: 'PME ESRP Azure Connection'
+            usemanagedidentity: true
+            keyvaultname: 'quantum-esrp-kv'
+            signcertname: ESRPCert
+            clientid: '832c049d-cd07-4c1c-bfa5-c07250d190cb'
+            contenttype: PyPi
+            domaintenantid: '975f013f-7f24-47e8-a7d3-abc4752bf346'
+            folderlocation: '$(System.DefaultWorkingDirectory)/target/wheels'
+            waitforreleasecompletion: true
+            owners: 'billti@microsoft.com'
+            approvers: 'billti@microsoft.com'
+            mainpublisher: ESRPRELPACMAN

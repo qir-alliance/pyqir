@@ -50,34 +50,52 @@ The QIR output will look like:
 ; ModuleID = 'Bell'
 source_filename = "Bell"
 
-%Qubit = type opaque
-%Result = type opaque
+
+
 
 define void @main() #0 {
 entry:
-  call void @__quantum__qis__h__body(%Qubit* null)
-  call void @__quantum__qis__cnot__body(%Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*))
-  call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
-  call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 1 to %Qubit*), %Result* inttoptr (i64 1 to %Result*))
+  call void @__quantum__qis__h__body(ptr null)
+  call void @__quantum__qis__cnot__body(ptr null, ptr inttoptr (i64 1 to ptr))
+  call void @__quantum__qis__mz__body(ptr null, ptr null)
+  call void @__quantum__qis__mz__body(ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 1 to ptr))
   ret void
 }
 
-declare void @__quantum__qis__h__body(%Qubit*)
+declare void @__quantum__qis__h__body(ptr)
 
-declare void @__quantum__qis__cnot__body(%Qubit*, %Qubit*)
+declare void @__quantum__qis__cnot__body(ptr, ptr)
 
-declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly) #1
+declare void @__quantum__qis__mz__body(ptr, ptr writeonly) #1
 
 attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="2" "required_num_results"="2" }
 attributes #1 = { "irreversible" }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 
-!0 = !{i32 1, !"qir_major_version", i32 1}
+!0 = !{i32 1, !"qir_major_version", i32 2}
 !1 = !{i32 7, !"qir_minor_version", i32 0}
 !2 = !{i32 1, !"dynamic_qubit_management", i1 false}
 !3 = !{i32 1, !"dynamic_result_management", i1 false}
 ```
+
+## LLVM Opaque Pointers
+
+Starting in PyQIR 0.12, we support LLVM opaque pointers via dependency on LLVM version 18 or higher.
+These newer version of PyQIR can parse IR or bitcode (.ll or .bc) with either style of pointers, but will always produce
+opaque pointers in any QIR output. Given that, PyQIR 0.12 also produces QIR with major version 2 by default.
+If you have need to produce QIR output with major version 1 that uses typed pointers, use PyQIR 0.11 or earlier.
+
+The following table describes the compatibility of PyQIR versions:
+
+Input | Output | Tooling
+-- | -- | --
+Typed Pointer QIR | Typed Pointer QIR | Use PyQIR 0.11 or earlier
+Typed Pointer QIR | Opaque Pointer QIR | Use PyQIR 0.12 or later
+Opaque Pointer QIR | Opaque Pointer QIR | Use PyQIR 0.12 or later
+Opaque Pointer QIR | Typed Pointer QIR | NOT SUPPORTED
+
+For more information on QIR major version compatibility, see the [QIR 2.0 Specification](https://github.com/qir-alliance/qir-spec/tree/2.0/specification#version-compatibility).
 
 ## Contributing
 

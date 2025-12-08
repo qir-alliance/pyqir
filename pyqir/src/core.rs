@@ -4,7 +4,6 @@
 #![allow(clippy::used_underscore_binding)]
 
 use llvm_sys::core::LLVMContextCreate;
-#[allow(deprecated)]
 use llvm_sys::{
     core::{LLVMContextDispose, LLVMDisposeMemoryBuffer, LLVMDisposeMessage},
     prelude::*,

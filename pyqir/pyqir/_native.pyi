@@ -151,6 +151,14 @@ class Builder:
         """
         ...
 
+    def insert_after(self, instr: Instruction) -> None:
+        """
+        Tells the builder to insert subsequent instructions after the given instruction.
+
+        :param inst: The instruction to insert after.
+        """
+        ...
+
     def instr(self, instr: Instruction) -> None:
         """
         Inserts an instruction into the current block.
@@ -1006,7 +1014,7 @@ def dynamic_result_management(module: Module) -> Optional[bool]:
 def qir_module(
     context: Context,
     name: str,
-    qir_major_version: int = 1,
+    qir_major_version: int = 2,
     qir_minor_version: int = 0,
     dynamic_qubit_management: bool = False,
     dynamic_result_management: bool = False,
@@ -1062,24 +1070,6 @@ def is_interop_friendly(function: Function) -> bool:
     """
     ...
 
-def is_qubit_type(ty: Type) -> bool:
-    """
-    Whether the type is the QIR qubit type.
-
-    :param Type ty: The type.
-    :returns: True if the type is the QIR qubit type.
-    """
-    ...
-
-def is_result_type(ty: Type) -> bool:
-    """
-    Whether the type is the QIR result type.
-
-    :param ty: The type.
-    :returns: True if the type is the QIR result type.
-    """
-    ...
-
 def qubit(context: Context, id: int) -> Constant:
     """
     Creates a static qubit value.
@@ -1090,21 +1080,12 @@ def qubit(context: Context, id: int) -> Constant:
     """
     ...
 
-def qubit_id(value: Value) -> Optional[int]:
+def ptr_id(value: Value) -> Optional[int]:
     """
-    If the value is a static qubit ID, extracts it.
+    If the value is a static identifier, extracts it.
 
     :param value: The value.
-    :returns: The static qubit ID.
-    """
-    ...
-
-def qubit_type(context: Context) -> Type:
-    """
-    The QIR qubit type.
-
-    :param context: The LLVM context.
-    :returns: The qubit type.
+    :returns: The static identifier.
     """
     ...
 
@@ -1136,24 +1117,6 @@ def result(context: Context, id: int) -> Constant:
     """
     ...
 
-def result_id(value: Value) -> Optional[int]:
-    """
-    If the value is a static result ID, extracts it.
-
-    :param value: The value.
-    :returns: The static result ID.
-    """
-    ...
-
-def result_type(context: Context) -> Type:
-    """
-    The QIR result type.
-
-    :param Context context: The LLVM context.
-    :returns: The result type.
-    """
-    ...
-
 # Runtime
 
 def array_record_output(builder: Builder, num_elements: Value, label: Value) -> None:
@@ -1173,7 +1136,7 @@ def initialize(builder: Builder, data: Value) -> None:
     if they are not dynamically managed.
 
     :param Builder builder: The IR Builder used to create the instructions
-    :param Value data: For base profile QIR, a const null i8* Value should be passed.
+    :param Value data: For base profile QIR, a const null ptr Value should be passed.
     """
     ...
 

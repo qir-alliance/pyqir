@@ -12,13 +12,11 @@ from pyqir import (
     Call,
     Context,
     Module,
+    PointerType,
     is_entry_point,
-    is_qubit_type,
-    is_result_type,
-    qubit_id,
+    ptr_id,
     required_num_qubits,
     required_num_results,
-    result_id,
     SimpleModule,
 )
 
@@ -79,10 +77,8 @@ def gate_inst_to_str(inst: Call) -> str:
     raw = removesuffix(removeprefix(inst.callee.name, "__quantum__qis__"), "__body")
     args = []
     for arg in inst.args:
-        if is_qubit_type(arg.type):
-            args.append(str(qubit_id(arg)))
-        elif is_result_type(arg.type):
-            args.append(str(result_id(arg)))
+        if isinstance(arg.type, PointerType):
+            args.append(str(ptr_id(arg)))
         else:
             args.append(str(arg))
     arg_str = ", ".join(args)

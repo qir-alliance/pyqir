@@ -1,16 +1,16 @@
 [project]
 name = "pyqir"
-version = "0.10.7"
-requires-python = ">= 3.8"
+version = "0.12.1"
+requires-python = ">= 3.9"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python",
     "Programming Language :: Rust",
     "Operating System :: MacOS",
@@ -22,7 +22,7 @@ classifiers = [
 test = ["pytest ~= 7.2.0"]
 
 [build-system]
-requires = ["maturin ~= 1.7.8"]
+requires = ["maturin ~= 1.8.3"]
 build-backend = "maturin"
 
 [tool.maturin]

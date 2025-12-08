@@ -77,6 +77,31 @@ impl Builder {
         Ok(())
     }
 
+    /// Tells this builder to insert subsequent instructions after the given instruction.
+    ///
+    /// :param Value instr: The instruction to insert after.
+    /// :rtype: None
+    #[pyo3(text_signature = "(instr)")]
+    fn insert_after(&mut self, py: Python, instr: &Value) -> PyResult<()> {
+        let owner = Owner::merge(py, [&self.owner, instr.owner()])?;
+        if *owner.context(py).borrow(py) != *self.owner.context(py).borrow(py) {
+            Err(PyValueError::new_err(
+                "Instruction is not from the same context as builder.",
+            ))?;
+        }
+
+        unsafe {
+            let next_instr = LLVMGetNextInstruction(instr.cast().as_ptr());
+            if next_instr.is_null() {
+                let block = LLVMGetInstructionParent(instr.cast().as_ptr());
+                LLVMPositionBuilderAtEnd(self.cast().as_ptr(), block);
+            } else {
+                LLVMPositionBuilderBefore(self.cast().as_ptr(), next_instr);
+            }
+        }
+        Ok(())
+    }
+
     /// Inserts the given instruction.
     fn instr(&mut self, py: Python, instr: &Value) -> PyResult<()> {
         let owner = Owner::merge(py, [&self.owner, instr.owner()])?;
@@ -318,13 +343,13 @@ impl Builder {
             let mut args = args
                 .iter()
                 .zip(param_types)
-                .map(|(arg, ty)| arg.to_value(ty).map_err(Into::into))
+                .map(|(arg, ty)| arg.to_value(ty))
                 .collect::<PyResult<Vec<_>>>()?;
 
-            #[allow(deprecated)]
-            let value = LLVMBuildCall(
-                self.cast().as_ptr(),
-                callee.cast().as_ptr(),
+            let value = LLVMBuildCall2(
+                self.as_ptr(),
+                fn_type,
+                callee.as_ptr(),
                 args.as_mut_ptr(),
                 args.len().try_into().unwrap(),
                 raw_cstr!(""),
@@ -540,7 +565,7 @@ unsafe fn callable_fn_type(value: LLVMValueRef) -> Option<NonNull<LLVMType>> {
     match LLVMGetTypeKind(ty) {
         LLVMTypeKind::LLVMFunctionTypeKind => Some(NonNull::new(ty).unwrap()),
         LLVMTypeKind::LLVMPointerTypeKind => {
-            let pointee = LLVMGetElementType(ty);
+            let pointee = LLVMGlobalGetValueType(value);
             if LLVMGetTypeKind(pointee) == LLVMTypeKind::LLVMFunctionTypeKind {
                 Some(NonNull::new(pointee).unwrap())
             } else {

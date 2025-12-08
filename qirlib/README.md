@@ -7,7 +7,7 @@ is also the native implementation behind PyQIR.
 ## Requirements
 
 - Rust 1.64+
-- LLVM 11.x, 12.x, 13.x, or LLVM 14.x (see [Usage](#usage) below)
+- LLVM 18.x, 19.x, or LLVM 20.x (see [Usage](#usage) below)
 
 ## Usage
 
@@ -27,8 +27,8 @@ specified with an environment variable.
 
 Supported cargo features are following:
 
-- The use `<llvm version>` is a placeholder for `llvm11-0`, `llvm12-0`, `llvm13-0`, or `llvm14-0`.
-- The use of `<llvm major>` is a placeholder for `110`, `120`, `130`, or `140` corresponding to the LLVM releases.
+- The use `<llvm version>` is a placeholder for `llvm18-1`, `llvm19-1`, or `llvm20-1`.
+- The use of `<llvm major>` is a placeholder for `181`, `191`, or `201` corresponding to the LLVM releases.
 
 | Feature                 | Link type               | Requirements        | Description                                            |
 |:------------------------|:------------------------|:--------------------|:-------------------------------------------------------|
@@ -36,10 +36,9 @@ Supported cargo features are following:
 | `external-llvm-linking` | external | gcc/clang           | Uses llvm-sys/inkwell for LLVM linking                 |
 | `<llvm version>-no-llvm-linking` |  none    |                     | Disable all LLVM linking. Used for local installation or packaging of LLVM. Includes `<llvm version>`, `llvm-sys-<llvm major>/disable-alltargets-init` and `inkwell/<llvm version>-no-llvm-linking`. Additionally adds `no-llvm-linking` as a marker used in the code. |
 | `<llvm version>-qirlib-llvm-linking`  | internal  | `build-llvm` or `download-llvm` |  let `qirlib` do the LLVM linking. Includes `<llvm version>`, `llvm-sys-<llvm major>/disable-alltargets-init` and `inkwell/<llvm version>-no-llvm-linking`.  Additionally adds `qirlib-llvm-linking` as a marker used in the code. |
-| `llvm11-0` | NA | `inkwell/llvm11-0` | Target LLVM 11.1 |
-| `llvm12-0` | NA | `inkwell/llvm12-0` | Target LLVM 12.0 |
-| `llvm13-0` | NA | `inkwell/llvm13-0` | Target LLVM 13.0 |
-| `llvm14-0` | NA | `inkwell/llvm14-0` | Target LLVM 14.0 |
+| `llvm18-1` | NA | `inkwell/llvm18-1` | Target LLVM 18.1 |
+| `llvm19-1` | NA | `inkwell/llvm19-1` | Target LLVM 19.1 |
+| `llvm20-1` | NA | `inkwell/llvm20-1` | Target LLVM 19.1 |
 | `download-llvm` | internal/none | cmake | dowload a precompiled version of LLVM|
 | `build-llvm`| internal/none | gcc/clang, cmake, ninja, git | Build LLVM from source. Installation defaults to `OUT_DIR/llvm` but can be overridden via the `QIRLIB_CACHE_DIR` environment variable.
 | `package-llvm` | none | cc/clang, cmake, ninja, git | *Dev use only* for packaging LLVM builds. Includes `build-llvm` and `no-llvm-linking`
@@ -50,10 +49,9 @@ Supported cargo features are following:
   - `<llvm version>-no-llvm-linking`
 - `build-llvm` and `download-llvm` cannot be used with `external-llvm-linking`
 - Exactly one of the LLVM version features is required:
-  - `llvm11-0`
-  - `llvm12-0`
-  - `llvm13-0`
-  - `llvm14-0`
+  - `llvm18-1`
+  - `llvm19-1`
+  - `llvm20-1`
 
 ### Environment variables
 
@@ -87,17 +85,16 @@ source and package it
 - `QIRLIB_LLVM_TAG`
   - LLVM repo tag to fetch when building LLVM from source.
   - Default values are:
-    - `llvm11-0`: `llvmorg-11.1.0`
-    - `llvm12-0`: `llvmorg-12.0.1`
-    - `llvm13-0`: `llvmorg-13.0.1`
-    - `llvm14-0`: `llvmorg-14.0.6`
+    - `llvm18-1`: `llvmorg-18.1.2`
+    - `llvm19-1`: `llvmorg-19.1.0`
+    - `llvm20-1`: `llvmorg-20.1.0`
 - `QIRLIB_LLVM_PKG_NAME`
   - Optional name of package to be downloaded/created.
 - `LLVM_SYS_*_PREFIX`
   - Required by `llvm-sys` and must be set to the version of LLVM used for
   configuration if compiling against an external LLVM installation.
-  - Version dependent and will change as LLVM is updated. (`LLVM_SYS_120_PREFIX`,
-  `LLVM_SYS_130_PREFIX`, etc)
+  - Version dependent and will change as LLVM is updated. (`LLVM_SYS_181_PREFIX`,
+  `LLVM_SYS_191_PREFIX`, etc)
   - Not needed if you have a working LLVM installation on the path and wish
   to use the installed system version.
 
@@ -108,13 +105,11 @@ the linking that is used. The `default` feature enables the `external-llvm-linki
 
 ```toml
 [dependencies]
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", features = "llvm11-0" }
-# or 
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", features = "llvm12-0" }
+qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", features = "llvm18-1" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", features = "llvm13-0" }
+qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", features = "llvm19-1" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", features = "llvm14-0" }
+qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", features = "llvm20-1" }
 ```
 
 [`llvm-sys`](https://github.com/tari/llvm-sys.rs) leveraged by `qirlib` and [`Inkwell`](https://github.com/thedan64/inkwell) will look for `llvm-config` on the path in order to determine how to link against LLVM. If this application is not found on the path, then the the `LLVM_SYS_<version>_PREFIX` environment variable is used to locate `llvm-config`.
@@ -135,25 +130,21 @@ To do this, we must disable the default behavior (`external-llvm-linking`)  usin
 
 ```toml
 [dependencies]
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm11-0-qirlib-llvm-linking,build-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm18-1-qirlib-llvm-linking,build-llvm" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm12-0-qirlib-llvm-linking,build-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm19-1-qirlib-llvm-linking,build-llvm" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm13-0-qirlib-llvm-linking,build-llvm" }
-# or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm14-0-qirlib-llvm-linking,build-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm20-1-qirlib-llvm-linking,build-llvm" }
 ```
 
 Or via the terminal (adding -vv so we can see build progress of LLVM)
 
 ```bash
-qirlib> cargo build --release --no-default-features --features "llvm11-0-qirlib-llvm-linking,build-llvm" -vv
+qirlib> cargo build --release --no-default-features --features "llvm18-1-qirlib-llvm-linking,build-llvm" -vv
 # or
-qirlib> cargo build --release --no-default-features --features "llvm12-0-qirlib-llvm-linking,build-llvm" -vv
+qirlib> cargo build --release --no-default-features --features "llvm19-1-qirlib-llvm-linking,build-llvm" -vv
 # or
-qirlib> cargo build --release --no-default-features --features "llvm13-0-qirlib-llvm-linking,build-llvm" -vv
-# or
-qirlib> cargo build --release --no-default-features --features "llvm14-0-qirlib-llvm-linking,build-llvm" -vv
+qirlib> cargo build --release --no-default-features --features "llvm20-1-qirlib-llvm-linking,build-llvm" -vv
 ```
 
 ### Downloading (and linking) LLVM from pre-compiled binaries
@@ -174,25 +165,21 @@ To do this, we must disable the default behavior (`external-llvm-linking`)  usin
 
 ```toml
 [dependencies]
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm11-0-qirlib-llvm-linking,download-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm18-1-qirlib-llvm-linking,download-llvm" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm12-0-qirlib-llvm-linking,download-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm19-1-qirlib-llvm-linking,download-llvm" }
 # or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm13-0-qirlib-llvm-linking,download-llvm" }
-# or
-qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm14-0-qirlib-llvm-linking,download-llvm" }
+qirlib = { git = "https://github.com/qir-alliance/pyqir", branch = "main", default-features = false, features = "llvm20-1-qirlib-llvm-linking,download-llvm" }
 ```
 
 Or via the terminal (adding -vv so we can see download progress of LLVM)
 
 ```bash
-qirlib> cargo build --release --no-default-features --features "llvm11-0-qirlib-llvm-linking,download-llvm" -vv
+qirlib> cargo build --release --no-default-features --features "llvm18-1-qirlib-llvm-linking,download-llvm" -vv
 # or
-qirlib> cargo build --release --no-default-features --features "llvm12-0-qirlib-llvm-linking,download-llvm" -vv
+qirlib> cargo build --release --no-default-features --features "llvm19-1-qirlib-llvm-linking,download-llvm" -vv  
 # or
-qirlib> cargo build --release --no-default-features --features "llvm13-0-qirlib-llvm-linking,download-llvm" -vv
-# or
-qirlib> cargo build --release --no-default-features --features "llvm14-0-qirlib-llvm-linking,download-llvm" -vv  
+qirlib> cargo build --release --no-default-features --features "llvm20-1-qirlib-llvm-linking,download-llvm" -vv  
 ```
 
 ## Contributing

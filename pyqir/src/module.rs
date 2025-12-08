@@ -11,10 +11,10 @@ use crate::{
 };
 use core::mem::forget;
 use core::slice;
-#[allow(clippy::wildcard_imports, deprecated)]
+#[allow(clippy::wildcard_imports)]
 use llvm_sys::{
     analysis::{LLVMVerifierFailureAction, LLVMVerifyModule},
-    bit_reader::LLVMParseBitcodeInContext,
+    bit_reader::LLVMParseBitcodeInContext2,
     bit_writer::LLVMWriteBitcodeToMemoryBuffer,
     core::*,
     ir_reader::LLVMParseIRInContext,
@@ -82,7 +82,7 @@ impl Module {
         let mut error = ptr::null_mut();
         unsafe {
             let context_ref = context.borrow(py).cast().as_ptr();
-            if LLVMParseIRInContext(context_ref, buffer, &mut module, &mut error) != 0 {
+            if LLVMParseIRInContext(context_ref, buffer, &raw mut module, &raw mut error) != 0 {
                 let error = Message::from_raw(error);
                 return Err(PyValueError::new_err(
                     error
@@ -124,24 +124,23 @@ impl Module {
         };
 
         let mut module = ptr::null_mut();
-        let mut error = ptr::null_mut();
         let context_ref = context.borrow(py).cast().as_ptr();
 
         unsafe {
-            #[allow(deprecated)]
-            if LLVMParseBitcodeInContext(
-                context_ref,
-                buffer.cast().as_ptr(),
-                &mut module,
-                &mut error,
-            ) == 0
+            let mut c_char_output: *mut ::core::ffi::c_char = ptr::null_mut();
+            let output = ::core::ptr::from_mut::<*mut ::core::ffi::c_char>(&mut c_char_output)
+                .cast::<*mut ::core::ffi::c_void>()
+                .cast::<::core::ffi::c_void>();
+
+            set_diagnostic_handler(context_ref, output);
+            if LLVMParseBitcodeInContext2(context_ref, buffer.cast().as_ptr(), &raw mut module) == 0
             {
                 Ok(Self {
                     module: NonNull::new(module).unwrap(),
                     context,
                 })
             } else {
-                let error = Message::from_raw(error);
+                let error = Message::from_raw(c_char_output);
                 Err(PyValueError::new_err(error.to_str().unwrap().to_string()))
             }
         }
@@ -154,7 +153,7 @@ impl Module {
     fn source_filename(&self) -> &str {
         unsafe {
             let mut len = 0;
-            let name = LLVMGetSourceFileName(self.cast().as_ptr(), &mut len);
+            let name = LLVMGetSourceFileName(self.cast().as_ptr(), &raw mut len);
             str::from_utf8(slice::from_raw_parts(name.cast(), len)).unwrap()
         }
     }
@@ -265,7 +264,7 @@ impl Module {
         unsafe {
             let action = LLVMVerifierFailureAction::LLVMReturnStatusAction;
             let mut error = ptr::null_mut();
-            if LLVMVerifyModule(self.cast().as_ptr(), action, &mut error) == 0 {
+            if LLVMVerifyModule(self.cast().as_ptr(), action, &raw mut error) == 0 {
                 None
             } else {
                 let error = Message::from_raw(error);
@@ -419,6 +418,8 @@ pub(crate) enum ModuleFlagBehavior {
     AppendUnique,
     #[pyo3(name = "MAX")]
     Max,
+    #[pyo3(name = "MIN")]
+    Min,
 }
 
 impl From<FlagBehavior> for ModuleFlagBehavior {
@@ -431,6 +432,7 @@ impl From<FlagBehavior> for ModuleFlagBehavior {
             FlagBehavior::Append => ModuleFlagBehavior::Append,
             FlagBehavior::AppendUnique => ModuleFlagBehavior::AppendUnique,
             FlagBehavior::Max => ModuleFlagBehavior::Max,
+            FlagBehavior::Min => ModuleFlagBehavior::Min,
         }
     }
 }
@@ -445,6 +447,7 @@ impl From<ModuleFlagBehavior> for FlagBehavior {
             ModuleFlagBehavior::Append => FlagBehavior::Append,
             ModuleFlagBehavior::AppendUnique => FlagBehavior::AppendUnique,
             ModuleFlagBehavior::Max => FlagBehavior::Max,
+            ModuleFlagBehavior::Min => FlagBehavior::Min,
         }
     }
 }

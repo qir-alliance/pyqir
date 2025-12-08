@@ -177,6 +177,8 @@ class QirModuleVisitor:
             self._on_qis_z(call, call.args[0])
         elif callee_name == "__quantum__qis__m__body":
             self._on_qis_m(call, call.args[0], call.args[1])
+        elif callee_name == "__quantum__qis__mz__body":
+            self._on_qis_mz(call, call.args[0], call.args[1])
         elif callee_name == "__quantum__qis__mresetz__body":
             self._on_qis_mresetz(call, call.args[0], call.args[1])
         elif callee_name == "__quantum__qis__reset__body":
@@ -323,6 +325,12 @@ class QirModuleVisitor:
     def _on_qis_m(self, call: Call, target: Value, result: Value) -> None:
         """
         Invoked for each call instruction to non-destructive measurement M in a basic block.
+        """
+        pass
+
+    def _on_qis_mz(self, call: Call, target: Value, result: Value) -> None:
+        """
+        Invoked for each call instruction to non-destructive measurement Mz in a basic block.
         """
         pass
 

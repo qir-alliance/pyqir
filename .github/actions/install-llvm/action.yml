@@ -17,6 +17,9 @@ inputs:
   target:
     description: "The build script target."
     required: true
+  cache_counter:
+    description: "A counter to force cache updates."
+    required: true
 
 runs:
   using: composite
@@ -26,23 +29,23 @@ runs:
       uses: actions/cache@v4
       with:
         path: ${{ inputs.directory }}
-        key: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}-${{ inputs.target }}
-        restore-keys: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}-${{ inputs.target }}
+        key: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}-${{ inputs.target }}-${{ inputs.cache_counter }}
+        restore-keys: llvm-${{ inputs.version }}-${{ inputs.arch }}-${{ inputs.os }}-${{ inputs.target }}-${{ inputs.cache_counter }}
 
     - name: Linux - Install build dependencies, ninja
       run: sudo apt-get install -y ninja-build
       shell: pwsh
-      if: ${{ (inputs.os == 'ubuntu-20.04') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
+      if: ${{ (inputs.os == 'ubuntu-22.04') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
     - name: Windows - Install build dependencies, ninja
       run: |
         choco install --accept-license -y ninja
         choco uninstall -y llvm
       shell: pwsh
-      if: ${{ (inputs.os == 'windows-2019') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
+      if: ${{ (inputs.os == 'windows-2022') && (steps.cache-llvm.outputs.cache-hit != 'true') }}
     - name: MacOS - Install build dependencies, ninja
       run: brew install ninja
       shell: pwsh
-      if: ${{ ((inputs.os == 'macos-14')) && (steps.cache-llvm.outputs.cache-hit != 'true') }}
+      if: ${{ ((inputs.os == 'macos-15')) && (steps.cache-llvm.outputs.cache-hit != 'true') }}
 
     - name: Configure long paths
       run: git config --global core.longpaths true
@@ -52,8 +55,8 @@ runs:
     - name: Configure LLVM Environment
       run: |
         Write-Output "QIRLIB_CACHE_DIR=${{ inputs.directory }}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-        Write-Output "LLVM_SYS_${{ inputs.version }}0_PREFIX=${{ inputs.directory }}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-        Write-Output "PYQIR_LLVM_FEATURE_VERSION=llvm${{ inputs.version }}-0" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+        Write-Output "LLVM_SYS_${{ inputs.version }}1_PREFIX=${{ inputs.directory }}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+        Write-Output "PYQIR_LLVM_FEATURE_VERSION=llvm${{ inputs.version }}-1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
       shell: pwsh
 
     - name: Install LLVM

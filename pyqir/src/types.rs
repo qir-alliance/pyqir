@@ -7,7 +7,6 @@ use crate::{core::Context, values::Owner};
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{core::*, prelude::*, LLVMType, LLVMTypeKind};
 use pyo3::{prelude::*, IntoPyObjectExt};
-use qirlib::types;
 use std::{ffi::CStr, ops::Deref, ptr::NonNull};
 
 /// A type.
@@ -268,8 +267,8 @@ impl ArrayType {
     ///
     /// :type: int
     #[getter]
-    fn count(slf: PyRef<Self>) -> u32 {
-        unsafe { LLVMGetArrayLength(slf.into_super().cast().as_ptr()) }
+    fn count(slf: PyRef<Self>) -> u64 {
+        unsafe { LLVMGetArrayLength2(slf.into_super().cast().as_ptr()) }
     }
 }
 
@@ -294,13 +293,17 @@ impl PointerType {
         )
     }
 
-    /// The type being pointed to.
+    /// The type being pointed to. With opaque pointers, always treat this as void.
     ///
     /// :type: Type
     #[getter]
     fn pointee<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let slf = slf.into_super();
         unsafe {
+            if LLVMPointerTypeIsOpaque(slf.ty.as_ptr()) != 0 {
+                return Py::new(py, Type::void(py, slf.context.clone_ref(py)))?
+                    .into_bound_py_any(py);
+            }
             let ty = LLVMGetElementType(slf.cast().as_ptr());
             Type::from_raw(py, slf.context.clone_ref(py), ty)
         }
@@ -313,54 +316,4 @@ impl PointerType {
     fn address_space(slf: PyRef<Self>) -> u32 {
         unsafe { LLVMGetPointerAddressSpace(slf.into_super().cast().as_ptr()) }
     }
-}
-
-/// The QIR qubit type.
-///
-/// :param Context context: The LLVM context.
-/// :returns: The qubit type.
-/// :rtype: Type
-#[pyfunction]
-#[pyo3(text_signature = "(context)")]
-pub(crate) fn qubit_type(py: Python<'_>, context: Py<Context>) -> PyResult<Bound<'_, PyAny>> {
-    unsafe {
-        let ty = types::qubit(context.borrow(py).cast().as_ptr());
-        Type::from_raw(py, context, ty)
-    }
-}
-
-/// Whether the type is the QIR qubit type.
-///
-/// :param Type ty: The type.
-/// :returns: True if the type is the QIR qubit type.
-/// :rtype: bool
-#[pyfunction]
-#[pyo3(text_signature = "(ty)")]
-pub(crate) fn is_qubit_type(ty: &Type) -> bool {
-    unsafe { types::is_qubit(ty.cast().as_ptr()) }
-}
-
-/// The QIR result type.
-///
-/// :param Context context: The LLVM context.
-/// :returns: The result type.
-/// :rtype: Type
-#[pyfunction]
-#[pyo3(text_signature = "(context)")]
-pub(crate) fn result_type(py: Python<'_>, context: Py<Context>) -> PyResult<Bound<'_, PyAny>> {
-    unsafe {
-        let ty = types::result(context.borrow(py).cast().as_ptr());
-        Type::from_raw(py, context, ty)
-    }
-}
-
-/// Whether the type is the QIR result type.
-///
-/// :param Type ty: The type.
-/// :returns: True if the type is the QIR result type.
-/// :rtype: bool
-#[pyfunction]
-#[pyo3(text_signature = "(ty)")]
-pub(crate) fn is_result_type(ty: &Type) -> bool {
-    unsafe { types::is_result(ty.cast().as_ptr()) }
 }

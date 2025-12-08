@@ -32,14 +32,13 @@ Tier 2 systems are likely to work and may be compatible with the binaries publis
 
 ### Tier 1
 
-- Ubuntu 20.04
-- Debian 9
-- macOS 11
-- Windows Server 2019
+- Ubuntu 22.04
+- Debian 11
+- macOS 14
+- Windows Server 2022
 
 ### Tier 2
 
-- Ubuntu 22.04
-- Debian 11, 10
+- Ubuntu 24.04
 - macOS 12, 10.7-10.15
 - Windows 11, 10
