@@ -317,13 +317,3 @@ function install-llvm {
         }
     }
 }
-
-function Get-AuditWheelTag($python) {
-    $tag = & $python -c "from packaging.tags import sys_tags; print(next(t.platform for t in sys_tags() if t.platform.startswith('manylinux')))"
-    if ($tag.StartsWith("manylinux")) {
-        Write-BuildLog "Using tag [$tag] for auditwheel"
-        return $tag
-    } else {
-        throw "Unsupported tag [$tag]"
-    }
-}
