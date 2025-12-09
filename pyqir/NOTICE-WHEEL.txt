@@ -2605,7 +2605,7 @@ limitations under the License.
 
 
 
-qirlib 0.12.1 - SPDX: MIT - MIT License
+qirlib 0.12.2 - SPDX: MIT - MIT License
 https://github.com/qir-alliance/pyqir
 
 /*
@@ -2855,7 +2855,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-pyqir 0.12.1 - SPDX: MIT - MIT License
+pyqir 0.12.2 - SPDX: MIT - MIT License
 https://github.com/qir-alliance/pyqir
 
 MIT License
