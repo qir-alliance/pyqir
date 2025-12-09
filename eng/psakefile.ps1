@@ -78,7 +78,7 @@ task pyqir -depends init {
     Invoke-LoggedCommand { & $Python -m pip --verbose wheel --config-settings=build-args="$configSettings" --wheel-dir $Wheels $Pyqir }
 
     if ($IsLinux) {
-        Invoke-LoggedCommand { & $Python -m pip install auditwheel==6.3.0 patchelf==0.17.2.2 }
+        Invoke-LoggedCommand { & $Python -m pip install auditwheel>=6.5.0 patchelf==0.17.2.4 }
     }
     if (Test-CommandExists auditwheel) {
         $unauditedWheels = Get-Wheels pyqir
