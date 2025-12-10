@@ -28,7 +28,7 @@ variables:
   LLVM_VERSION: 20
   # use this to invalidate the cache. Any time we update the OS
   # image, we should increment this to ensure that the cache is rebuilt.
-  CACHE_COUNTER: 8
+  CACHE_COUNTER: 9
 
 resources:
   repositories:
@@ -194,21 +194,6 @@ extends:
               brew install cmake ninja ccache
             displayName: Install build dependencies
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables.CACHE_RESTORED, 'true'))
-
-          - script: |
-              choco install --accept-license -y ninja
-            displayName: Install build dependencies
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables['arch'], 'x86_64'), ne(variables.CACHE_RESTORED, 'true'))
-
-          # ninja is not available on windows aarch64 images, so we install it from its github releases
-          - pwsh: ./build.ps1 -t install-ninja
-            displayName: Install build dependencies
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables['arch'], 'aarch64'), ne(variables.CACHE_RESTORED, 'true'))
-
-          # all platforms: verify ninja is installed
-          - pwsh: ./build.ps1 -t verify-ninja
-            displayName: Verify ninja build dependencie
-            condition: and(succeeded(), ne(variables.CACHE_RESTORED, 'true'))
 
           # on Azure Linux 3.0 aarch64 we need to install:
           # ld with binutils

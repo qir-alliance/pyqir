@@ -21,10 +21,6 @@ task default -depends build, test, run-examples
 task build -depends qirlib, pyqir
 task checks -depends cargo-fmt, cargo-clippy, black, mypy
 
-task install-ninja {
-    . .\install-ninja.ps1
-}
-
 task verify-ninja {
     Write-BuildLog "`nTesting ninja availability..."
     
@@ -82,12 +78,12 @@ task pyqir -depends init {
     Invoke-LoggedCommand { & $Python -m pip --verbose wheel --config-settings=build-args="$configSettings" --wheel-dir $Wheels $Pyqir }
 
     if ($IsLinux) {
-        Invoke-LoggedCommand { & $Python -m pip install auditwheel==6.3.0 patchelf==0.17.2.2 }
+        Invoke-LoggedCommand { & $Python -m pip install auditwheel>=6.5.0 patchelf==0.17.2.4 }
     }
     if (Test-CommandExists auditwheel) {
         $unauditedWheels = Get-Wheels pyqir
         Invoke-LoggedCommand { auditwheel show $unauditedWheels }
-        Invoke-LoggedCommand { auditwheel repair --wheel-dir $Wheels --plat (Get-AuditWheelTag($Python)) $unauditedWheels }
+        Invoke-LoggedCommand { auditwheel repair --wheel-dir $Wheels $unauditedWheels }
         $unauditedWheels | Remove-Item
     }
 }
@@ -183,6 +179,7 @@ task install-llvm-from-source -depends configure-sccache -postaction { Write-Cac
     if ($IsWindows) {
         . .\vcvars.ps1
     }
+    Invoke-Task "verify-ninja"
     install-llvm $Qirlib build (Get-LLVMFeatureVersion)
     $installationDirectory = Resolve-InstallationDirectory
     Assert (Test-LlvmConfig $installationDirectory) "install-llvm-from-source failed to install a usable LLVM installation"
@@ -192,6 +189,7 @@ task package-llvm {
     if ($IsWindows) {
         . .\vcvars.ps1
     }
+    Invoke-Task "verify-ninja"
     $clear_pkg_dest_var = $false
     if (!(Test-Path env:\QIRLIB_PKG_DEST)) {
         $clear_pkg_dest_var = $true

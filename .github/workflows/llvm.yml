@@ -28,15 +28,9 @@ jobs:
       - name: Linux - Install build dependencies, ccache, ninja
         run: sudo apt-get install -y ccache ninja-build
         if: ${{ matrix.config.os == 'ubuntu-22.04' }}
-      - name: Windows - Install build dependencies, sccache, ninja
-        run: choco install --accept-license -y sccache ninja
-        if: ${{ matrix.config.os == 'windows-2022' }}
       - name: MacOS - Install build dependencies, ccache, ninja
         run: brew install ccache ninja
         if: ${{ matrix.config.os == 'macos-15' }}
-      - name: Windows - Install LLVM 20.1.8
-        run: choco install llvm --version=20.1.8 --allow-downgrade
-        if: ${{ matrix.config.os == 'windows-2022' }}
       - name: "Build and Package LLVM"
         run: ./build.ps1 -t package-llvm
         shell: pwsh
