@@ -211,12 +211,9 @@ pub unsafe fn extract_string(value: LLVMValueRef) -> Option<Vec<u8>> {
     }
 
     let element = LLVMGetOperand(value, 0);
-    if LLVMIsConstantString(element) == 0 {
-        return None;
-    }
     let mut len = 0;
     let data = LLVMGetAsString(element, &raw mut len);
-    if data.is_null() {
+    if data.is_null() || len == 0 {
         return None;
     }
     let data = slice::from_raw_parts(data.cast(), len);
