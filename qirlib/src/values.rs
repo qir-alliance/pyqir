@@ -211,11 +211,11 @@ pub unsafe fn extract_string(value: LLVMValueRef) -> Option<Vec<u8>> {
     }
 
     let element = LLVMGetOperand(value, 0);
-    let mut len = 0;
-    let data = LLVMGetAsString(element, &raw mut len);
-    if data.is_null() || len == 0 {
+    if LLVMIsAConstantAggregateZero(element) == element {
         return None;
     }
+    let mut len = 0;
+    let data = LLVMGetAsString(element, &raw mut len);
     let data = slice::from_raw_parts(data.cast(), len);
     Some(data[..].to_vec())
 }
