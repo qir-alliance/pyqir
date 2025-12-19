@@ -151,6 +151,23 @@ def test_null_i8ptr_string() -> None:
     assert string is None
 
 
+def test_zeroinit_string() -> None:
+    llvm_ir = """
+    @.str = private constant [1 x i8] zeroinitializer
+
+    define void @main() {
+      call void @a(ptr @.str)
+      ret void
+    }
+    declare void @a(ptr)
+    """
+
+    module = Module.from_ir(Context(), llvm_ir, "module")
+    zeroinit_value = module.functions[0].basic_blocks[0].instructions[0].operands[0]
+    string = extract_byte_string(zeroinit_value)
+    assert string is None
+
+
 def test_parser_zext_support() -> None:
     bitcode = Path("tests/select.bc").read_bytes()
     mod = Module.from_bitcode(Context(), bitcode)
