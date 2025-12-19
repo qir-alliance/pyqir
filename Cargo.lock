@@ -218,7 +218,7 @@ dependencies = [
 
 [[package]]
 name = "pyqir"
-version = "0.12.2"
+version = "0.12.3"
 dependencies = [
  "const-str",
  "llvm-sys 181.2.0",
@@ -230,7 +230,7 @@ dependencies = [
 
 [[package]]
 name = "qirlib"
-version = "0.12.2"
+version = "0.12.3"
 dependencies = [
  "cc",
  "cmake",
