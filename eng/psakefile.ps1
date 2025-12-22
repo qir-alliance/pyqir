@@ -75,17 +75,9 @@ task pyqir -depends init {
     $configSettings = @(Get-CliCargoArgs) -Join " "
     Get-Wheels pyqir | Remove-Item
 
-    Invoke-LoggedCommand { & $Python -m pip --verbose wheel --config-settings=build-args="$configSettings" --wheel-dir $Wheels $Pyqir }
-
-    if ($IsLinux) {
-        Invoke-LoggedCommand { & $Python -m pip install auditwheel>=6.5.0 patchelf==0.17.2.4 }
-    }
-    if (Test-CommandExists auditwheel) {
-        $unauditedWheels = Get-Wheels pyqir
-        Invoke-LoggedCommand { auditwheel show $unauditedWheels }
-        Invoke-LoggedCommand { auditwheel repair --wheel-dir $Wheels $unauditedWheels }
-        $unauditedWheels | Remove-Item
-    }
+    # the --compatibility is passed to maturin to build wheels so that they are tagged
+    # with the lowest common denominator of the supported platforms on linux.
+    Invoke-LoggedCommand { & $Python -m pip --verbose wheel --config-settings=build-args="$configSettings --compatibility" --wheel-dir $Wheels $Pyqir }
 }
 
 task test {
