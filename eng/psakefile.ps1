@@ -77,7 +77,8 @@ task pyqir -depends init {
 
     # the --compatibility is passed to maturin to build wheels so that they are tagged
     # with the lowest common denominator of the supported platforms on linux.
-    Invoke-LoggedCommand { & $Python -m pip --verbose wheel --config-settings=build-args="$configSettings --compatibility" --wheel-dir $Wheels $Pyqir }
+    Invoke-LoggedCommand { & $Python -m pip install build }
+    Invoke-LoggedCommand { & $Python -m build --verbose --wheel --outdir $Wheels --config-setting=build-args="$configSettings --compatibility" $Pyqir }
 }
 
 task test {
