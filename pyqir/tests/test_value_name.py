@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pyqir
 
-
 current_file_path = Path(__file__)
 # Get the directory of the current file
 current_dir = current_file_path.parent

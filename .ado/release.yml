@@ -28,7 +28,7 @@ variables:
   LLVM_VERSION: 20
   # use this to invalidate the cache. Any time we update the OS
   # image, we should increment this to ensure that the cache is rebuilt.
-  CACHE_COUNTER: 9
+  CACHE_COUNTER: 10
 
 resources:
   repositories:
@@ -48,7 +48,7 @@ parameters:
     arch: x86_64
   - name: linux_aarch64
     poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
-    imageName: 'azurelinux-3.0-arm64'
+    imageName: 'azurelinux-3.0-gen2-arm64'
     os: linux
     arch: aarch64
   - name: mac_x86_64
@@ -67,7 +67,7 @@ parameters:
     arch: x86_64
   - name: windows_aarch64
     poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
-    imageName: 'Windows-2022-ARM64'
+    imageName: 'windows-2025-gen2-arm64'
     os: windows
     arch: aarch64
 
