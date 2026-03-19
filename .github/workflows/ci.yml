@@ -34,7 +34,7 @@ jobs:
       - name: Setup rust toolchain
         uses: ./.github/actions/rust-toolchain
         with:
-          toolchain: "1.90"
+          toolchain: "1.93"
           components: rustfmt clippy
       - uses: actions/checkout@v4
       - name: Set up Python 3.11
