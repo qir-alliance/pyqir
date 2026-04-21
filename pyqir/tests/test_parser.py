@@ -15,6 +15,7 @@ from pyqir import (
     IntType,
     Module,
     Opcode,
+    Switch,
     extract_byte_string,
     is_entry_point,
     is_interop_friendly,
@@ -314,3 +315,14 @@ def test_not_contains_attribute() -> None:
     assert "foo" not in attributes.ret
     with pytest.raises(KeyError):
         attributes.ret["foo"]
+
+
+def test_switch_instr_cond_works() -> None:
+    ir = Path("tests/switch_instr.ll").read_text()
+    module = Module.from_ir(Context(), ir)
+    func = module.functions[0]
+    block = func.basic_blocks[0]
+    switch = block.instructions[1]
+    assert switch.opcode == Opcode.SWITCH
+    assert isinstance(switch, Switch)
+    assert switch.cond == switch.operands[0]
