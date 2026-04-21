@@ -356,7 +356,7 @@ impl Switch {
     fn cond<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let slf = slf.into_super().into_super();
         unsafe {
-            let value = LLVMGetCondition(slf.cast().as_ptr());
+            let value = LLVMGetOperand(slf.cast().as_ptr(), 0);
             Value::from_raw(py, slf.owner().clone_ref(py), value)
         }
     }
