@@ -13,6 +13,8 @@ from pyqir import (
     PointerType,
 )
 
+from typing import cast, List
+
 
 def test_global_constant_data_array_i32() -> None:
     """Introspect a global constant array of i32 values."""
@@ -30,7 +32,7 @@ def test_global_constant_data_array_i32() -> None:
     assert isinstance(arr, ArrayConstant)
     assert arr.count == 3
 
-    elements = arr.elements
+    elements = cast(List[IntConstant], arr.elements)
     assert len(elements) == 3
     assert all(isinstance(e, IntConstant) for e in elements)
     assert [e.value for e in elements] == [10, 20, 30]
@@ -58,7 +60,7 @@ def test_global_constant_data_array_double() -> None:
     assert isinstance(arr, ArrayConstant)
     assert arr.count == 2
 
-    elements = arr.elements
+    elements = cast(List[FloatConstant], arr.elements)
     assert len(elements) == 2
     assert all(isinstance(e, FloatConstant) for e in elements)
     assert elements[0].value == 1.5
@@ -89,11 +91,11 @@ def test_global_constant_array_of_arrays() -> None:
     first_row = inner_elements[0]
     assert isinstance(first_row, ArrayConstant)
     assert first_row.count == 2
-    assert [e.value for e in first_row.elements] == [1, 2]
+    assert [e.value for e in cast(List[IntConstant], first_row.elements)] == [1, 2]
 
     second_row = inner_elements[1]
     assert isinstance(second_row, ArrayConstant)
-    assert [e.value for e in second_row.elements] == [3, 4]
+    assert [e.value for e in cast(List[IntConstant], second_row.elements)] == [3, 4]
 
 
 def test_global_variable_without_initializer() -> None:
@@ -123,7 +125,7 @@ def test_global_mutable_array() -> None:
     assert isinstance(arr, ArrayConstant)
     assert arr.count == 3
     assert all(isinstance(e, IntConstant) for e in arr.elements)
-    assert [e.value for e in arr.elements] == [7, 8, 9]
+    assert [e.value for e in cast(List[IntConstant], arr.elements)] == [7, 8, 9]
 
 
 def test_global_array_of_pointers_to_arrays() -> None:
@@ -149,7 +151,7 @@ def test_global_array_of_pointers_to_arrays() -> None:
     assert isinstance(arr_ty.element, PointerType)
 
     # Each element is a GlobalVariable pointing to a row array.
-    elements = arr.elements
+    elements = cast(List[GlobalVariable], arr.elements)
     assert len(elements) == 2
     assert all(isinstance(e, GlobalVariable) for e in elements)
     assert elements[0].name == "row0"
@@ -159,9 +161,17 @@ def test_global_array_of_pointers_to_arrays() -> None:
     row0_init = elements[0].initializer
     assert row0_init is not None
     assert isinstance(row0_init, ArrayConstant)
-    assert [e.value for e in row0_init.elements] == [10, 20, 30]
+    assert [e.value for e in cast(List[IntConstant], row0_init.elements)] == [
+        10,
+        20,
+        30,
+    ]
 
     row1_init = elements[1].initializer
     assert row1_init is not None
     assert isinstance(row1_init, ArrayConstant)
-    assert [e.value for e in row1_init.elements] == [40, 50, 60]
+    assert [e.value for e in cast(List[IntConstant], row1_init.elements)] == [
+        40,
+        50,
+        60,
+    ]
