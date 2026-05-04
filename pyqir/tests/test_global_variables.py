@@ -2,17 +2,16 @@
 # Licensed under the MIT License.
 
 from pyqir import (
+    ArrayConstant,
     ArrayType,
     Constant,
     Context,
     FloatConstant,
-    Function,
     GlobalVariable,
     IntConstant,
     IntType,
     Module,
     PointerType,
-    Type,
 )
 
 
@@ -95,7 +94,7 @@ def test_is_constant_false() -> None:
 
 
 def test_global_variable_name() -> None:
-    ir = '@my_special_name = global i32 0'
+    ir = "@my_special_name = global i32 0"
     mod = Module.from_ir(Context(), ir, "test")
     gv = mod.global_variables[0]
     assert gv.name == "my_special_name"
@@ -188,7 +187,7 @@ def test_multiple_globals_mixed_types() -> None:
 
     gv_array = mod.global_variables[2]
     assert gv_array.name == "an_array"
-    from pyqir import ArrayConstant
+
     assert isinstance(gv_array.initializer, ArrayConstant)
 
     gv_ext = mod.global_variables[3]
