@@ -187,7 +187,6 @@ def test_multiple_globals_mixed_types() -> None:
 
     gv_array = mod.global_variables[2]
     assert gv_array.name == "an_array"
-
     assert isinstance(gv_array.initializer, ArrayConstant)
 
     gv_ext = mod.global_variables[3]
