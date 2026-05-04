@@ -20,13 +20,14 @@ use crate::{
         extract_byte_string, global_byte_string, is_entry_point, is_interop_friendly, ptr_id,
         qir_major_version, qir_minor_version, qir_module, qubit, r#const, required_num_qubits,
         required_num_results, result, Attribute, AttributeList, AttributeSet, BasicBlock, Constant,
-        FloatConstant, Function, IntConstant, Value,
+        ArrayConstant, FloatConstant, Function, GlobalVariable, IntConstant, Value,
     },
 };
 use pyo3::prelude::*;
 
 #[pymodule]
 fn _native<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
+    m.add_class::<ArrayConstant>()?;
     m.add_class::<ArrayType>()?;
     m.add_class::<Attribute>()?;
     m.add_class::<AttributeList>()?;
@@ -42,6 +43,7 @@ fn _native<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
     m.add_class::<FloatPredicate>()?;
     m.add_class::<Function>()?;
     m.add_class::<FunctionType>()?;
+    m.add_class::<GlobalVariable>()?;
     m.add_class::<ICmp>()?;
     m.add_class::<Instruction>()?;
     m.add_class::<IntConstant>()?;
