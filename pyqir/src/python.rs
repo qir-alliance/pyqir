@@ -19,8 +19,8 @@ use crate::{
         add_string_attribute, dynamic_qubit_management, dynamic_result_management,
         extract_byte_string, global_byte_string, is_entry_point, is_interop_friendly, ptr_id,
         qir_major_version, qir_minor_version, qir_module, qubit, r#const, required_num_qubits,
-        required_num_results, result, Attribute, AttributeList, AttributeSet, BasicBlock, Constant,
-        ArrayConstant, FloatConstant, Function, GlobalVariable, IntConstant, Value,
+        required_num_results, result, ArrayConstant, Attribute, AttributeList, AttributeSet,
+        BasicBlock, Constant, FloatConstant, Function, GlobalVariable, IntConstant, Value,
     },
 };
 use pyo3::prelude::*;
