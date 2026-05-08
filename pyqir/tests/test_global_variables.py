@@ -12,7 +12,10 @@ from pyqir import (
     IntType,
     Module,
     PointerType,
+    extract_byte_string,
 )
+
+from typing import cast, List
 
 
 def test_empty_module_has_no_globals() -> None:
@@ -201,3 +204,33 @@ def test_global_with_internal_linkage() -> None:
     assert gv.name == ".str"
     assert gv.is_constant is True
     assert gv.initializer is not None
+
+
+def test_inline_global_string_extract_and_initializer_agree() -> None:
+    """For a global string constant defined in IR, extract_byte_string (via a
+    pointer operand) and the global_variables initializer yield the same data."""
+    ir = r"""
+    @.str = private constant [6 x i8] c"world\00"
+
+    define void @main() {
+      call void @use(ptr @.str)
+      ret void
+    }
+    declare void @use(ptr)
+    """
+    mod = Module.from_ir(Context(), ir, "test")
+
+    # Read the string through extract_byte_string (existing API path).
+    call_operand = mod.functions[0].basic_blocks[0].instructions[0].operands[0]
+    extracted = extract_byte_string(call_operand)
+    assert extracted is not None
+
+    # Read the same string through global_variables + initializer (new API).
+    gv = next(g for g in mod.global_variables if g.name == ".str")
+    init = gv.initializer
+    assert init is not None
+    assert isinstance(init, ArrayConstant)
+    init_bytes = bytes(e.value for e in cast(List[IntConstant], init.elements))
+
+    # Both paths must produce the same bytes.
+    assert extracted == init_bytes
