@@ -260,15 +260,17 @@
 </li>
         <li><a href="api/pyqir.html#pyqir.Builder.and_">and_() (pyqir.Builder method)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.ModuleFlagBehavior.APPEND">APPEND (pyqir.ModuleFlagBehavior attribute)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.ModuleFlagBehavior.APPEND_UNIQUE">APPEND_UNIQUE (pyqir.ModuleFlagBehavior attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Linkage.APPENDING">APPENDING (pyqir.Linkage attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Call.args">args (pyqir.Call attribute)</a>
+</li>
+        <li><a href="api/pyqir.html#pyqir.ArrayConstant">ArrayConstant (class in pyqir)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.ArrayType">ArrayType (class in pyqir)</a>
 </li>
@@ -352,10 +354,10 @@
 </li>
         <li><a href="api/pyqir.html#pyqir.Opcode.CLEANUP_RET">CLEANUP_RET (pyqir.Opcode attribute)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Linkage.COMMON">COMMON (pyqir.Linkage attribute)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Switch.cond">cond (pyqir.Switch attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Builder.condbr">condbr() (pyqir.Builder method)</a>
@@ -374,8 +376,12 @@
           <li><a href="api/pyqir.html#pyqir.SimpleModule.context">(pyqir.SimpleModule property)</a>
 </li>
         </ul></li>
-        <li><a href="api/pyqir.html#pyqir.ArrayType.count">count (pyqir.ArrayType attribute)</a>
+        <li><a href="api/pyqir.html#pyqir.ArrayConstant.count">count (pyqir.ArrayConstant attribute)</a>
+
+        <ul>
+          <li><a href="api/pyqir.html#pyqir.ArrayType.count">(pyqir.ArrayType attribute)</a>
 </li>
+        </ul></li>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.cx">cx() (pyqir.BasicQisBuilder method)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.BasicQisBuilder.cz">cz() (pyqir.BasicQisBuilder method)</a>
@@ -410,6 +416,8 @@
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.ArrayType.element">element (pyqir.ArrayType attribute)</a>
 </li>
+        <li><a href="api/pyqir.html#pyqir.ArrayConstant.elements">elements (pyqir.ArrayConstant attribute)</a>
+</li>
         <li><a href="api/pyqir.html#pyqir.SimpleModule.entry_block">entry_block (pyqir.SimpleModule property)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.SimpleModule.entry_point">entry_point (pyqir.SimpleModule property)</a>
@@ -418,10 +426,10 @@
 </li>
         <li><a href="api/pyqir.html#pyqir.IntPredicate.EQ">EQ (pyqir.IntPredicate attribute)</a>
 </li>
-        <li><a href="api/pyqir.html#pyqir.Instruction.erase">erase() (pyqir.Instruction method)</a>
-</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/pyqir.html#pyqir.Instruction.erase">erase() (pyqir.Instruction method)</a>
+</li>
         <li><a href="api/pyqir.html#pyqir.ModuleFlagBehavior.ERROR">ERROR (pyqir.ModuleFlagBehavior attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Linkage.EXTERNAL">EXTERNAL (pyqir.Linkage attribute)</a>
@@ -502,11 +510,15 @@
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Opcode.GET_ELEMENT_PTR">GET_ELEMENT_PTR (pyqir.Opcode attribute)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.Module.get_flag">get_flag() (pyqir.Module method)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/pyqir.html#pyqir.global_byte_string">global_byte_string() (in module pyqir)</a>
+</li>
+        <li><a href="api/pyqir.html#pyqir.Module.global_variables">global_variables (pyqir.Module attribute)</a>
+</li>
+        <li><a href="api/pyqir.html#pyqir.GlobalVariable">GlobalVariable (class in pyqir)</a>
 </li>
     </ul></td>
   </tr></table>
@@ -540,6 +552,8 @@
 </li>
         <li><a href="api/pyqir.html#pyqir.Opcode.INDIRECT_BR">INDIRECT_BR (pyqir.Opcode attribute)</a>
 </li>
+        <li><a href="api/pyqir.html#pyqir.GlobalVariable.initializer">initializer (pyqir.GlobalVariable attribute)</a>
+</li>
         <li><a href="api/pyqir.html#pyqir.Builder.insert_after">insert_after() (pyqir.Builder method)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Builder.insert_at_end">insert_at_end() (pyqir.Builder method)</a>
@@ -571,6 +585,8 @@
         <li><a href="api/pyqir.html#pyqir.Opcode.INVOKE">INVOKE (pyqir.Opcode attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.SimpleModule.ir">ir() (pyqir.SimpleModule method)</a>
+</li>
+        <li><a href="api/pyqir.html#pyqir.GlobalVariable.is_constant">is_constant (pyqir.GlobalVariable attribute)</a>
 </li>
         <li><a href="api/pyqir.html#pyqir.Type.is_double">is_double (pyqir.Type attribute)</a>
 </li>
