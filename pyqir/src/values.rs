@@ -411,8 +411,15 @@ impl Constant {
                 LLVMValueKind::LLVMConstantFPValueKind => {
                     Ok(Py::new(py, base.add_subclass(FloatConstant))?.into_bound_py_any(py)?)
                 }
+                LLVMValueKind::LLVMConstantArrayValueKind
+                | LLVMValueKind::LLVMConstantDataArrayValueKind => {
+                    Ok(Py::new(py, base.add_subclass(ArrayConstant))?.into_bound_py_any(py)?)
+                }
                 LLVMValueKind::LLVMFunctionValueKind => {
                     Ok(Py::new(py, base.add_subclass(Function))?.into_bound_py_any(py)?)
+                }
+                LLVMValueKind::LLVMGlobalVariableValueKind => {
+                    Ok(Py::new(py, base.add_subclass(GlobalVariable))?.into_bound_py_any(py)?)
                 }
                 _ => Ok(Py::new(py, base)?.into_bound_py_any(py)?),
             }
@@ -447,6 +454,73 @@ impl FloatConstant {
     #[getter]
     fn value(slf: PyRef<Self>) -> f64 {
         unsafe { LLVMConstRealGetDouble(slf.into_super().into_super().cast().as_ptr(), &mut 0) }
+    }
+}
+
+/// A constant array value.
+#[pyclass(extends = Constant)]
+pub(crate) struct ArrayConstant;
+
+#[pymethods]
+impl ArrayConstant {
+    /// The number of elements in the array.
+    ///
+    /// :type: int
+    #[getter]
+    fn count(slf: PyRef<Self>) -> u64 {
+        unsafe { LLVMGetArrayLength2(LLVMTypeOf(slf.into_super().into_super().cast().as_ptr())) }
+    }
+
+    /// The elements of the array.
+    ///
+    /// :type: `typing.List[Constant]`
+    #[getter]
+    fn elements<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyAny>>> {
+        let slf = slf.into_super().into_super();
+        let owner = slf.owner();
+        let ptr = slf.cast().as_ptr();
+        unsafe {
+            let count = LLVMGetArrayLength2(LLVMTypeOf(ptr));
+            (0..u32::try_from(count).unwrap())
+                .map(|i| {
+                    let element = LLVMGetAggregateElement(ptr, i);
+                    Constant::from_raw(py, owner.clone_ref(py), element)
+                })
+                .collect()
+        }
+    }
+}
+
+/// A global variable value.
+#[pyclass(extends = Constant)]
+pub(crate) struct GlobalVariable;
+
+#[pymethods]
+impl GlobalVariable {
+    /// The initializer constant for this global variable, or ``None`` if it
+    /// does not have one.
+    ///
+    /// :type: typing.Optional[Constant]
+    #[getter]
+    fn initializer<'py>(slf: PyRef<Self>, py: Python<'py>) -> PyResult<Option<Bound<'py, PyAny>>> {
+        let slf = slf.into_super().into_super();
+        let owner = slf.owner();
+        unsafe {
+            let init = LLVMGetInitializer(slf.cast().as_ptr());
+            if init.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(Constant::from_raw(py, owner.clone_ref(py), init)?))
+            }
+        }
+    }
+
+    /// Whether this global variable is constant.
+    ///
+    /// :type: bool
+    #[getter]
+    fn is_constant(slf: PyRef<Self>) -> bool {
+        unsafe { LLVMIsGlobalConstant(slf.into_super().into_super().cast().as_ptr()) != 0 }
     }
 }
 

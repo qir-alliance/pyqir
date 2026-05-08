@@ -26,6 +26,19 @@ class ArrayType(Type):
         """The number of elements in the array."""
         ...
 
+class ArrayConstant(Constant):
+    """A constant array value."""
+
+    @property
+    def count(self) -> int:
+        """The number of elements in the array."""
+        ...
+
+    @property
+    def elements(self) -> List[Constant]:
+        """The elements of the array."""
+        ...
+
 class Attribute:
     """An attribute."""
 
@@ -501,6 +514,19 @@ class FunctionType(Type):
         """The types of the function parameters."""
         ...
 
+class GlobalVariable(Constant):
+    """A global variable value."""
+
+    @property
+    def initializer(self) -> Optional[Constant]:
+        """The initializer constant for this global variable, or ``None`` if it does not have one."""
+        ...
+
+    @property
+    def is_constant(self) -> bool:
+        """Whether this global variable is constant."""
+        ...
+
 class ICmp(Instruction):
     """An integer comparison instruction."""
 
@@ -672,6 +698,11 @@ class Module:
     @property
     def functions(self) -> List[Function]:
         """The functions declared in this module."""
+        ...
+
+    @property
+    def global_variables(self) -> List[GlobalVariable]:
+        """The global variables declared in this module."""
         ...
 
     @property

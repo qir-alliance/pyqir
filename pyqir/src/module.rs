@@ -182,6 +182,23 @@ impl Module {
         Ok(functions)
     }
 
+    /// The global variables declared in this module.
+    ///
+    /// :type: `typing.List[Value]`
+    #[getter]
+    fn global_variables(slf: Py<Module>, py: Python<'_>) -> PyResult<Vec<Bound<'_, PyAny>>> {
+        let module = slf.borrow(py).cast().as_ptr();
+        let mut globals = Vec::new();
+        unsafe {
+            let mut global = LLVMGetFirstGlobal(module);
+            while !global.is_null() {
+                globals.push(Value::from_raw(py, slf.clone_ref(py).into(), global)?);
+                global = LLVMGetNextGlobal(global);
+            }
+        }
+        Ok(globals)
+    }
+
     /// The LLVM bitcode for this module.
     ///
     /// :type: bytes

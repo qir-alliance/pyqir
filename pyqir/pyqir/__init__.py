@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 from pyqir._native import (
+    ArrayConstant,
     ArrayType,
     Attribute,
     AttributeList,
@@ -17,6 +18,7 @@ from pyqir._native import (
     FloatPredicate,
     Function,
     FunctionType,
+    GlobalVariable,
     ICmp,
     Instruction,
     IntConstant,
@@ -58,6 +60,7 @@ from pyqir._constants import ATTR_FUNCTION_INDEX, ATTR_RETURN_INDEX
 from pyqir._passes import QirModuleVisitor
 
 __all__ = [
+    "ArrayConstant",
     "ArrayType",
     "Attribute",
     "AttributeList",
@@ -74,6 +77,7 @@ __all__ = [
     "FloatPredicate",
     "Function",
     "FunctionType",
+    "GlobalVariable",
     "ICmp",
     "Instruction",
     "IntConstant",
