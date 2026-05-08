@@ -146,8 +146,6 @@ def test_globals_do_not_include_functions() -> None:
     """
     mod = Module.from_ir(Context(), ir, "test")
     gv_names = [gv.name for gv in mod.global_variables]
-    assert "func" not in gv_names
-    assert "decl" not in gv_names
     assert gv_names == ["g1", "g2"]
 
 
