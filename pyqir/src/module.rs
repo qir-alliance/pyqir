@@ -362,7 +362,7 @@ impl PartialEq for Module {
 }
 
 /// The linkage kind for a global value in a module.
-#[pyclass(eq, eq_int, ord)]
+#[pyclass(eq, eq_int, ord, from_py_object)]
 #[derive(Clone, Copy, PartialEq, Hash, Eq, PartialOrd, Ord)]
 pub(crate) enum Linkage {
     #[pyo3(name = "APPENDING")]
@@ -418,7 +418,7 @@ impl From<Linkage> for LLVMLinkage {
 }
 
 /// Module flag behavior choices
-#[pyclass(eq, eq_int)]
+#[pyclass(eq, eq_int, from_py_object)]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ModuleFlagBehavior {
     #[pyo3(name = "ERROR")]

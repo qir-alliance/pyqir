@@ -120,7 +120,7 @@ impl Instruction {
 
 /// An instruction opcode.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[pyclass(eq, eq_int, ord)]
+#[pyclass(eq, eq_int, ord, from_py_object)]
 pub(crate) enum Opcode {
     #[pyo3(name = "ADD")]
     Add,
@@ -416,7 +416,7 @@ impl ICmp {
 }
 
 /// An integer comparison predicate.
-#[pyclass(eq, eq_int, ord)]
+#[pyclass(eq, eq_int, ord, from_py_object)]
 #[derive(Clone, Copy, PartialEq, Hash, Eq, PartialOrd, Ord)]
 pub(crate) enum IntPredicate {
     #[pyo3(name = "EQ")]
@@ -501,7 +501,7 @@ impl FCmp {
 }
 
 /// A floating-point comparison predicate.
-#[pyclass(eq, eq_int, ord)]
+#[pyclass(eq, eq_int, ord, from_py_object)]
 #[derive(Clone, Copy, PartialEq, Hash, PartialOrd, Eq, Ord)]
 pub(crate) enum FloatPredicate {
     #[pyo3(name = "FALSE")]
