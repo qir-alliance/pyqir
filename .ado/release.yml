@@ -126,6 +126,11 @@ extends:
             displayName: View rust target info
             condition: succeeded()
 
+          - task: PipAuthenticate@1
+            displayName: Pip Authenticate
+            inputs:
+              artifactFeeds: 'AzureQuantum/azure-quantum'
+
           - task: UsePythonVersion@0
             inputs:
               versionSpec: $(PYTHON_VERSION)
