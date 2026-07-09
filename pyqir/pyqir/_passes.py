@@ -165,6 +165,8 @@ class QirModuleVisitor:
             self._on_qis_s(call, call.args[0])
         elif callee_name == "__quantum__qis__s__adj":
             self._on_qis_s_adj(call, call.args[0])
+        elif callee_name == "__quantum__qis__sx__body":
+            self._on_qis_sx(call, call.args[0])
         elif callee_name == "__quantum__qis__t__body":
             self._on_qis_t(call, call.args[0])
         elif callee_name == "__quantum__qis__t__adj":
@@ -197,6 +199,8 @@ class QirModuleVisitor:
             self._on_rt_tuple_record_output(call, call.args[0], call.args[1])
         elif callee_name == "__quantum__rt__array_record_output":
             self._on_rt_array_record_output(call, call.args[0], call.args[1])
+        elif callee_name == "__quantum__rt__initialize":
+            self._on_rt_initialize(call, call.args[0])
         else:
             pass
 
@@ -289,6 +293,12 @@ class QirModuleVisitor:
     def _on_qis_s_adj(self, call: Call, target: Value) -> None:
         """
         Invoked for each call instruction to an adjoint S gate in a basic block.
+        """
+        pass
+
+    def _on_qis_sx(self, call: Call, target: Value) -> None:
+        """
+        Invoked for each call instruction to an SX gate in a basic block.
         """
         pass
 
@@ -395,5 +405,11 @@ class QirModuleVisitor:
     ) -> None:
         """
         Invoked for each call instruction to record an array in a basic block.
+        """
+        pass
+
+    def _on_rt_initialize(self, call: Call, value: Value) -> None:
+        """
+        Invoked for each call instruction to initialize the runtime in a basic block.
         """
         pass
