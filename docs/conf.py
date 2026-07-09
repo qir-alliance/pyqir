@@ -8,6 +8,7 @@ extensions = ["myst_parser", "sphinx.ext.autodoc", "sphinx.ext.intersphinx"]
 autodoc_default_options = {
     "members": None,
     "undoc-members": True,
+    "private-members": True,
     "show-inheritance": True,
 }
 intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}

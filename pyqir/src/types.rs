@@ -117,15 +117,13 @@ pub(crate) struct IntType;
 impl IntType {
     #[new]
     #[pyo3(text_signature = "(context, width)")]
-    fn new(py: Python, context: Py<Context>, width: u32) -> (Self, Type) {
+    fn new(py: Python, context: Py<Context>, width: u32) -> PyClassInitializer<Self> {
         let ty = unsafe { LLVMIntTypeInContext(context.borrow(py).cast().as_ptr(), width) };
-        (
-            Self,
-            Type {
-                ty: NonNull::new(ty).unwrap(),
-                context,
-            },
-        )
+        PyClassInitializer::from(Type {
+            ty: NonNull::new(ty).unwrap(),
+            context,
+        })
+        .add_subclass(Self)
     }
 
     /// The number of bits in the integer.
@@ -148,7 +146,7 @@ pub(crate) struct FunctionType;
 impl FunctionType {
     #[new]
     #[pyo3(text_signature = "(ret, params)")]
-    fn new(py: Python, ret: &Type, params: Vec<PyRef<Type>>) -> PyResult<(Self, Type)> {
+    fn new(py: Python, ret: &Type, params: Vec<PyRef<Type>>) -> PyResult<PyClassInitializer<Self>> {
         Owner::merge(
             py,
             params
@@ -167,13 +165,11 @@ impl FunctionType {
             )
         };
 
-        Ok((
-            Self,
-            Type {
-                ty: NonNull::new(ty).unwrap(),
-                context: ret.context.clone_ref(py),
-            },
-        ))
+        Ok(PyClassInitializer::from(Type {
+            ty: NonNull::new(ty).unwrap(),
+            context: ret.context.clone_ref(py),
+        })
+        .add_subclass(Self))
     }
 
     /// The return type of the function.
@@ -282,15 +278,13 @@ pub(crate) struct PointerType;
 impl PointerType {
     #[new]
     #[pyo3(text_signature = "(pointee)")]
-    fn new(py: Python, pointee: &Type) -> (Self, Type) {
+    fn new(py: Python, pointee: &Type) -> PyClassInitializer<Self> {
         let ty = unsafe { LLVMPointerType(pointee.cast().as_ptr(), 0) };
-        (
-            Self,
-            Type {
-                ty: NonNull::new(ty).unwrap(),
-                context: pointee.context.clone_ref(py),
-            },
-        )
+        PyClassInitializer::from(Type {
+            ty: NonNull::new(ty).unwrap(),
+            context: pointee.context.clone_ref(py),
+        })
+        .add_subclass(Self)
     }
 
     /// The type being pointed to. With opaque pointers, always treat this as void.
