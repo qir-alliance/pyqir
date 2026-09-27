@@ -70,6 +70,9 @@ if ($ENV{QIRLIB_DOWNLOAD_LLVM} MATCHES "true")
   )
 else()
 
+  message(STATUS "DEBUG CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
+  message(STATUS "DEBUG QIRLIB_CMAKE_CL_ARGS = ${QIRLIB_CMAKE_CL_ARGS}")
+  
   ExternalProject_Add(llvm
     GIT_REPOSITORY    https://github.com/llvm/llvm-project.git
     GIT_TAG           $ENV{QIRLIB_LLVM_TAG}
@@ -77,7 +80,6 @@ else()
     GIT_PROGRESS      TRUE
     SOURCE_SUBDIR     llvm
     CMAKE_ARGS        -C ${CMAKE_CURRENT_LIST_DIR}/config.cmake ${QIRLIB_CMAKE_CL_ARGS}
-                      -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
     BUILD_COMMAND     ninja
     USES_TERMINAL_DOWNLOAD  TRUE
     USES_TERMINAL_CONFIGURE TRUE
