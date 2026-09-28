@@ -15,11 +15,6 @@ if (NOT QIRLIB_CMAKE_CL_ARGS)
   get_cmake_property(vars CACHE_VARIABLES)
   foreach(var ${vars})
     get_property(currentHelpString CACHE "${var}" PROPERTY HELPSTRING)
-
-    if("${var}" STREQUAL "CMAKE_INSTALL_PREFIX")
-      message(STATUS "DEBUG CMAKE_INSTALL_PREFIX HELPSTRING = [${currentHelpString}]")
-    endif()
-
     # only add the cache variable to the list if it is set on the command line
     if("${currentHelpString}" MATCHES "No help, variable specified on the command line." OR "${currentHelpString}" STREQUAL "")
       message ("${var} = [${${var}}]  --  ${currentHelpString}")
@@ -75,9 +70,6 @@ if ($ENV{QIRLIB_DOWNLOAD_LLVM} MATCHES "true")
   )
 else()
 
-  message(STATUS "DEBUG CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
-  message(STATUS "DEBUG QIRLIB_CMAKE_CL_ARGS = ${QIRLIB_CMAKE_CL_ARGS}")
-  
   ExternalProject_Add(llvm
     GIT_REPOSITORY    https://github.com/llvm/llvm-project.git
     GIT_TAG           $ENV{QIRLIB_LLVM_TAG}
@@ -85,7 +77,8 @@ else()
     GIT_PROGRESS      TRUE
     SOURCE_SUBDIR     llvm
     CMAKE_ARGS        -C ${CMAKE_CURRENT_LIST_DIR}/config.cmake ${QIRLIB_CMAKE_CL_ARGS}
-    BUILD_COMMAND     ninja
+                          "-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}"
+        BUILD_COMMAND     ninja
     USES_TERMINAL_DOWNLOAD  TRUE
     USES_TERMINAL_CONFIGURE TRUE
     USES_TERMINAL_BUILD     TRUE
