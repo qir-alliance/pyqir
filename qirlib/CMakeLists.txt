@@ -15,6 +15,11 @@ if (NOT QIRLIB_CMAKE_CL_ARGS)
   get_cmake_property(vars CACHE_VARIABLES)
   foreach(var ${vars})
     get_property(currentHelpString CACHE "${var}" PROPERTY HELPSTRING)
+
+    if("${var}" STREQUAL "CMAKE_INSTALL_PREFIX")
+      message(STATUS "DEBUG CMAKE_INSTALL_PREFIX HELPSTRING = [${currentHelpString}]")
+    endif()
+
     # only add the cache variable to the list if it is set on the command line
     if("${currentHelpString}" MATCHES "No help, variable specified on the command line." OR "${currentHelpString}" STREQUAL "")
       message ("${var} = [${${var}}]  --  ${currentHelpString}")
