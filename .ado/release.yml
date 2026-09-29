@@ -242,7 +242,22 @@ extends:
             condition: succeeded()
 
           - pwsh: |
+              $buildVenv = Join-Path "$(System.DefaultWorkingDirectory)" "target/.env"
+              if (Test-Path $buildVenv) {
+                Remove-Item -Path $buildVenv -Recurse -Force -ErrorAction Stop
+              }
+
+              python -c "import sys; print(f'Selected Python: {sys.executable} ({sys.version})')"
+
               ./build.ps1 -t pyqir
+
+              $venvPython = if ($IsWindows) {
+                Join-Path $buildVenv "Scripts/python.exe"
+              }
+              else {
+                Join-Path $buildVenv "bin/python"
+              }
+              & $venvPython -c "import sys; print(f'Build venv Python: {sys.executable} ({sys.version})')"
 
               $wheelDirectory = Join-Path "$(System.DefaultWorkingDirectory)" "target/wheels"
               $abi3Wheels = Join-Path "$(Agent.TempDirectory)" "pyqir-abi3-wheels-$(System.JobId)"
