@@ -3,27 +3,77 @@
 
 cmake_minimum_required(VERSION 3.10.0)
 
-# Copy the command line arguments to a cache variable so that they can be used
-# with the inner project. This is needed because the inner project
-# needs to use the same configuration and the command line arguments are not
-# passed to the inner project.
-# This also manifests itself in apple silicon systems where the inner project
-# defaults to x86_64 even if the outer project is arm64.
-# This needs to be done before the project command is called.
-if (NOT QIRLIB_CMAKE_CL_ARGS)
-  # get all cache variables
-  get_cmake_property(vars CACHE_VARIABLES)
-  foreach(var ${vars})
-    get_property(currentHelpString CACHE "${var}" PROPERTY HELPSTRING)
-    # only add the cache variable to the list if it is set on the command line
-    if("${currentHelpString}" MATCHES "No help, variable specified on the command line." OR "${currentHelpString}" STREQUAL "")
-      message ("${var} = [${${var}}]  --  ${currentHelpString}")
-      list(APPEND QIRLIB_CMAKE_CL_ARGS "-D${var}=${${var}}")
-    endif()
-  endforeach()
-  # cache the command line arguments
-  set(QIRLIB_CMAKE_CL_ARGS ${QIRLIB_CMAKE_CL_ARGS} CACHE STRING "comment")
-endif ()
+# CMake 4.4 gives command-line entries descriptive HELPSTRINGs. Forward
+# supported build inputs by name instead, before project() initializes defaults.
+# Discard the old snapshot so reconfiguration uses the current cache values.
+unset(QIRLIB_CMAKE_CL_ARGS CACHE)
+set(_qirlib_forward_variables
+  BUILD_SHARED_LIBS
+  CMAKE_BUILD_TYPE
+  CMAKE_INSTALL_PREFIX
+  CMAKE_STAGING_PREFIX
+  CMAKE_TOOLCHAIN_FILE
+  CMAKE_SYSTEM_NAME
+  CMAKE_SYSTEM_PROCESSOR
+  CMAKE_SYSTEM_VERSION
+  CMAKE_OSX_ARCHITECTURES
+  CMAKE_OSX_SYSROOT
+  CMAKE_OSX_DEPLOYMENT_TARGET
+  CMAKE_SYSROOT
+  CMAKE_SYSROOT_COMPILE
+  CMAKE_SYSROOT_LINK
+  CMAKE_PREFIX_PATH
+  CMAKE_FIND_ROOT_PATH
+  CMAKE_FIND_ROOT_PATH_MODE_PROGRAM
+  CMAKE_FIND_ROOT_PATH_MODE_LIBRARY
+  CMAKE_FIND_ROOT_PATH_MODE_INCLUDE
+  CMAKE_FIND_ROOT_PATH_MODE_PACKAGE
+  CMAKE_MSVC_RUNTIME_LIBRARY
+  CMAKE_POSITION_INDEPENDENT_CODE
+  CMAKE_VERBOSE_MAKEFILE
+  CMAKE_MAKE_PROGRAM
+  CMAKE_AR
+  CMAKE_RANLIB
+  CMAKE_LINKER
+  CMAKE_NM
+  CMAKE_STRIP
+  CMAKE_OBJCOPY
+  CMAKE_OBJDUMP
+)
+set(_qirlib_cache_content "")
+get_cmake_property(_qirlib_cache_variables CACHE_VARIABLES)
+foreach(_qirlib_var IN LISTS _qirlib_cache_variables)
+  if(NOT _qirlib_var IN_LIST _qirlib_forward_variables
+      AND NOT _qirlib_var MATCHES "^(LLVM_|CPACK_)"
+      AND NOT _qirlib_var MATCHES "^CMAKE_(C|CXX|ASM|RC)_(COMPILER(_ARG1|_TARGET|_EXTERNAL_TOOLCHAIN|_LAUNCHER|_AR|_RANLIB)?|FLAGS(_[A-Za-z0-9_]+)?)$"
+      AND NOT _qirlib_var MATCHES "^CMAKE_(EXE|SHARED|MODULE|STATIC)_LINKER_FLAGS(_[A-Za-z0-9_]+)?$")
+    continue()
+  endif()
+
+  get_property(_qirlib_type CACHE "${_qirlib_var}" PROPERTY TYPE)
+  if(_qirlib_type STREQUAL "INTERNAL" OR _qirlib_type STREQUAL "STATIC")
+    continue()
+  endif()
+  get_property(_qirlib_value CACHE "${_qirlib_var}" PROPERTY VALUE)
+  string(REPLACE "\\" "\\\\" _qirlib_value "${_qirlib_value}")
+  string(REPLACE "\"" "\\\"" _qirlib_value "${_qirlib_value}")
+  string(REPLACE "$" "\\$" _qirlib_value "${_qirlib_value}")
+  # A preload script preserves lists and quoting without encoding separators.
+  # Restore TYPE separately because set(CACHE) does not accept UNINITIALIZED.
+  string(APPEND _qirlib_cache_content
+    "set(${_qirlib_var} \"${_qirlib_value}\" CACHE STRING \"Forwarded from qirlib\" FORCE)\n"
+    "set_property(CACHE ${_qirlib_var} PROPERTY TYPE ${_qirlib_type})\n")
+endforeach()
+
+set(QIRLIB_LLVM_CACHE_FILE "${CMAKE_CURRENT_BINARY_DIR}/qirlib-llvm-cache.cmake")
+set(_qirlib_previous_cache_content "")
+if(EXISTS "${QIRLIB_LLVM_CACHE_FILE}")
+  file(READ "${QIRLIB_LLVM_CACHE_FILE}" _qirlib_previous_cache_content)
+endif()
+if(NOT EXISTS "${QIRLIB_LLVM_CACHE_FILE}"
+    OR NOT _qirlib_cache_content STREQUAL _qirlib_previous_cache_content)
+  file(WRITE "${QIRLIB_LLVM_CACHE_FILE}" "${_qirlib_cache_content}")
+endif()
 
 project(qirlib_external)
 include(ExternalProject)
@@ -76,12 +126,20 @@ else()
     GIT_SHALLOW       TRUE
     GIT_PROGRESS      TRUE
     SOURCE_SUBDIR     llvm
-    CMAKE_ARGS        -C ${CMAKE_CURRENT_LIST_DIR}/config.cmake ${QIRLIB_CMAKE_CL_ARGS}
+    CMAKE_ARGS        -C "${CMAKE_CURRENT_LIST_DIR}/config.cmake"
+                      -C "${QIRLIB_LLVM_CACHE_FILE}"
     BUILD_COMMAND     ninja
     USES_TERMINAL_DOWNLOAD  TRUE
     USES_TERMINAL_CONFIGURE TRUE
     USES_TERMINAL_BUILD     TRUE
     USES_TERMINAL_INSTALL   TRUE
+  )
+
+  ExternalProject_Add_StepDependencies(
+    llvm
+    configure
+    "${CMAKE_CURRENT_LIST_DIR}/config.cmake"
+    "${QIRLIB_LLVM_CACHE_FILE}"
   )
 
   ExternalProject_Add_Step(llvm package
