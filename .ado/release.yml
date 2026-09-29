@@ -221,6 +221,42 @@ extends:
             displayName: Build
             condition: succeeded()
 
+          # The pyqir task clears target/wheels, so preserve the ABI3 wheel
+          # while building the ABI3T wheel with Python 3.15.
+          - pwsh: |
+              $abi3Wheels = Join-Path "$(Agent.TempDirectory)" "pyqir-abi3-wheels-$(System.JobId)"
+              New-Item -ItemType Directory -Path $abi3Wheels -Force
+              Copy-Item `
+                -Path (Join-Path "$(System.DefaultWorkingDirectory)" "target/wheels/pyqir-*.whl") `
+                -Destination $abi3Wheels
+            displayName: Preserve ABI3 Wheel
+            condition: succeeded()
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: ">=3.15.0-a0 <3.16.0"
+              allowUnstable: true
+              ${{ if eq(target.arch, 'aarch64') }}:
+                architecture: "arm64"
+            displayName: Set Up Python 3.15 for ABI3T
+            condition: succeeded()
+
+          - pwsh: |
+              ./build.ps1 -t pyqir
+
+              $wheelDirectory = Join-Path "$(System.DefaultWorkingDirectory)" "target/wheels"
+              $abi3Wheels = Join-Path "$(Agent.TempDirectory)" "pyqir-abi3-wheels-$(System.JobId)"
+              Copy-Item -Path (Join-Path $abi3Wheels "*.whl") -Destination $wheelDirectory
+
+              if (-not (Test-Path (Join-Path $wheelDirectory "pyqir-*-cp39-abi3-*.whl"))) {
+                throw "The ABI3 wheel was not preserved."
+              }
+              if (-not (Test-Path (Join-Path $wheelDirectory "pyqir-*-cp315-abi3.abi3t-*.whl"))) {
+                throw "The ABI3T wheel was not generated."
+              }
+            displayName: Build ABI3T Wheel
+            condition: succeeded()
+
           - script: |
               dir target\wheels\*
             displayName: List Py Packages on Win
