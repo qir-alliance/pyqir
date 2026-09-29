@@ -330,6 +330,7 @@ def test_switch_instr_cond_works() -> None:
     assert isinstance(switch, Switch)
     assert switch.cond == switch.operands[0]
 
+
 def test_alloca_instr_allocated_type() -> None:
     ir = Path("tests/alloca_instr.ll").read_text()
     module = Module.from_ir(Context(), ir)
