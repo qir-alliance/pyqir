@@ -5,7 +5,7 @@ use crate::{
     builder::Builder,
     core::Context,
     instructions::{
-        Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
+        Alloca, Call, FCmp, FloatPredicate, ICmp, Instruction, IntPredicate, Opcode, Phi, Switch,
     },
     metadata::{ConstantAsMetadata, Metadata, MetadataString},
     module::{Linkage, Module, ModuleFlagBehavior},
@@ -27,6 +27,7 @@ use pyo3::prelude::*;
 
 #[pymodule]
 fn _native<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
+    m.add_class::<Alloca>()?;
     m.add_class::<ArrayConstant>()?;
     m.add_class::<ArrayType>()?;
     m.add_class::<Attribute>()?;

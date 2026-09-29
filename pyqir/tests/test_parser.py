@@ -16,6 +16,9 @@ from pyqir import (
     Module,
     Opcode,
     Switch,
+    Alloca,
+    ArrayType,
+    PointerType,
     extract_byte_string,
     is_entry_point,
     is_interop_friendly,
@@ -326,3 +329,32 @@ def test_switch_instr_cond_works() -> None:
     assert switch.opcode == Opcode.SWITCH
     assert isinstance(switch, Switch)
     assert switch.cond == switch.operands[0]
+
+
+def test_alloca_instr_allocated_type() -> None:
+    ir = Path("tests/alloca_instr.ll").read_text()
+    module = Module.from_ir(Context(), ir)
+    func = module.functions[0]
+    block = func.basic_blocks[0]
+    alloca1 = block.instructions[0]
+    assert alloca1.opcode == Opcode.ALLOCA
+    assert isinstance(alloca1, Alloca)
+    assert isinstance(alloca1.allocated_type, IntType)
+    assert alloca1.allocated_type.width == 32
+    alloca2 = block.instructions[1]
+    assert alloca2.opcode == Opcode.ALLOCA
+    assert isinstance(alloca2, Alloca)
+    assert alloca2.allocated_type.is_double
+    alloca3 = block.instructions[2]
+    assert alloca3.opcode == Opcode.ALLOCA
+    assert isinstance(alloca3, Alloca)
+    assert isinstance(alloca3.allocated_type, ArrayType)
+    assert isinstance(alloca3.allocated_type.element, PointerType)
+    assert alloca3.allocated_type.count == 2
+    alloca4 = block.instructions[3]
+    assert alloca4.opcode == Opcode.ALLOCA
+    assert isinstance(alloca4, Alloca)
+    assert isinstance(alloca4.allocated_type, ArrayType)
+    assert isinstance(alloca4.allocated_type.element, IntType)
+    assert alloca4.allocated_type.element.width == 1
+    assert alloca4.allocated_type.count == 4
