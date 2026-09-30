@@ -46,6 +46,25 @@ parameters:
     imageName: 'azurelinux-3.0-gen2-arm64'
     os: linux
     arch: aarch64
+  # - name: mac_x86_64
+  #   poolName: 'Azure Pipelines'
+  #   imageName: 'macOS-15'
+  #   os: macOS
+  #   arch: x86_64
+  # - name: mac_aarch64
+  #   poolName: 'AcesShared'
+  #   os: macOS
+  #   arch: aarch64
+  # - name: windows_x86_64
+  #   poolName: 'Azure-Pipelines-DevTools-EO'
+  #   imageName: 'windows-2022'
+  #   os: windows
+  #   arch: x86_64
+  # - name: windows_aarch64
+  #   poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
+  #   imageName: 'windows-2025-gen2-arm64'
+  #   os: windows
+  #   arch: aarch64
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
@@ -222,7 +241,7 @@ extends:
               sudo $HOME/.local/bin/uv python list
               sudo $HOME/.local/bin/uv python install 3.15 --default
               sudo alternatives --remove-all python
-              sudo alternatives --install /usr/bin/python python $HOME/.local/bin/python 1
+              sudo alternatives --install /usr/bin/python python /root/.local/bin/python 1
             displayName: Install Python 3.15 on Azure Linux 3.0 aarch64
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
 
