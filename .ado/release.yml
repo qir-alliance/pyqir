@@ -239,7 +239,14 @@ extends:
               ${{ if eq(target.arch, 'aarch64') }}:
                 architecture: "arm64"
             displayName: Set Up Python 3.15 for ABI3T
-            condition: succeeded()
+            condition: and(succeeded(), not(and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))))
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: ">=3.15.0-a0 <3.16.0"
+              allowUnstable: true
+            displayName: Set Up Python 3.15 for ABI3T
+            condition: and(succeeded(), and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64')))
 
           - pwsh: |
               $buildVenv = Join-Path "$(System.DefaultWorkingDirectory)" "target/.env"
