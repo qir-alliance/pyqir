@@ -241,12 +241,12 @@ extends:
             displayName: Set Up Python 3.15 for ABI3T
             condition: and(succeeded(), not(and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))))
 
-          - task: UsePythonVersion@0
-            inputs:
-              versionSpec: ">=3.15.0-a0 <3.16.0"
-              allowUnstable: true
-            displayName: Set Up Python 3.15 for ABI3T
-            condition: and(succeeded(), and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64')))
+          - script: |
+              sudo python3 -m pip install uv
+              sudo uv python list
+              sudo uv python install 3.15 --default
+            displayName: Install Python 3.15on Azure Linux 3.0 aarch64
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
 
           - pwsh: |
               $buildVenv = Join-Path "$(System.DefaultWorkingDirectory)" "target/.env"
