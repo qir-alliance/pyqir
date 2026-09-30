@@ -237,10 +237,10 @@ extends:
             condition: and(succeeded(), not(and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))))
 
           - script: |
-              sudo curl -LsSf https://astral.sh/uv/install.sh | sh
-              sudo $HOME/.local/bin/uv python list
-              sudo $HOME/.local/bin/uv python install 3.15 --default
-              sudo ls -l /root/.local/bin
+              curl -LsSf https://astral.sh/uv/install.sh | sh
+              $HOME/.local/bin/uv python list
+              $HOME/.local/bin/uv python install 3.15 --default
+              ls -l $HOME/.local/bin
               sudo alternatives --remove-all python
               sudo alternatives --install /usr/bin/python python /root/.local/bin/python 1
               python --version
