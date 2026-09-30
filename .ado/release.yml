@@ -245,8 +245,8 @@ extends:
               sudo curl -LsSf https://astral.sh/uv/install.sh | sh
               sudo $HOME/.local/bin/uv python list
               sudo $HOME/.local/bin/uv python install 3.15 --default
-              sudo $HOME/.local/bin/uv python update-shell
-            displayName: Install Python 3.15on Azure Linux 3.0 aarch64
+              sudo alternatives --install /usr/bin/python python /root/.local/bin/python 1
+            displayName: Install Python 3.15 on Azure Linux 3.0 aarch64
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
 
           - pwsh: |
