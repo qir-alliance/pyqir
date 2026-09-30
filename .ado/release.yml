@@ -239,7 +239,58 @@ extends:
               ${{ if eq(target.arch, 'aarch64') }}:
                 architecture: "arm64"
             displayName: Set Up Python 3.15 for ABI3T
-            condition: succeeded()
+            condition: and(succeeded(), not(and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))))
+
+          - script: |
+              set -euo pipefail
+
+              python_version="3.15.0rc2"
+              python_sha256="8d93af5eaaaea5adfd41bd786a7ba3f03f2ad1ab57c6a65e0b963deab91d5ad7"
+              work_dir="$(Agent.TempDirectory)/cpython-3.15t-$(System.JobId)"
+              archive="$work_dir/Python-$python_version.tar.xz"
+              source_dir="$work_dir/Python-$python_version"
+              prefix="$work_dir/install"
+
+              sudo tdnf install -y \
+                curl \
+                make \
+                tar \
+                xz \
+                bzip2-devel \
+                expat-devel \
+                libffi-devel \
+                ncurses-devel \
+                openssl-devel \
+                pkgconf-pkg-config\
+                readline-devel \
+                sqlite-devel \
+                xz-devel \
+                zlib-devel
+
+              mkdir -p "$work_dir"
+              curl --fail --location --silent --show-error \
+                "https://www.python.org/ftp/python/3.15.0/Python-$python_version.tar.xz" \
+                --output "$archive"
+              echo "$python_sha256  $archive" | sha256sum --check -
+              tar --extract --file "$archive" --directory "$work_dir"
+
+              cd "$source_dir"
+              ./configure --prefix="$prefix" --disable-gil --with-ensurepip=install
+              jobs="$(nproc)"
+              make -j"$jobs"
+              make install
+
+              python_bin="$prefix/bin/python3.15t"
+              test -x "$python_bin"
+              ln -sf "$python_bin" "$prefix/bin/python"
+              ln -sf "$python_bin" "$prefix/bin/python3"
+
+              "$python_bin" --version
+              "$python_bin" -c 'import platform, sys, sysconfig; print("Executable:", sys.executable); print("Architecture:", platform.machine()); print("Py_GIL_DISABLED:", sysconfig.get_config_var("Py_GIL_DISABLED")); print("GIL enabled:", sys._is_gil_enabled()); assert platform.machine().lower() in {"aarch64", "arm64"}; assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1; assert not sys._is_gil_enabled()'
+
+              echo "##vso[task.prependpath]$prefix/bin"
+            displayName: Build Python 3.15t from source on Azure Linux ARM64
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
 
           - pwsh: |
               $buildVenv = Join-Path "$(System.DefaultWorkingDirectory)" "target/.env"
@@ -248,6 +299,11 @@ extends:
               }
 
               python -c "import sys; print(f'Selected Python: {sys.executable} ({sys.version})')"
+
+              if ("$(Agent.OS)" -eq "Linux" -and "$(arch)" -eq "aarch64") {
+                python --version
+                python -c 'import platform, sys, sysconfig; print("Selected executable:", sys.executable); print("Architecture:", platform.machine()); print("Py_GIL_DISABLED:", sysconfig.get_config_var("Py_GIL_DISABLED")); print("GIL enabled:", sys._is_gil_enabled()); assert platform.machine().lower() in {"aarch64", "arm64"}; assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1; assert not sys._is_gil_enabled()'
+              }
 
               ./build.ps1 -t pyqir
 
@@ -258,6 +314,11 @@ extends:
                 Join-Path $buildVenv "bin/python"
               }
               & $venvPython -c "import sys; print(f'Build venv Python: {sys.executable} ({sys.version})')"
+
+              if ("$(Agent.OS)" -eq "Linux" -and "$(arch)" -eq "aarch64") {
+                & $venvPython --version
+                & $venvPython -c 'import platform, sysconfig; print("Venv architecture:", platform.machine()); print("Venv Py_GIL_DISABLED:", sysconfig.get_config_var("Py_GIL_DISABLED")); assert platform.machine().lower() in {"aarch64", "arm64"}; assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1'
+              }
 
               $wheelDirectory = Join-Path "$(System.DefaultWorkingDirectory)" "target/wheels"
               $abi3Wheels = Join-Path "$(Agent.TempDirectory)" "pyqir-abi3-wheels-$(System.JobId)"
