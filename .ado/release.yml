@@ -240,7 +240,7 @@ extends:
               sudo curl -LsSf https://astral.sh/uv/install.sh | sh
               sudo $HOME/.local/bin/uv python list
               sudo $HOME/.local/bin/uv python install 3.15 --default
-              sudo ls -l /root/.local/bin/python*
+              sudo ls -l /root/.local/bin
               sudo alternatives --remove-all python
               sudo alternatives --install /usr/bin/python python /root/.local/bin/python 1
               python --version
