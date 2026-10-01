@@ -25,6 +25,10 @@ variables:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN_VERSION: "1.93"
   PYTHON_VERSION: "3.11"
+  PYTHON_315T_VERSION: "3.15.0rc2"
+  PYTHON_315T_COMMIT: "435c9e5a798c99653e3ab64ce29baed0e4f3dfee"
+  PYTHON_315T_DIRECTORY: $(Pipeline.Workspace)/python-3.15t-arm64
+  PYTHON_315T_CACHE_COUNTER: 1
   LLVM_VERSION: 20
   # use this to invalidate the cache. Any time we update the OS
   # image, we should increment this to ensure that the cache is rebuilt.
@@ -41,35 +45,37 @@ parameters:
 - name: matrix
   type: object
   default:
-  - name: linux_x86_64
-    poolName: 'Azure-Pipelines-DevTools-EO'
-    imageName: 'ubuntu-22.04'
-    os: linux
-    arch: x86_64
+  # Temporarily disabled while iterating on Python 3.15t support on Azure Linux
+  # ARM64. Restore all commented targets before finalizing or merging this PR.
+  # - name: linux_x86_64
+  #   poolName: 'Azure-Pipelines-DevTools-EO'
+  #   imageName: 'ubuntu-22.04'
+  #   os: linux
+  #   arch: x86_64
   - name: linux_aarch64
     poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
     imageName: 'azurelinux-3.0-gen2-arm64'
     os: linux
     arch: aarch64
-  - name: mac_x86_64
-    poolName: 'Azure Pipelines'
-    imageName: 'macOS-15'
-    os: macOS
-    arch: x86_64
-  - name: mac_aarch64
-    poolName: 'AcesShared'
-    os: macOS
-    arch: aarch64
-  - name: windows_x86_64
-    poolName: 'Azure-Pipelines-DevTools-EO'
-    imageName: 'windows-2022'
-    os: windows
-    arch: x86_64
-  - name: windows_aarch64
-    poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
-    imageName: 'windows-2025-gen2-arm64'
-    os: windows
-    arch: aarch64
+  # - name: mac_x86_64
+  #   poolName: 'Azure Pipelines'
+  #   imageName: 'macOS-15'
+  #   os: macOS
+  #   arch: x86_64
+  # - name: mac_aarch64
+  #   poolName: 'AcesShared'
+  #   os: macOS
+  #   arch: aarch64
+  # - name: windows_x86_64
+  #   poolName: 'Azure-Pipelines-DevTools-EO'
+  #   imageName: 'windows-2022'
+  #   os: windows
+  #   arch: x86_64
+  # - name: windows_aarch64
+  #   poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
+  #   imageName: 'windows-2025-gen2-arm64'
+  #   os: windows
+  #   arch: aarch64
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
@@ -219,6 +225,134 @@ extends:
           # Build PyQIR
           - pwsh: ./build.ps1
             displayName: Build
+            condition: succeeded()
+
+          # The pyqir task clears target/wheels, so preserve the ABI3 wheel
+          # while building the ABI3T wheel with Python 3.15.
+          - pwsh: |
+              $abi3Wheels = Join-Path "$(Agent.TempDirectory)" "pyqir-abi3-wheels-$(System.JobId)"
+              New-Item -ItemType Directory -Path $abi3Wheels -Force
+              Copy-Item `
+                -Path (Join-Path "$(System.DefaultWorkingDirectory)" "target/wheels/pyqir-*.whl") `
+                -Destination $abi3Wheels
+            displayName: Preserve ABI3 Wheel
+            condition: succeeded()
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: ">=3.15.0-a0 <3.16.0"
+              allowUnstable: true
+              ${{ if eq(target.arch, 'aarch64') }}:
+                architecture: "arm64"
+            displayName: Set Up Python 3.15 for ABI3T
+            condition: and(succeeded(), not(and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))))
+
+          - task: Cache@2
+            inputs:
+              key: '"python-$(PYTHON_315T_VERSION)-$(PYTHON_315T_COMMIT)-azurelinux-3.0-arm64-free-threaded-$(PYTHON_315T_CACHE_COUNTER)"'
+              path: $(PYTHON_315T_DIRECTORY)
+              cacheHitVar: PYTHON_315T_CACHE_RESTORED
+            displayName: Cache Python 3.15t on Azure Linux ARM64
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
+
+          - script: |
+              set -euo pipefail
+
+              python_version="$(PYTHON_315T_VERSION)"
+              source_dir="$(Agent.TempDirectory)/cpython-$python_version-$(System.JobId)"
+              prefix="$(PYTHON_315T_DIRECTORY)"
+
+              if [ "$(PYTHON_315T_CACHE_RESTORED)" != "true" ]; then
+                sudo tdnf install -y \
+                  git \
+                  make \
+                  bzip2-devel \
+                  expat-devel \
+                  libffi-devel \
+                  ncurses-devel \
+                  openssl-devel \
+                  pkgconf-pkg-config \
+                  readline-devel \
+                  sqlite-devel \
+                  xz-devel \
+                  zlib-devel
+
+                git clone \
+                  --branch "v$python_version" \
+                  --depth 1 \
+                  --single-branch \
+                  https://github.com/python/cpython.git \
+                  "$source_dir"
+
+                actual_commit="$(git -C "$source_dir" rev-parse HEAD)"
+                expected_commit="$(PYTHON_315T_COMMIT)"
+                echo "Expected CPython commit: $expected_commit"
+                echo "Actual CPython commit:   $actual_commit"
+                if [ "$actual_commit" != "$expected_commit" ]; then
+                  echo "ERROR: CPython v$python_version resolved to an unexpected commit." >&2
+                  exit 1
+                fi
+
+                cd "$source_dir"
+                ./configure --prefix="$prefix" --disable-gil --with-ensurepip=install
+                jobs="$(nproc)"
+                make -j"$jobs"
+                make install
+              else
+                echo "Using cached Python installation from $prefix"
+              fi
+
+              python_bin="$prefix/bin/python3.15t"
+              test -x "$python_bin"
+              ln -sf "$python_bin" "$prefix/bin/python"
+              ln -sf "$python_bin" "$prefix/bin/python3"
+
+              "$python_bin" --version
+              "$python_bin" -c 'import platform, sys, sysconfig; print("Executable:", sys.executable); print("Architecture:", platform.machine()); print("Py_GIL_DISABLED:", sysconfig.get_config_var("Py_GIL_DISABLED")); print("GIL enabled:", sys._is_gil_enabled()); assert platform.machine().lower() in {"aarch64", "arm64"}; assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1; assert not sys._is_gil_enabled()'
+
+              echo "##vso[task.prependpath]$prefix/bin"
+            displayName: Build Python 3.15t from source on Azure Linux ARM64
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
+
+          - pwsh: |
+              $buildVenv = Join-Path "$(System.DefaultWorkingDirectory)" "target/.env"
+              if (Test-Path $buildVenv) {
+                Remove-Item -Path $buildVenv -Recurse -Force -ErrorAction Stop
+              }
+
+              python -c "import sys; print(f'Selected Python: {sys.executable} ({sys.version})')"
+
+              if ("$(Agent.OS)" -eq "Linux" -and "$(arch)" -eq "aarch64") {
+                python --version
+                python -c 'import platform, sys, sysconfig; print("Selected executable:", sys.executable); print("Architecture:", platform.machine()); print("Py_GIL_DISABLED:", sysconfig.get_config_var("Py_GIL_DISABLED")); print("GIL enabled:", sys._is_gil_enabled()); assert platform.machine().lower() in {"aarch64", "arm64"}; assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1; assert not sys._is_gil_enabled()'
+              }
+
+              ./build.ps1 -t pyqir
+
+              $venvPython = if ($IsWindows) {
+                Join-Path $buildVenv "Scripts/python.exe"
+              }
+              else {
+                Join-Path $buildVenv "bin/python"
+              }
+              & $venvPython -c "import sys; print(f'Build venv Python: {sys.executable} ({sys.version})')"
+
+              if ("$(Agent.OS)" -eq "Linux" -and "$(arch)" -eq "aarch64") {
+                & $venvPython --version
+                & $venvPython -c 'import platform, sysconfig; print("Venv architecture:", platform.machine()); print("Venv Py_GIL_DISABLED:", sysconfig.get_config_var("Py_GIL_DISABLED")); assert platform.machine().lower() in {"aarch64", "arm64"}; assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1'
+              }
+
+              $wheelDirectory = Join-Path "$(System.DefaultWorkingDirectory)" "target/wheels"
+              $abi3Wheels = Join-Path "$(Agent.TempDirectory)" "pyqir-abi3-wheels-$(System.JobId)"
+              Copy-Item -Path (Join-Path $abi3Wheels "*.whl") -Destination $wheelDirectory
+
+              if (-not (Test-Path (Join-Path $wheelDirectory "pyqir-*-cp39-abi3-*.whl"))) {
+                throw "The ABI3 wheel was not preserved."
+              }
+              if (-not (Test-Path (Join-Path $wheelDirectory "pyqir-*-cp315-abi3.abi3t-*.whl"))) {
+                throw "The ABI3T wheel was not generated."
+              }
+            displayName: Build ABI3T Wheel
             condition: succeeded()
 
           - script: |
