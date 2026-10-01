@@ -25,6 +25,10 @@ variables:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN_VERSION: "1.93"
   PYTHON_VERSION: "3.11"
+  PYTHON_315T_VERSION: "3.15.0rc2"
+  PYTHON_315T_COMMIT: "435c9e5a798c99653e3ab64ce29baed0e4f3dfee"
+  PYTHON_315T_DIRECTORY: $(Pipeline.Workspace)/python-3.15t-arm64
+  PYTHON_315T_CACHE_COUNTER: 1
   LLVM_VERSION: 20
   # use this to invalidate the cache. Any time we update the OS
   # image, we should increment this to ensure that the cache is rebuilt.
@@ -243,44 +247,60 @@ extends:
             displayName: Set Up Python 3.15 for ABI3T
             condition: and(succeeded(), not(and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))))
 
+          - task: Cache@2
+            inputs:
+              key: '"python-$(PYTHON_315T_VERSION)-$(PYTHON_315T_COMMIT)-azurelinux-3.0-arm64-free-threaded-$(PYTHON_315T_CACHE_COUNTER)"'
+              path: $(PYTHON_315T_DIRECTORY)
+              cacheHitVar: PYTHON_315T_CACHE_RESTORED
+            displayName: Cache Python 3.15t on Azure Linux ARM64
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
+
           - script: |
               set -euo pipefail
 
-              python_version="3.15.0rc2"
-              python_sha256="8d93af5eaaaea5adfd41bd786a7ba3f03f2ad1ab57c6a65e0b963deab91d5ad7"
-              work_dir="$(Agent.TempDirectory)/cpython-3.15t-$(System.JobId)"
-              archive="$work_dir/Python-$python_version.tar.xz"
-              source_dir="$work_dir/Python-$python_version"
-              prefix="$work_dir/install"
+              python_version="$(PYTHON_315T_VERSION)"
+              source_dir="$(Agent.TempDirectory)/cpython-$python_version-$(System.JobId)"
+              prefix="$(PYTHON_315T_DIRECTORY)"
 
-              sudo tdnf install -y \
-                curl \
-                make \
-                tar \
-                xz \
-                bzip2-devel \
-                expat-devel \
-                libffi-devel \
-                ncurses-devel \
-                openssl-devel \
-                pkgconf-pkg-config \
-                readline-devel \
-                sqlite-devel \
-                xz-devel \
-                zlib-devel
+              if [ "$(PYTHON_315T_CACHE_RESTORED)" != "true" ]; then
+                sudo tdnf install -y \
+                  git \
+                  make \
+                  bzip2-devel \
+                  expat-devel \
+                  libffi-devel \
+                  ncurses-devel \
+                  openssl-devel \
+                  pkgconf-pkg-config \
+                  readline-devel \
+                  sqlite-devel \
+                  xz-devel \
+                  zlib-devel
 
-              mkdir -p "$work_dir"
-              curl --fail --location --silent --show-error \
-                "https://www.python.org/ftp/python/3.15.0/Python-$python_version.tar.xz" \
-                --output "$archive"
-              echo "$python_sha256  $archive" | sha256sum --check -
-              tar --extract --file "$archive" --directory "$work_dir"
+                git clone \
+                  --branch "v$python_version" \
+                  --depth 1 \
+                  --single-branch \
+                  https://github.com/python/cpython.git \
+                  "$source_dir"
 
-              cd "$source_dir"
-              ./configure --prefix="$prefix" --disable-gil --with-ensurepip=install
-              jobs="$(nproc)"
-              make -j"$jobs"
-              make install
+                actual_commit="$(git -C "$source_dir" rev-parse HEAD)"
+                expected_commit="$(PYTHON_315T_COMMIT)"
+                echo "Expected CPython commit: $expected_commit"
+                echo "Actual CPython commit:   $actual_commit"
+                if [ "$actual_commit" != "$expected_commit" ]; then
+                  echo "ERROR: CPython v$python_version resolved to an unexpected commit." >&2
+                  exit 1
+                fi
+
+                cd "$source_dir"
+                ./configure --prefix="$prefix" --disable-gil --with-ensurepip=install
+                jobs="$(nproc)"
+                make -j"$jobs"
+                make install
+              else
+                echo "Using cached Python installation from $prefix"
+              fi
 
               python_bin="$prefix/bin/python3.15t"
               test -x "$python_bin"
