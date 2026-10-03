@@ -67,7 +67,7 @@ extends:
             displayName: Download LLVM source
             inputs:
               command: download
-              feed: "azure-quantum"
+              feed: "AzureQuantum/azure-quantum"
               packageName: "llvm-source"
               packageVersion: "20.1.8" # or '*', '18.*' (wildcards supported for download)
               directory: "$(Pipeline.Workspace)/llvm-src"
@@ -76,7 +76,6 @@ extends:
               cat /etc/redhat-release
               uname -m
               python --version
-              ls "$(Pipeline.Workspace)/llvm-src"
             target: qdkImage
             displayName: Verify Environment
           # - task: RustInstaller@1
