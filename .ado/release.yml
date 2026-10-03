@@ -31,8 +31,9 @@ extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
     settings:
-      # To fetch the Universal Package from the ADO feed, Azure blob access is needed :(
-      networkIsolationPolicy: AzureStorage
+      # To fetch the Universal Package from the ADO feed, Azure blob access is needed. Also need to install dnf packages
+      # See https://eng.ms/docs/cloud-ai-platform/devdiv/one-engineering-system-1es/1es-build/cloudbuild/security/1espt-network-isolation
+      networkIsolationPolicy: AzureStorage,LinuxDistroRepos
 
     sdl:
       autobaseline:
@@ -61,11 +62,13 @@ extends:
           timeoutInMinutes: 300
           templateContext:
             outputs:
-            - output: pipelineArtifact
-              displayName: 'Upload Python Artifacts for ${{ target.os }} ${{ target.arch }}'
-              condition: succeeded()
-              targetPath: $(System.DefaultWorkingDirectory)/target/wheels
-              artifactName: wheel.${{ target.os }}.${{ target.arch }}
+            - output: containerImage
+              image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(Build.BuildNumber)
+            # - output: pipelineArtifact
+            #   displayName: 'Upload Python Artifacts for ${{ target.os }} ${{ target.arch }}'
+            #   condition: succeeded()
+            #   targetPath: $(System.DefaultWorkingDirectory)/target/wheels
+            #   artifactName: wheel.${{ target.os }}.${{ target.arch }}
           steps:
           - checkout: self
 
@@ -77,13 +80,26 @@ extends:
               packageName: "llvm-source"
               packageVersion: "20.1.8" # or '*', '18.*' (wildcards supported for download)
               directory: "$(Pipeline.Workspace)/llvm-src"
+
+          # Need to copy the LLVM source into the container before building it
           - script: |
               set -euxo pipefail
-              cat /etc/redhat-release
-              uname -m
-              python --version
-            target: qdkImage
-            displayName: Verify Environment
+              cp -R "$(Pipeline.Workspace)/llvm-src/." "$(Build.SourcesDirectory)/.ado/images/qdk-llvm"
+              ls -la "$(Build.SourcesDirectory)/.ado/images/qdk-llvm"
+            displayName: Copy LLVM source into container build context
+
+          - task: 1ES.BuildContainerImage@1
+            inputs:
+              image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(Build.BuildNumber)
+              path: $(Build.SourcesDirectory)/.ado/images/qdk-llvm
+
+          # - script: |
+          #     set -euxo pipefail
+          #     cat /etc/redhat-release
+          #     uname -m
+          #     python --version
+          #   target: qdkImage
+          #   displayName: Verify Environment
           # - task: RustInstaller@1
           #   inputs:
           #     rustVersion: ms-prod-$(RUST_TOOLCHAIN_VERSION)
@@ -93,7 +109,7 @@ extends:
           #     toolchainFeed: $(toolchainFeed)
           #   displayName: Install Rust toolchain
 
-          - script: |
-              ls target/wheels/*
-            displayName: List Py Packages on non-Win
-            condition: and(succeeded(), ne(variables['Agent.OS'], 'Windows_NT'))
+          # - script: |
+          #     ls target/wheels/*
+          #   displayName: List Py Packages on non-Win
+          #   condition: and(succeeded(), ne(variables['Agent.OS'], 'Windows_NT'))
