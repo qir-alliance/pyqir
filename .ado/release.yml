@@ -30,6 +30,10 @@ parameters:
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
+    settings:
+      # To fetch the Universal Package from the ADO feed, Azure blob access is needed :(
+      networkIsolationPolicy: AzureStorage
+
     sdl:
       autobaseline:
         enableForGitHub: true
@@ -63,6 +67,8 @@ extends:
               targetPath: $(System.DefaultWorkingDirectory)/target/wheels
               artifactName: wheel.${{ target.os }}.${{ target.arch }}
           steps:
+          - checkout: self
+
           - task: UniversalPackages@1
             displayName: Download LLVM source
             inputs:
