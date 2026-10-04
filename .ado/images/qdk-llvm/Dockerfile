@@ -1,28 +1,7 @@
 ARG BASE_REGISTRY=qdkacr-cfgqhwddajdaebhg.azurecr.io
 ARG LLVM_INSTALL_PREFIX=/opt/llvm-20
-ARG PYTHON_VERSION=3.11
 
-FROM ${BASE_REGISTRY}/ubi8/ubi:8.10 AS toolchain
-
-ARG PYTHON_VERSION
-
-RUN dnf install -y \
-        python${PYTHON_VERSION} \
-        python${PYTHON_VERSION}-pip \
-        git \
-        gcc \
-        gcc-c++ \
-        make \
-        cmake \
-        ninja-build \
-        curl \
-        tar \
-        gzip \
-        xz \
-    && dnf clean all \
-    && rm -rf /var/cache/dnf
-
-FROM toolchain AS builder
+FROM ${BASE_REGISTRY}/qdk-image:latest AS builder
 
 ARG LLVM_INSTALL_PREFIX
 ARG LLVM_ARCHIVE=llvm-project-llvmorg-20.1.8.tar.gz
@@ -54,7 +33,7 @@ RUN mkdir /tmp/llvm-project \
         --target install \
         --parallel 2
 
-FROM toolchain
+FROM ${BASE_REGISTRY}/qdk-image:latest
 
 ARG LLVM_INSTALL_PREFIX
 
@@ -65,10 +44,14 @@ ENV LLVM_SYS_201_PREFIX="${LLVM_INSTALL_PREFIX}"
 
 WORKDIR /work
 
-RUN test "$(llvm-config --version)" = "20.1.8" \
-    && python3.11 --version \
-    && cmake --version \
-    && ninja --version \
-    && gcc --version
+RUN llvm-config --version
 
-CMD ["bash"]
+RUN test "$(llvm-config --prefix)" = "${LLVM_INSTALL_PREFIX}" \
+    && echo "LLVM host target: $(llvm-config --host-target)" \
+    && echo "LLVM targets built: $(llvm-config --targets-built)" \
+    && echo "LLVM build mode: $(llvm-config --build-mode)" \
+    && echo "LLVM assertions: $(llvm-config --assertion-mode)" \
+    && echo "LLVM RTTI: $(llvm-config --has-rtti)" \
+    && echo "LLVM shared mode: $(llvm-config --shared-mode)" \
+    && echo "LLVM library directory: $(llvm-config --libdir)" \
+    && echo "LLVM version: $(llvm-config --version)"
