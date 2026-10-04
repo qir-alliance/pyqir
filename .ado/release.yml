@@ -61,6 +61,8 @@ extends:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)/target/llvm
           timeoutInMinutes: 300
           templateContext:
+            authenticatedContainerRegistries:
+            - serviceConnection: qdkacr
             outputs:
             - output: containerImage
               image: qdk-llvm:$(Build.BuildNumber)
