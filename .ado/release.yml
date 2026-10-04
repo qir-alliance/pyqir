@@ -117,41 +117,32 @@ extends:
 # End of LLVM container image build and publish steps
 
 
-          # Make available the authenticated pip feed variables
+          # Make available the authenticated pip feed variable (PIP_INDEX_URL)
           - task: PipAuthenticate@1
             displayName: Pip Authenticate
             inputs:
               artifactFeeds: 'AzureQuantum/azure-quantum'
-
-          # Check pip environment variables within the qdk-llvm container
-          - script: |
-              python - <<'PY'
-              import os
-              print("PIP_INDEX_URL present:", bool(os.environ.get("PIP_INDEX_URL")))
-              print("PIP_EXTRA_INDEX_URL present:", bool(os.environ.get("PIP_EXTRA_INDEX_URL")))
-              PY
-            target: qdkLlvm
-            displayName: Check pip env
-            env:
-              PIP_INDEX_URL: $(PIP_INDEX_URL)
-              PIP_EXTRA_INDEX_URL: $(PIP_EXTRA_INDEX_URL)
           
           # Check if we can pip install, and if multiple steps use the same container
+          # Note: The default venv at /opt/venv is not writable by the current user, so we create and use a local one at .venv
           - script: |
+              set -euxo pipefail
+              python -m venv .venv
+              source .venv/bin/activate
               python -m pip install maturin
             target: qdkLlvm
-            displayName: Test pip install
+            displayName: Test pip instal
             env:
               PIP_INDEX_URL: $(PIP_INDEX_URL)
-              PIP_EXTRA_INDEX_URL: $(PIP_EXTRA_INDEX_URL)
 
           - script: |
+              set -euxo pipefail
+              source .venv/bin/activate
               python -m pip list
             target: qdkLlvm
             displayName: Verify pip install
             env:
               PIP_INDEX_URL: $(PIP_INDEX_URL)
-              PIP_EXTRA_INDEX_URL: $(PIP_EXTRA_INDEX_URL)
 
           # - script: |
           #     set -euxo pipefail
