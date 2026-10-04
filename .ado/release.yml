@@ -8,7 +8,6 @@ resources:
     ref: refs/tags/release
   containers:
     - container: qdkImage
-    # TODO: Make the amd64 configurable to arm64
       image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-image:latest
       endpoint: qdkacr
 
@@ -16,16 +15,16 @@ parameters:
 - name: matrix
   type: object
   default:
-  - name: linux_x86_64
-    poolName: 'Azure-Pipelines-DevTools-EO'
-    imageName: 'ubuntu-22.04'
-    os: linux
-    arch: x86_64
-  # - name: linux_aarch64
-  #   poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
-  #   imageName: 'azurelinux-3.0-gen2-arm64'
+  # - name: linux_x86_64
+  #   poolName: 'Azure-Pipelines-DevTools-EO'
+  #   imageName: 'ubuntu-22.04'
   #   os: linux
-  #   arch: aarch64
+  #   arch: x86_64
+  - name: linux_aarch64
+    poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
+    imageName: 'azurelinux-3.0-gen2-arm64'
+    os: linux
+    arch: aarch64
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
