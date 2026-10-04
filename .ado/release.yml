@@ -9,7 +9,7 @@ resources:
   containers:
     - container: qdkImage
     # TODO: Make the amd64 configurable to arm64
-      image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-image:cc4-amd64
+      image: qdkacr-cfgqhwddajdaebhg.azurecr.io/ubi8/ubi:8.10
       endpoint: qdkacr
 
 parameters:
@@ -52,7 +52,7 @@ extends:
             name: ${{ target.poolName }}
             image: ${{ target.imageName }}
             os: ${{ target.os }}
-          container: qdkImage
+          # container: qdkImage
           variables:
             arch: ${{ target.arch }}
             ${{ if eq(target.os, 'windows') }}:
@@ -63,7 +63,8 @@ extends:
           templateContext:
             outputs:
             - output: containerImage
-              image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(Build.BuildNumber)
+              image: qdk-llvm:$(Build.BuildNumber)
+              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(Build.BuildNumber)
             # - output: pipelineArtifact
             #   displayName: 'Upload Python Artifacts for ${{ target.os }} ${{ target.arch }}'
             #   condition: succeeded()
@@ -90,8 +91,8 @@ extends:
 
           - task: 1ES.BuildContainerImage@1
             inputs:
-              image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(Build.BuildNumber)
               path: $(Build.SourcesDirectory)/.ado/images/qdk-llvm
+              image: qdk-llvm:$(Build.BuildNumber)
 
           # - script: |
           #     set -euxo pipefail
