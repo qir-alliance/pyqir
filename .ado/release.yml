@@ -84,7 +84,7 @@ extends:
 
 # The below steps create and publish the LLVM container image (if BuildLlvmImage is true)
           - task: UniversalPackages@1
-            condition: eq(parameters.BuildLlvmImage, true)
+            condition: and(succeeded(), ${{ eq(parameters.BuildLlvmImage, true) }})
             displayName: Download LLVM source
             inputs:
               command: download
@@ -98,22 +98,22 @@ extends:
               set -euxo pipefail
               cp -R "$(Pipeline.Workspace)/llvm-src/." "$(Build.SourcesDirectory)/.ado/images/qdk-llvm"
               ls -la "$(Build.SourcesDirectory)/.ado/images/qdk-llvm"
-            condition: eq(parameters.BuildLlvmImage, true)
+            condition: and(succeeded(), ${{ eq(parameters.BuildLlvmImage, true) }})
             displayName: Copy LLVM source into container build context
 
           - task: 1ES.BuildContainerImage@1
-            condition: eq(parameters.BuildLlvmImage, true)
+            condition: and(succeeded(), ${{ eq(parameters.BuildLlvmImage, true) }})
             inputs:
               path: $(Build.SourcesDirectory)/.ado/images/qdk-llvm
-              image: qdk-llvm:$(Build.BuildId)
+              image: qdk-llvm:${{ parameters.qdkLlvmTag }}
           
           # Use the publish task rather than the output so it can be used at later steps
           # (As outputs run at the end of the pipeline)
           - task: 1ES.PushContainerImage@1
-            condition: eq(parameters.BuildLlvmImage, true)
+            condition: and(succeeded(), ${{ eq(parameters.BuildLlvmImage, true) }})
             inputs:
-              image: qdk-llvm:$(Build.BuildId)
-              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(Build.BuildId)
+              image: qdk-llvm:${{ parameters.qdkLlvmTag }}
+              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:${{ parameters.qdkLlvmTag }}
 # End of LLVM container image build and publish steps
 
 
