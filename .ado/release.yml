@@ -1,5 +1,9 @@
 name: pyqir-publish-$(BuildId)
 
+variables:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN_VERSION: "1.95"
+
 parameters:
 - name: matrix
   type: object
@@ -14,12 +18,24 @@ parameters:
     imageName: 'azurelinux-3.0-gen2-arm64'
     os: linux
     arch: aarch64
+
+# Parameters for building the LLVM image
 - name: BuildLlvmImage
   type: boolean
   default: false
   displayName: Build the LLVM container images
 - name: qdkLlvmTag
   displayName: Tag for the qdk-llvm container image
+  type: string
+  default: '20261003'
+
+# Parameters for building the Rust image
+- name: BuildRustImage
+  type: boolean
+  default: true
+  displayName: Build the Rust container images
+- name: qdkRustTag
+  displayName: Tag for the qdk-rust container image
   type: string
   default: '20261003'
 
@@ -116,6 +132,28 @@ extends:
               remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:${{ parameters.qdkLlvmTag }}
 # End of LLVM container image build and publish steps
 
+# The below steps create and publish the Rust container image (if BuildRustImage is true)
+          - task: 1ES.BuildContainerImage@1
+            condition: and(succeeded(), ${{ eq(parameters.BuildRustImage, true) }})
+            inputs:
+              path: $(Build.SourcesDirectory)/.ado/images/qdk-rust
+              image: qdk-rust:${{ parameters.qdkRustTag }}
+              useBuildKit: true
+              buildArguments: >
+                --build-arg MSRUSTUP_FEED_URL=$(toolchainFeed)
+                --build-arg RUST_TOOLCHAIN=ms-prod-$(RUST_TOOLCHAIN_VERSION)
+                --secret id=msrustup_token,env=SYSTEM_ACCESSTOKEN
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          
+          # Use the publish task rather than the output so it can be used at later steps
+          # (As outputs run at the end of the pipeline)
+          - task: 1ES.PushContainerImage@1
+            condition: and(succeeded(), ${{ eq(parameters.BuildRustImage, true) }})
+            inputs:
+              image: qdk-rust:${{ parameters.qdkRustTag }}
+              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-rust:${{ parameters.qdkRustTag }}
+# End of Rust container image build and publish steps
 
           # Make available the authenticated pip feed variable (PIP_INDEX_URL)
           - task: PipAuthenticate@1
