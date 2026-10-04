@@ -1,5 +1,28 @@
 name: pyqir-publish-$(BuildId)
 
+parameters:
+- name: matrix
+  type: object
+  default:
+  - name: linux_x86_64
+    poolName: 'Azure-Pipelines-DevTools-EO'
+    imageName: 'ubuntu-22.04'
+    os: linux
+    arch: x86_64
+  - name: linux_aarch64
+    poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
+    imageName: 'azurelinux-3.0-gen2-arm64'
+    os: linux
+    arch: aarch64
+- name: BuildLlvmImage
+  type: boolean
+  default: false
+  displayName: Build the LLVM container images
+- name: qdkLlvmTag
+  displayName: Tag for the qdk-llvm container image
+  type: string
+  default: '20261003'
+
 resources:
   repositories:
   - repository: 1ESPipelineTemplates
@@ -10,21 +33,9 @@ resources:
     - container: qdkImage
       image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-image:latest
       endpoint: qdkacr
-
-parameters:
-- name: matrix
-  type: object
-  default:
-  # - name: linux_x86_64
-  #   poolName: 'Azure-Pipelines-DevTools-EO'
-  #   imageName: 'ubuntu-22.04'
-  #   os: linux
-  #   arch: x86_64
-  - name: linux_aarch64
-    poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
-    imageName: 'azurelinux-3.0-gen2-arm64'
-    os: linux
-    arch: aarch64
+    - container: qdkLlvm
+      image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:${{ parameters.qdkLlvmTag }}
+      endpoint: qdkacr
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
@@ -62,10 +73,7 @@ extends:
           templateContext:
             authenticatedContainerRegistries:
             - serviceConnection: qdkacr
-            outputs:
-            - output: containerImage
-              image: qdk-llvm:$(Build.BuildNumber)
-              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(Build.BuildNumber)
+            # outputs:
             # - output: pipelineArtifact
             #   displayName: 'Upload Python Artifacts for ${{ target.os }} ${{ target.arch }}'
             #   condition: succeeded()
@@ -74,7 +82,9 @@ extends:
           steps:
           - checkout: self
 
+# The below steps create and publish the LLVM container image (if BuildLlvmImage is true)
           - task: UniversalPackages@1
+            condition: eq(parameters.BuildLlvmImage, true)
             displayName: Download LLVM source
             inputs:
               command: download
@@ -88,12 +98,60 @@ extends:
               set -euxo pipefail
               cp -R "$(Pipeline.Workspace)/llvm-src/." "$(Build.SourcesDirectory)/.ado/images/qdk-llvm"
               ls -la "$(Build.SourcesDirectory)/.ado/images/qdk-llvm"
+            condition: eq(parameters.BuildLlvmImage, true)
             displayName: Copy LLVM source into container build context
 
           - task: 1ES.BuildContainerImage@1
+            condition: eq(parameters.BuildLlvmImage, true)
             inputs:
               path: $(Build.SourcesDirectory)/.ado/images/qdk-llvm
-              image: qdk-llvm:$(Build.BuildNumber)
+              image: qdk-llvm:$(Build.BuildId)
+          
+          # Use the publish task rather than the output so it can be used at later steps
+          # (As outputs run at the end of the pipeline)
+          - task: 1ES.PushContainerImage@1
+            condition: eq(parameters.BuildLlvmImage, true)
+            inputs:
+              image: qdk-llvm:$(Build.BuildId)
+              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(Build.BuildId)
+# End of LLVM container image build and publish steps
+
+
+          # Make available the authenticated pip feed variables
+          - task: PipAuthenticate@1
+            displayName: Pip Authenticate
+            inputs:
+              artifactFeeds: 'AzureQuantum/azure-quantum'
+
+          # Check pip environment variables within the qdk-llvm container
+          - script: |
+              python - <<'PY'
+              import os
+              print("PIP_INDEX_URL present:", bool(os.environ.get("PIP_INDEX_URL")))
+              print("PIP_EXTRA_INDEX_URL present:", bool(os.environ.get("PIP_EXTRA_INDEX_URL")))
+              PY
+            target: qdkLlvm
+            displayName: Check pip env
+            env:
+              PIP_INDEX_URL: $(PIP_INDEX_URL)
+              PIP_EXTRA_INDEX_URL: $(PIP_EXTRA_INDEX_URL)
+          
+          # Check if we can pip install, and if multiple steps use the same container
+          - script: |
+              python -m pip install maturin
+            target: qdkLlvm
+            displayName: Test pip install
+            env:
+              PIP_INDEX_URL: $(PIP_INDEX_URL)
+              PIP_EXTRA_INDEX_URL: $(PIP_EXTRA_INDEX_URL)
+
+          - script: |
+              python -m pip list
+            target: qdkLlvm
+            displayName: Verify pip install
+            env:
+              PIP_INDEX_URL: $(PIP_INDEX_URL)
+              PIP_EXTRA_INDEX_URL: $(PIP_EXTRA_INDEX_URL)
 
           # - script: |
           #     set -euxo pipefail
