@@ -95,7 +95,7 @@ extends:
 
               python -m venv .venv
               source .venv/bin/activate
-              python -m pip install "maturin~=1.15.0"
+              python -m pip install build "maturin~=1.15.0"
 
               mkdir -p .cargo_home/
               export CARGO_HOME=$(pwd)/.cargo_home
