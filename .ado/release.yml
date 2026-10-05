@@ -1,9 +1,5 @@
 name: pyqir-publish-$(BuildId)
 
-variables:
-  CARGO_TERM_COLOR: always
-  RUST_TOOLCHAIN_VERSION: "1.95"
-
 parameters:
 - name: matrix
   type: object
@@ -27,17 +23,29 @@ parameters:
 - name: qdkLlvmTag
   displayName: Tag for the qdk-llvm container image
   type: string
-  default: '20261003'
+  default: 'latest'
 
 # Parameters for building the Rust image
 - name: BuildRustImage
   type: boolean
-  default: true
+  default: false
   displayName: Build the Rust container images
 - name: qdkRustTag
   displayName: Tag for the qdk-rust container image
   type: string
-  default: '20261003'
+  default: 'latest'
+
+variables:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN_VERSION: "1.95"
+  ${{ if and(eq(parameters.BuildLlvmImage, true), eq(parameters.qdkLlvmTag, 'latest')) }}:
+    finalLlvmTag: $(Build.BuildId)
+  ${{ else }}:
+    finalLlvmTag: ${{ parameters.qdkLlvmTag }}
+  ${{ if and(eq(parameters.BuildRustImage, true), eq(parameters.qdkRustTag, 'latest')) }}:
+    finalRustTag: $(Build.BuildId)
+  ${{ else }}:
+    finalRustTag: ${{ parameters.qdkRustTag }}
 
 resources:
   repositories:
@@ -50,7 +58,7 @@ resources:
       image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-image:latest
       endpoint: qdkacr
     - container: qdkLlvm
-      image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:${{ parameters.qdkLlvmTag }}
+      image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(finalLlvmTag)
       endpoint: qdkacr
 
 extends:
@@ -121,15 +129,15 @@ extends:
             condition: and(succeeded(), ${{ eq(parameters.BuildLlvmImage, true) }})
             inputs:
               path: $(Build.SourcesDirectory)/.ado/images/qdk-llvm
-              image: qdk-llvm:${{ parameters.qdkLlvmTag }}
+              image: qdk-llvm:$(finalLlvmTag)
           
           # Use the publish task rather than the output so it can be used at later steps
           # (As outputs run at the end of the pipeline)
           - task: 1ES.PushContainerImage@1
             condition: and(succeeded(), ${{ eq(parameters.BuildLlvmImage, true) }})
             inputs:
-              image: qdk-llvm:${{ parameters.qdkLlvmTag }}
-              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:${{ parameters.qdkLlvmTag }}
+              image: qdk-llvm:$(finalLlvmTag)
+              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(finalLlvmTag)
 # End of LLVM container image build and publish steps
 
 # The below steps create and publish the Rust container image (if BuildRustImage is true)
@@ -137,7 +145,7 @@ extends:
             condition: and(succeeded(), ${{ eq(parameters.BuildRustImage, true) }})
             inputs:
               path: $(Build.SourcesDirectory)/.ado/images/qdk-rust
-              image: qdk-rust:${{ parameters.qdkRustTag }}
+              image: qdk-rust:$(finalRustTag)
               useBuildKit: true
               buildArguments: >
                 --build-arg MSRUSTUP_FEED_URL=$(toolchainFeed)
@@ -151,8 +159,8 @@ extends:
           - task: 1ES.PushContainerImage@1
             condition: and(succeeded(), ${{ eq(parameters.BuildRustImage, true) }})
             inputs:
-              image: qdk-rust:${{ parameters.qdkRustTag }}
-              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-rust:${{ parameters.qdkRustTag }}
+              image: qdk-rust:$(finalRustTag)
+              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-rust:$(finalRustTag)
 # End of Rust container image build and publish steps
 
           # Make available the authenticated pip feed variable (PIP_INDEX_URL)
