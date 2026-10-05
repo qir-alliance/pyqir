@@ -18,7 +18,7 @@ parameters:
 # Parameters for building the LLVM image
 - name: BuildLlvmImage
   type: boolean
-  default: false
+  default: true
   displayName: Build the LLVM container images
 - name: qdkLlvmTag
   displayName: Tag for the qdk-llvm container image
@@ -57,9 +57,9 @@ resources:
     - container: qdkImage
       image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-image:latest
       endpoint: qdkacr
-    - container: qdkLlvm
-      image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(finalLlvmTag)
-      endpoint: qdkacr
+    # - container: qdkLlvm
+    #   image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(finalLlvmTag)
+    #   endpoint: qdkacr
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
@@ -171,24 +171,24 @@ extends:
           
           # Check if we can pip install, and if multiple steps use the same container
           # Note: The default venv at /opt/venv is not writable by the current user, so we create and use a local one at .venv
-          - script: |
-              set -euxo pipefail
-              python -m venv .venv
-              source .venv/bin/activate
-              python -m pip install maturin
-            target: qdkLlvm
-            displayName: Test pip instal
-            env:
-              PIP_INDEX_URL: $(PIP_INDEX_URL)
+          # - script: |
+          #     set -euxo pipefail
+          #     python -m venv .venv
+          #     source .venv/bin/activate
+          #     python -m pip install maturin
+          #   target: qdkLlvm
+          #   displayName: Test pip instal
+          #   env:
+          #     PIP_INDEX_URL: $(PIP_INDEX_URL)
 
-          - script: |
-              set -euxo pipefail
-              source .venv/bin/activate
-              python -m pip list
-            target: qdkLlvm
-            displayName: Verify pip install
-            env:
-              PIP_INDEX_URL: $(PIP_INDEX_URL)
+          # - script: |
+          #     set -euxo pipefail
+          #     source .venv/bin/activate
+          #     python -m pip list
+          #   target: qdkLlvm
+          #   displayName: Verify pip install
+          #   env:
+          #     PIP_INDEX_URL: $(PIP_INDEX_URL)
 
           # - script: |
           #     set -euxo pipefail
