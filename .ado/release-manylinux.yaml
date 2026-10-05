@@ -13,11 +13,13 @@ parameters:
     poolName: 'Azure-Pipelines-DevTools-EO'
     imageName: 'ubuntu-22.04'
     os: linux
+    arch: x86_64
     tag: amd64
   - name: linux_aarch64
     poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
     imageName: 'azurelinux-3.0-gen2-arm64'
     os: linux
+    arch: aarch64
     tag: arm64
 
 # Parameters for building PyQIR
@@ -71,6 +73,12 @@ extends:
           templateContext:
             authenticatedContainerRegistries:
             - serviceConnection: qdkacr
+            outputs:
+            - output: pipelineArtifact
+              displayName: 'Upload Python Artifacts for ${{ target.os }} ${{ target.arch }}'
+              condition: succeeded()
+              targetPath: $(System.DefaultWorkingDirectory)/target/wheels
+              artifactName: wheel.${{ target.os }}.${{ target.arch }}
           steps:
           - checkout: self
 
@@ -87,7 +95,8 @@ extends:
               source .venv/bin/activate
               python -m pip install "maturin~=1.15.0"
 
-              cat > "$CARGO_HOME/config.toml" <<EOF
+              mkdir -p .cargo/
+              cat > ".cargo/config.toml" <<EOF
               [source.crates-io]
               replace-with = "ms-crates-io"
 
@@ -98,6 +107,18 @@ extends:
               pwd
               ls -lF .
               cargo fetch
+
+              cd qirlib
+              export QIRLIB_CACHE_DIR=$LLVM_SYS_201_PREFIX
+              cargo test  --release --features llvm20-1
+              cargo build --release --features llvm20-1
+              cd ..
+
+              python -m build --verbose --wheel \
+                --config-setting=build-args="--features llvm20-1 --compatibility" pyqir
+              
+              ls -lF target/wheels
+
             target: qdkRust
             displayName: Test Rust build
             env:
@@ -105,33 +126,3 @@ extends:
               CARGO_REGISTRIES_MS_CRATES_IO_INDEX: $(cratesIoFeedOverride)
               CARGO_REGISTRIES_MS_CRATES_IO_TOKEN: $(System.AccessToken)
               CARGO_REGISTRIES_MS_CRATES_IO_CREDENTIAL_PROVIDER: cargo:token
-
-          # - script: |
-          #     set -euxo pipefail
-          #     source .venv/bin/activate
-          #     python -m pip list
-          #   target: qdkLlvm
-          #   displayName: Verify pip install
-          #   env:
-          #     PIP_INDEX_URL: $(PIP_INDEX_URL)
-
-          # - script: |
-          #     set -euxo pipefail
-          #     cat /etc/redhat-release
-          #     uname -m
-          #     python --version
-          #   target: qdkImage
-          #   displayName: Verify Environment
-          # - task: RustInstaller@1
-          #   inputs:
-          #     rustVersion: ms-prod-$(RUST_TOOLCHAIN_VERSION)
-          #     ${{ if target.additionalRustTargets }}:
-          #       additionalTargets: ${{ target.additionalRustTargets }}
-          #     cratesIoFeedOverride: $(cratesIoFeedOverride)
-          #     toolchainFeed: $(toolchainFeed)
-          #   displayName: Install Rust toolchain
-
-          # - script: |
-          #     ls target/wheels/*
-          #   displayName: List Py Packages on non-Win
-          #   condition: and(succeeded(), ne(variables['Agent.OS'], 'Windows_NT'))

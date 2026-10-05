@@ -20,6 +20,9 @@ RUN export MSRUSTUP_ACCESS_TOKEN MSRUSTUP_FEED_URL && \
     popd && /tmp/msrustup toolchain install ${RUST_TOOLCHAIN} && \
     rm -f /tmp/msrustup /tmp/install-msrustup.sh
 
+# Allow all users to run the tools
+RUN chmod 755 ${MSRUSTUP_HOME}/multiplexers/bin/* || true
+
 WORKDIR /work
 
 RUN echo "Cargo version: $(cargo --version)" \
