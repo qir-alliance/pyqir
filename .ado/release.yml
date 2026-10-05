@@ -1,4 +1,4 @@
-name: pyqir-llvm-$(BuildId)
+name: pyqir-rust-$(BuildId)
 
 trigger:
   branches:
@@ -20,22 +20,28 @@ parameters:
     os: linux
     tag: arm64
 
-# Parameters for building the LLVM image
+# Parameters for building the Rust image
 - name: ACR_SERVER
   displayName: Azure Container Registry server
   type: string
   default: 'qdkacr-cfgqhwddajdaebhg.azurecr.io'
 - name: qdkLlvmTag
-  displayName: Tag for the qdk-llvm container image
+  displayName: Tag for the qdk-llvm base container image
+  type: string
+  default: 'latest'
+- name: qdkRustTag
+  displayName: Tag for the new qdk-rust container image
   type: string
   default: 'latest'
 
 variables:
-  # If the user didn't specify a tag for the LLVM image, use the build ID as the tag.
-  ${{ if eq(parameters.qdkLlvmTag, 'latest') }}:
-    finalLlvmTag: $(Build.BuildId)
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN_VERSION: "1.95"
+  # If the user didn't specify a tag for the Rust image, use the build ID as the tag.
+  ${{ if eq(parameters.qdkRustTag, 'latest') }}:
+    finalRustTag: $(Build.BuildId)
   ${{ else }}:
-    finalLlvmTag: ${{ parameters.qdkLlvmTag }}
+    finalRustTag: ${{ parameters.qdkRustTag }}
 
 resources:
   repositories:
@@ -44,17 +50,17 @@ resources:
     name: 1ESPipelineTemplates/1ESPipelineTemplates
     ref: refs/tags/release
   containers:
-    - container: qdkImage
-      image: ${{ parameters.ACR_SERVER }}/qdk-image:latest
+    - container: qdkLlvmImage
+      image: ${{ parameters.ACR_SERVER }}/qdk-image:${{ parameters.qdkLlvmTag }}
       endpoint: qdkacr
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
     settings:
-      # To fetch the Universal Package from the ADO feed, Azure blob access is needed.
+      # To fetch the packages from the ADO feed, Azure blob access is needed.
       # See https://eng.ms/docs/cloud-ai-platform/devdiv/one-engineering-system-1es/1es-build/cloudbuild/security/1espt-network-isolation
-      networkIsolationPolicy: AzureStorage
+      networkIsolationPolicy: Permissive
 
     sdl:
       autobaseline:
@@ -80,28 +86,20 @@ extends:
           steps:
           - checkout: self
 
-          - task: UniversalPackages@1
-            displayName: Download LLVM source
-            inputs:
-              command: download
-              feed: "AzureQuantum/azure-quantum"
-              packageName: "llvm-source"
-              packageVersion: "20.1.8" # or '*', '18.*' (wildcards supported for download)
-              directory: "$(Pipeline.Workspace)/llvm-src"
-
-          # Need to copy the LLVM source into the container before building it
-          - script: |
-              set -euxo pipefail
-              cp -R "$(Pipeline.Workspace)/llvm-src/." "$(Build.SourcesDirectory)/.ado/images/qdk-llvm"
-              ls -la "$(Build.SourcesDirectory)/.ado/images/qdk-llvm"
-            displayName: Copy LLVM source into container build context
-
           - task: 1ES.BuildContainerImage@1
             inputs:
-              path: $(Build.SourcesDirectory)/.ado/images/qdk-llvm
-              image: qdk-llvm:$(finalLlvmTag)-${{ target.tag }}
-          
+              path: $(Build.SourcesDirectory)/.ado/images/qdk-rust
+              image: qdk-rust:$(finalRustTag)-${{ target.tag }}
+              # Need to enable network access in order to access the ms-rustup feed
+              enableNetwork: true
+              # I tried using BuildKit with secrets, but it didn't work with the network isolation due
+              # to trying to fetch schema files from docker.io
+              buildArguments: >
+                --build-arg MSRUSTUP_FEED_URL=$(toolchainFeed)
+                --build-arg MSRUSTUP_ACCESS_TOKEN=$(System.AccessToken)
+                --build-arg RUST_TOOLCHAIN=ms-prod-$(RUST_TOOLCHAIN_VERSION)
+
           - task: 1ES.PushContainerImage@1
             inputs:
-              image: qdk-llvm:$(finalLlvmTag)-${{ target.tag }}
-              remoteImage: ${{ parameters.ACR_SERVER }}/qdk-llvm:$(finalLlvmTag)-${{ target.tag }}
+              image: qdk-rust:$(finalRustTag)-${{ target.tag }}
+              remoteImage: ${{ parameters.ACR_SERVER }}/qdk-rust:$(finalRustTag)-${{ target.tag }}
