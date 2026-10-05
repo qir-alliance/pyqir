@@ -51,7 +51,7 @@ resources:
     ref: refs/tags/release
   containers:
     - container: qdkLlvmImage
-      image: ${{ parameters.ACR_SERVER }}/qdk-image:${{ parameters.qdkLlvmTag }}
+      image: ${{ parameters.ACR_SERVER }}/qdk-llvm:${{ parameters.qdkLlvmTag }}
       endpoint: qdkacr
 
 extends:
