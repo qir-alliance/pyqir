@@ -88,12 +88,17 @@ extends:
             inputs:
               artifactFeeds: 'AzureQuantum/azure-quantum'
           
+          # The image CARGO_HOME is only root writable, so need to create a local CARGO_HOME directory
+          # Also write a local .cargo/config.toml to override the crates.io source
           - script: |
               set -euxo pipefail
 
               python -m venv .venv
               source .venv/bin/activate
               python -m pip install "maturin~=1.15.0"
+
+              mkdir -p .cargo_home/
+              export CARGO_HOME=$(pwd)/.cargo_home
 
               mkdir -p .cargo/
               cat > ".cargo/config.toml" <<EOF
@@ -124,6 +129,7 @@ extends:
             displayName: Test Rust build
             env:
               PIP_INDEX_URL: $(PIP_INDEX_URL)
+              # See https://eng.ms/docs/coreai/devdiv/one-engineering-system-1es/1es-docs/azure-artifacts/cargo
               CARGO_REGISTRIES_MS_CRATES_IO_INDEX: $(cratesIoFeedOverride)
               CARGO_REGISTRIES_MS_CRATES_IO_TOKEN: Bearer $(System.AccessToken)
               CARGO_REGISTRIES_MS_CRATES_IO_CREDENTIAL_PROVIDER: cargo:token
