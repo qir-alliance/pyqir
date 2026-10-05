@@ -90,13 +90,12 @@ extends:
             inputs:
               path: $(Build.SourcesDirectory)/.ado/images/qdk-rust
               image: qdk-rust:$(finalRustTag)-${{ target.tag }}
-              useBuildKit: true
+              # I tried using BuildKit with secrets, but it didn't work with the network isolation due
+              # to trying to fetch schema files from docker.io
               buildArguments: >
                 --build-arg MSRUSTUP_FEED_URL=$(toolchainFeed)
                 --build-arg RUST_TOOLCHAIN=ms-prod-$(RUST_TOOLCHAIN_VERSION)
-                --secret id=msrustup_token,env=SYSTEM_ACCESSTOKEN
-            env:
-              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+                --build-arg MSRUSTUP_ACCESS_TOKEN=$(System.AccessToken)
           
           - task: 1ES.PushContainerImage@1
             inputs:
