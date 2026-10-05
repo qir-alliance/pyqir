@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.2
 ARG BASE_REGISTRY=qdkacr-cfgqhwddajdaebhg.azurecr.io
-ARG BASE_TAG=20261003
+ARG BASE_TAG=latest
 
 FROM ${BASE_REGISTRY}/qdk-llvm:${BASE_TAG}
 

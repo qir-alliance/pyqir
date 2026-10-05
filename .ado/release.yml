@@ -1,4 +1,4 @@
-name: pyqir-llvm-$(BuildId)
+name: pyqir-rust-$(BuildId)
 
 trigger:
   branches:
@@ -20,37 +20,28 @@ parameters:
     os: linux
     tag: arm64
 
-# Parameters for building the LLVM image
-- name: BuildLlvmImage
-  type: boolean
-  default: true
-  displayName: Build the LLVM container images
+# Parameters for building the Rust image
+- name: ACR_SERVER
+  displayName: Azure Container Registry server
+  type: string
+  default: 'qdkacr-cfgqhwddajdaebhg.azurecr.io'
 - name: qdkLlvmTag
-  displayName: Tag for the qdk-llvm container image
+  displayName: Tag for the qdk-llvm base container image
   type: string
   default: 'latest'
-
-# Parameters for building the Rust image
-# - name: BuildRustImage
-#   type: boolean
-#   default: false
-#   displayName: Build the Rust container images
-# - name: qdkRustTag
-#   displayName: Tag for the qdk-rust container image
-#   type: string
-#   default: 'latest'
+- name: qdkRustTag
+  displayName: Tag for the new qdk-rust container image
+  type: string
+  default: 'latest'
 
 variables:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN_VERSION: "1.95"
-  ${{ if eq(parameters.qdkLlvmTag, 'latest') }}:
-    finalLlvmTag: $(Build.BuildId)
+  # If the user didn't specify a tag for the Rust image, use the build ID as the tag.
+  ${{ if eq(parameters.qdkRustTag, 'latest') }}:
+    finalRustTag: $(Build.BuildId)
   ${{ else }}:
-    finalLlvmTag: ${{ parameters.qdkLlvmTag }}
-  # ${{ if and(eq(parameters.BuildRustImage, true), eq(parameters.qdkRustTag, 'latest')) }}:
-  #   finalRustTag: $(Build.BuildId)
-  # ${{ else }}:
-  #   finalRustTag: ${{ parameters.qdkRustTag }}
+    finalRustTag: ${{ parameters.qdkRustTag }}
 
 resources:
   repositories:
@@ -59,18 +50,15 @@ resources:
     name: 1ESPipelineTemplates/1ESPipelineTemplates
     ref: refs/tags/release
   containers:
-    - container: qdkImage
-      image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-image:latest
+    - container: qdkLlvmImage
+      image: ${{ parameters.ACR_SERVER }}/qdk-llvm:${{ parameters.qdkLlvmTag }}
       endpoint: qdkacr
-    # - container: qdkLlvm
-    #   image: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(finalLlvmTag)
-    #   endpoint: qdkacr
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
     settings:
-      # To fetch the Universal Package from the ADO feed, Azure blob access is needed. Also need to install dnf packages
+      # To fetch the packages from the ADO feed, Azure blob access is needed.
       # See https://eng.ms/docs/cloud-ai-platform/devdiv/one-engineering-system-1es/1es-build/cloudbuild/security/1espt-network-isolation
       networkIsolationPolicy: AzureStorage
 
@@ -91,123 +79,26 @@ extends:
             name: ${{ target.poolName }}
             image: ${{ target.imageName }}
             os: ${{ target.os }}
-          # container: qdkImage
-          # variables:
-            # arch: ${{ target.arch }}
-            # ${{ if eq(target.os, 'windows') }}:
-            #     LLVM_DIRECTORY: $(Build.SourcesDirectory)\target\llvm
-            # ${{ else }}:
-            #     LLVM_DIRECTORY: $(Build.SourcesDirectory)/target/llvm
           timeoutInMinutes: 300
           templateContext:
             authenticatedContainerRegistries:
             - serviceConnection: qdkacr
-            # outputs:
-            # - output: pipelineArtifact
-            #   displayName: 'Upload Python Artifacts for ${{ target.os }} ${{ target.arch }}'
-            #   condition: succeeded()
-            #   targetPath: $(System.DefaultWorkingDirectory)/target/wheels
-            #   artifactName: wheel.${{ target.os }}.${{ target.arch }}
           steps:
           - checkout: self
 
-# The below steps create and publish the LLVM container image
-          - task: UniversalPackages@1
-            displayName: Download LLVM source
-            inputs:
-              command: download
-              feed: "AzureQuantum/azure-quantum"
-              packageName: "llvm-source"
-              packageVersion: "20.1.8" # or '*', '18.*' (wildcards supported for download)
-              directory: "$(Pipeline.Workspace)/llvm-src"
-
-          # Need to copy the LLVM source into the container before building it
-          - script: |
-              set -euxo pipefail
-              cp -R "$(Pipeline.Workspace)/llvm-src/." "$(Build.SourcesDirectory)/.ado/images/qdk-llvm"
-              ls -la "$(Build.SourcesDirectory)/.ado/images/qdk-llvm"
-            displayName: Copy LLVM source into container build context
-
           - task: 1ES.BuildContainerImage@1
             inputs:
-              path: $(Build.SourcesDirectory)/.ado/images/qdk-llvm
-              image: qdk-llvm:$(finalLlvmTag)-${{ target.tag }}
+              path: $(Build.SourcesDirectory)/.ado/images/qdk-rust
+              image: qdk-rust:$(finalRustTag)-${{ target.tag }}
+              useBuildKit: true
+              buildArguments: >
+                --build-arg MSRUSTUP_FEED_URL=$(toolchainFeed)
+                --build-arg RUST_TOOLCHAIN=ms-prod-$(RUST_TOOLCHAIN_VERSION)
+                --secret id=msrustup_token,env=SYSTEM_ACCESSTOKEN
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
           
-          # Use the publish task rather than the output so it can be used at later steps
-          # (As outputs run at the end of the pipeline)
           - task: 1ES.PushContainerImage@1
             inputs:
-              image: qdk-llvm:$(finalLlvmTag)-${{ target.tag }}
-              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(finalLlvmTag)-${{ target.tag }}
-# End of LLVM container image build and publish steps
-
-# The below steps create and publish the Rust container image (if BuildRustImage is true)
-          # - task: 1ES.BuildContainerImage@1
-          #   condition: and(succeeded(), ${{ eq(parameters.BuildRustImage, true) }})
-          #   inputs:
-          #     path: $(Build.SourcesDirectory)/.ado/images/qdk-rust
-          #     image: qdk-rust:$(finalRustTag)
-          #     useBuildKit: true
-          #     buildArguments: >
-          #       --build-arg MSRUSTUP_FEED_URL=$(toolchainFeed)
-          #       --build-arg RUST_TOOLCHAIN=ms-prod-$(RUST_TOOLCHAIN_VERSION)
-          #       --secret id=msrustup_token,env=SYSTEM_ACCESSTOKEN
-          #   env:
-          #     SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-          
-          # # Use the publish task rather than the output so it can be used at later steps
-          # # (As outputs run at the end of the pipeline)
-          # - task: 1ES.PushContainerImage@1
-          #   condition: and(succeeded(), ${{ eq(parameters.BuildRustImage, true) }})
-          #   inputs:
-          #     image: qdk-rust:$(finalRustTag)-${{ target.tag }}
-          #     remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-rust:$(finalRustTag)-${{ target.tag }}
-# End of Rust container image build and publish steps
-
-          # Make available the authenticated pip feed variable (PIP_INDEX_URL)
-          # - task: PipAuthenticate@1
-          #   displayName: Pip Authenticate
-          #   inputs:
-          #     artifactFeeds: 'AzureQuantum/azure-quantum'
-          
-          # Check if we can pip install, and if multiple steps use the same container
-          # Note: The default venv at /opt/venv is not writable by the current user, so we create and use a local one at .venv
-          # - script: |
-          #     set -euxo pipefail
-          #     python -m venv .venv
-          #     source .venv/bin/activate
-          #     python -m pip install maturin
-          #   target: qdkLlvm
-          #   displayName: Test pip instal
-          #   env:
-          #     PIP_INDEX_URL: $(PIP_INDEX_URL)
-
-          # - script: |
-          #     set -euxo pipefail
-          #     source .venv/bin/activate
-          #     python -m pip list
-          #   target: qdkLlvm
-          #   displayName: Verify pip install
-          #   env:
-          #     PIP_INDEX_URL: $(PIP_INDEX_URL)
-
-          # - script: |
-          #     set -euxo pipefail
-          #     cat /etc/redhat-release
-          #     uname -m
-          #     python --version
-          #   target: qdkImage
-          #   displayName: Verify Environment
-          # - task: RustInstaller@1
-          #   inputs:
-          #     rustVersion: ms-prod-$(RUST_TOOLCHAIN_VERSION)
-          #     ${{ if target.additionalRustTargets }}:
-          #       additionalTargets: ${{ target.additionalRustTargets }}
-          #     cratesIoFeedOverride: $(cratesIoFeedOverride)
-          #     toolchainFeed: $(toolchainFeed)
-          #   displayName: Install Rust toolchain
-
-          # - script: |
-          #     ls target/wheels/*
-          #   displayName: List Py Packages on non-Win
-          #   condition: and(succeeded(), ne(variables['Agent.OS'], 'Windows_NT'))
+              image: qdk-rust:$(finalRustTag)-${{ target.tag }}
+              remoteImage: ${{ parameters.ACR_SERVER }}/qdk-rust:$(finalRustTag)-${{ target.tag }}

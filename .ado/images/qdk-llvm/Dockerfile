@@ -44,8 +44,6 @@ ENV LLVM_SYS_201_PREFIX="${LLVM_INSTALL_PREFIX}"
 
 WORKDIR /work
 
-RUN llvm-config --version
-
 RUN test "$(llvm-config --prefix)" = "${LLVM_INSTALL_PREFIX}" \
     && echo "LLVM host target: $(llvm-config --host-target)" \
     && echo "LLVM targets built: $(llvm-config --targets-built)" \
