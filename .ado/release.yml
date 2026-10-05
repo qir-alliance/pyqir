@@ -1,4 +1,9 @@
-name: pyqir-publish-$(BuildId)
+name: pyqir-llvm-$(BuildId)
+
+trigger:
+  branches:
+    include:
+    - main
 
 parameters:
 - name: matrix
@@ -8,12 +13,12 @@ parameters:
     poolName: 'Azure-Pipelines-DevTools-EO'
     imageName: 'ubuntu-22.04'
     os: linux
-    arch: x86_64
+    tag: amd64
   - name: linux_aarch64
     poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
     imageName: 'azurelinux-3.0-gen2-arm64'
     os: linux
-    arch: aarch64
+    tag: arm64
 
 # Parameters for building the LLVM image
 - name: BuildLlvmImage
@@ -26,26 +31,26 @@ parameters:
   default: 'latest'
 
 # Parameters for building the Rust image
-- name: BuildRustImage
-  type: boolean
-  default: false
-  displayName: Build the Rust container images
-- name: qdkRustTag
-  displayName: Tag for the qdk-rust container image
-  type: string
-  default: 'latest'
+# - name: BuildRustImage
+#   type: boolean
+#   default: false
+#   displayName: Build the Rust container images
+# - name: qdkRustTag
+#   displayName: Tag for the qdk-rust container image
+#   type: string
+#   default: 'latest'
 
 variables:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN_VERSION: "1.95"
-  ${{ if and(eq(parameters.BuildLlvmImage, true), eq(parameters.qdkLlvmTag, 'latest')) }}:
+  ${{ if eq(parameters.qdkLlvmTag, 'latest') }}:
     finalLlvmTag: $(Build.BuildId)
   ${{ else }}:
     finalLlvmTag: ${{ parameters.qdkLlvmTag }}
-  ${{ if and(eq(parameters.BuildRustImage, true), eq(parameters.qdkRustTag, 'latest')) }}:
-    finalRustTag: $(Build.BuildId)
-  ${{ else }}:
-    finalRustTag: ${{ parameters.qdkRustTag }}
+  # ${{ if and(eq(parameters.BuildRustImage, true), eq(parameters.qdkRustTag, 'latest')) }}:
+  #   finalRustTag: $(Build.BuildId)
+  # ${{ else }}:
+  #   finalRustTag: ${{ parameters.qdkRustTag }}
 
 resources:
   repositories:
@@ -87,12 +92,12 @@ extends:
             image: ${{ target.imageName }}
             os: ${{ target.os }}
           # container: qdkImage
-          variables:
-            arch: ${{ target.arch }}
-            ${{ if eq(target.os, 'windows') }}:
-                LLVM_DIRECTORY: $(Build.SourcesDirectory)\target\llvm
-            ${{ else }}:
-                LLVM_DIRECTORY: $(Build.SourcesDirectory)/target/llvm
+          # variables:
+            # arch: ${{ target.arch }}
+            # ${{ if eq(target.os, 'windows') }}:
+            #     LLVM_DIRECTORY: $(Build.SourcesDirectory)\target\llvm
+            # ${{ else }}:
+            #     LLVM_DIRECTORY: $(Build.SourcesDirectory)/target/llvm
           timeoutInMinutes: 300
           templateContext:
             authenticatedContainerRegistries:
@@ -106,9 +111,8 @@ extends:
           steps:
           - checkout: self
 
-# The below steps create and publish the LLVM container image (if BuildLlvmImage is true)
+# The below steps create and publish the LLVM container image
           - task: UniversalPackages@1
-            condition: and(succeeded(), ${{ eq(parameters.BuildLlvmImage, true) }})
             displayName: Download LLVM source
             inputs:
               command: download
@@ -122,52 +126,49 @@ extends:
               set -euxo pipefail
               cp -R "$(Pipeline.Workspace)/llvm-src/." "$(Build.SourcesDirectory)/.ado/images/qdk-llvm"
               ls -la "$(Build.SourcesDirectory)/.ado/images/qdk-llvm"
-            condition: and(succeeded(), ${{ eq(parameters.BuildLlvmImage, true) }})
             displayName: Copy LLVM source into container build context
 
           - task: 1ES.BuildContainerImage@1
-            condition: and(succeeded(), ${{ eq(parameters.BuildLlvmImage, true) }})
             inputs:
               path: $(Build.SourcesDirectory)/.ado/images/qdk-llvm
-              image: qdk-llvm:$(finalLlvmTag)
+              image: qdk-llvm:$(finalLlvmTag)-${{ target.tag }}
           
           # Use the publish task rather than the output so it can be used at later steps
           # (As outputs run at the end of the pipeline)
           - task: 1ES.PushContainerImage@1
-            condition: and(succeeded(), ${{ eq(parameters.BuildLlvmImage, true) }})
             inputs:
-              image: qdk-llvm:$(finalLlvmTag)
-              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(finalLlvmTag)
+              image: qdk-llvm:$(finalLlvmTag)-${{ target.tag }}
+              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-llvm:$(finalLlvmTag)-${{ target.tag }}
 # End of LLVM container image build and publish steps
 
 # The below steps create and publish the Rust container image (if BuildRustImage is true)
-          - task: 1ES.BuildContainerImage@1
-            condition: and(succeeded(), ${{ eq(parameters.BuildRustImage, true) }})
-            inputs:
-              path: $(Build.SourcesDirectory)/.ado/images/qdk-rust
-              image: qdk-rust:$(finalRustTag)
-              useBuildKit: true
-              buildArguments: >
-                --build-arg MSRUSTUP_FEED_URL=$(toolchainFeed)
-                --build-arg RUST_TOOLCHAIN=ms-prod-$(RUST_TOOLCHAIN_VERSION)
-                --secret id=msrustup_token,env=SYSTEM_ACCESSTOKEN
-            env:
-              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          # - task: 1ES.BuildContainerImage@1
+          #   condition: and(succeeded(), ${{ eq(parameters.BuildRustImage, true) }})
+          #   inputs:
+          #     path: $(Build.SourcesDirectory)/.ado/images/qdk-rust
+          #     image: qdk-rust:$(finalRustTag)
+          #     useBuildKit: true
+          #     buildArguments: >
+          #       --build-arg MSRUSTUP_FEED_URL=$(toolchainFeed)
+          #       --build-arg RUST_TOOLCHAIN=ms-prod-$(RUST_TOOLCHAIN_VERSION)
+          #       --secret id=msrustup_token,env=SYSTEM_ACCESSTOKEN
+          #   env:
+          #     SYSTEM_ACCESSTOKEN: $(System.AccessToken)
           
-          # Use the publish task rather than the output so it can be used at later steps
-          # (As outputs run at the end of the pipeline)
-          - task: 1ES.PushContainerImage@1
-            condition: and(succeeded(), ${{ eq(parameters.BuildRustImage, true) }})
-            inputs:
-              image: qdk-rust:$(finalRustTag)
-              remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-rust:$(finalRustTag)
+          # # Use the publish task rather than the output so it can be used at later steps
+          # # (As outputs run at the end of the pipeline)
+          # - task: 1ES.PushContainerImage@1
+          #   condition: and(succeeded(), ${{ eq(parameters.BuildRustImage, true) }})
+          #   inputs:
+          #     image: qdk-rust:$(finalRustTag)-${{ target.tag }}
+          #     remoteImage: qdkacr-cfgqhwddajdaebhg.azurecr.io/qdk-rust:$(finalRustTag)-${{ target.tag }}
 # End of Rust container image build and publish steps
 
           # Make available the authenticated pip feed variable (PIP_INDEX_URL)
-          - task: PipAuthenticate@1
-            displayName: Pip Authenticate
-            inputs:
-              artifactFeeds: 'AzureQuantum/azure-quantum'
+          # - task: PipAuthenticate@1
+          #   displayName: Pip Authenticate
+          #   inputs:
+          #     artifactFeeds: 'AzureQuantum/azure-quantum'
           
           # Check if we can pip install, and if multiple steps use the same container
           # Note: The default venv at /opt/venv is not writable by the current user, so we create and use a local one at .venv
