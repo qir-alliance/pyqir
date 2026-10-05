@@ -87,7 +87,8 @@ extends:
               source .venv/bin/activate
               python -m pip install "maturin~=1.15.0"
 
-              cat > "$CARGO_HOME/config.toml" <<EOF
+              mkdir -p .cargo/
+              cat > ".cargo/config.toml" <<EOF
               [source.crates-io]
               replace-with = "ms-crates-io"
 
