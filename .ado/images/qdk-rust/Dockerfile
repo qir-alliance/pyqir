@@ -1,7 +1,7 @@
 ARG BASE_REGISTRY=qdkacr-cfgqhwddajdaebhg.azurecr.io
 ARG BASE_TAG=latest
 
-FROM ${BASE_REGISTRY}/qdk-image:${BASE_TAG}
+FROM ${BASE_REGISTRY}/qdk-llvm:${BASE_TAG}
 
 ARG MSRUSTUP_FEED_URL
 ARG MSRUSTUP_ACCESS_TOKEN
