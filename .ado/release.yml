@@ -104,6 +104,13 @@ extends:
               registry = "$(cratesIoFeedOverride)"
               EOF
 
+              id && whoami
+              which cargo && ls -l $(which cargo)
+              namei -l $(which cargo)
+              file $(which cargo)
+              ldd $(which cargo) || readelf -l $(which cargo) | grep interpreter
+              strace -f -e execve cargo fetch
+
               pwd
               ls -lF .
               cargo fetch
