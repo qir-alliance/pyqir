@@ -1,4 +1,4 @@
-name: pyqir-manylinux-$(BuildId)
+name: pyqir-rust-$(BuildId)
 
 trigger:
   branches:
@@ -13,25 +13,35 @@ parameters:
     poolName: 'Azure-Pipelines-DevTools-EO'
     imageName: 'ubuntu-22.04'
     os: linux
-    arch: x86_64
     tag: amd64
   - name: linux_aarch64
     poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
     imageName: 'azurelinux-3.0-gen2-arm64'
     os: linux
-    arch: aarch64
     tag: arm64
 
-# Parameters for building PyQIR
+# Parameters for building the Rust image
 - name: ACR_SERVER
   displayName: Azure Container Registry server
   type: string
   default: 'qdkacr-cfgqhwddajdaebhg.azurecr.io'
+- name: qdkLlvmTag
+  displayName: Tag for the qdk-llvm base container image
+  type: string
+  default: 'latest'
 - name: qdkRustTag
-  displayName: Tag for the qdk-rust container image
+  displayName: Tag for the new qdk-rust container image
   type: string
   default: 'latest'
 
+variables:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN_VERSION: "1.95"
+  # If the user didn't specify a tag for the Rust image, use the build ID as the tag.
+  ${{ if eq(parameters.qdkRustTag, 'latest') }}:
+    finalRustTag: $(Build.BuildId)
+  ${{ else }}:
+    finalRustTag: ${{ parameters.qdkRustTag }}
 
 resources:
   repositories:
@@ -40,17 +50,17 @@ resources:
     name: 1ESPipelineTemplates/1ESPipelineTemplates
     ref: refs/tags/release
   containers:
-    - container: qdkRust
-      image: ${{ parameters.ACR_SERVER }}/qdk-rust:${{ parameters.qdkRustTag }}
+    - container: qdkLlvmImage
+      image: ${{ parameters.ACR_SERVER }}/qdk-llvm:${{ parameters.qdkLlvmTag }}
       endpoint: qdkacr
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
     settings:
-      # To fetch the Universal Package from the ADO feed, Azure blob access is needed.
+      # To fetch the packages from the ADO feed, Azure blob access is needed.
       # See https://eng.ms/docs/cloud-ai-platform/devdiv/one-engineering-system-1es/1es-build/cloudbuild/security/1espt-network-isolation
-      networkIsolationPolicy: AzureStorage
+      networkIsolationPolicy: Permissive
 
     sdl:
       autobaseline:
@@ -73,63 +83,57 @@ extends:
           templateContext:
             authenticatedContainerRegistries:
             - serviceConnection: qdkacr
-            outputs:
-            - output: pipelineArtifact
-              displayName: 'Upload Python Artifacts for ${{ target.os }} ${{ target.arch }}'
-              condition: succeeded()
-              targetPath: $(System.DefaultWorkingDirectory)/target/wheels
-              artifactName: wheel.${{ target.os }}.${{ target.arch }}
           steps:
           - checkout: self
 
-          # Make available the authenticated pip feed variable (PIP_INDEX_URL)
-          - task: PipAuthenticate@1
-            displayName: Pip Authenticate
+          - task: 1ES.BuildContainerImage@1
             inputs:
-              artifactFeeds: 'AzureQuantum/azure-quantum'
-          
-          # The image CARGO_HOME is only root writable, so need to create a local CARGO_HOME directory
-          # Also write a local .cargo/config.toml to override the crates.io source
-          - script: |
-              set -euxo pipefail
+              path: $(Build.SourcesDirectory)/.ado/images/qdk-rust
+              image: qdk-rust:$(finalRustTag)-${{ target.tag }}
+              # Need to enable network access in order to access the ms-rustup feed
+              enableNetwork: true
+              # I tried using BuildKit with secrets, but it didn't work with the network isolation due
+              # to trying to fetch schema files from docker.io
+              buildArguments: >
+                --build-arg MSRUSTUP_FEED_URL=$(toolchainFeed)
+                --build-arg MSRUSTUP_ACCESS_TOKEN=$(System.AccessToken)
+                --build-arg RUST_TOOLCHAIN=ms-prod-$(RUST_TOOLCHAIN_VERSION)
 
-              python -m venv .venv
-              source .venv/bin/activate
-              python -m pip install build "maturin~=1.15.0"
+          - task: 1ES.PushContainerImage@1
+            inputs:
+              image: qdk-rust:$(finalRustTag)-${{ target.tag }}
+              remoteImage: ${{ parameters.ACR_SERVER }}/qdk-rust:$(finalRustTag)-${{ target.tag }}
 
-              mkdir -p .cargo_home/
-              export CARGO_HOME=$(pwd)/.cargo_home
 
-              mkdir -p .cargo/
-              cat > ".cargo/config.toml" <<EOF
-              [source.crates-io]
-              replace-with = "ms-crates-io"
+      - job: publishImageManifest
+        dependsOn:
+        - linux_x86_64
+        - linux_aarch64
 
-              [source.ms-crates-io]
-              registry = "$(cratesIoFeedOverride)"
-              EOF
+        templateContext:
+          authenticatedContainerRegistries:
+          - serviceConnection: qdkacr
+        
+        pool:
+          name: 'Azure-Pipelines-DevTools-EO'
+          image: 'ubuntu-22.04'
+          os: 'linux'
 
-              pwd
-              ls -lF .
-              cat ".cargo/config.toml"
-              cargo fetch
+        steps:
+        - bash: |
+            set -euo pipefail
 
-              cd qirlib
-              export QIRLIB_CACHE_DIR=$LLVM_SYS_201_PREFIX
-              cargo test  --release --features llvm20-1
-              cargo build --release --features llvm20-1
-              cd ..
+            ACR="${{ parameters.ACR_SERVER }}"
+            IMG="qdk-rust"
+            TAG="$(finalRustTag)"
 
-              python -m build --verbose --wheel \
-                --config-setting=build-args="--features llvm20-1 --compatibility" pyqir
-              
-              ls -lF target/wheels
+            # Create a manifest list that points at the already-pushed arch tags
+            docker manifest create "$ACR/$IMG:$TAG" \
+              "$ACR/$IMG:$TAG-amd64" \
+              "$ACR/$IMG:$TAG-arm64"
 
-            target: qdkRust
-            displayName: Test Rust build
-            env:
-              PIP_INDEX_URL: $(PIP_INDEX_URL)
-              # See https://eng.ms/docs/coreai/devdiv/one-engineering-system-1es/1es-docs/azure-artifacts/cargo
-              CARGO_REGISTRIES_MS_CRATES_IO_INDEX: $(cratesIoFeedOverride)
-              CARGO_REGISTRIES_MS_CRATES_IO_TOKEN: Bearer $(System.AccessToken)
-              CARGO_REGISTRIES_MS_CRATES_IO_CREDENTIAL_PROVIDER: cargo:token
+            # Push the manifest list back to ACR
+            docker manifest push "$ACR/$IMG:$TAG"
+
+            # Optional: verify
+            docker manifest inspect "$ACR/$IMG:$TAG"
