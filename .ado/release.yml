@@ -128,12 +128,9 @@ extends:
             TAG="$(finalRustTag)"
 
             # Create a manifest list that points at the already-pushed arch tags
-            docker manifest create "$ACR/$IMG:$TAG" \
-              "$ACR/$IMG:$TAG-amd64" \
-              "$ACR/$IMG:$TAG-arm64"
+            docker buildx imagetools create \
+                  --tag "$ACR/$IMG:$TAG" \
+                  "$ACR/$IMG:$TAG-amd64" \
+                  "$ACR/$IMG:$TAG-arm64"
 
-            # Push the manifest list back to ACR
-            docker manifest push "$ACR/$IMG:$TAG"
-
-            # Optional: verify
-            docker manifest inspect "$ACR/$IMG:$TAG"
+            docker buildx imagetools inspect "$ACR/$IMG:$TAG"
