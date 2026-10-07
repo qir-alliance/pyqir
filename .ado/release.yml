@@ -158,5 +158,9 @@ extends:
                   --tag "$ACR/$IMG:$TAG" \
                   "$ACR/$IMG:$TAG-amd64" \
                   "$ACR/$IMG:$TAG-arm64"
+            # Tag as latest
+            docker buildx imagetools create \
+                  --tag "$ACR/$IMG:latest" \
+                  "$ACR/$IMG:$TAG"
 
             docker buildx imagetools inspect "$ACR/$IMG:$TAG"
