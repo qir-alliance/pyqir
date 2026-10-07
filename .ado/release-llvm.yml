@@ -105,3 +105,36 @@ extends:
             inputs:
               image: qdk-llvm:$(finalLlvmTag)-${{ target.tag }}
               remoteImage: ${{ parameters.ACR_SERVER }}/qdk-llvm:$(finalLlvmTag)-${{ target.tag }}
+
+      - job: publishImageManifest
+        dependsOn:
+        - linux_x86_64
+        - linux_aarch64
+
+        templateContext:
+          authenticatedContainerRegistries:
+          - serviceConnection: qdkacr
+        
+        pool:
+          name: 'Azure-Pipelines-DevTools-EO'
+          image: 'ubuntu-22.04'
+          os: 'linux'
+
+        steps:
+        - bash: |
+            set -euo pipefail
+
+            ACR="${{ parameters.ACR_SERVER }}"
+            IMG="qdk-llvm"
+            TAG="$(finalLlvmTag)"
+
+            # Create a manifest list that points at the already-pushed arch tags
+            docker manifest create "$ACR/$IMG:$TAG" \
+              "$ACR/$IMG:$TAG-amd64" \
+              "$ACR/$IMG:$TAG-arm64"
+
+            # Push the manifest list back to ACR
+            docker manifest push "$ACR/$IMG:$TAG"
+
+            # Optional: verify
+            docker manifest inspect "$ACR/$IMG:$TAG"
