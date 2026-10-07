@@ -13,11 +13,13 @@ parameters:
     poolName: 'Azure-Pipelines-DevTools-EO'
     imageName: 'ubuntu-22.04'
     os: linux
+    arch: x86_64
     tag: amd64
   - name: linux_aarch64
     poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
     imageName: 'azurelinux-3.0-gen2-arm64'
     os: linux
+    arch: aarch64
     tag: arm64
 
 # Parameters for building the qdk-build image
@@ -73,6 +75,10 @@ extends:
             name: ${{ target.poolName }}
             image: ${{ target.imageName }}
             os: ${{ target.os }}
+            ${{ if eq(target.arch, 'aarch64') }}:
+              hostArchitecture: Arm64
+          variables:
+            arch: ${{ target.arch }}
           timeoutInMinutes: 300
           templateContext:
             authenticatedContainerRegistries:
