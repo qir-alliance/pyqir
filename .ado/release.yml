@@ -25,10 +25,12 @@ variables:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN_VERSION: "1.93"
   PYTHON_VERSION: "3.11"
-  PYTHON_315_VERSION: "3.15.0rc2"
-  PYTHON_315_COMMIT: "435c9e5a798c99653e3ab64ce29baed0e4f3dfee"
+  PYTHON_315_VERSION: "3.15.0rc3"
   PYTHON_315_DIRECTORY: $(Pipeline.Workspace)/python-3.15-arm64
   PYTHON_315_CACHE_COUNTER: 1
+  PYTHON_315_PREBUILT_VERSION: "3.15.0-rc.3"
+  PYTHON_315T_DIRECTORY: $(Pipeline.Workspace)/python-3.15t-arm64
+  PYTHON_315T_CACHE_COUNTER: 1
   LLVM_VERSION: 20
   # use this to invalidate the cache. Any time we update the OS
   # image, we should increment this to ensure that the cache is rebuilt.
@@ -50,6 +52,9 @@ parameters:
     imageName: 'ubuntu-22.04'
     os: linux
     arch: x86_64
+    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-rc.3-37256039299/python-3.15.0-rc.3-linux-22.04-x64-freethreaded.tar.gz"
+    python315tAssetSha256Variable: PYTHON_315T_LINUX_X64_SHA256
+    python315tToolcacheArch: x64-freethreaded
   - name: linux_aarch64
     poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
     imageName: 'azurelinux-3.0-gen2-arm64'
@@ -60,20 +65,32 @@ parameters:
     imageName: 'macOS-15'
     os: macOS
     arch: x86_64
+    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-rc.3-37256039299/python-3.15.0-rc.3-darwin-x64-freethreaded.tar.gz"
+    python315tAssetSha256Variable: PYTHON_315T_MACOS_X64_SHA256
+    python315tToolcacheArch: x64-freethreaded
   - name: mac_aarch64
     poolName: 'AcesShared'
     os: macOS
     arch: aarch64
+    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-rc.3-37256039299/python-3.15.0-rc.3-darwin-arm64-freethreaded.tar.gz"
+    python315tAssetSha256Variable: PYTHON_315T_MACOS_ARM64_SHA256
+    python315tToolcacheArch: arm64-freethreaded
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
     imageName: 'windows-2022'
     os: windows
     arch: x86_64
+    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-rc.3-37256039299/python-3.15.0-rc.3-win32-x64-freethreaded.zip"
+    python315tAssetSha256Variable: PYTHON_315T_WINDOWS_X64_SHA256
+    python315tToolcacheArch: x64-freethreaded
   - name: windows_aarch64
     poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
     imageName: 'windows-2025-gen2-arm64'
     os: windows
     arch: aarch64
+    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-rc.3-37256039299/python-3.15.0-rc.3-win32-arm64-freethreaded.zip"
+    python315tAssetSha256Variable: PYTHON_315T_WINDOWS_ARM64_SHA256
+    python315tToolcacheArch: arm64-freethreaded
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
@@ -102,6 +119,10 @@ extends:
               - ImageOverride -equals ACES_VM_SharedPool_Sequoia
           variables:
             arch: ${{ target.arch }}
+            ${{ if target.python315tAssetUrl }}:
+              PYTHON_315T_ASSET_URL: ${{ target.python315tAssetUrl }}
+              PYTHON_315T_ASSET_SHA256_VARIABLE: ${{ target.python315tAssetSha256Variable }}
+              PYTHON_315T_TOOLCACHE_ARCH: ${{ target.python315tToolcacheArch }}
             ${{ if eq(target.os, 'windows') }}:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)\target\llvm
             ${{ else }}:
@@ -251,12 +272,20 @@ extends:
 
           - task: UsePythonVersion@0
             inputs:
-              versionSpec: ">=3.15.0-a0 <3.16.0"
+              versionSpec: $(PYTHON_315_PREBUILT_VERSION)
               allowUnstable: true
               ${{ if eq(target.arch, 'aarch64') }}:
                 architecture: "arm64"
             displayName: Set Up Python 3.15 for ABI3T
             condition: and(succeeded(), not(and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))))
+
+          - pwsh: |
+              $commit = "$(PYTHON_315_COMMIT)"
+              if ($commit -notmatch "^[a-fA-F0-9]{40}$") {
+                throw "Define the non-secret ADO pipeline variable PYTHON_315_COMMIT with the pinned CPython commit."
+              }
+            displayName: Validate pinned CPython commit
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
 
           - task: Cache@2
             inputs:
@@ -331,12 +360,21 @@ extends:
                 Remove-Item -Path $buildVenv -Recurse -Force -ErrorAction Stop
               }
 
-              python -c "import sys; print(f'Selected Python: {sys.executable} ({sys.version})')"
+              python -c 'import sys; print(f"Selected Python: {sys.executable} ({sys.version})"); print("GIL enabled:", sys._is_gil_enabled()); assert sys.version_info[:2] == (3, 15); assert sys._is_gil_enabled()'
+              if ($LASTEXITCODE -ne 0) {
+                throw "Regular Python 3.15 validation failed."
+              }
+              $selectedPythonVersion = (python -c 'import platform; print(platform.python_version())').Trim()
+              if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($selectedPythonVersion)) {
+                throw "Failed to determine the selected regular Python 3.15 version."
+              }
+              Write-Host "Selected regular Python version: $selectedPythonVersion"
+              Write-Host "##vso[task.setvariable variable=PYTHON_315_SELECTED_VERSION]$selectedPythonVersion"
 
               if ("$(Agent.OS)" -eq "Linux" -and "$(arch)" -eq "aarch64") {
                 $expectedPython = Join-Path "$(PYTHON_315_DIRECTORY)" "bin/python3.15"
                 python --version
-                python -c 'import platform, sys; from pathlib import Path; actual_executable = Path(sys.executable).resolve(); expected_executable = Path(sys.argv[1]).resolve(); actual_prefix = Path(sys.prefix).resolve(); expected_prefix = Path(sys.argv[2]).resolve(); print("Selected executable:", actual_executable); print("Selected prefix:", actual_prefix); print("Architecture:", platform.machine()); assert sys.version_info[:2] == (3, 15); assert platform.machine().lower() in {"aarch64", "arm64"}; assert actual_executable == expected_executable; assert actual_prefix == expected_prefix' $expectedPython "$(PYTHON_315_DIRECTORY)"
+                python -c 'import platform, sys; from pathlib import Path; actual_executable = Path(sys.executable).resolve(); expected_executable = Path(sys.argv[1]).resolve(); actual_prefix = Path(sys.prefix).resolve(); expected_prefix = Path(sys.argv[2]).resolve(); print("Selected executable:", actual_executable); print("Selected prefix:", actual_prefix); print("Architecture:", platform.machine()); assert sys.version_info[:2] == (3, 15); assert platform.machine().lower() in {"aarch64", "arm64"}; assert actual_executable == expected_executable; assert actual_prefix == expected_prefix; assert sys._is_gil_enabled()' $expectedPython "$(PYTHON_315_DIRECTORY)"
               }
 
               ./build.ps1 -t pyqir
@@ -361,6 +399,18 @@ extends:
               if ($abi3tWheelMatches.Count -ne 1) {
                 $matchingNames = $abi3tWheelMatches.Name -join ", "
                 throw "Expected exactly one ABI3T wheel after the ABI3T build, found $($abi3tWheelMatches.Count): $matchingNames"
+              }
+
+              $env:PYQIR_TEST_WHEEL = $abi3tWheelMatches[0].FullName
+              try {
+                Write-Host "Testing ABI3T wheel with regular Python 3.15: $($abi3tWheelMatches[0].Name)"
+                ./build.ps1 -t test
+                if ($LASTEXITCODE -ne 0) {
+                  throw "ABI3T wheel tests failed under regular Python 3.15."
+                }
+              }
+              finally {
+                Remove-Item Env:\PYQIR_TEST_WHEEL -ErrorAction SilentlyContinue
               }
 
               $abi3Wheels = Join-Path "$(Agent.TempDirectory)" "pyqir-abi3-wheels-$(System.JobId)"
@@ -407,6 +457,246 @@ extends:
               Write-Host "Final PyQIR wheels:"
               $pyqirWheels | ForEach-Object { Write-Host "  $($_.Name)" }
             displayName: Build ABI3T Wheel
+            condition: succeeded()
+
+          - pwsh: |
+              $assetUrl = $env:PYTHON_315T_ASSET_URL
+              $expectedSha256Variable = $env:PYTHON_315T_ASSET_SHA256_VARIABLE
+              $toolcacheArchitecture = $env:PYTHON_315T_TOOLCACHE_ARCH
+              if ([string]::IsNullOrWhiteSpace($assetUrl) -or
+                  [string]::IsNullOrWhiteSpace($expectedSha256Variable) -or
+                  [string]::IsNullOrWhiteSpace($toolcacheArchitecture)) {
+                throw "Missing pinned Python 3.15t asset metadata for this target."
+              }
+
+              $expectedSha256 = [Environment]::GetEnvironmentVariable($expectedSha256Variable)
+              if ($expectedSha256 -notmatch "^[a-fA-F0-9]{64}$") {
+                throw "Define the non-secret ADO pipeline variable $expectedSha256Variable with the published SHA-256 for this Python 3.15t asset."
+              }
+
+              $assetName = [System.IO.Path]::GetFileName(([Uri]$assetUrl).AbsolutePath)
+              $downloadDirectory = Join-Path "$(Agent.TempDirectory)" "python-3.15t-download-$(System.JobId)"
+              $extractDirectory = Join-Path "$(Agent.TempDirectory)" "python-3.15t-extract-$(System.JobId)"
+              foreach ($directory in @($downloadDirectory, $extractDirectory)) {
+                if (Test-Path $directory) {
+                  Remove-Item -Path $directory -Recurse -Force -ErrorAction Stop
+                }
+                New-Item -ItemType Directory -Path $directory -Force | Out-Null
+              }
+              $assetPath = Join-Path $downloadDirectory $assetName
+
+              Write-Host "Downloading pinned Python 3.15t asset: $assetUrl"
+              Invoke-WebRequest -Uri $assetUrl -OutFile $assetPath
+              $actualSha256 = (Get-FileHash -LiteralPath $assetPath -Algorithm SHA256).Hash.ToLowerInvariant()
+              if ($actualSha256 -ne $expectedSha256.ToLowerInvariant()) {
+                throw "SHA-256 mismatch for ${assetName}: expected $expectedSha256, got $actualSha256."
+              }
+              Write-Host "Verified SHA-256 for ${assetName}: $actualSha256"
+
+              if ($assetName.EndsWith(".zip", [StringComparison]::OrdinalIgnoreCase)) {
+                Expand-Archive -LiteralPath $assetPath -DestinationPath $extractDirectory -Force
+                $setupScriptName = "setup.ps1"
+              }
+              elseif ($assetName.EndsWith(".tar.gz", [StringComparison]::OrdinalIgnoreCase)) {
+                & tar -xzf $assetPath -C $extractDirectory
+                if ($LASTEXITCODE -ne 0) {
+                  throw "Failed to extract $assetName."
+                }
+                $setupScriptName = "setup.sh"
+              }
+              else {
+                throw "Unsupported Python 3.15t asset format: $assetName"
+              }
+
+              $setupScriptMatches = @(
+                Get-ChildItem -Path $extractDirectory -Filter $setupScriptName -File -Recurse
+              )
+              if ($setupScriptMatches.Count -ne 1) {
+                $matchingNames = $setupScriptMatches.FullName -join ", "
+                throw "Expected exactly one $setupScriptName in $assetName, found $($setupScriptMatches.Count): $matchingNames"
+              }
+
+              $toolDirectory = "$(Agent.ToolsDirectory)"
+              if ([string]::IsNullOrWhiteSpace($toolDirectory)) {
+                throw "Agent.ToolsDirectory is required to install the Python 3.15t distribution."
+              }
+              $env:AGENT_TOOLSDIRECTORY = $toolDirectory
+
+              Push-Location $setupScriptMatches[0].DirectoryName
+              try {
+                if ("$(Agent.OS)" -eq "Windows_NT") {
+                  & powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $setupScriptMatches[0].FullName
+                }
+                else {
+                  & bash $setupScriptMatches[0].FullName
+                }
+                if ($LASTEXITCODE -ne 0) {
+                  throw "Python 3.15t setup failed with exit code $LASTEXITCODE."
+                }
+              }
+              finally {
+                Pop-Location
+              }
+
+              $installDirectory = Join-Path $toolDirectory "Python/$(PYTHON_315_PREBUILT_VERSION)/$toolcacheArchitecture"
+              $pythonExecutable = if ("$(Agent.OS)" -eq "Windows_NT") {
+                Join-Path $installDirectory "python.exe"
+              }
+              else {
+                Join-Path $installDirectory "bin/python"
+              }
+              if (!(Test-Path -LiteralPath $pythonExecutable -PathType Leaf)) {
+                throw "Python 3.15t executable not found at $pythonExecutable."
+              }
+
+              if ("$(Agent.OS)" -eq "Linux") {
+                $pythonLibraryDirectory = Join-Path $installDirectory "lib"
+                $libraryPath = if ([string]::IsNullOrWhiteSpace($env:LD_LIBRARY_PATH)) {
+                  $pythonLibraryDirectory
+                }
+                else {
+                  "$pythonLibraryDirectory`:$env:LD_LIBRARY_PATH"
+                }
+                Write-Host "##vso[task.setvariable variable=LD_LIBRARY_PATH]$libraryPath"
+              }
+
+              Write-Host "Python 3.15t executable: $pythonExecutable"
+              Write-Host "##vso[task.setvariable variable=PYTHON_315T_EXECUTABLE]$pythonExecutable"
+            displayName: Install pinned Python 3.15t distribution
+            condition: and(succeeded(), not(and(eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))))
+
+          - task: Cache@2
+            inputs:
+              key: '"python-$(PYTHON_315_VERSION)-$(PYTHON_315_COMMIT)-azurelinux-3.0-arm64-gil-disabled-$(PYTHON_315T_CACHE_COUNTER)"'
+              path: $(PYTHON_315T_DIRECTORY)
+              cacheHitVar: PYTHON_315T_CACHE_RESTORED
+            displayName: Cache Python 3.15t on Azure Linux ARM64
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
+
+          - script: |
+              set -euo pipefail
+
+              python_version="$(PYTHON_315_VERSION)"
+              source_dir="$(Agent.TempDirectory)/cpython-$python_version-freethreaded-$(System.JobId)"
+              prefix="$(PYTHON_315T_DIRECTORY)"
+
+              if [ "$(PYTHON_315T_CACHE_RESTORED)" != "true" ]; then
+                sudo tdnf install -y \
+                  git \
+                  make \
+                  bzip2-devel \
+                  expat-devel \
+                  libffi-devel \
+                  ncurses-devel \
+                  openssl-devel \
+                  pkgconf-pkg-config \
+                  readline-devel \
+                  sqlite-devel \
+                  xz-devel \
+                  zlib-devel
+
+                git clone \
+                  --branch "v$python_version" \
+                  --depth 1 \
+                  --single-branch \
+                  https://github.com/python/cpython.git \
+                  "$source_dir"
+
+                actual_commit="$(git -C "$source_dir" rev-parse HEAD)"
+                expected_commit="$(PYTHON_315_COMMIT)"
+                echo "Expected CPython commit: $expected_commit"
+                echo "Actual CPython commit:   $actual_commit"
+                if [ "$actual_commit" != "$expected_commit" ]; then
+                  echo "ERROR: CPython v$python_version resolved to an unexpected commit." >&2
+                  exit 1
+                fi
+
+                cd "$source_dir"
+                ./configure \
+                  --prefix="$prefix" \
+                  --with-ensurepip=install \
+                  --disable-gil
+                jobs="$(nproc)"
+                make -j"$jobs"
+                make install
+              else
+                echo "Using cached free-threaded Python installation from $prefix"
+              fi
+
+              python_bin="$prefix/bin/python3.15t"
+              test -x "$python_bin"
+              ln -sf "$python_bin" "$prefix/bin/python"
+              ln -sf "$python_bin" "$prefix/bin/python3"
+              "$python_bin" --version
+              echo "##vso[task.setvariable variable=PYTHON_315T_EXECUTABLE]$python_bin"
+            displayName: Build Python 3.15t from source on Azure Linux ARM64
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
+
+          - pwsh: |
+              $pythonExecutable = "$(PYTHON_315T_EXECUTABLE)"
+              $regularPythonVersion = "$(PYTHON_315_SELECTED_VERSION)"
+              if ([string]::IsNullOrWhiteSpace($pythonExecutable) -or
+                  !(Test-Path -LiteralPath $pythonExecutable -PathType Leaf)) {
+                throw "Python 3.15t executable not found at $pythonExecutable."
+              }
+              if ([string]::IsNullOrWhiteSpace($regularPythonVersion)) {
+                throw "The regular Python 3.15 version was not recorded."
+              }
+
+              Write-Host "Validating Python 3.15t interpreter: $pythonExecutable"
+              & $pythonExecutable -VV
+              if ($LASTEXITCODE -ne 0) {
+                throw "Python 3.15t version check failed."
+              }
+              & $pythonExecutable -c 'import platform, sys, sysconfig; expected_arch = sys.argv[1].lower(); expected_version = sys.argv[2]; actual_arch = platform.machine().lower(); actual_version = platform.python_version(); allowed_arches = {"x86_64": {"x86_64", "amd64"}, "aarch64": {"aarch64", "arm64"}}; print("Executable:", sys.executable); print("Version:", sys.version); print("Architecture:", actual_arch); print("ABI flags:", getattr(sys, "abiflags", "")); print("Py_GIL_DISABLED:", sysconfig.get_config_var("Py_GIL_DISABLED")); print("GIL enabled:", sys._is_gil_enabled()); print("Regular Python version:", expected_version); assert sys.version_info[:2] == (3, 15); assert actual_version == expected_version; assert actual_arch in allowed_arches[expected_arch]; assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1; assert not sys._is_gil_enabled()' "$(arch)" $regularPythonVersion
+              if ($LASTEXITCODE -ne 0) {
+                throw "Python 3.15t runtime verification failed."
+              }
+
+              $wheelDirectory = Join-Path "$(System.DefaultWorkingDirectory)" "target/wheels"
+              $pyqirWheelsBefore = @(
+                Get-ChildItem -Path $wheelDirectory -Filter "pyqir-*.whl" -File | Sort-Object Name
+              )
+              $abi3tWheelMatches = @(
+                $pyqirWheelsBefore | Where-Object Name -Like "pyqir-*-cp315-abi3.abi3t-*.whl"
+              )
+              if ($pyqirWheelsBefore.Count -ne 2 -or $abi3tWheelMatches.Count -ne 1) {
+                $wheelNames = $pyqirWheelsBefore.Name -join ", "
+                throw "Expected two PyQIR wheels with exactly one ABI3T test candidate, found: $wheelNames"
+              }
+
+              $pythonDirectory = Split-Path -Parent $pythonExecutable
+              $runtimePaths = @($pythonDirectory)
+              if ("$(Agent.OS)" -eq "Windows_NT") {
+                $runtimePaths = @((Join-Path $pythonDirectory "Scripts")) + $runtimePaths
+              }
+              $env:PATH = ($runtimePaths + @($env:PATH)) -join [System.IO.Path]::PathSeparator
+
+              $env:PYQIR_TEST_WHEEL = $abi3tWheelMatches[0].FullName
+              $env:PYQIR_TEST_GIL_DISABLED = "true"
+              try {
+                Write-Host "Testing ABI3T wheel with Python 3.15t: $($abi3tWheelMatches[0].Name)"
+                ./build.ps1 -t test
+                if ($LASTEXITCODE -ne 0) {
+                  throw "PyQIR tests failed under Python 3.15t."
+                }
+              }
+              finally {
+                Remove-Item Env:\PYQIR_TEST_WHEEL -ErrorAction SilentlyContinue
+                Remove-Item Env:\PYQIR_TEST_GIL_DISABLED -ErrorAction SilentlyContinue
+              }
+
+              $pyqirWheelsAfter = @(
+                Get-ChildItem -Path $wheelDirectory -Filter "pyqir-*.whl" -File | Sort-Object Name
+              )
+              $wheelChanges = @(
+                Compare-Object -ReferenceObject $pyqirWheelsBefore.Name -DifferenceObject $pyqirWheelsAfter.Name
+              )
+              if ($pyqirWheelsAfter.Count -ne 2 -or $wheelChanges.Count -ne 0) {
+                $wheelNames = $pyqirWheelsAfter.Name -join ", "
+                throw "Python 3.15t validation changed the two-wheel release output: $wheelNames"
+              }
+            displayName: Test ABI3T wheel with Python 3.15t
             condition: succeeded()
 
           - script: |

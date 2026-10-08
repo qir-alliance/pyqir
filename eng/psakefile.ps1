@@ -82,9 +82,22 @@ task pyqir -depends init {
 }
 
 task test {
-    $packages = Get-Wheels pyqir | ForEach-Object { "$_[test]" }
+    $wheels = if (Test-Path env:\PYQIR_TEST_WHEEL) {
+        Assert (Test-Path -LiteralPath $env:PYQIR_TEST_WHEEL -PathType Leaf) `
+            "PYQIR_TEST_WHEEL does not identify a wheel file: $env:PYQIR_TEST_WHEEL"
+        @(Get-Item -LiteralPath $env:PYQIR_TEST_WHEEL -ErrorAction Stop)
+    }
+    else {
+        @(Get-Wheels pyqir)
+    }
+    $packages = $wheels | ForEach-Object { "$_[test]" }
     Invoke-LoggedCommand { & $Python -m pip install --force-reinstall $packages }
     Invoke-LoggedCommand { & $Python -m pip install --force-reinstall pytest }
+    if ($env:PYQIR_TEST_GIL_DISABLED -eq "true") {
+        Invoke-LoggedCommand {
+            & $Python -c 'import sys, sysconfig; assert sys.version_info[:2] == (3, 15); assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1; assert not sys._is_gil_enabled(); import pyqir; print("Imported PyQIR:", pyqir.__file__); print("GIL enabled after import:", sys._is_gil_enabled()); assert not sys._is_gil_enabled()'
+        }
+    }
     Invoke-LoggedCommand -workingDirectory $Pyqir { pytest }
 }
 
