@@ -27,8 +27,8 @@ parameters:
   displayName: Azure Container Registry server
   type: string
   default: 'qdkacr-cfgqhwddajdaebhg.azurecr.io'
-- name: qdkRustTag
-  displayName: Tag for the qdk-rust container image
+- name: qdkBuildTag
+  displayName: Tag for the qdk-build container image
   type: string
   default: 'latest'
 
@@ -40,8 +40,8 @@ resources:
     name: 1ESPipelineTemplates/1ESPipelineTemplates
     ref: refs/tags/release
   containers:
-    - container: qdkRust
-      image: ${{ parameters.ACR_SERVER }}/qdk-rust:${{ parameters.qdkRustTag }}
+    - container: qdkBuild
+      image: ${{ parameters.ACR_SERVER }}/qdk-build:${{ parameters.qdkBuildTag }}
       endpoint: qdkacr
 
 extends:
@@ -69,6 +69,10 @@ extends:
             name: ${{ target.poolName }}
             image: ${{ target.imageName }}
             os: ${{ target.os }}
+            ${{ if eq(target.arch, 'aarch64') }}:
+              hostArchitecture: Arm64
+          variables:
+            arch: ${{ target.arch }}
           timeoutInMinutes: 300
           templateContext:
             authenticatedContainerRegistries:
@@ -88,12 +92,17 @@ extends:
             inputs:
               artifactFeeds: 'AzureQuantum/azure-quantum'
           
+          # The image CARGO_HOME is only root writable, so need to create a local CARGO_HOME directory
+          # Also write a local .cargo/config.toml to override the crates.io source
           - script: |
               set -euxo pipefail
 
-              python -m venv .venv
+              python3 -m venv .venv
               source .venv/bin/activate
-              python -m pip install "maturin~=1.15.0"
+              python -m pip install build "maturin~=1.15.0"
+
+              mkdir -p .cargo_home/
+              export CARGO_HOME=$(pwd)/.cargo_home
 
               mkdir -p .cargo/
               cat > ".cargo/config.toml" <<EOF
@@ -119,10 +128,11 @@ extends:
               
               ls -lF target/wheels
 
-            target: qdkRust
-            displayName: Test Rust build
+            target: qdkBuild
+            displayName: Build with qdk-build container
             env:
               PIP_INDEX_URL: $(PIP_INDEX_URL)
+              # See https://eng.ms/docs/coreai/devdiv/one-engineering-system-1es/1es-docs/azure-artifacts/cargo
               CARGO_REGISTRIES_MS_CRATES_IO_INDEX: $(cratesIoFeedOverride)
-              CARGO_REGISTRIES_MS_CRATES_IO_TOKEN: $(System.AccessToken)
+              CARGO_REGISTRIES_MS_CRATES_IO_TOKEN: Bearer $(System.AccessToken)
               CARGO_REGISTRIES_MS_CRATES_IO_CREDENTIAL_PROVIDER: cargo:token
