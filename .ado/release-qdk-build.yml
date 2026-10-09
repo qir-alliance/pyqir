@@ -94,7 +94,7 @@ extends:
               command: download
               feed: "AzureQuantum/azure-quantum"
               packageName: "llvm-source"
-              packageVersion: "20.1.8" # or '*', '18.*' (wildcards supported for download)
+              packageVersion: "20.1.8"
               directory: "$(Pipeline.Workspace)/llvm-src"
           - task: UniversalPackages@1
             displayName: Download Python 3.15 source
@@ -102,7 +102,7 @@ extends:
               command: download
               feed: "AzureQuantum/azure-quantum"
               packageName: "python-source"
-              packageVersion: "3.15.0-rc3"
+              packageVersion: "3.15.0"
               directory: "$(Pipeline.Workspace)/python-src"
 
           # Need to copy the LLVM and Python source into the container before building it

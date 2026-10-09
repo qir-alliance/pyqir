@@ -123,8 +123,20 @@ extends:
               cargo build --release --features llvm20-1
               cd ..
 
-              python -m build --verbose --wheel \
-                --config-setting=build-args="--features llvm20-1 --compatibility" pyqir
+              # See https://www.maturin.rs/bindings#py_limited_apiabi3
+              maturin build \
+                  --manifest-path pyqir/Cargo.toml \
+                  --release \
+                  --features llvm20-1 \
+                  --compatibility manylinux_2_28 \
+                  --interpreter python3.11
+
+              maturin build \
+                  --manifest-path pyqir/Cargo.toml \
+                  --release \
+                  --features llvm20-1 \
+                  --compatibility manylinux_2_28 \
+                  --interpreter python3.15t
               
               ls -lF target/wheels
 

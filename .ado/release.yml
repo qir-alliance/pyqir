@@ -123,6 +123,7 @@ extends:
               cargo build --release --features llvm20-1
               cd ..
 
+              # See https://www.maturin.rs/bindings#py_limited_apiabi3
               maturin build \
                   --manifest-path pyqir/Cargo.toml \
                   --release \

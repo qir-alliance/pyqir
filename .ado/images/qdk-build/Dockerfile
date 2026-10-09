@@ -45,18 +45,20 @@ ENV PATH="${LLVM_INSTALL_PREFIX}/bin:${PATH}"
 ENV LLVM_SYS_201_PREFIX="${LLVM_INSTALL_PREFIX}"
 
 # Build Python 3.15t into this image
-ARG PY315_ARCHIVE=Python-3.15.0rc3.tar.xz
+ARG PY315_ARCHIVE=Python-3.15.0.tar.xz
 
-COPY ${PY315_ARCHIVE} /tmp/python-3.15t.tar.xz
+COPY ${PY315_ARCHIVE} /tmp/${PY315_ARCHIVE}
 
-RUN mkdir /tmp/python315 \
-    && tar -xJf /tmp/python-3.15t.tar.xz -C /tmp/python315 --strip-components=1 \
-    && pushd /tmp/python315 \
+RUN cd /tmp \
+    && echo "ba4bed1ba346b916890b76d9e320451420aa69f6408997d33c66482eeae3d575  ${PY315_ARCHIVE}" | sha256sum -c - \
+    && mkdir /tmp/python315 \
+    && tar -xJf /tmp/${PY315_ARCHIVE} -C /tmp/python315 --strip-components=1 \
+    && cd /tmp/python315 \
     && ./configure --disable-gil \
     && make \
     && make altinstall \
-    && popd \
-    && rm -rf /tmp/python315 /tmp/python-3.15t.tar.xz
+    && cd /tmp \
+    && rm -rf /tmp/python315 /tmp/${PY315_ARCHIVE}
 # /usr/local/bin/python3.15t will be installed by make altinstall (which in on the PATH)
 
 # Install msrustup
