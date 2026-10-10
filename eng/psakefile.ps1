@@ -95,10 +95,17 @@ task test {
     Invoke-LoggedCommand { & $Python -m pip install --force-reinstall pytest }
     if ($env:PYQIR_TEST_GIL_DISABLED -eq "true") {
         Invoke-LoggedCommand {
-            & $Python -c 'import sys, sysconfig; assert sys.version_info[:2] == (3, 15); assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1; assert not sys._is_gil_enabled(); import pyqir; print("Imported PyQIR:", pyqir.__file__); print("GIL enabled after import:", sys._is_gil_enabled()); assert not sys._is_gil_enabled()'
+            & $Python -c 'import sys; assert not sys._is_gil_enabled(); import pyqir; print("Imported PyQIR:", pyqir.__file__); print("GIL enabled after import:", sys._is_gil_enabled()); assert not sys._is_gil_enabled()'
+        }
+        # Run pytest in-process so the GIL state can be asserted after the whole suite.
+        # -P keeps the pyqir source directory off sys.path so the installed wheel is tested.
+        Invoke-LoggedCommand -workingDirectory $Pyqir {
+            & $Python -P -c 'import sys, pytest; assert not sys._is_gil_enabled(); exit_code = int(pytest.main()); gil_enabled = sys._is_gil_enabled(); print("GIL enabled after PyQIR tests:", gil_enabled); sys.exit(exit_code or int(gil_enabled))'
         }
     }
-    Invoke-LoggedCommand -workingDirectory $Pyqir { pytest }
+    else {
+        Invoke-LoggedCommand -workingDirectory $Pyqir { pytest }
+    }
 }
 
 task wheelhouse -precondition { -not (Test-Path (Join-Path $Wheels *.whl)) } {
