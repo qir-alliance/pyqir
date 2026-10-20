@@ -269,7 +269,7 @@ extends:
             condition: and(succeeded(), ne(variables['Agent.OS'], 'Linux'))
 
           # Run the tests and examples outside the container for the Linux builds
-          - pwsh: ./build.ps1 -t test,run-examples
+          - pwsh: ./eng/build.ps1 -taskList test,run-examples
             displayName: Run Tests and Examples for Linux Builds
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'))
 
