@@ -89,7 +89,8 @@ task install-wheel -depends check-environment {
 
 task test -depends install-wheel {
     Invoke-LoggedCommand { & $Python -m pip install "pyqir[test]" }
-    Invoke-LoggedCommand -workingDirectory $Pyqir { & $Python -m pytest }
+    # Prevent the source package from shadowing the installed wheel.
+    Invoke-LoggedCommand -workingDirectory $Pyqir { & $Python -I -m pytest }
 }
 
 task wheelhouse -precondition { -not (Test-Path (Join-Path $Wheels *.whl)) } {
