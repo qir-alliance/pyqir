@@ -10,7 +10,7 @@ trigger:
     include:
     - main
 
-# Run the pipeline every day at 6:00 AM to ensure
+# Run the pipeline every day at 5:00 AM to ensure
 # codeql and other governance checks are up-to-date.
 schedules:
 - cron: "0 5 * * *"
@@ -133,10 +133,9 @@ extends:
             inputs:
               artifactFeeds: 'AzureQuantum/azure-quantum'
 
-          
           # Build PyQIR in the Linux containers. Do this before the steps that install Python, Rust, etc.
           # on the host agent, as these can get added to the PATH in the container and mess with the build
-          # if it finds the wrong tools.
+          # if it finds the wrong tool versions.
           - ${{ if eq(target.os, 'linux') }}:
             - script: |
                 set -euxo pipefail
@@ -184,21 +183,23 @@ extends:
                 CARGO_REGISTRIES_MS_CRATES_IO_TOKEN: Bearer $(System.AccessToken)
                 CARGO_REGISTRIES_MS_CRATES_IO_CREDENTIAL_PROVIDER: cargo:token
 
-          - task: RustInstaller@1
-            inputs:
-              rustVersion: ms-prod-$(RUST_TOOLCHAIN_VERSION)
-              ${{ if target.additionalRustTargets }}:
-                additionalTargets: ${{ target.additionalRustTargets }}
-              cratesIoFeedOverride: $(cratesIoFeedOverride)
-              toolchainFeed: $(toolchainFeed)
-            displayName: Install Rust toolchain
+          # We don't need Rust if the build happened in the Linux container
+          - ${{ if ne(target.os, 'linux') }}:
+            - task: RustInstaller@1
+              inputs:
+                rustVersion: ms-prod-$(RUST_TOOLCHAIN_VERSION)
+                ${{ if target.additionalRustTargets }}:
+                  additionalTargets: ${{ target.additionalRustTargets }}
+                cratesIoFeedOverride: $(cratesIoFeedOverride)
+                toolchainFeed: $(toolchainFeed)
+              displayName: Install Rust toolchain
 
-          - script: |
-              rustc --version
-              rustc --print target-list
-            displayName: View rust target info
-            condition: succeeded()
+            - script: |
+                rustc --version
+                rustc --print target-list
+              displayName: View rust target info
 
+          # We need Python on the host VM regardless of the container build to run tests and examples
           - task: UsePythonVersion@0
             inputs:
               versionSpec: $(PYTHON_VERSION)
@@ -216,62 +217,58 @@ extends:
             condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['arch'], 'aarch64'))
 
           # Build or restore LLVM - not needed for Linux builds where it is already in the container
-          - pwsh: New-Item -ItemType Directory -Path $(LLVM_DIRECTORY) -Force
-            displayName: Ensure cache dir exists
-            condition: and(succeeded(), ne(variables['Agent.OS'], 'Linux'))
+          - ${{ if ne(target.os, 'linux') }}:
+            - pwsh: New-Item -ItemType Directory -Path $(LLVM_DIRECTORY) -Force
+              displayName: Ensure cache dir exists
 
-          - task: Cache@2
-            inputs:
-              key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
-              restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
-              path: $(LLVM_DIRECTORY)
-              cacheHitVar: CACHE_RESTORED
-            displayName: Cache LLVM
-            condition: and(succeeded(), ne(variables['Agent.OS'], 'Linux'))
+            - task: Cache@2
+              inputs:
+                key: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
+                restoreKeys: '"llvm-$(LLVM_VERSION)-${{ target.os }}-${{ target.arch }}-$(CACHE_COUNTER)"'
+                path: $(LLVM_DIRECTORY)
+                cacheHitVar: CACHE_RESTORED
+              displayName: Cache LLVM
 
-          - pwsh: |
-              git config --global core.longpaths true
+            - pwsh: |
+                git config --global core.longpaths true
 
-              $directory = Resolve-Path $(LLVM_DIRECTORY)
+                $directory = Resolve-Path $(LLVM_DIRECTORY)
 
-              # Tell the build where LLVM is installed
-              # This is usually automatic, but we are using a different directory than the default
-              Write-Host "##vso[task.setvariable variable=QIRLIB_LLVM_EXTERNAL_DIR;]$directory"
+                # Tell the build where LLVM is installed
+                # This is usually automatic, but we are using a different directory than the default
+                Write-Host "##vso[task.setvariable variable=QIRLIB_LLVM_EXTERNAL_DIR;]$directory"
 
-              # Tell the build what llvm feature version to use
-              $feature = "llvm$(LLVM_VERSION)-1"
-              $variableName = "LLVM_SYS_$(LLVM_VERSION)1_PREFIX"
-              Write-Host "##vso[task.setvariable variable=PYQIR_LLVM_FEATURE_VERSION;]$feature"
+                # Tell the build what llvm feature version to use
+                $feature = "llvm$(LLVM_VERSION)-1"
+                $variableName = "LLVM_SYS_$(LLVM_VERSION)1_PREFIX"
+                Write-Host "##vso[task.setvariable variable=PYQIR_LLVM_FEATURE_VERSION;]$feature"
 
-              # Tell LLVM-SYS where LLVM is installed
-              Write-Host "##vso[task.setvariable variable=$variableName;]$directory"
+                # Tell LLVM-SYS where LLVM is installed
+                Write-Host "##vso[task.setvariable variable=$variableName;]$directory"
 
-              # Tell the qirlib build where to cache the LLVM directory and to not download LLVM
-              Write-Host "##vso[task.setvariable variable=QIRLIB_CACHE_DIR;]$directory"
-              Write-Host "##vso[task.setvariable variable=QIRLIB_DOWNLOAD_LLVM;]false"
-            displayName: Configure Environment
-            condition: and(succeeded(), ne(variables['Agent.OS'], 'Linux'))
+                # Tell the qirlib build where to cache the LLVM directory and to not download LLVM
+                Write-Host "##vso[task.setvariable variable=QIRLIB_CACHE_DIR;]$directory"
+                Write-Host "##vso[task.setvariable variable=QIRLIB_DOWNLOAD_LLVM;]false"
+              displayName: Configure Environment
 
-          - script: |
-              brew install cmake ninja ccache
-            displayName: Install build dependencies
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables.CACHE_RESTORED, 'true'))
+            - script: |
+                brew install cmake ninja ccache
+              displayName: Install build dependencies
+              condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'), ne(variables.CACHE_RESTORED, 'true'))
 
-          # build and install LLVM
+            # build and install LLVM
+            - pwsh: ./build.ps1 -t install-llvm-from-source
+              displayName: Build and Install LLVM
+              condition: and(succeeded(), ne(variables.CACHE_RESTORED, 'true'))
 
-          - pwsh: ./build.ps1 -t install-llvm-from-source
-            displayName: Build and Install LLVM
-            condition: and(succeeded(), ne(variables['Agent.OS'], 'Linux'), not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'))
+            # Build PyQIR on Mac and Windows
+            - pwsh: ./build.ps1
+              displayName: Build
 
-          # Build PyQIR on Mac and Windows
-          - pwsh: ./build.ps1
-            displayName: Build
-            condition: and(succeeded(), ne(variables['Agent.OS'], 'Linux'))
-
-          # Run the tests and examples outside the container for the Linux builds
-          - pwsh: ./eng/build.ps1 -taskList test,run-examples
-            displayName: Run Tests and Examples for Linux Builds
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'))
+          - ${{ else }}:
+            # Run the tests and examples outside the container for the Linux builds
+            - pwsh: ./eng/build.ps1 -taskList test,run-examples
+              displayName: Run Tests and Examples for Linux Builds
 
           - script: |
               dir target\wheels\*
@@ -328,7 +325,6 @@ extends:
           displayName: Display Py Artifacts in Publishing Dir
 
         - task: EsrpRelease@9
-          condition: succeeded()
           displayName: Publish Py Packages
           inputs:
             connectedservicename: 'PME ESRP Azure Connection'
