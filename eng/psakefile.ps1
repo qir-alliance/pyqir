@@ -81,11 +81,15 @@ task pyqir -depends init {
     Invoke-LoggedCommand { & $Python -m build --verbose --wheel --config-setting=build-args="$configSettings --compatibility" $Pyqir }
 }
 
-task test {
-    $packages = Get-Wheels pyqir | ForEach-Object { "$_[test]" }
-    Invoke-LoggedCommand { & $Python -m pip install --force-reinstall $packages }
-    Invoke-LoggedCommand { & $Python -m pip install --force-reinstall pytest }
-    Invoke-LoggedCommand -workingDirectory $Pyqir { pytest }
+task install-wheel -depends check-environment {
+    Invoke-LoggedCommand {
+        & $Python -m pip install --force-reinstall --no-deps --no-index --find-links $Wheels pyqir
+    }
+}
+
+task test -depends install-wheel {
+    Invoke-LoggedCommand { & $Python -m pip install "pyqir[test]" }
+    Invoke-LoggedCommand -workingDirectory $Pyqir { & $Python -m pytest }
 }
 
 task wheelhouse -precondition { -not (Test-Path (Join-Path $Wheels *.whl)) } {
@@ -201,11 +205,9 @@ task package-llvm {
     }
 }
 
-# run-examples assumes the wheels have already been installed locally
-task run-examples {
+task run-examples -depends install-wheel {
     exec -workingDirectory $Examples {
         & $Python -m pip install --requirement requirements.txt --use-pep517
-        & $Python -m pip install --force-reinstall (Get-Wheel pyqir)
 
         & $Python bell_pair.py | Tee-Object -Variable output
         $head = $output | Select-Object -First 1
