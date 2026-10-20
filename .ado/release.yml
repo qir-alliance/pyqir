@@ -118,8 +118,9 @@ extends:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)/target/llvm
           timeoutInMinutes: 300
           templateContext:
-            authenticatedContainerRegistries:
-            - serviceConnection: qdkacr
+            ${{ if eq(target.os, 'linux') }}:
+              authenticatedContainerRegistries:
+              - serviceConnection: qdkacr
             outputs:
             - output: pipelineArtifact
               displayName: 'Upload Python Artifacts for ${{ target.os }} ${{ target.arch }}'
@@ -217,52 +218,52 @@ extends:
             condition: and(succeeded(), ne(variables['Agent.OS'], 'Linux'))
           
           # Build PyQIR in the Linux containers
-          - script: |
-              set -euxo pipefail
+          - ${{ if eq(target.os, 'linux') }}:
+            - script: |
+                set -euxo pipefail
 
-              python3 -m venv .venv
-              source .venv/bin/activate
-              python -m pip install build "maturin~=1.15.0"
+                python3 -m venv .venv
+                source .venv/bin/activate
+                python -m pip install build "maturin~=1.15.0"
 
-              mkdir -p .cargo/
-              export CARGO_HOME=$(pwd)/.cargo
-              cat > ".cargo/config.toml" <<EOF
-              [source.crates-io]
-              replace-with = "ms-crates-io"
+                mkdir -p .cargo/
+                export CARGO_HOME=$(pwd)/.cargo
+                cat > ".cargo/config.toml" <<EOF
+                [source.crates-io]
+                replace-with = "ms-crates-io"
 
-              [source.ms-crates-io]
-              registry = "$(cratesIoFeedOverride)"
-              EOF
+                [source.ms-crates-io]
+                registry = "$(cratesIoFeedOverride)"
+                EOF
 
-              cd qirlib
-              export QIRLIB_CACHE_DIR=$LLVM_SYS_201_PREFIX
-              cargo test  --release --features llvm20-1
-              cargo build --release --features llvm20-1
-              cd ..
+                cd qirlib
+                export QIRLIB_CACHE_DIR=$LLVM_SYS_201_PREFIX
+                cargo test  --release --features llvm20-1
+                cargo build --release --features llvm20-1
+                cd ..
 
-              # See https://www.maturin.rs/bindings#py_limited_apiabi3
-              maturin build \
-                  --manifest-path pyqir/Cargo.toml \
-                  --release \
-                  --features llvm20-1 \
-                  --compatibility manylinux_2_28 \
-                  --interpreter python3.11
+                # See https://www.maturin.rs/bindings#py_limited_apiabi3
+                maturin build \
+                    --manifest-path pyqir/Cargo.toml \
+                    --release \
+                    --features llvm20-1 \
+                    --compatibility manylinux_2_28 \
+                    --interpreter python3.11
 
-              maturin build \
-                  --manifest-path pyqir/Cargo.toml \
-                  --release \
-                  --features llvm20-1 \
-                  --compatibility manylinux_2_28 \
-                  --interpreter python3.15t
-            displayName: Build PyQIR in Linux containers
-            target: qdkBuild
-            env:
-              PIP_INDEX_URL: $(PIP_INDEX_URL)
-              # See https://eng.ms/docs/coreai/devdiv/one-engineering-system-1es/1es-docs/azure-artifacts/cargo
-              CARGO_REGISTRIES_MS_CRATES_IO_INDEX: $(cratesIoFeedOverride)
-              CARGO_REGISTRIES_MS_CRATES_IO_TOKEN: Bearer $(System.AccessToken)
-              CARGO_REGISTRIES_MS_CRATES_IO_CREDENTIAL_PROVIDER: cargo:token
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'))
+                maturin build \
+                    --manifest-path pyqir/Cargo.toml \
+                    --release \
+                    --features llvm20-1 \
+                    --compatibility manylinux_2_28 \
+                    --interpreter python3.15t
+              displayName: Build PyQIR in Linux containers
+              target: qdkBuild
+              env:
+                PIP_INDEX_URL: $(PIP_INDEX_URL)
+                # See https://eng.ms/docs/coreai/devdiv/one-engineering-system-1es/1es-docs/azure-artifacts/cargo
+                CARGO_REGISTRIES_MS_CRATES_IO_INDEX: $(cratesIoFeedOverride)
+                CARGO_REGISTRIES_MS_CRATES_IO_TOKEN: Bearer $(System.AccessToken)
+                CARGO_REGISTRIES_MS_CRATES_IO_CREDENTIAL_PROVIDER: cargo:token
 
           # Run the tests and examples outside the container for the Linux builds
           - pwsh: ./build.ps1 -t test,run-examples
