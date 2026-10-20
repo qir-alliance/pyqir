@@ -101,10 +101,8 @@ extends:
               source .venv/bin/activate
               python -m pip install build "maturin~=1.15.0"
 
-              mkdir -p .cargo_home/
-              export CARGO_HOME=$(pwd)/.cargo_home
-
               mkdir -p .cargo/
+              export CARGO_HOME=$(pwd)/.cargo
               cat > ".cargo/config.toml" <<EOF
               [source.crates-io]
               replace-with = "ms-crates-io"
