@@ -904,6 +904,14 @@ class StructType(Type):
         """The types of the structure fields."""
         ...
 
+class Alloca(Instruction):
+    """An alloca instruction."""
+
+    @property
+    def allocated_type(self) -> Type:
+        """The allocated type."""
+        ...
+
 class Switch(Instruction):
     """A switch instruction."""
 

@@ -3,7 +3,10 @@
 
 #![allow(clippy::used_underscore_binding)]
 
-use crate::values::{BasicBlock, Owner, Value};
+use crate::{
+    types::Type,
+    values::{BasicBlock, Owner, Value},
+};
 #[allow(clippy::wildcard_imports)]
 use llvm_sys::{core::*, prelude::*, LLVMIntPredicate, LLVMOpcode, LLVMRealPredicate};
 use pyo3::{prelude::*, IntoPyObjectExt, PyRef};
@@ -113,6 +116,9 @@ impl Instruction {
                 Ok(Py::new(py, base.add_subclass(Call))?.into_bound_py_any(py)?)
             }
             LLVMOpcode::LLVMPHI => Ok(Py::new(py, base.add_subclass(Phi))?.into_bound_py_any(py)?),
+            LLVMOpcode::LLVMAlloca => {
+                Ok(Py::new(py, base.add_subclass(Alloca))?.into_bound_py_any(py)?)
+            }
             _ => Ok(Py::new(py, base)?.into_bound_py_any(py)?),
         }
     }
@@ -339,6 +345,25 @@ impl From<LLVMOpcode> for Opcode {
             LLVMOpcode::LLVMVAArg => Self::VaArg,
             LLVMOpcode::LLVMXor => Self::Xor,
             LLVMOpcode::LLVMZExt => Self::ZExt,
+        }
+    }
+}
+
+/// An alloca instruction.
+#[pyclass(extends = Instruction)]
+pub(crate) struct Alloca;
+
+#[pymethods]
+impl Alloca {
+    /// The allocated type.
+    ///
+    /// :type: `Type`
+    #[getter]
+    fn allocated_type<'py>(slf: PyRef<Self>, py: pyo3::Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let slf = slf.into_super().into_super();
+        unsafe {
+            let ty = LLVMGetAllocatedType(slf.cast().as_ptr());
+            Type::from_raw(py, slf.owner().context(py), ty)
         }
     }
 }

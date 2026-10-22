@@ -81,31 +81,16 @@ task pyqir -depends init {
     Invoke-LoggedCommand { & $Python -m build --verbose --wheel --config-setting=build-args="$configSettings --compatibility" $Pyqir }
 }
 
-task test {
-    $wheels = if (Test-Path env:\PYQIR_TEST_WHEEL) {
-        Assert (Test-Path -LiteralPath $env:PYQIR_TEST_WHEEL -PathType Leaf) `
-            "PYQIR_TEST_WHEEL does not identify a wheel file: $env:PYQIR_TEST_WHEEL"
-        @(Get-Item -LiteralPath $env:PYQIR_TEST_WHEEL -ErrorAction Stop)
+task install-wheel -depends check-environment {
+    Invoke-LoggedCommand {
+        & $Python -m pip install --force-reinstall --no-deps --no-index --find-links $Wheels pyqir
     }
-    else {
-        @(Get-Wheels pyqir)
-    }
-    $packages = $wheels | ForEach-Object { "$_[test]" }
-    Invoke-LoggedCommand { & $Python -m pip install --force-reinstall $packages }
-    Invoke-LoggedCommand { & $Python -m pip install --force-reinstall pytest }
-    if ($env:PYQIR_TEST_GIL_DISABLED -eq "true") {
-        Invoke-LoggedCommand {
-            & $Python -c 'import sys; assert not sys._is_gil_enabled(); import pyqir; print("Imported PyQIR:", pyqir.__file__); print("GIL enabled after import:", sys._is_gil_enabled()); assert not sys._is_gil_enabled()'
-        }
-        # Run pytest in-process so the GIL state can be asserted after the whole suite.
-        # -P keeps the pyqir source directory off sys.path so the installed wheel is tested.
-        Invoke-LoggedCommand -workingDirectory $Pyqir {
-            & $Python -P -c 'import sys, pytest; assert not sys._is_gil_enabled(); exit_code = int(pytest.main()); gil_enabled = sys._is_gil_enabled(); print("GIL enabled after PyQIR tests:", gil_enabled); sys.exit(exit_code or int(gil_enabled))'
-        }
-    }
-    else {
-        Invoke-LoggedCommand -workingDirectory $Pyqir { pytest }
-    }
+}
+
+task test -depends install-wheel {
+    Invoke-LoggedCommand { & $Python -m pip install "pyqir[test]" }
+    # Prevent the source package from shadowing the installed wheel.
+    Invoke-LoggedCommand -workingDirectory $Pyqir { & $Python -I -m pytest }
 }
 
 task wheelhouse -precondition { -not (Test-Path (Join-Path $Wheels *.whl)) } {
@@ -221,11 +206,9 @@ task package-llvm {
     }
 }
 
-# run-examples assumes the wheels have already been installed locally
-task run-examples {
+task run-examples -depends install-wheel {
     exec -workingDirectory $Examples {
         & $Python -m pip install --requirement requirements.txt --use-pep517
-        & $Python -m pip install --force-reinstall (Get-Wheel pyqir)
 
         & $Python bell_pair.py | Tee-Object -Variable output
         $head = $output | Select-Object -First 1

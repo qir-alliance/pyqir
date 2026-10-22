@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 from pyqir._native import (
+    Alloca,
     ArrayConstant,
     ArrayType,
     Attribute,
@@ -60,6 +61,7 @@ from pyqir._constants import ATTR_FUNCTION_INDEX, ATTR_RETURN_INDEX
 from pyqir._passes import QirModuleVisitor
 
 __all__ = [
+    "Alloca",
     "ArrayConstant",
     "ArrayType",
     "Attribute",
