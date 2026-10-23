@@ -25,8 +25,7 @@ variables:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN_VERSION: "1.93"
   PYTHON_VERSION: "3.11"
-  PYTHON_315_PREBUILT_VERSION: "3.15.0-rc.3"
-  PYTHON_315T_WINDOWS_PACKAGE_VERSION: "3.15.0"
+  PYTHON_315_PREBUILT_VERSION: "3.15.0"
   LLVM_VERSION: 20
   # use this to invalidate the cache. Any time we update the OS
   # image, we should increment this to ensure that the cache is rebuilt.
@@ -51,16 +50,16 @@ parameters:
     imageName: 'macOS-15'
     os: macOS
     arch: x86_64
-    python315tExpectedVersion: "3.15.0rc3"
-    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-rc.3-37256039299/python-3.15.0-rc.3-darwin-x64-freethreaded.tar.gz"
+    python315tExpectedVersion: "3.15.0"
+    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-38076878863/python-3.15.0-darwin-x64-freethreaded.tar.gz"
     python315tAssetSha256Variable: PYTHON_315T_MACOS_X64_SHA256
     python315tToolcacheArch: x64-freethreaded
   - name: mac_aarch64
     poolName: 'AcesShared'
     os: macOS
     arch: aarch64
-    python315tExpectedVersion: "3.15.0rc3"
-    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-rc.3-37256039299/python-3.15.0-rc.3-darwin-arm64-freethreaded.tar.gz"
+    python315tExpectedVersion: "3.15.0"
+    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-38076878863/python-3.15.0-darwin-arm64-freethreaded.tar.gz"
     python315tAssetSha256Variable: PYTHON_315T_MACOS_ARM64_SHA256
     python315tToolcacheArch: arm64-freethreaded
   - name: windows_x86_64
@@ -69,16 +68,18 @@ parameters:
     os: windows
     arch: x86_64
     python315tExpectedVersion: "3.15.0"
-    python315tWindowsPackageName: python-315t-amd64
-    python315tWindowsZip: pythoncore-3.15t-64-3.15.0.zip
+    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-38076878863/python-3.15.0-win32-x64-freethreaded.zip"
+    python315tAssetSha256Variable: PYTHON_315T_WINDOWS_X64_SHA256
+    python315tToolcacheArch: x64-freethreaded
   - name: windows_aarch64
     poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
     imageName: 'windows-2025-gen2-arm64'
     os: windows
     arch: aarch64
     python315tExpectedVersion: "3.15.0"
-    python315tWindowsPackageName: python-315t-arm64
-    python315tWindowsZip: pythoncore-3.15t-arm64-3.15.0.zip
+    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-38076878863/python-3.15.0-win32-arm64-freethreaded.zip"
+    python315tAssetSha256Variable: PYTHON_315T_WINDOWS_ARM64_SHA256
+    python315tToolcacheArch: arm64-freethreaded
 
 # Parameters for building PyQIR
 - name: ACR_SERVER
@@ -136,9 +137,6 @@ extends:
               PYTHON_315T_ASSET_URL: ${{ target.python315tAssetUrl }}
               PYTHON_315T_ASSET_SHA256_VARIABLE: ${{ target.python315tAssetSha256Variable }}
               PYTHON_315T_TOOLCACHE_ARCH: ${{ target.python315tToolcacheArch }}
-            ${{ if target.python315tWindowsPackageName }}:
-              PYTHON_315T_WINDOWS_PACKAGE_NAME: ${{ target.python315tWindowsPackageName }}
-              PYTHON_315T_WINDOWS_ZIP: ${{ target.python315tWindowsZip }}
             ${{ if eq(target.os, 'windows') }}:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)\target\llvm
             ${{ else }}:
@@ -292,59 +290,6 @@ extends:
             - pwsh: ./build.ps1
               displayName: Build
 
-            - task: UniversalPackages@1
-              inputs:
-                command: download
-                feed: 'AzureQuantum/azure-quantum'
-                packageName: $(PYTHON_315T_WINDOWS_PACKAGE_NAME)
-                packageVersion: $(PYTHON_315T_WINDOWS_PACKAGE_VERSION)
-                directory: $(Agent.TempDirectory)\python-3.15t-package-$(System.JobId)
-              displayName: Download Python 3.15t runtime package
-              condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
-
-            - pwsh: |
-                $packageDirectory = Join-Path "$(Agent.TempDirectory)" "python-3.15t-package-$(System.JobId)"
-                $expectedZip = $env:PYTHON_315T_WINDOWS_ZIP
-                if ([string]::IsNullOrWhiteSpace($expectedZip)) {
-                  throw "Missing the expected Python 3.15t runtime ZIP name for this Windows target."
-                }
-
-                $zipMatches = @(
-                  Get-ChildItem -LiteralPath $packageDirectory -Filter $expectedZip -File -Recurse
-                )
-                if ($zipMatches.Count -ne 1) {
-                  $matchingPaths = $zipMatches.FullName -join ", "
-                  throw "Expected exactly one $expectedZip under $packageDirectory, found $($zipMatches.Count): $matchingPaths"
-                }
-                $runtimeZip = $zipMatches[0].FullName
-                Write-Host "Python 3.15t runtime ZIP: $runtimeZip"
-
-                $runtimeDirectory = Join-Path "$(Agent.TempDirectory)" "python-3.15t-runtime-$(System.JobId)"
-                if (Test-Path -LiteralPath $runtimeDirectory) {
-                  Remove-Item -LiteralPath $runtimeDirectory -Recurse -Force -ErrorAction Stop
-                }
-                New-Item -ItemType Directory -Path $runtimeDirectory | Out-Null
-                Expand-Archive -LiteralPath $runtimeZip -DestinationPath $runtimeDirectory
-
-                $pythonExecutableMatches = @(
-                  Get-ChildItem -LiteralPath $runtimeDirectory -Filter "python3.15t.exe" -File -Recurse
-                )
-                if ($pythonExecutableMatches.Count -ne 1) {
-                  $matchingPaths = $pythonExecutableMatches.FullName -join ", "
-                  throw "Expected exactly one python3.15t.exe in $expectedZip, found $($pythonExecutableMatches.Count): $matchingPaths"
-                }
-                $pythonExecutable = $pythonExecutableMatches[0].FullName
-
-                $stableAbiDll = Join-Path (Split-Path -Parent $pythonExecutable) "python3t.dll"
-                if (!(Test-Path -LiteralPath $stableAbiDll -PathType Leaf)) {
-                  throw "python3t.dll was not found beside $pythonExecutable."
-                }
-
-                Write-Host "Python 3.15t executable: $pythonExecutable"
-                Write-Host "##vso[task.setvariable variable=PYTHON_315T_EXECUTABLE]$pythonExecutable"
-              displayName: Extract Python 3.15t runtime
-              condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
-
             - pwsh: |
                 $assetUrl = $env:PYTHON_315T_ASSET_URL
                 $expectedSha256Variable = $env:PYTHON_315T_ASSET_SHA256_VARIABLE
@@ -379,20 +324,27 @@ extends:
                 }
                 Write-Host "Verified SHA-256 for ${assetName}: $actualSha256"
 
-                if (!$assetName.EndsWith(".tar.gz", [StringComparison]::OrdinalIgnoreCase)) {
-                  throw "Unsupported Python 3.15t asset format: $assetName"
+                if ($IsWindows -and $assetName.EndsWith(".zip", [StringComparison]::OrdinalIgnoreCase)) {
+                  Expand-Archive -LiteralPath $assetPath -DestinationPath $extractDirectory
+                  $setupScriptName = "setup.ps1"
                 }
-                & tar -xzf $assetPath -C $extractDirectory
-                if ($LASTEXITCODE -ne 0) {
-                  throw "Failed to extract $assetName."
+                elseif (!$IsWindows -and $assetName.EndsWith(".tar.gz", [StringComparison]::OrdinalIgnoreCase)) {
+                  & tar -xzf $assetPath -C $extractDirectory
+                  if ($LASTEXITCODE -ne 0) {
+                    throw "Failed to extract $assetName."
+                  }
+                  $setupScriptName = "setup.sh"
+                }
+                else {
+                  throw "Unsupported Python 3.15t asset format: $assetName"
                 }
 
                 $setupScriptMatches = @(
-                  Get-ChildItem -Path $extractDirectory -Filter "setup.sh" -File -Recurse
+                  Get-ChildItem -Path $extractDirectory -Filter $setupScriptName -File -Recurse
                 )
                 if ($setupScriptMatches.Count -ne 1) {
                   $matchingNames = $setupScriptMatches.FullName -join ", "
-                  throw "Expected exactly one setup.sh in $assetName, found $($setupScriptMatches.Count): $matchingNames"
+                  throw "Expected exactly one $setupScriptName in $assetName, found $($setupScriptMatches.Count): $matchingNames"
                 }
 
                 $toolDirectory = "$(Agent.ToolsDirectory)"
@@ -403,7 +355,12 @@ extends:
 
                 Push-Location $setupScriptMatches[0].DirectoryName
                 try {
-                  & bash $setupScriptMatches[0].FullName
+                  if ($IsWindows) {
+                    & $setupScriptMatches[0].FullName
+                  }
+                  else {
+                    & bash $setupScriptMatches[0].FullName
+                  }
                   if ($LASTEXITCODE -ne 0) {
                     throw "Python 3.15t setup failed with exit code $LASTEXITCODE."
                   }
@@ -413,15 +370,27 @@ extends:
                 }
 
                 $installDirectory = Join-Path $toolDirectory "Python/$(PYTHON_315_PREBUILT_VERSION)/$toolcacheArchitecture"
-                $pythonExecutable = Join-Path $installDirectory "bin/python"
+                $pythonExecutable = if ($IsWindows) {
+                  Join-Path $installDirectory "python.exe"
+                }
+                else {
+                  Join-Path $installDirectory "bin/python"
+                }
                 if (!(Test-Path -LiteralPath $pythonExecutable -PathType Leaf)) {
                   throw "Python 3.15t executable not found at $pythonExecutable."
+                }
+
+                if ($IsWindows) {
+                  $stableAbiDll = Join-Path $installDirectory "python3t.dll"
+                  if (!(Test-Path -LiteralPath $stableAbiDll -PathType Leaf)) {
+                    throw "python3t.dll was not found beside $pythonExecutable."
+                  }
                 }
 
                 Write-Host "Python 3.15t executable: $pythonExecutable"
                 Write-Host "##vso[task.setvariable variable=PYTHON_315T_EXECUTABLE]$pythonExecutable"
               displayName: Install pinned Python 3.15t distribution
-              condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
+              condition: succeeded()
 
             - pwsh: |
                 $pythonExecutable = "$(PYTHON_315T_EXECUTABLE)"
