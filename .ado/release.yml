@@ -290,6 +290,65 @@ extends:
             - pwsh: ./build.ps1
               displayName: Build
 
+            - task: UsePythonVersion@0
+              name: Python315Probe
+              inputs:
+                versionSpec: "3.15.1"
+                addToPath: false
+                ${{ if eq(target.arch, 'aarch64') }}:
+                  architecture: "arm64"
+                ${{ else }}:
+                  architecture: "x64"
+              displayName: Probe Python 3.15.1 installation
+
+            - pwsh: |
+                $pythonLocation = "$(Python315Probe.pythonLocation)"
+                Write-Host "Resolved Python installation directory: $pythonLocation"
+
+                if ($IsWindows) {
+                  $searchRoot = $pythonLocation
+                  $names = @("python3.15t.exe", "python315t.dll", "python3t.dll")
+                  $freeThreadedPythonName = "python3.15t.exe"
+                }
+                else {
+                  $searchRoot = Join-Path $pythonLocation "bin"
+                  $names = @("python3.15t", "python315t")
+                }
+
+                Write-Host "Files in ${searchRoot}:"
+                Get-ChildItem -LiteralPath $searchRoot -Force | ForEach-Object {
+                  Write-Host "  $($_.FullName)"
+                }
+
+                $matches = @(
+                  Get-ChildItem -LiteralPath $searchRoot -Recurse -Force |
+                    Where-Object Name -In $names
+                )
+                Write-Host "Free-threaded files:"
+                $matches | ForEach-Object { Write-Host "  $($_.FullName)" }
+
+                $freeThreadedPython = if ($IsWindows) {
+                  $matches | Where-Object Name -EQ $freeThreadedPythonName | Select-Object -First 1
+                }
+                else {
+                  $matches | Where-Object Name -In @("python3.15t", "python315t") | Select-Object -First 1
+                }
+
+                $available = $false
+                if ($null -ne $freeThreadedPython) {
+                  & $freeThreadedPython.FullName -c 'import sys, sysconfig; print(sys.executable); print(sys.version); value = sysconfig.get_config_var("Py_GIL_DISABLED"); print(value); raise SystemExit(0 if value == 1 else 1)'
+                  $available = $LASTEXITCODE -eq 0
+                }
+
+                if ($available) {
+                  Write-Host "RESULT: free-threaded interpreter available"
+                }
+                else {
+                  Write-Host "RESULT: free-threaded interpreter not available"
+                }
+                $global:LASTEXITCODE = 0
+              displayName: Inspect Python 3.15.1 installation
+
             - pwsh: |
                 $assetUrl = $env:PYTHON_315T_ASSET_URL
                 $expectedSha256 = $env:PYTHON_315T_ASSET_SHA256
