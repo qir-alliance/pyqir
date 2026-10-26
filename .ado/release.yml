@@ -25,7 +25,7 @@ variables:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN_VERSION: "1.93"
   PYTHON_VERSION: "3.11"
-  PYTHON_315_PREBUILT_VERSION: "3.15.0"
+  PYTHON_315_PREBUILT_VERSION: "3.15.1"
   LLVM_VERSION: 20
   # use this to invalidate the cache. Any time we update the OS
   # image, we should increment this to ensure that the cache is rebuilt.
@@ -50,35 +50,35 @@ parameters:
     imageName: 'macOS-15'
     os: macOS
     arch: x86_64
-    python315tExpectedVersion: "3.15.0"
-    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-38076878863/python-3.15.0-darwin-x64-freethreaded.tar.gz"
-    python315tAssetSha256Variable: PYTHON_315T_MACOS_X64_SHA256
+    python315tExpectedVersion: "3.15.1"
+    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.1-39619321210/python-3.15.1-darwin-x64-freethreaded.tar.gz"
+    python315tAssetSha256: f779e3ceb42e375e936a7c43a8f50d67dea1baa5aebc8cc88eae7be5c461eeb9
     python315tToolcacheArch: x64-freethreaded
   - name: mac_aarch64
     poolName: 'AcesShared'
     os: macOS
     arch: aarch64
-    python315tExpectedVersion: "3.15.0"
-    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-38076878863/python-3.15.0-darwin-arm64-freethreaded.tar.gz"
-    python315tAssetSha256Variable: PYTHON_315T_MACOS_ARM64_SHA256
+    python315tExpectedVersion: "3.15.1"
+    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.1-39619321210/python-3.15.1-darwin-arm64-freethreaded.tar.gz"
+    python315tAssetSha256: c6bfc0d1bfb377d45dd006af338ce38f4adf8a854dddddb9c7b3fba3cfa83b7f
     python315tToolcacheArch: arm64-freethreaded
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
     imageName: 'windows-2022'
     os: windows
     arch: x86_64
-    python315tExpectedVersion: "3.15.0"
-    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-38076878863/python-3.15.0-win32-x64-freethreaded.zip"
-    python315tAssetSha256Variable: PYTHON_315T_WINDOWS_X64_SHA256
+    python315tExpectedVersion: "3.15.1"
+    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.1-39619321210/python-3.15.1-win32-x64-freethreaded.zip"
+    python315tAssetSha256: 046cfd2c852b47043314f5ec0c1ef72b0669b67da4aec368504ff57af0c6d6ee
     python315tToolcacheArch: x64-freethreaded
   - name: windows_aarch64
     poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
     imageName: 'windows-2025-gen2-arm64'
     os: windows
     arch: aarch64
-    python315tExpectedVersion: "3.15.0"
-    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.0-38076878863/python-3.15.0-win32-arm64-freethreaded.zip"
-    python315tAssetSha256Variable: PYTHON_315T_WINDOWS_ARM64_SHA256
+    python315tExpectedVersion: "3.15.1"
+    python315tAssetUrl: "https://github.com/actions/python-versions/releases/download/3.15.1-39619321210/python-3.15.1-win32-arm64-freethreaded.zip"
+    python315tAssetSha256: 14a10d6ed36debd531c6bb44fda5b2042fdb47892b2f4150072baa98cdf71769
     python315tToolcacheArch: arm64-freethreaded
 
 # Parameters for building PyQIR
@@ -135,7 +135,7 @@ extends:
               PYTHON_315T_EXPECTED_RUNTIME_VERSION: ${{ target.python315tExpectedVersion }}
             ${{ if target.python315tAssetUrl }}:
               PYTHON_315T_ASSET_URL: ${{ target.python315tAssetUrl }}
-              PYTHON_315T_ASSET_SHA256_VARIABLE: ${{ target.python315tAssetSha256Variable }}
+              PYTHON_315T_ASSET_SHA256: ${{ target.python315tAssetSha256 }}
               PYTHON_315T_TOOLCACHE_ARCH: ${{ target.python315tToolcacheArch }}
             ${{ if eq(target.os, 'windows') }}:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)\target\llvm
@@ -292,17 +292,16 @@ extends:
 
             - pwsh: |
                 $assetUrl = $env:PYTHON_315T_ASSET_URL
-                $expectedSha256Variable = $env:PYTHON_315T_ASSET_SHA256_VARIABLE
+                $expectedSha256 = $env:PYTHON_315T_ASSET_SHA256
                 $toolcacheArchitecture = $env:PYTHON_315T_TOOLCACHE_ARCH
                 if ([string]::IsNullOrWhiteSpace($assetUrl) -or
-                    [string]::IsNullOrWhiteSpace($expectedSha256Variable) -or
+                    [string]::IsNullOrWhiteSpace($expectedSha256) -or
                     [string]::IsNullOrWhiteSpace($toolcacheArchitecture)) {
                   throw "Missing pinned Python 3.15t asset metadata for this target."
                 }
 
-                $expectedSha256 = [Environment]::GetEnvironmentVariable($expectedSha256Variable)
                 if ($expectedSha256 -notmatch "^[a-fA-F0-9]{64}$") {
-                  throw "Define the non-secret ADO pipeline variable $expectedSha256Variable with the published SHA-256 for this Python 3.15t asset."
+                  throw "The pinned Python 3.15t asset SHA-256 must contain exactly 64 hexadecimal characters."
                 }
 
                 $assetName = [System.IO.Path]::GetFileName(([Uri]$assetUrl).AbsolutePath)
