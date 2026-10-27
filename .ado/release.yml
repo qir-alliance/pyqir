@@ -34,25 +34,25 @@ parameters:
 - name: matrix
   type: object
   default:
-  - name: linux_x86_64
-    poolName: 'Azure-Pipelines-DevTools-EO'
-    imageName: 'ubuntu-22.04'
-    os: linux
-    arch: x86_64
-  - name: linux_aarch64
-    poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
-    imageName: 'azurelinux-3.0-gen2-arm64'
-    os: linux
-    arch: aarch64
-  - name: mac_x86_64
-    poolName: 'Azure Pipelines'
-    imageName: 'macOS-15'
-    os: macOS
-    arch: x86_64
-  - name: mac_aarch64
-    poolName: 'AcesShared'
-    os: macOS
-    arch: aarch64
+  # - name: linux_x86_64
+  #   poolName: 'Azure-Pipelines-DevTools-EO'
+  #   imageName: 'ubuntu-22.04'
+  #   os: linux
+  #   arch: x86_64
+  # - name: linux_aarch64
+  #   poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
+  #   imageName: 'azurelinux-3.0-gen2-arm64'
+  #   os: linux
+  #   arch: aarch64
+  # - name: mac_x86_64
+  #   poolName: 'Azure Pipelines'
+  #   imageName: 'macOS-15'
+  #   os: macOS
+  #   arch: x86_64
+  # - name: mac_aarch64
+  #   poolName: 'AcesShared'
+  #   os: macOS
+  #   arch: aarch64
   - name: windows_x86_64
     poolName: 'Azure-Pipelines-DevTools-EO'
     imageName: 'windows-2022'
@@ -284,19 +284,37 @@ extends:
               displayName: Install Python 3.15.2 free-threaded
 
             - pwsh: |
-                $agentTempDirectory = "$(Agent.TempDirectory)"
                 $diagnosticDirectory = Join-Path "$(Build.ArtifactStagingDirectory)" "python-3.15.2-installer-logs"
                 New-Item -ItemType Directory -Path $diagnosticDirectory -Force | Out-Null
 
+                $burnLogDirectory = @(
+                  $env:TMP
+                  $env:TEMP
+                  $env:USERPROFILE
+                  $env:SystemRoot
+                ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 1
+
+                $sessionId = [Diagnostics.Process]::GetCurrentProcess().SessionId.ToString()
+                $trimmedBurnLogDirectory = $burnLogDirectory.TrimEnd('\')
+                if ((Split-Path -Path $trimmedBurnLogDirectory -Leaf) -eq $sessionId) {
+                  $burnLogDirectory = Split-Path -Path $trimmedBurnLogDirectory -Parent
+                }
+
+                Write-Host "Burn log directory: $burnLogDirectory"
+
                 $installerLogs = @(
-                  Get-ChildItem -LiteralPath $agentTempDirectory -Filter "Python 3.15.2*.log" -File -Recurse |
+                  Get-ChildItem -LiteralPath $burnLogDirectory -Filter "Python 3.15.2*.log" -File |
                     Sort-Object FullName
                 )
 
                 if ($installerLogs.Count -eq 0) {
-                  $message = "No Python 3.15.2 installer logs were found under $agentTempDirectory."
-                  Write-Warning $message
-                  Set-Content -LiteralPath (Join-Path $diagnosticDirectory "no-installer-logs-found.txt") -Value $message
+                  Write-Warning "No Python 3.15.2 installer logs were found."
+                  Write-Host "TMP: $env:TMP"
+                  Write-Host "TEMP: $env:TEMP"
+                  Write-Host "USERPROFILE: $env:USERPROFILE"
+                  Write-Host "SystemRoot: $env:SystemRoot"
+                  Write-Host "Burn log directory: $burnLogDirectory"
+                  return
                 }
 
                 foreach ($installerLog in $installerLogs) {
