@@ -129,6 +129,11 @@ extends:
               condition: succeeded()
               targetPath: $(System.DefaultWorkingDirectory)/target/wheels
               artifactName: wheel.${{ target.os }}.${{ target.arch }}
+            - output: pipelineArtifact
+              displayName: 'Upload Python 3.15.2 installer diagnostics for ${{ target.arch }}'
+              condition: and(failed(), eq(variables['Agent.OS'], 'Windows_NT'))
+              targetPath: $(Build.ArtifactStagingDirectory)/python-3.15.2-installer-logs
+              artifactName: python-3.15.2-installer-logs.${{ target.arch }}
           steps:
           - task: PipAuthenticate@1
             displayName: Pip Authenticate
@@ -279,6 +284,30 @@ extends:
               displayName: Install Python 3.15.2 free-threaded
 
             - pwsh: |
+                $agentTempDirectory = "$(Agent.TempDirectory)"
+                $diagnosticDirectory = Join-Path "$(Build.ArtifactStagingDirectory)" "python-3.15.2-installer-logs"
+                New-Item -ItemType Directory -Path $diagnosticDirectory -Force | Out-Null
+
+                $installerLogs = @(
+                  Get-ChildItem -LiteralPath $agentTempDirectory -Filter "Python 3.15.2*.log" -File -Recurse |
+                    Sort-Object FullName
+                )
+
+                if ($installerLogs.Count -eq 0) {
+                  $message = "No Python 3.15.2 installer logs were found under $agentTempDirectory."
+                  Write-Warning $message
+                  Set-Content -LiteralPath (Join-Path $diagnosticDirectory "no-installer-logs-found.txt") -Value $message
+                }
+
+                foreach ($installerLog in $installerLogs) {
+                  Write-Host "===== $($installerLog.FullName) ====="
+                  Get-Content -LiteralPath $installerLog.FullName
+                  Copy-Item -LiteralPath $installerLog.FullName -Destination $diagnosticDirectory
+                }
+              displayName: Collect Python 3.15.2 installer diagnostics
+              condition: and(failed(), eq(variables['Agent.OS'], 'Windows_NT'))
+
+            - pwsh: |
                 $pythonLocation = "$(Python315t.pythonLocation)"
                 Write-Host "pythonLocation: $pythonLocation"
 
@@ -349,20 +378,24 @@ extends:
                 if ($LASTEXITCODE -ne 0) {
                   throw "Failed to install the ABI3T wheel and test dependencies."
                 }
-                & $pythonExecutable -I -c 'import pyqir, sysconfig; print("Imported PyQIR:", pyqir.__file__); gil_disabled = sysconfig.get_config_var("Py_GIL_DISABLED"); print("Py_GIL_DISABLED:", gil_disabled); assert gil_disabled == 1'
+                & $pythonExecutable -I -c 'import pyqir, sys, sysconfig; print("Python executable:", sys.executable); print("Python version:", sys.version); print("Imported PyQIR:", pyqir.__file__); gil_disabled = sysconfig.get_config_var("Py_GIL_DISABLED"); print("Py_GIL_DISABLED:", gil_disabled); assert sys.version_info[:3] == (3, 15, 2); assert gil_disabled == 1'
                 if ($LASTEXITCODE -ne 0) {
                   throw "The installed ABI3T wheel failed import validation."
                 }
 
+                $pytestExitCode = 0
                 Push-Location (Join-Path "$(System.DefaultWorkingDirectory)" "pyqir")
                 try {
                   & $pythonExecutable -I -m pytest
-                  if ($LASTEXITCODE -ne 0) {
-                    throw "PyQIR tests failed under Python 3.15.2 free-threaded."
-                  }
+                  $pytestExitCode = $LASTEXITCODE
                 }
                 finally {
                   Pop-Location
+                }
+
+                if ($pytestExitCode -ne 0) {
+                  Write-Host "##vso[task.logissue type=error]PyQIR tests failed under Python 3.15.2 free-threaded with exit code $pytestExitCode."
+                  exit $pytestExitCode
                 }
               displayName: Test PyQIR ABI3T wheel
 
