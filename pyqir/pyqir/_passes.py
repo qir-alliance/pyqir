@@ -106,7 +106,7 @@ class QirModuleVisitor:
                 # topological order for programs that happen to be a Directed Acyclic Graph,
                 # we need to reverse the order of successors.
                 for b in reversed(block.terminator.successors):
-                    if b not in to_visit:
+                    if b not in to_visit and b not in blocks:
                         blocks.append(b)
         for block in to_visit.values():
             self._on_block(block)
