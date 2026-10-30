@@ -324,7 +324,7 @@ extends:
             ls $(System.DefaultWorkingDirectory)/target/wheels
           displayName: Display Py Artifacts in Publishing Dir
 
-        - task: EsrpRelease@9
+        - task: EsrpRelease@14
           displayName: Publish Py Packages
           inputs:
             connectedservicename: 'PME ESRP Azure Connection'
