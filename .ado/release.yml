@@ -114,6 +114,10 @@ extends:
             arch: ${{ target.arch }}
             ${{ if eq(target.os, 'windows') }}:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)\target\llvm
+                ${{ if eq(target.arch, 'aarch64') }}:
+                  PYTHON315T_NUGET_PACKAGE: pythonarm64-freethreaded
+                ${{ else }}:
+                  PYTHON315T_NUGET_PACKAGE: python-freethreaded
             ${{ else }}:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)/target/llvm
           timeoutInMinutes: 300
@@ -264,6 +268,131 @@ extends:
             # Build PyQIR on Mac and Windows
             - pwsh: ./build.ps1
               displayName: Build
+
+            # On Windows, UsePythonVersion@0 runs the python.org installer, which downloads freethreaded.msi and is
+            # blocked by network isolation. Take the same interpreter from its NuGet package through the CFS feed
+            # instead; -Source pins that feed so nuget.exe cannot fall back to nuget.org.
+            - ${{ if eq(target.os, 'windows') }}:
+              - task: NuGetCommand@2
+                displayName: Download Python 3.15.2 free-threaded
+                inputs:
+                  command: custom
+                  arguments: >-
+                    install $(PYTHON315T_NUGET_PACKAGE)
+                    -Version 3.15.2
+                    -ExcludeVersion
+                    -OutputDirectory $(Agent.TempDirectory)\python315t
+                    -Source https://pkgs.dev.azure.com/ms-azurequantum/AzureQuantum/_packaging/azure-quantum/nuget/v3/index.json
+
+              - pwsh: |
+                  $tools = (Resolve-Path (Join-Path "$(Agent.TempDirectory)" "python315t\$(PYTHON315T_NUGET_PACKAGE)\tools")).Path
+                  Write-Host "##vso[task.setvariable variable=pythonLocation;isOutput=true]$tools"
+                name: Python315t
+                displayName: Locate Python 3.15.2 free-threaded
+
+            - ${{ else }}:
+              - task: UsePythonVersion@0
+                name: Python315t
+                inputs:
+                  versionSpec: "3.15.2"
+                  addToPath: false
+                  ${{ if eq(target.arch, 'aarch64') }}:
+                    architecture: "arm64-freethreaded"
+                  ${{ else }}:
+                    architecture: "x64-freethreaded"
+                displayName: Install Python 3.15.2 free-threaded
+
+            - pwsh: |
+                $pythonLocation = "$(Python315t.pythonLocation)"
+                Write-Host "pythonLocation: $pythonLocation"
+
+                $pythonExecutable = if ($IsWindows) {
+                  Join-Path $pythonLocation "python.exe"
+                }
+                else {
+                  Join-Path $pythonLocation "bin/python"
+                }
+
+                & $pythonExecutable -c 'import sys, sysconfig; print(sys.executable); print(sys.version); gil_disabled = sysconfig.get_config_var("Py_GIL_DISABLED"); print(gil_disabled); assert sys.version_info[:3] == (3, 15, 2); assert gil_disabled == 1'
+                if ($LASTEXITCODE -ne 0) {
+                  throw "Python 3.15.2 free-threaded interpreter verification failed."
+                }
+              displayName: Verify Python 3.15.2 free-threaded
+
+            - pwsh: |
+                $pythonExecutable = if ($IsWindows) {
+                  Join-Path "$(Python315t.pythonLocation)" "python.exe"
+                }
+                else {
+                  Join-Path "$(Python315t.pythonLocation)" "bin/python"
+                }
+
+                python -m pip install "maturin~=1.15.0"
+                if ($LASTEXITCODE -ne 0) {
+                  throw "Failed to install Maturin."
+                }
+                python -m maturin build `
+                  --manifest-path pyqir/Cargo.toml `
+                  --release `
+                  --features llvm20-1 `
+                  --interpreter $pythonExecutable
+                if ($LASTEXITCODE -ne 0) {
+                  throw "Failed to build the ABI3T wheel."
+                }
+
+                $wheelDirectory = Join-Path "$(System.DefaultWorkingDirectory)" "target/wheels"
+                $abi3tWheels = @(
+                  Get-ChildItem -LiteralPath $wheelDirectory -Filter "pyqir-*-cp315-abi3.abi3t-*.whl" -File
+                )
+                if ($abi3tWheels.Count -ne 1) {
+                  $wheelNames = $abi3tWheels.Name -join ", "
+                  throw "Expected exactly one cp315-abi3.abi3t wheel, found $($abi3tWheels.Count): $wheelNames"
+                }
+                Write-Host "Built ABI3T wheel: $($abi3tWheels[0].FullName)"
+              displayName: Build PyQIR ABI3T wheel
+
+            - pwsh: |
+                $pythonExecutable = if ($IsWindows) {
+                  Join-Path "$(Python315t.pythonLocation)" "python.exe"
+                }
+                else {
+                  Join-Path "$(Python315t.pythonLocation)" "bin/python"
+                }
+
+                $wheelDirectory = Join-Path "$(System.DefaultWorkingDirectory)" "target/wheels"
+                $abi3tWheels = @(
+                  Get-ChildItem -LiteralPath $wheelDirectory -Filter "pyqir-*-cp315-abi3.abi3t-*.whl" -File
+                )
+                if ($abi3tWheels.Count -ne 1) {
+                  $wheelNames = $abi3tWheels.Name -join ", "
+                  throw "Expected exactly one cp315-abi3.abi3t wheel, found $($abi3tWheels.Count): $wheelNames"
+                }
+                $wheelWithTests = "$($abi3tWheels[0].FullName)[test]"
+
+                & $pythonExecutable -m pip install --force-reinstall $wheelWithTests
+                if ($LASTEXITCODE -ne 0) {
+                  throw "Failed to install the ABI3T wheel and test dependencies."
+                }
+                & $pythonExecutable -I -c 'import pyqir, sys, sysconfig; print("Python executable:", sys.executable); print("Python version:", sys.version); print("Imported PyQIR:", pyqir.__file__); gil_disabled = sysconfig.get_config_var("Py_GIL_DISABLED"); print("Py_GIL_DISABLED:", gil_disabled); assert sys.version_info[:3] == (3, 15, 2); assert gil_disabled == 1'
+                if ($LASTEXITCODE -ne 0) {
+                  throw "The installed ABI3T wheel failed import validation."
+                }
+
+                $pytestExitCode = 0
+                Push-Location (Join-Path "$(System.DefaultWorkingDirectory)" "pyqir")
+                try {
+                  & $pythonExecutable -I -m pytest
+                  $pytestExitCode = $LASTEXITCODE
+                }
+                finally {
+                  Pop-Location
+                }
+
+                if ($pytestExitCode -ne 0) {
+                  Write-Host "##vso[task.logissue type=error]PyQIR tests failed under Python 3.15.2 free-threaded with exit code $pytestExitCode."
+                  exit $pytestExitCode
+                }
+              displayName: Test PyQIR ABI3T wheel
 
           - ${{ else }}:
             # Run the tests and examples outside the container for the Linux builds
