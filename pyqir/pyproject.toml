@@ -20,7 +20,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest ~= 7.2.0"]
+test = ["pytest == 9.1.1"]
 
 [build-system]
 requires = ["maturin ~= 1.15.0"]
