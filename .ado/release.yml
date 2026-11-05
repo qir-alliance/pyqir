@@ -359,39 +359,7 @@ extends:
                   Join-Path "$(Python315t.pythonLocation)" "bin/python"
                 }
 
-                $wheelDirectory = Join-Path "$(System.DefaultWorkingDirectory)" "target/wheels"
-                $abi3tWheels = @(
-                  Get-ChildItem -LiteralPath $wheelDirectory -Filter "pyqir-*-cp315-abi3.abi3t-*.whl" -File
-                )
-                if ($abi3tWheels.Count -ne 1) {
-                  $wheelNames = $abi3tWheels.Name -join ", "
-                  throw "Expected exactly one cp315-abi3.abi3t wheel, found $($abi3tWheels.Count): $wheelNames"
-                }
-                $wheelWithTests = "$($abi3tWheels[0].FullName)[test]"
-
-                & $pythonExecutable -m pip install --force-reinstall $wheelWithTests
-                if ($LASTEXITCODE -ne 0) {
-                  throw "Failed to install the ABI3T wheel and test dependencies."
-                }
-                & $pythonExecutable -I -c 'import pyqir, sys, sysconfig; print("Python executable:", sys.executable); print("Python version:", sys.version); print("Imported PyQIR:", pyqir.__file__); gil_disabled = sysconfig.get_config_var("Py_GIL_DISABLED"); print("Py_GIL_DISABLED:", gil_disabled); assert sys.version_info[:3] == (3, 15, 2); assert gil_disabled == 1'
-                if ($LASTEXITCODE -ne 0) {
-                  throw "The installed ABI3T wheel failed import validation."
-                }
-
-                $pytestExitCode = 0
-                Push-Location (Join-Path "$(System.DefaultWorkingDirectory)" "pyqir")
-                try {
-                  & $pythonExecutable -I -m pytest
-                  $pytestExitCode = $LASTEXITCODE
-                }
-                finally {
-                  Pop-Location
-                }
-
-                if ($pytestExitCode -ne 0) {
-                  Write-Host "##vso[task.logissue type=error]PyQIR tests failed under Python 3.15.2 free-threaded with exit code $pytestExitCode."
-                  exit $pytestExitCode
-                }
+                ./eng/build.ps1 -taskList test-abi3t -properties @{ Python = $pythonExecutable }
               displayName: Test PyQIR ABI3T wheel
 
           - ${{ else }}:

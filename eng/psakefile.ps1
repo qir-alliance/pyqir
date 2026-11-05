@@ -93,6 +93,23 @@ task test -depends install-wheel {
     Invoke-LoggedCommand -workingDirectory $Pyqir { & $Python -I -m pytest }
 }
 
+task test-abi3t {
+    $abi3tWheels = @(
+        Get-ChildItem -LiteralPath $Wheels -Filter "pyqir-*-cp315-abi3.abi3t-*.whl" -File
+    )
+    $wheelNames = $abi3tWheels.Name -join ", "
+    Assert ($abi3tWheels.Count -eq 1) "Expected exactly one cp315-abi3.abi3t wheel, found $($abi3tWheels.Count): $wheelNames"
+    $wheelWithTests = "$($abi3tWheels[0].FullName)[test]"
+
+    Invoke-LoggedCommand {
+        & $Python -m pip install --force-reinstall $wheelWithTests
+    }
+    Invoke-LoggedCommand {
+        & $Python -I -c 'import pyqir; print("Imported PyQIR:", pyqir.__file__)'
+    }
+    Invoke-LoggedCommand -workingDirectory $Pyqir { & $Python -I -m pytest }
+}
+
 task wheelhouse -precondition { -not (Test-Path (Join-Path $Wheels *.whl)) } {
     Invoke-Task build
 }
