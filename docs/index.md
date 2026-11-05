@@ -24,7 +24,7 @@ You can also {doc}`build PyQIR from source <building>`.
 
 ## Supported Systems
 
-PyQIR runs on most 64-bit x86 systems with Python 3.7 or newer.
+PyQIR runs on most 64-bit x86 systems with Python 3.10 or newer.
 
 There are two tiers of support.
 Tier 1 systems are guaranteed to work and we publish official binaries for them.
