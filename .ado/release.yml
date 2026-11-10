@@ -272,6 +272,8 @@ extends:
             # On Windows, UsePythonVersion@0 runs the python.org installer, which downloads freethreaded.msi and is
             # blocked by network isolation. Take the same interpreter from its NuGet package through the CFS feed
             # instead; -Source pins that feed so nuget.exe cannot fall back to nuget.org.
+            # More information on using Python from NuGet packages on Windows:
+            # https://docs.python.org/3/using/windows.html#the-nuget-org-packages
             - ${{ if eq(target.os, 'windows') }}:
               - task: NuGetCommand@2
                 displayName: Download Python 3.15.2 free-threaded
