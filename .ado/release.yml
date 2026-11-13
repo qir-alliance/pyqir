@@ -25,6 +25,7 @@ variables:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN_VERSION: "1.93"
   PYTHON_VERSION: "3.11"
+  PYTHON_FREETHREADED_VERSION: "3.15.2"
   LLVM_VERSION: 20
   # use this to invalidate the cache. Any time we update the OS
   # image, we should increment this to ensure that the cache is rebuilt.
@@ -276,33 +277,33 @@ extends:
             # https://docs.python.org/3/using/windows.html#the-nuget-org-packages
             - ${{ if eq(target.os, 'windows') }}:
               - task: NuGetCommand@2
-                displayName: Download Python 3.15.2 free-threaded
+                displayName: Download Python 3.15 free-threaded
                 inputs:
                   command: custom
                   arguments: >-
                     install $(PYTHON315T_NUGET_PACKAGE)
-                    -Version 3.15.2
+                    -Version $(PYTHON_FREETHREADED_VERSION)
                     -ExcludeVersion
                     -OutputDirectory $(Agent.TempDirectory)\python315t
-                    -Source https://pkgs.dev.azure.com/ms-azurequantum/AzureQuantum/_packaging/azure-quantum/nuget/v3/index.json
+                    -Source $(PYTHON_NUGET_FEED)
 
               - pwsh: |
                   $tools = (Resolve-Path (Join-Path "$(Agent.TempDirectory)" "python315t\$(PYTHON315T_NUGET_PACKAGE)\tools")).Path
                   Write-Host "##vso[task.setvariable variable=pythonLocation;isOutput=true]$tools"
                 name: Python315t
-                displayName: Locate Python 3.15.2 free-threaded
+                displayName: Locate Python 3.15 free-threaded
 
             - ${{ else }}:
               - task: UsePythonVersion@0
                 name: Python315t
                 inputs:
-                  versionSpec: "3.15.2"
+                  versionSpec: $(PYTHON_FREETHREADED_VERSION)
                   addToPath: false
                   ${{ if eq(target.arch, 'aarch64') }}:
                     architecture: "arm64-freethreaded"
                   ${{ else }}:
                     architecture: "x64-freethreaded"
-                displayName: Install Python 3.15.2 free-threaded
+                displayName: Install Python 3.15 free-threaded
 
             - pwsh: |
                 $pythonLocation = "$(Python315t.pythonLocation)"
@@ -315,11 +316,11 @@ extends:
                   Join-Path $pythonLocation "bin/python"
                 }
 
-                & $pythonExecutable -c 'import sys, sysconfig; print(sys.executable); print(sys.version); gil_disabled = sysconfig.get_config_var("Py_GIL_DISABLED"); print(gil_disabled); assert sys.version_info[:3] == (3, 15, 2); assert gil_disabled == 1'
+                & $pythonExecutable -c 'import sys, sysconfig; print(sys.executable); print(sys.version); gil_disabled = sysconfig.get_config_var("Py_GIL_DISABLED"); print(gil_disabled); assert sys.version_info[:2] == (3, 15); assert gil_disabled == 1'
                 if ($LASTEXITCODE -ne 0) {
-                  throw "Python 3.15.2 free-threaded interpreter verification failed."
+                  throw "Python 3.15 free-threaded interpreter verification failed."
                 }
-              displayName: Verify Python 3.15.2 free-threaded
+              displayName: Verify Python 3.15 free-threaded
 
             - pwsh: |
                 $pythonExecutable = if ($IsWindows) {
