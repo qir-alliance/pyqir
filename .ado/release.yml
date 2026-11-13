@@ -294,15 +294,40 @@ extends:
                 displayName: Locate Python 3.15 free-threaded
 
             - ${{ else }}:
-              - task: UsePythonVersion@0
+              # UsePythonVersion@0 rejects free-threaded architectures:
+              # https://github.com/microsoft/azure-pipelines-tasks/pull/22752
+              - pwsh: |
+                  $ErrorActionPreference = "Stop"
+                  $version = "$(PYTHON_FREETHREADED_VERSION)"
+                  $arch = if ("${{ target.arch }}" -eq "aarch64") { "arm64-freethreaded" } else { "x64-freethreaded" }
+                  $manifest = Invoke-RestMethod "https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json"
+                  $files = @(
+                    ($manifest | Where-Object version -eq $version).files |
+                      Where-Object { $_.platform -eq "darwin" -and $_.arch -eq $arch }
+                  )
+                  if ($files.Count -ne 1) {
+                    throw "Expected one Python $version ($arch) macOS package, found $($files.Count)."
+                  }
+
+                  $installer = Join-Path "$(Agent.TempDirectory)" "python-freethreaded"
+                  New-Item -ItemType Directory -Path $installer -Force | Out-Null
+                  $archive = Join-Path $installer "python.tar.gz"
+                  Invoke-WebRequest $files[0].download_url -OutFile $archive
+                  tar -xzf $archive -C $installer
+                  if ($LASTEXITCODE -ne 0) { throw "Failed to extract $($files[0].filename)." }
+
+                  Push-Location $installer
+                  try {
+                    bash ./setup.sh
+                    if ($LASTEXITCODE -ne 0) { throw "Python installer failed." }
+                  }
+                  finally {
+                    Pop-Location
+                  }
+
+                  $location = Join-Path "$(Agent.ToolsDirectory)" "Python/$version/$arch"
+                  Write-Host "##vso[task.setvariable variable=pythonLocation;isOutput=true]$location"
                 name: Python315t
-                inputs:
-                  versionSpec: $(PYTHON_FREETHREADED_VERSION)
-                  addToPath: false
-                  ${{ if eq(target.arch, 'aarch64') }}:
-                    architecture: "arm64-freethreaded"
-                  ${{ else }}:
-                    architecture: "x64-freethreaded"
                 displayName: Install Python 3.15 free-threaded
 
             - pwsh: |
