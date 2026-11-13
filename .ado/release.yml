@@ -285,7 +285,7 @@ extends:
                     -Version $(PYTHON_FREETHREADED_VERSION)
                     -ExcludeVersion
                     -OutputDirectory $(Agent.TempDirectory)\python315t
-                    -Source $(PYTHON_NUGET_FEED)
+                    -Source $(pythonNugetFeed)
 
               - pwsh: |
                   $tools = (Resolve-Path (Join-Path "$(Agent.TempDirectory)" "python315t\$(PYTHON315T_NUGET_PACKAGE)\tools")).Path
