@@ -1,25 +1,8 @@
-name: pyqir-publish-$(BuildId)
+name: pyqir-macos-test-$(BuildId)
 
-# This pipeline is used to build and publish the PyQIR package
-# It uses a Microsoft ADO template for additional security checks.
-
-# Run on merges to main to ensure that the latest code
-# is always able to be published.
-trigger:
-  branches:
-    include:
-    - main
-
-# Run the pipeline every day at 5:00 AM to ensure
-# codeql and other governance checks are up-to-date.
-schedules:
-- cron: "0 5 * * *"
-  displayName: 'Build for Component Governance'
-  branches:
-    include:
-    - main
-  always: true
-
+# Scratch validation only: build and test both Macs without releasing packages.
+trigger: none
+pr: none
 
 variables:
   CARGO_TERM_COLOR: always
@@ -35,16 +18,6 @@ parameters:
 - name: matrix
   type: object
   default:
-  - name: linux_x86_64
-    poolName: 'Azure-Pipelines-DevTools-EO'
-    imageName: 'ubuntu-22.04'
-    os: linux
-    arch: x86_64
-  - name: linux_aarch64
-    poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
-    imageName: 'azurelinux-3.0-gen2-arm64'
-    os: linux
-    arch: aarch64
   - name: mac_x86_64
     poolName: 'Azure Pipelines'
     imageName: 'macOS-15'
@@ -53,16 +26,6 @@ parameters:
   - name: mac_aarch64
     poolName: 'AcesShared'
     os: macOS
-    arch: aarch64
-  - name: windows_x86_64
-    poolName: 'Azure-Pipelines-DevTools-EO'
-    imageName: 'windows-2022'
-    os: windows
-    arch: x86_64
-  - name: windows_aarch64
-    poolName: 'Azure-Pipelines-DevTools-ARM64-EO'
-    imageName: 'windows-2025-gen2-arm64'
-    os: windows
     arch: aarch64
 
 # Parameters for building PyQIR
@@ -294,15 +257,40 @@ extends:
                 displayName: Locate Python 3.15 free-threaded
 
             - ${{ else }}:
-              - task: UsePythonVersion@0
+              # UsePythonVersion@0 rejects free-threaded architectures:
+              # https://github.com/microsoft/azure-pipelines-tasks/pull/22752
+              - pwsh: |
+                  $ErrorActionPreference = "Stop"
+                  $version = "$(PYTHON_FREETHREADED_VERSION)"
+                  $arch = if ("${{ target.arch }}" -eq "aarch64") { "arm64-freethreaded" } else { "x64-freethreaded" }
+                  $manifest = Invoke-RestMethod "https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json"
+                  $files = @(
+                    ($manifest | Where-Object version -eq $version).files |
+                      Where-Object { $_.platform -eq "darwin" -and $_.arch -eq $arch }
+                  )
+                  if ($files.Count -ne 1) {
+                    throw "Expected one Python $version ($arch) macOS package, found $($files.Count)."
+                  }
+
+                  $installer = Join-Path "$(Agent.TempDirectory)" "python-freethreaded"
+                  New-Item -ItemType Directory -Path $installer -Force | Out-Null
+                  $archive = Join-Path $installer "python.tar.gz"
+                  Invoke-WebRequest $files[0].download_url -OutFile $archive
+                  tar -xzf $archive -C $installer
+                  if ($LASTEXITCODE -ne 0) { throw "Failed to extract $($files[0].filename)." }
+
+                  Push-Location $installer
+                  try {
+                    bash ./setup.sh
+                    if ($LASTEXITCODE -ne 0) { throw "Python installer failed." }
+                  }
+                  finally {
+                    Pop-Location
+                  }
+
+                  $location = Join-Path "$(Agent.ToolsDirectory)" "Python/$version/$arch"
+                  Write-Host "##vso[task.setvariable variable=pythonLocation;isOutput=true]$location"
                 name: Python315t
-                inputs:
-                  versionSpec: $(PYTHON_FREETHREADED_VERSION)
-                  addToPath: false
-                  ${{ if eq(target.arch, 'aarch64') }}:
-                    architecture: "arm64-freethreaded"
-                  ${{ else }}:
-                    architecture: "x64-freethreaded"
                 displayName: Install Python 3.15 free-threaded
 
             - pwsh: |
@@ -379,63 +367,3 @@ extends:
               ls target/wheels/*
             displayName: List Py Packages on non-Win
             condition: and(succeeded(), ne(variables['Agent.OS'], 'Windows_NT'))
-
-    - stage: approval
-      displayName: Approval
-      dependsOn: build
-      condition: and(succeeded(), eq(variables['Build.Reason'], 'Manual'))
-      jobs:
-      - job: "Approval"
-        pool: server
-        timeoutInMinutes: 1440 # job times out in 1 day
-        steps:
-        - task: ManualValidation@0
-          timeoutInMinutes: 1440 # task times out in 1 day
-          inputs:
-            notifyUsers: ''
-            instructions: 'Please verify artifacts and approve the release'
-            onTimeout: 'reject'
-
-    - stage: release
-      displayName: Release
-      dependsOn: approval
-      condition: and(succeeded(), eq(variables['Build.Reason'], 'Manual'))
-      jobs:
-      # We will get a warning about extra files in the sbom validation saying it failed.
-      # This is expected as we have the wheels being downloaded to the same directory.
-      # So each successive wheel will have the previous wheel in the directory and each
-      # will be flagged as an extra file. See:
-      # http://aka.ms/drop-validation-failure-additional-files
-      - job: "Publish_Python_Packages"
-        pool:
-          name: 'Azure-Pipelines-DevTools-EO'
-          image: 'ubuntu-latest'
-          os: linux
-        templateContext:
-          type: releaseJob
-          isProduction: true
-          inputs:
-          - ${{ each target in parameters.matrix }}:
-            - input: pipelineArtifact
-              artifactName: wheel.${{ target.os }}.${{ target.arch }}
-              targetPath: $(System.DefaultWorkingDirectory)/target/wheels
-        steps:
-        - script: |
-            ls $(System.DefaultWorkingDirectory)/target/wheels
-          displayName: Display Py Artifacts in Publishing Dir
-
-        - task: EsrpRelease@14
-          displayName: Publish Py Packages
-          inputs:
-            connectedservicename: 'PME ESRP Azure Connection'
-            usemanagedidentity: true
-            keyvaultname: 'quantum-esrp-kv'
-            signcertname: ESRPCert
-            clientid: '832c049d-cd07-4c1c-bfa5-c07250d190cb'
-            contenttype: PyPi
-            domaintenantid: '975f013f-7f24-47e8-a7d3-abc4752bf346'
-            folderlocation: '$(System.DefaultWorkingDirectory)/target/wheels'
-            waitforreleasecompletion: true
-            owners: 'billti@microsoft.com'
-            approvers: 'billti@microsoft.com'
-            mainpublisher: ESRPRELPACMAN
