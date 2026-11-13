@@ -402,7 +402,7 @@ mod string_attribute_tests {
                 },
                 |f| {
                     let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
-                    assert!(count == 4);
+                    assert_eq!(count, 4);
                 },
             );
         }
@@ -416,7 +416,7 @@ mod string_attribute_tests {
                 },
                 |f| {
                     let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
-                    assert!(count == 1);
+                    assert_eq!(count, 1);
                     let attrs = get_attributes(f, LLVMAttributeFunctionIndex);
                     for attr in attrs {
                         if let Some(value) = super::get_string_attribute_value(attr) {
@@ -438,7 +438,7 @@ mod string_attribute_tests {
                 },
                 |f| {
                     let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
-                    assert!(count == 1);
+                    assert_eq!(count, 1);
                     let attrs = get_attributes(f, LLVMAttributeFunctionIndex);
                     for attr in attrs {
                         assert_eq!(super::get_string_attribute_kind(attr), "entry_point");
@@ -461,7 +461,7 @@ mod string_attribute_tests {
                 },
                 |f| {
                     let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
-                    assert!(count == 1);
+                    assert_eq!(count, 1);
                     let attrs = get_attributes(f, LLVMAttributeFunctionIndex);
                     for attr in attrs {
                         assert_eq!(super::get_string_attribute_kind(attr), "qir_profiles");
@@ -479,7 +479,7 @@ mod string_attribute_tests {
                 |_, _, _| {},
                 |f| {
                     let count = get_attribute_count(f, LLVMAttributeFunctionIndex);
-                    assert!(count == 0);
+                    assert_eq!(count, 0);
                 },
             );
         }
@@ -491,7 +491,7 @@ mod string_attribute_tests {
                 |_, _, _| {},
                 |f| {
                     let count = get_attribute_count(f, LLVMAttributeReturnIndex);
-                    assert!(count == 0);
+                    assert_eq!(count, 0);
                 },
             );
         }
@@ -504,7 +504,7 @@ mod string_attribute_tests {
                 |f| {
                     const INVALID_PARAM_ID: LLVMAttributeIndex = 1;
                     let count = get_attribute_count(f, INVALID_PARAM_ID);
-                    assert!(count == 0);
+                    assert_eq!(count, 0);
                 },
             );
         }

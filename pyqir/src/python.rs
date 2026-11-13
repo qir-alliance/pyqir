@@ -25,8 +25,8 @@ use crate::{
 };
 use pyo3::prelude::*;
 
-#[pymodule]
-fn _native<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
+#[pymodule(name = "_native")]
+fn native<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
     m.add_class::<Alloca>()?;
     m.add_class::<ArrayConstant>()?;
     m.add_class::<ArrayType>()?;
