@@ -158,11 +158,10 @@ pub(crate) fn assert_reference_ir(
         panic!(
             "Saved reference IR. Run again without the {PYQIR_TEST_SAVE_REFERENCES} environment variable.",
         )
-    } else {
-        let contents = fs::read_to_string(&path).unwrap();
-        let expected_ir: String = normalized(contents.chars()).collect();
-        assert_eq!(expected_ir, actual_ir.to_str().unwrap());
     }
+    let contents = fs::read_to_string(&path).unwrap();
+    let expected_ir: String = normalized(contents.chars()).collect();
+    assert_eq!(expected_ir, actual_ir.to_str().unwrap());
 }
 
 fn build_ir(
