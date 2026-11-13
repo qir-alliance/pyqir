@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 #![allow(clippy::used_underscore_binding)]
+// PyO3's from_py_object generates clones for Copy enums outside enum-level lint scopes.
+#![allow(clippy::clone_on_copy)]
 
 use crate::{
     types::Type,
