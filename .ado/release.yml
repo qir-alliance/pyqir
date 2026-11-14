@@ -300,6 +300,7 @@ extends:
                   $ErrorActionPreference = "Stop"
                   $version = "$(PYTHON_FREETHREADED_VERSION)"
                   $arch = if ("${{ target.arch }}" -eq "aarch64") { "arm64-freethreaded" } else { "x64-freethreaded" }
+                  $expectedSha256 = $env:PYTHON_FREETHREADED_SHA256
                   $manifest = Invoke-RestMethod "https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json"
                   $files = @(
                     ($manifest | Where-Object version -eq $version).files |
@@ -313,6 +314,11 @@ extends:
                   New-Item -ItemType Directory -Path $installer -Force | Out-Null
                   $archive = Join-Path $installer "python.tar.gz"
                   Invoke-WebRequest $files[0].download_url -OutFile $archive
+                  $actualSha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+                  if ($actualSha256 -ne $expectedSha256) {
+                    throw "SHA-256 mismatch for $($files[0].filename): expected $expectedSha256, got $actualSha256."
+                  }
+                  Write-Host "Verified SHA-256 for $($files[0].filename): $actualSha256"
                   tar -xzf $archive -C $installer
                   if ($LASTEXITCODE -ne 0) { throw "Failed to extract $($files[0].filename)." }
 
@@ -329,6 +335,12 @@ extends:
                   Write-Host "##vso[task.setvariable variable=pythonLocation;isOutput=true]$location"
                 name: Python315t
                 displayName: Install Python 3.15 free-threaded
+                # Expected archive digests; update alongside PYTHON_FREETHREADED_VERSION.
+                env:
+                  ${{ if eq(target.arch, 'aarch64') }}:
+                    PYTHON_FREETHREADED_SHA256: $(pythonMacArm64Sha256)
+                  ${{ else }}:
+                    PYTHON_FREETHREADED_SHA256: $(pythonMacX64Sha256)
 
             - pwsh: |
                 $pythonLocation = "$(Python315t.pythonLocation)"
