@@ -25,6 +25,7 @@ variables:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN_VERSION: "1.99"
   PYTHON_VERSION: "3.11"
+  PYTHON_FREETHREADED_VERSION: "3.15.2"
   LLVM_VERSION: 20
   # use this to invalidate the cache. Any time we update the OS
   # image, we should increment this to ensure that the cache is rebuilt.
@@ -114,6 +115,10 @@ extends:
             arch: ${{ target.arch }}
             ${{ if eq(target.os, 'windows') }}:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)\target\llvm
+                ${{ if eq(target.arch, 'aarch64') }}:
+                  PYTHON315T_NUGET_PACKAGE: pythonarm64-freethreaded
+                ${{ else }}:
+                  PYTHON315T_NUGET_PACKAGE: python-freethreaded
             ${{ else }}:
                 LLVM_DIRECTORY: $(Build.SourcesDirectory)/target/llvm
           timeoutInMinutes: 300
@@ -264,6 +269,138 @@ extends:
             # Build PyQIR on Mac and Windows
             - pwsh: ./build.ps1
               displayName: Build
+
+            # On Windows, UsePythonVersion@0 runs the python.org installer, which downloads freethreaded.msi and is
+            # blocked by network isolation. Take the same interpreter from its NuGet package through the CFS feed
+            # instead; -Source pins that feed so nuget.exe cannot fall back to nuget.org.
+            # More information on using Python from NuGet packages on Windows:
+            # https://docs.python.org/3/using/windows.html#the-nuget-org-packages
+            - ${{ if eq(target.os, 'windows') }}:
+              - task: NuGetCommand@2
+                displayName: Download Python 3.15 free-threaded
+                inputs:
+                  command: custom
+                  arguments: >-
+                    install $(PYTHON315T_NUGET_PACKAGE)
+                    -Version $(PYTHON_FREETHREADED_VERSION)
+                    -ExcludeVersion
+                    -OutputDirectory $(Agent.TempDirectory)\python315t
+                    -Source $(pythonNugetFeed)
+
+              - pwsh: |
+                  $tools = (Resolve-Path (Join-Path "$(Agent.TempDirectory)" "python315t\$(PYTHON315T_NUGET_PACKAGE)\tools")).Path
+                  Write-Host "##vso[task.setvariable variable=pythonLocation;isOutput=true]$tools"
+                name: Python315t
+                displayName: Locate Python 3.15 free-threaded
+
+            - ${{ else }}:
+              # UsePythonVersion@0 rejects free-threaded architectures:
+              # https://github.com/microsoft/azure-pipelines-tasks/pull/22752
+              - pwsh: |
+                  $ErrorActionPreference = "Stop"
+                  $version = "$(PYTHON_FREETHREADED_VERSION)"
+                  $arch = if ("${{ target.arch }}" -eq "aarch64") { "arm64-freethreaded" } else { "x64-freethreaded" }
+                  $expectedSha256 = $env:PYTHON_FREETHREADED_SHA256
+                  $manifest = Invoke-RestMethod "https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json"
+                  $files = @(
+                    ($manifest | Where-Object version -eq $version).files |
+                      Where-Object { $_.platform -eq "darwin" -and $_.arch -eq $arch }
+                  )
+                  if ($files.Count -ne 1) {
+                    throw "Expected one Python $version ($arch) macOS package, found $($files.Count)."
+                  }
+
+                  $installer = Join-Path "$(Agent.TempDirectory)" "python-freethreaded"
+                  New-Item -ItemType Directory -Path $installer -Force | Out-Null
+                  $archive = Join-Path $installer "python.tar.gz"
+                  Invoke-WebRequest $files[0].download_url -OutFile $archive
+                  $actualSha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+                  if ($actualSha256 -ne $expectedSha256) {
+                    throw "SHA-256 mismatch for $($files[0].filename): expected $expectedSha256, got $actualSha256."
+                  }
+                  Write-Host "Verified SHA-256 for $($files[0].filename): $actualSha256"
+                  tar -xzf $archive -C $installer
+                  if ($LASTEXITCODE -ne 0) { throw "Failed to extract $($files[0].filename)." }
+
+                  Push-Location $installer
+                  try {
+                    bash ./setup.sh
+                    if ($LASTEXITCODE -ne 0) { throw "Python installer failed." }
+                  }
+                  finally {
+                    Pop-Location
+                  }
+
+                  $location = Join-Path "$(Agent.ToolsDirectory)" "Python/$version/$arch"
+                  Write-Host "##vso[task.setvariable variable=pythonLocation;isOutput=true]$location"
+                name: Python315t
+                displayName: Install Python 3.15 free-threaded
+                # Expected archive digests; update alongside PYTHON_FREETHREADED_VERSION.
+                env:
+                  ${{ if eq(target.arch, 'aarch64') }}:
+                    PYTHON_FREETHREADED_SHA256: $(pythonMacArm64Sha256)
+                  ${{ else }}:
+                    PYTHON_FREETHREADED_SHA256: $(pythonMacX64Sha256)
+
+            - pwsh: |
+                $pythonLocation = "$(Python315t.pythonLocation)"
+                Write-Host "pythonLocation: $pythonLocation"
+
+                $pythonExecutable = if ($IsWindows) {
+                  Join-Path $pythonLocation "python.exe"
+                }
+                else {
+                  Join-Path $pythonLocation "bin/python"
+                }
+
+                & $pythonExecutable -c 'import sys, sysconfig; print(sys.executable); print(sys.version); gil_disabled = sysconfig.get_config_var("Py_GIL_DISABLED"); print(gil_disabled); assert sys.version_info[:2] == (3, 15); assert gil_disabled == 1'
+                if ($LASTEXITCODE -ne 0) {
+                  throw "Python 3.15 free-threaded interpreter verification failed."
+                }
+              displayName: Verify Python 3.15 free-threaded
+
+            - pwsh: |
+                $pythonExecutable = if ($IsWindows) {
+                  Join-Path "$(Python315t.pythonLocation)" "python.exe"
+                }
+                else {
+                  Join-Path "$(Python315t.pythonLocation)" "bin/python"
+                }
+
+                python -m pip install "maturin~=1.15.0"
+                if ($LASTEXITCODE -ne 0) {
+                  throw "Failed to install Maturin."
+                }
+                python -m maturin build `
+                  --manifest-path pyqir/Cargo.toml `
+                  --release `
+                  --features llvm20-1 `
+                  --interpreter $pythonExecutable
+                if ($LASTEXITCODE -ne 0) {
+                  throw "Failed to build the ABI3T wheel."
+                }
+
+                $wheelDirectory = Join-Path "$(System.DefaultWorkingDirectory)" "target/wheels"
+                $abi3tWheels = @(
+                  Get-ChildItem -LiteralPath $wheelDirectory -Filter "pyqir-*-cp315-abi3.abi3t-*.whl" -File
+                )
+                if ($abi3tWheels.Count -ne 1) {
+                  $wheelNames = $abi3tWheels.Name -join ", "
+                  throw "Expected exactly one cp315-abi3.abi3t wheel, found $($abi3tWheels.Count): $wheelNames"
+                }
+                Write-Host "Built ABI3T wheel: $($abi3tWheels[0].FullName)"
+              displayName: Build PyQIR ABI3T wheel
+
+            - pwsh: |
+                $pythonExecutable = if ($IsWindows) {
+                  Join-Path "$(Python315t.pythonLocation)" "python.exe"
+                }
+                else {
+                  Join-Path "$(Python315t.pythonLocation)" "bin/python"
+                }
+
+                ./eng/build.ps1 -taskList test-abi3t -properties @{ Python = $pythonExecutable }
+              displayName: Test PyQIR ABI3T wheel
 
           - ${{ else }}:
             # Run the tests and examples outside the container for the Linux builds
