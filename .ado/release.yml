@@ -26,6 +26,9 @@ variables:
   RUST_TOOLCHAIN_VERSION: "1.99"
   PYTHON_VERSION: "3.11"
   PYTHON_FREETHREADED_VERSION: "3.15.2"
+  # SHA-256 checksums for the macOS Python downloads; update when changing the Python version.
+  PYTHON_MAC_X64_SHA256: 40d77d85d5293256e0fdaafc43faac628ceb1dafaa6ebcd9d2f78232b0ba9c7c
+  PYTHON_MAC_ARM64_SHA256: 0c164aca56952e34683717fe92b534d9cc995340fb89e3decc98c43956d43708
   LLVM_VERSION: 20
   # use this to invalidate the cache. Any time we update the OS
   # image, we should increment this to ensure that the cache is rebuilt.
@@ -335,12 +338,11 @@ extends:
                   Write-Host "##vso[task.setvariable variable=pythonLocation;isOutput=true]$location"
                 name: Python315t
                 displayName: Install Python 3.15 free-threaded
-                # Expected archive digests; update alongside PYTHON_FREETHREADED_VERSION.
                 env:
                   ${{ if eq(target.arch, 'aarch64') }}:
-                    PYTHON_FREETHREADED_SHA256: $(pythonMacArm64Sha256)
+                    PYTHON_FREETHREADED_SHA256: $(PYTHON_MAC_ARM64_SHA256)
                   ${{ else }}:
-                    PYTHON_FREETHREADED_SHA256: $(pythonMacX64Sha256)
+                    PYTHON_FREETHREADED_SHA256: $(PYTHON_MAC_X64_SHA256)
 
             - pwsh: |
                 $pythonLocation = "$(Python315t.pythonLocation)"
