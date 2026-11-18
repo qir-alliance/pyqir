@@ -191,6 +191,28 @@ extends:
                 CARGO_REGISTRIES_MS_CRATES_IO_TOKEN: Bearer $(System.AccessToken)
                 CARGO_REGISTRIES_MS_CRATES_IO_CREDENTIAL_PROVIDER: cargo:token
 
+            - bash: |
+                set -euo pipefail
+                shopt -s nullglob
+
+                python3.15t -m venv .venv-abi3t
+                source .venv-abi3t/bin/activate
+                python -I -c 'import sys, sysconfig; print(sys.executable); print(sys.version); gil_disabled = sysconfig.get_config_var("Py_GIL_DISABLED"); print(gil_disabled); assert sys.version_info[:2] == (3, 15); assert gil_disabled == 1'
+
+                wheels=(target/wheels/pyqir-*-cp315-abi3.abi3t-*.whl)
+                if [ "${#wheels[@]}" -ne 1 ]; then
+                  echo "Expected exactly one PyQIR ABI3T wheel, found ${#wheels[@]}" >&2
+                  exit 1
+                fi
+                python -m pip install --force-reinstall "${wheels[0]}[test]"
+                python -I -c 'import pyqir; print("Imported PyQIR:", pyqir.__file__)'
+                cd pyqir
+                python -I -m pytest
+              displayName: Test PyQIR ABI3T wheel in Linux containers
+              target: qdkBuild
+              env:
+                PIP_INDEX_URL: $(PIP_INDEX_URL)
+
           # We don't need Rust if the build happened in the Linux container
           - ${{ if ne(target.os, 'linux') }}:
             - task: RustInstaller@1
